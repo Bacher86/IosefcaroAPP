@@ -11,11 +11,10 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; color: #1e293b; }
-        .card-alumno { background: white; border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .input-nota { width: 50px; height: 45px; text-align: center; border: 2px solid #e2e8f0; border-radius: 0.75rem; font-weight: 800; font-size: 1.1rem; outline: none; transition: 0.2s; }
-        .input-nota:focus { border-color: #2563eb; background: #eff6ff; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; backdrop-filter: blur(4px); }
-        .modal.active { display: flex; align-items: center; justify-content: center; p: 4; }
+        .card-alumno { background: white; border-radius: 2rem; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .input-nota { width: 100%; height: 50px; text-align: center; border: 2px solid #f1f5f9; border-radius: 1rem; font-weight: 800; font-size: 1.1rem; outline: none; transition: 0.2s; background: #f8fafc; }
+        .input-nota:focus { border-color: #2563eb; background: #white; }
+        .input-pro { border: 2px solid #white; border-radius: 1.2rem; padding: 1rem; width: 100%; outline: none; background: white; font-weight: 600; shadow: 0 2px 4px rgba(0,0,0,0.02); }
     </style>
 </head>
 <body class="pb-10">
@@ -25,30 +24,42 @@
             <i class="fas fa-apple-alt"></i>
         </div>
         <h2 class="text-2xl font-black tracking-tighter mb-2">Acceso Docente</h2>
-        <p class="text-slate-400 text-sm mb-8">Ingresá con tu email institucional</p>
-        <input type="email" id="login-email" class="w-full max-w-xs p-4 border-2 border-slate-100 rounded-2xl mb-4 outline-none focus:border-blue-500 font-bold" placeholder="tu-email@gmail.com">
-        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">Entrar al Aula</button>
+        <p class="text-slate-400 text-sm mb-8 text-center">Ingresá con tu email para gestionar tus cursos</p>
+        <input type="email" id="login-email" class="w-full max-w-xs p-4 border-2 border-slate-100 rounded-2xl mb-4 outline-none focus:border-blue-500 font-bold" placeholder="profe@gmail.com">
+        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Entrar al Aula</button>
     </div>
 
-    <header class="bg-white p-6 border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
+    <header class="bg-white/80 backdrop-blur-md p-6 border-b sticky top-0 z-50 flex justify-between items-center">
         <div>
-            <span id="docente-nombre" class="font-black text-lg block leading-none">Cargando...</span>
-            <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Gestión Académica</span>
+            <span id="docente-nombre" class="font-black text-lg block leading-none">Hola, Profe</span>
+            <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Gestión Docente</span>
         </div>
-        <button onclick="location.reload()" class="text-slate-400"><i class="fas fa-sign-out-alt"></i></button>
+        <button onclick="location.reload()" class="w-10 h-10 bg-slate-50 rounded-xl text-slate-400 flex items-center justify-center">
+            <i class="fas fa-power-off"></i>
+        </button>
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
         
-        <div class="mb-6">
-            <label class="text-[10px] font-black text-slate-400 ml-2 uppercase mb-2 block">Seleccionar Curso</label>
-            <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-4 bg-white border-2 border-white rounded-2xl shadow-sm font-bold text-slate-700 outline-none focus:border-blue-500">
-                <option value="">Cargando cursos...</option>
-            </select>
+        <div class="grid grid-cols-2 gap-3 mb-8">
+            <div>
+                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase mb-2 block">Curso</label>
+                <select id="select-curso" onchange="cargarAlumnos()" class="input-pro"></select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase mb-2 block">Materia</label>
+                <select id="select-materia" class="input-pro">
+                    <option value="General">General</option>
+                    <option value="Lengua">Lengua</option>
+                    <option value="Matemática">Matemática</option>
+                    <option value="Inglés">Inglés</option>
+                </select>
+            </div>
         </div>
 
         <div id="lista-alumnos" class="space-y-4">
-            </div>
+            <p class="text-center text-slate-400 py-20">Seleccioná un curso para comenzar</p>
+        </div>
 
     </main>
 
@@ -75,14 +86,13 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('docente-nombre').innerText = docenteData.nombre;
                 
-                // Cargar los cursos que el Admin le asignó
                 const select = document.getElementById('select-curso');
-                select.innerHTML = '<option value="">Elegir curso...</option>';
+                select.innerHTML = '<option value="">Elegir...</option>';
                 docenteData.cursos.forEach(c => {
                     select.innerHTML += `<option value="${c}">${c}</option>`;
                 });
             } else {
-                alert("Email no registrado como docente. Pedí acceso al Administrador.");
+                alert("Email no registrado como docente.");
             }
         }
 
@@ -91,53 +101,82 @@
             if(!curso) return;
 
             const container = document.getElementById('lista-alumnos');
-            container.innerHTML = '<p class="text-center text-slate-400 py-10">Buscando alumnos...</p>';
+            container.innerHTML = '<div class="text-center py-20"><i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i></div>';
 
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             container.innerHTML = "";
 
             snap.forEach(doc => {
-                const alum = doc.data();
+                const al = doc.data();
                 const id = doc.id;
                 
                 container.innerHTML += `
                     <div class="card-alumno">
-                        <h3 class="font-black text-slate-800 mb-4">${alum.nombre}</h3>
-                        <div class="flex justify-between items-center gap-2">
-                            <div class="flex flex-col items-center">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase mb-1">1° T</span>
-                                <input type="number" value="${alum.n1 || ''}" onchange="guardarNota('${id}', 'n1', this.value)" class="input-nota">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 class="font-black text-slate-800 text-lg">${al.nombre}</h3>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${curso}</p>
                             </div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase mb-1">2° T</span>
-                                <input type="number" value="${alum.n2 || ''}" onchange="guardarNota('${id}', 'n2', this.value)" class="input-nota">
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase mb-1">3° T</span>
-                                <input type="number" value="${alum.n3 || ''}" onchange="guardarNota('${id}', 'n3', this.value)" class="input-nota">
-                            </div>
-                            <button onclick="verObs('${id}', '${alum.nombre}')" class="w-11 h-11 bg-slate-100 rounded-xl text-slate-400">
-                                <i class="fas fa-comment-dots"></i>
+                            <button onclick="tomarAsistencia('${id}', this)" class="px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-tighter bg-emerald-50 text-emerald-600 transition-colors">
+                                <i class="fas fa-check-circle mr-1"></i> Presente
                             </button>
                         </div>
+                        
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-black text-slate-400 uppercase ml-1">1° Trim</span>
+                                <input type="number" value="${al.n1 || ''}" onchange="guardarNota('${id}', 'n1', this.value)" class="input-nota" placeholder="-">
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-black text-slate-400 uppercase ml-1">2° Trim</span>
+                                <input type="number" value="${al.n2 || ''}" onchange="guardarNota('${id}', 'n2', this.value)" class="input-nota" placeholder="-">
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[9px] font-black text-slate-400 uppercase ml-1">3° Trim</span>
+                                <input type="number" value="${al.n3 || ''}" onchange="guardarNota('${id}', 'n3', this.value)" class="input-nota" placeholder="-">
+                            </div>
+                        </div>
+
+                        <button onclick="verObs('${id}', '${al.nombre}')" class="w-full mt-4 py-3 bg-slate-50 rounded-xl text-slate-400 text-xs font-bold flex items-center justify-center gap-2">
+                            <i class="fas fa-comment-dots"></i> Observaciones
+                        </button>
                     </div>
                 `;
             });
         }
 
         async function guardarNota(id, campo, valor) {
-            let update = {};
-            update[campo] = valor;
-            await db.collection('alumnos').doc(id).update(update);
-            // Pequeño feedback visual
-            console.log("Nota guardada");
+            let upd = {};
+            upd[campo] = valor;
+            await db.collection('alumnos').doc(id).update(upd);
+        }
+
+        async function tomarAsistencia(id, btn) {
+            const esPresente = btn.innerText.includes("PRESENTE");
+            const nuevoEstado = esPresente ? "AUSENTE" : "PRESENTE";
+            
+            // Guardamos el registro de asistencia con la fecha de hoy
+            await db.collection('asistencia').add({
+                alumnoId: id,
+                estado: nuevoEstado,
+                fecha: new Date().toISOString().split('T')[0],
+                docente: docenteData.nombre
+            });
+
+            if(nuevoEstado === "AUSENTE") {
+                btn.innerHTML = '<i class="fas fa-times-circle mr-1"></i> Ausente';
+                btn.className = "px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-tighter bg-rose-50 text-rose-600 transition-colors";
+            } else {
+                btn.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Presente';
+                btn.className = "px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-tighter bg-emerald-50 text-emerald-600 transition-colors";
+            }
         }
 
         function verObs(id, nombre) {
-            const obs = prompt("Observaciones para " + nombre + ":");
+            const obs = prompt("Observación para " + nombre + ":");
             if(obs !== null) {
                 db.collection('alumnos').doc(id).update({ observaciones: obs });
-                alert("Observación guardada.");
+                alert("Guardado correctamente.");
             }
         }
     </script>
