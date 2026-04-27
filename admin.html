@@ -151,20 +151,29 @@
             location.reload();
         }
 
-        async function crearUser(rol) {
-            const nom = (rol === 'docente') ? document.getElementById('doc-nom').value : document.getElementById('fam-nom').value;
-            const mail = (rol === 'docente') ? document.getElementById('doc-mail').value.toLowerCase().trim() : document.getElementById('fam-mail').value.toLowerCase().trim();
-            if(!nom || !mail) return alert("Faltan datos");
+        // Dentro de la función crearUser(rol) en admin.html
+async function crearUser(rol) {
+    const nom = (rol === 'docente') ? document.getElementById('doc-nom').value : document.getElementById('fam-nom').value;
+    const mail = (rol === 'docente') ? document.getElementById('doc-mail').value.toLowerCase().trim() : document.getElementById('fam-mail').value.toLowerCase().trim();
+    
+    if(!nom || !mail) return alert("Faltan datos");
 
-            let data = { nombre: nom, rol: rol };
-            if(rol === 'docente') {
-                data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
-            }
+    let data = { nombre: nom, rol: rol };
+    
+    if(rol === 'docente') {
+        data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
+    } else {
+        // AQUÍ VINCULAMOS AL HIJO
+        const hijo = prompt("Ingrese el nombre completo del ALUMNO vinculado a esta familia:");
+        if(!hijo) return alert("Es obligatorio asignar un hijo a la familia");
+        data.hijoReferencia = hijo.toUpperCase();
+    }
 
-            await db.collection('usuarios').doc(mail).set(data);
-            alert("Usuario registrado.");
-            location.reload();
-        }
+    await db.collection('usuarios').doc(mail).set(data);
+    alert("Usuario registrado y vinculado.");
+    location.reload();
+}
+
 
         async function crearAlumno() {
             const nom = document.getElementById('alum-nom').value;
