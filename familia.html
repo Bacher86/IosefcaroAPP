@@ -3,140 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Comunidad Familia - Iosef Caro</title>
+    <title>Familia - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 2rem; border: 1px solid #f1f5f9; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        .nav-btn.active { color: #0f172a; }
-        .nav-btn.active i { transform: translateY(-4px); color: #2563eb; }
-        .tab-content { display: none; padding-bottom: 100px; }
-        .tab-content.active { display: block; animation: slideUp 0.4s ease; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; pb-24; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
+        .nav-active { color: #2563eb; transform: translateY(-5px); }
+        .nav-active i { background: #eff6ff; padding: 10px; border-radius: 15px; }
+        .post-card { background: white; border-radius: 2rem; padding: 1.5rem; border: 1px solid #f1f5f9; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        .iosi-float { position: fixed; bottom: 100px; right: 20px; width: 60px; height: 60px; background: #1e293b; border-radius: 20px; display: flex; items-center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 1000; animation: bounce 2s infinite; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        #chat-window { height: 60vh; overflow-y: auto; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
 <body>
 
-    <header class="p-6 flex justify-between items-center bg-white border-b sticky top-0 z-50">
-        <div>
-            <h1 class="font-black text-2xl tracking-tighter">Iosef Caro</h1>
-            <p class="text-[9px] font-bold text-blue-600 uppercase tracking-widest">Portal Familia</p>
+    <div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8">
+        <div class="w-20 h-20 bg-blue-600 rounded-[2rem] mb-6 flex items-center justify-center text-white text-3xl shadow-2xl shadow-blue-200">
+            <i class="fas fa-heart"></i>
         </div>
-        <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-            <i class="fas fa-bell"></i>
+        <h2 class="text-3xl font-black tracking-tighter mb-2">Comunidad Caro</h2>
+        <p class="text-slate-400 text-center text-sm mb-8">Ingresá con el email registrado en la institución</p>
+        <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-blue-500 font-bold transition-all" placeholder="ejemplo@gmail.com">
+        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar</button>
+    </div>
+
+    <div class="iosi-float" onclick="abrirIosi()">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <header class="bg-white/80 backdrop-blur-md p-6 sticky top-0 z-50 flex justify-between items-center border-b border-slate-100">
+        <div>
+            <h1 class="font-extrabold text-xl tracking-tighter" id="user-name">Hola, Familia</h1>
+            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest" id="header-subtitle">Muro de Novedades</p>
+        </div>
+        <div class="w-10 h-10 bg-slate-100 rounded-full overflow-hidden border-2 border-white shadow-sm">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" alt="avatar">
         </div>
     </header>
 
-    <main class="p-4 max-w-lg mx-auto">
+    <main class="p-4 max-w-lg mx-auto min-h-screen">
         
-        <section id="muro" class="tab-content active space-y-4">
-            <h2 class="font-black text-xl px-2">Novedades</h2>
-            <div id="feed-comunicados" class="space-y-4">
+        <section id="tab-muro" class="tab-content active">
+            <div id="muro-container">
                 </div>
         </section>
 
-        <section id="notas" class="tab-content space-y-4">
-            <h2 class="font-black text-xl px-2">Desempeño Académico</h2>
-            <div id="boletin-container" class="space-y-3">
-                </div>
+        <section id="tab-agenda" class="tab-content">
+            <h3 class="font-black text-2xl mb-6">Próximos Eventos</h3>
+            <div id="agenda-container" class="space-y-4"></div>
         </section>
 
-        <section id="iosi" class="tab-content space-y-4">
-            <div class="card bg-blue-600 text-white mb-4">
-                <h2 class="font-black text-lg">Hola, soy IOSI</h2>
-                <p class="text-xs opacity-80">Asistente Virtual de Iosef Caro</p>
-            </div>
-            <div id="chat-window" class="space-y-4 p-2">
-                <div class="bg-white p-4 rounded-2xl border text-sm shadow-sm">
-                    Hola! ¿En qué puedo ayudarte hoy? Consultame sobre horarios, eventos o el menú del comedor.
-                </div>
-            </div>
-            <div class="flex gap-2 sticky bottom-24 bg-white p-2 rounded-2xl border shadow-lg">
-                <input type="text" id="chat-input" placeholder="Preguntame algo..." class="flex-1 outline-none px-2 font-bold text-sm">
-                <button onclick="preguntarIosi()" class="w-12 h-12 bg-blue-600 text-white rounded-xl"><i class="fas fa-paper-plane"></i></button>
-            </div>
+        <section id="tab-notas" class="tab-content">
+            <h3 class="font-black text-2xl mb-6">Desempeño Académico</h3>
+            <div id="notas-container" class="space-y-4"></div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-4 shadow-2xl z-50">
-        <button onclick="switchTab('muro')" class="nav-btn active flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-home transition-all"></i>
-            <span class="text-[8px] font-black uppercase">Muro</span>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-100 flex justify-around p-3 z-[1000]">
+        <button onclick="switchTab('muro')" id="nav-muro" class="nav-btn flex flex-col items-center gap-1 font-bold text-[10px] text-slate-400 nav-active">
+            <i class="fas fa-home text-lg"></i><span>INICIO</span>
         </button>
-        <button onclick="switchTab('notas')" class="nav-btn flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-file-invoice transition-all"></i>
-            <span class="text-[8px] font-black uppercase">Notas</span>
+        <button onclick="switchTab('agenda')" id="nav-agenda" class="nav-btn flex flex-col items-center gap-1 font-bold text-[10px] text-slate-400">
+            <i class="fas fa-calendar-alt text-lg"></i><span>AGENDA</span>
         </button>
-        <button onclick="switchTab('iosi')" class="nav-btn flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-robot transition-all"></i>
-            <span class="text-[8px] font-black uppercase">IOSI</span>
+        <button onclick="switchTab('notas')" id="nav-notas" class="nav-btn flex flex-col items-center gap-1 font-bold text-[10px] text-slate-400">
+            <i class="fas fa-star text-lg"></i><span>NOTAS</span>
         </button>
     </nav>
 
     <script>
         const firebaseConfig = {
-  apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
-  authDomain: "app-iosefcaro.firebaseapp.com",
-  projectId: "app-iosefcaro",
-  storageBucket: "app-iosefcaro.firebasestorage.app",
-  messagingSenderId: "651320124248",
-  appId: "1:651320124248:web:97c8ca00e29114e1983b2d",
-  measurementId: "G-0VKGY3WECC"
-};
+            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
+            authDomain: "app-iosefcaro.firebaseapp.com",
+            projectId: "app-iosefcaro",
+            storageBucket: "app-iosefcaro.firebasestorage.app",
+            messagingSenderId: "651320124248",
+            appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-// Inicialización compatible con tus archivos .html
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.firestore();
+        let userData = null;
 
-        // LÓGICA DE NAVEGACIÓN
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+        async function login() {
+            const email = document.getElementById('login-email').value.toLowerCase().trim();
+            const doc = await db.collection('usuarios').doc(email).get();
+
+            if (doc.exists && doc.data().rol === 'familia') {
+                userData = doc.data();
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('user-name').innerText = "Familia " + userData.nombre;
+                cargarMuro();
+            } else {
+                alert("Email no registrado. Contactate con administración.");
+            }
         }
 
-        // CARGAR MURO
-        db.collection('comunicados').orderBy('creadoEn', 'desc').onSnapshot(snap => {
-            const container = document.getElementById('feed-comunicados');
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('nav-active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('nav-' + tab).classList.add('nav-active');
+            
+            if(tab === 'muro') cargarMuro();
+            if(tab === 'agenda') cargarAgenda();
+            if(tab === 'notas') cargarNotas();
+        }
+
+        async function cargarMuro() {
+            const container = document.getElementById('muro-container');
+            container.innerHTML = '<p class="text-center py-10 text-slate-400">Cargando novedades...</p>';
+            
+            const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
             container.innerHTML = "";
+            
             snap.forEach(doc => {
-                const data = doc.data();
+                const post = doc.data();
                 container.innerHTML += `
-                    <div class="card">
-                        <span class="text-[8px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-black uppercase">${data.tag}</span>
-                        <h3 class="font-black text-lg mt-2">${data.titulo}</h3>
-                        <p class="text-sm text-slate-500 mt-2">${data.texto}</p>
-                        ${data.link ? `<a href="${data.link}" target="_blank" class="block mt-4 text-center bg-slate-50 p-3 rounded-xl text-xs font-bold text-slate-600"><i class="fas fa-link mr-2"></i> Ver adjunto</a>` : ''}
+                    <div class="post-card">
+                        <span class="text-[9px] font-extrabold bg-blue-100 text-blue-600 px-3 py-1 rounded-full uppercase tracking-tighter">${post.tag}</span>
+                        <h2 class="text-xl font-black mt-3 leading-tight">${post.titulo}</h2>
+                        <p class="text-slate-500 text-sm mt-2 mb-4">${post.texto}</p>
+                        <div class="flex gap-2">
+                            ${post.link ? `<a href="${post.link}" target="_blank" class="flex-1 bg-slate-900 text-white text-center py-3 rounded-xl font-bold text-xs"><i class="fas fa-play-circle mr-2"></i>Multimedia</a>` : ''}
+                            ${post.form ? `<a href="${post.form}" target="_blank" class="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-bold text-xs"><i class="fas fa-file-alt mr-2"></i>Formulario</a>` : ''}
+                        </div>
                     </div>
                 `;
             });
-        });
+        }
 
-        // LÓGICA CHAT IOSI (Sencilla para testear)
-        function preguntarIosi() {
-            const input = document.getElementById('chat-input');
-            const win = document.getElementById('chat-window');
-            if(!input.value) return;
+        async function cargarAgenda() {
+            const container = document.getElementById('agenda-container');
+            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                const ev = doc.data();
+                container.innerHTML += `
+                    <div class="bg-white p-5 rounded-2xl flex items-center gap-4 border border-slate-100">
+                        <div class="bg-blue-50 text-blue-600 p-3 rounded-xl font-bold text-center min-w-[60px]">
+                            <span class="block text-xs uppercase">${new Date(ev.fecha).toLocaleString('es', {month:'short'})}</span>
+                            <span class="text-xl">${new Date(ev.fecha).getDate() + 1}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">${ev.titulo}</h4>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">${ev.tipo || 'Evento'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
-            win.innerHTML += `<div class="bg-blue-50 p-4 rounded-2xl text-sm font-bold ml-10 text-blue-700">${input.value}</div>`;
-            
-            // Simulación de respuesta IA
-            setTimeout(() => {
-                win.innerHTML += `<div class="bg-white p-4 rounded-2xl border text-sm shadow-sm mr-10 italic">Estoy procesando tu consulta sobre "${input.value}"...</div>`;
-                win.scrollTop = win.scrollHeight;
-            }, 1000);
-            
-            input.value = "";
-            win.scrollTop = win.scrollHeight;
+        async function cargarNotas() {
+            const container = document.getElementById('notas-container');
+            // Aquí podrías filtrar por el nombre del hijo si lo tuviéramos vinculado
+            const snap = await db.collection('alumnos').get();
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                const al = doc.data();
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                        <h4 class="font-black text-lg mb-4 text-blue-600">${al.nombre}</h4>
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <div class="bg-slate-50 p-3 rounded-xl text-center">
+                                <span class="text-[9px] font-bold text-slate-400 block">1° TRIM</span>
+                                <span class="font-black text-xl">${al.n1 || '-'}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-center">
+                                <span class="text-[9px] font-bold text-slate-400 block">2° TRIM</span>
+                                <span class="font-black text-xl">${al.n2 || '-'}</span>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-center">
+                                <span class="text-[9px] font-bold text-slate-400 block">3° TRIM</span>
+                                <span class="font-black text-xl">${al.n3 || '-'}</span>
+                            </div>
+                        </div>
+                        ${al.observaciones ? `<div class="p-3 bg-blue-50 rounded-xl text-xs text-blue-700 italic">" ${al.observaciones} "</div>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function abrirIosi() {
+            alert("¡Hola! Soy Iosi. Próximamente estaré integrado con IA para responder todas tus dudas sobre el colegio.");
         }
     </script>
 </body>
