@@ -1,77 +1,75 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panel Docente - Iosef Caro</title>
+    <title>Docente - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; color: #1e293b; padding-bottom: 40px; }
-        .input-pro { border-radius: 1.2rem; padding: 1rem; width: 100%; outline: none; background: white; font-weight: 700; border: 2px solid #fff; shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .input-pro:focus { border-color: #2563eb; }
-        .card-alumno { background: white; border-radius: 2.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; margin-bottom: 1.2rem; }
-        .input-nota { width: 100%; height: 55px; text-align: center; border-radius: 1.2rem; background: #f8fafc; border: 2px solid #f1f5f9; font-weight: 800; font-size: 1.2rem; transition: 0.3s; }
-        .input-nota:focus { background: white; border-color: #2563eb; transform: scale(1.05); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding-bottom: 100px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-btn.active { color: #2563eb; background: #eff6ff; border-radius: 1rem; }
+        .input-nota { width: 100%; height: 50px; text-align: center; border-radius: 1rem; border: 2px solid #f1f5f9; font-weight: 800; outline: none; }
+        .input-nota:focus { border-color: #2563eb; background: white; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8">
-        <div class="w-16 h-16 bg-slate-900 rounded-[1.5rem] mb-6 flex items-center justify-center text-white text-2xl shadow-xl">
-            <i class="fas fa-chalkboard-teacher"></i>
-        </div>
-        <h2 class="text-3xl font-black tracking-tighter mb-2">Acceso Docente</h2>
-        <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="profe@gmail.com">
-        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold">Ingresar</button>
+    <div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8 text-center">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-2xl shadow-xl"><i class="fas fa-apple-alt"></i></div>
+        <h2 class="text-2xl font-black mb-6">Panel Docente</h2>
+        <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="profe@gmail.com">
+        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold">Entrar</button>
     </div>
 
-    <header class="bg-white/80 backdrop-blur-md p-6 sticky top-0 z-50 border-b flex justify-between items-center">
+    <header class="p-6 bg-white border-b sticky top-0 z-50 flex justify-between items-center">
         <div>
-            <h1 class="font-extrabold text-xl tracking-tighter" id="doc-nom">Hola, Docente</h1>
-            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Gestión de Clases</p>
+            <h1 id="doc-nom" class="font-black text-lg leading-none">Hola, Profe</h1>
+            <select id="select-curso" onchange="cargarAlumnos()" class="text-[10px] font-bold text-blue-600 uppercase border-none bg-transparent outline-none"></select>
         </div>
-        <div class="flex gap-2">
-            <input type="date" id="fecha-hoy" class="bg-slate-100 border-none rounded-xl p-2 text-[10px] font-bold outline-none">
-        </div>
+        <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
         
-        <div class="grid grid-cols-2 gap-3 mb-8">
-            <div class="space-y-1">
-                <label class="text-[9px] font-black text-slate-400 ml-2 uppercase">Curso</label>
-                <select id="select-curso" onchange="cargarAlumnos()" class="input-pro"></select>
-            </div>
-            <div class="space-y-1">
-                <label class="text-[9px] font-black text-slate-400 ml-2 uppercase">Materia</label>
-                <select id="select-materia" class="input-pro" onchange="cargarAlumnos()">
+        <section id="tab-notas" class="tab-content active">
+            <div class="mb-6">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Materia a calificar</label>
+                <select id="select-materia" onchange="cargarAlumnos()" class="w-full p-4 bg-white rounded-2xl border shadow-sm font-bold mt-1 outline-none">
                     <option value="MATEMATICA">Matemática</option>
                     <option value="LENGUA">Lengua</option>
                     <option value="INGLES">Inglés</option>
-                    <option value="SOCIALES">Soc./Naturales</option>
                     <option value="CONDUCTA">Conducta/Gral</option>
                 </select>
             </div>
-        </div>
+            <div id="lista-notas" class="space-y-4"></div>
+        </section>
 
-        <div id="lista-alumnos" class="space-y-4">
-            </div>
+        <section id="tab-asis" class="tab-content">
+            <h3 class="font-black text-xl mb-4">Pasar Lista</h3>
+            <div id="lista-asis" class="space-y-2"></div>
+            <button onclick="alert('Asistencia guardada en la nube')" class="w-full mt-6 bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg shadow-emerald-200">Finalizar Lista</button>
+        </section>
 
     </main>
 
+    <nav class="fixed bottom-0 left-4 right-4 bg-white border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
+        <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+            <i class="fas fa-star text-lg"></i>NOTAS
+        </button>
+        <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+            <i class="fas fa-list-check text-lg"></i>ASISTENCIA
+        </button>
+    </nav>
+
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
-            authDomain: "app-iosefcaro.firebaseapp.com",
-            projectId: "app-iosefcaro",
-            storageBucket: "app-iosefcaro.firebasestorage.app",
-            messagingSenderId: "651320124248",
-            appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
-        };
+        // Config igual...
+        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -81,131 +79,77 @@
         async function login() {
             const email = document.getElementById('login-email').value.toLowerCase().trim();
             const doc = await db.collection('usuarios').doc(email).get();
-
             if (doc.exists && doc.data().rol === 'docente') {
                 docenteData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('doc-nom').innerText = docenteData.nombre;
-                
                 const select = document.getElementById('select-curso');
-                select.innerHTML = '<option value="">Seleccionar Curso</option>';
-                docenteData.cursos.forEach(c => {
-                    select.innerHTML += `<option value="${c}">${c}</option>`;
-                });
-            } else {
-                alert("Email no autorizado.");
-            }
+                select.innerHTML = docenteData.cursos.map(c => `<option value="${c}">${c}</option>`).join('');
+                cargarAlumnos();
+            } else { alert("Error de acceso."); }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('btn-' + tab).classList.add('active');
         }
 
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
             const materia = document.getElementById('select-materia').value;
-            if(!curso) return;
-
-            const container = document.getElementById('lista-alumnos');
-            container.innerHTML = '<p class="text-center py-10 opacity-50">Buscando lista...</p>';
-
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
-            container.innerHTML = "";
+            
+            const containerNotas = document.getElementById('lista-notas');
+            const containerAsis = document.getElementById('lista-asis');
+            containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
 
             snap.forEach(async (docAl) => {
                 const al = docAl.data();
                 const id = docAl.id;
-                
-                // Buscamos si ya tiene notas de ESTA materia
+
+                // Para la pestaña de NOTAS
                 const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
                 const n = notaDoc.exists ? notaDoc.data() : {};
-
-                container.innerHTML += `
-                    <div class="card-alumno">
-                        <div class="flex justify-between items-start mb-6">
-                            <h3 class="font-black text-slate-800 text-lg leading-tight w-2/3">${al.nombre}</h3>
-                            <div class="flex gap-1">
-                                <button onclick="marcarAsis('${id}','P',this)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 font-bold text-[10px]">P</button>
-                                <button onclick="marcarAsis('${id}','A',this)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 font-bold text-[10px]">A</button>
-                                <button onclick="marcarAsis('${id}','T',this)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 font-bold text-[10px]">T</button>
-                            </div>
+                containerNotas.innerHTML += `
+                    <div class="bg-white p-5 rounded-3xl border shadow-sm">
+                        <h4 class="font-bold text-sm mb-4">${al.nombre}</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="number" value="${n.n1 || ''}" onchange="guardarNota('${id}','n1',this.value)" class="input-nota" placeholder="1T">
+                            <input type="number" value="${n.n2 || ''}" onchange="guardarNota('${id}','n2',this.value)" class="input-nota" placeholder="2T">
+                            <input type="number" value="${n.n3 || ''}" onchange="guardarNota('${id}','n3',this.value)" class="input-nota" placeholder="3T">
                         </div>
+                    </div>`;
 
-                        <div class="grid grid-cols-3 gap-3 mb-4">
-                            <div class="space-y-1">
-                                <span class="text-[8px] font-black text-slate-400 ml-1 uppercase">1° Trim</span>
-                                <input type="number" value="${n.n1 || ''}" onchange="guardarNota('${id}', 'n1', this.value)" class="input-nota" placeholder="-">
-                            </div>
-                            <div class="space-y-1">
-                                <span class="text-[8px] font-black text-slate-400 ml-1 uppercase">2° Trim</span>
-                                <input type="number" value="${n.n2 || ''}" onchange="guardarNota('${id}', 'n2', this.value)" class="input-nota" placeholder="-">
-                            </div>
-                            <div class="space-y-1">
-                                <span class="text-[8px] font-black text-slate-400 ml-1 uppercase">3° Trim</span>
-                                <input type="number" value="${n.n3 || ''}" onchange="guardarNota('${id}', 'n3', this.value)" class="input-nota" placeholder="-">
-                            </div>
-                        </div>
-
-                        <div class="flex gap-2">
-                            <button onclick="enviarSancion('${id}', '${al.nombre}')" class="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-bold text-[10px] uppercase tracking-tighter">
-                                <i class="fas fa-gavel mr-1"></i> Sanción / Informe
-                            </button>
-                            <button onclick="verObservacion('${id}', '${al.nombre}')" class="flex-1 bg-slate-50 text-slate-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-tighter">
-                                <i class="fas fa-comment-dots mr-1"></i> Observación
-                            </button>
+                // Para la pestaña de ASISTENCIA
+                containerAsis.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
+                        <span class="text-xs font-bold w-1/2">${al.nombre}</span>
+                        <div class="flex gap-1">
+                            <button onclick="marcarAsis('${id}','P',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">P</button>
+                            <button onclick="marcarAsis('${id}','A',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">A</button>
+                            <button onclick="marcarAsis('${id}','T',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">T</button>
                         </div>
                     </div>`;
             });
         }
 
-        async function guardarNota(id, campo, valor) {
-            const materia = document.getElementById('select-materia').value;
-            await db.collection('alumnos').doc(id).collection('notas').doc(materia).set({
-                [campo]: valor,
-                materia: materia,
-                fechaUpdate: new Date().toLocaleDateString()
+        async function guardarNota(id, trim, val) {
+            const mat = document.getElementById('select-materia').value;
+            await db.collection('alumnos').doc(id).collection('notas').doc(mat).set({
+                [trim]: val, materia: mat, fechaUpdate: new Date().toLocaleDateString()
             }, { merge: true });
         }
 
         async function marcarAsis(id, tipo, btn) {
             const fecha = document.getElementById('fecha-hoy').value;
-            let just = "";
+            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha: fecha });
             
-            if(tipo === 'A' || tipo === 'T') {
-                just = prompt("¿Motivo / Justificación? (Opcional)");
-            }
-
-            // Guardar en colección global de asistencia
-            await db.collection('asistencia').add({
-                alumnoId: id,
-                estado: tipo,
-                fecha: fecha,
-                justificativo: just || "Sin especificar",
-                docente: docenteData.nombre
-            });
-
-            // Feedback visual rápido
-            const parent = btn.parentElement;
-            parent.querySelectorAll('button').forEach(b => b.className = "w-8 h-8 rounded-lg bg-slate-100 text-slate-400 font-bold text-[10px]");
-            
+            // Feedback visual
+            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
             const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
-            btn.className = `w-8 h-8 rounded-lg ${color} font-bold text-[10px] shadow-lg shadow-current/30`;
-        }
-
-        async function enviarSancion(id, nombre) {
-            const msg = prompt("Escriba el motivo de la sanción o informe para " + nombre + ":");
-            if(!msg) return;
-
-            await db.collection('alumnos').doc(id).collection('sanciones').add({
-                motivo: msg,
-                fecha: new Date().toLocaleDateString(),
-                docente: docenteData.nombre
-            });
-            alert("Informe guardado.");
-        }
-
-        async function verObservacion(id, nombre) {
-            // Esto actualiza el campo de observaciones generales del alumno
-            const obs = prompt("Observación rápida para el boletín:");
-            if(obs !== null) {
-                await db.collection('alumnos').doc(id).update({ observaciones: obs });
-            }
+            btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
         }
     </script>
 </body>
