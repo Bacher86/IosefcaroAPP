@@ -80,17 +80,21 @@
     </nav>
 
     <script>
-        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
-            apiKey: "AIzaSyCLeGKE5NoGUQT0GRdMDIHn4zhxF3ZOp6k",
-            authDomain: "app-academica-interna.firebaseapp.com",
-            projectId: "app-academica-interna",
-            storageBucket: "app-academica-interna.firebasestorage.app",
-            messagingSenderId: "169882587504",
-            appId: "1:169882587504:web:0fcdf32efdc81ad0a0bfb5"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+  apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
+  authDomain: "app-iosefcaro.firebaseapp.com",
+  projectId: "app-iosefcaro",
+  storageBucket: "app-iosefcaro.firebasestorage.app",
+  messagingSenderId: "651320124248",
+  appId: "1:651320124248:web:97c8ca00e29114e1983b2d",
+  measurementId: "G-0VKGY3WECC"
+};
+
+// Inicialización compatible con tus archivos .html
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 
         // LÓGICA DE NAVEGACIÓN
         function switchTab(tabId) {
