@@ -10,15 +10,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; pb-24; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; padding-bottom: 80px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: slideUp 0.4s ease-out; }
         .nav-active { color: #2563eb; transform: translateY(-5px); }
         .nav-active i { background: #eff6ff; padding: 10px; border-radius: 15px; }
         .post-card { background: white; border-radius: 2rem; padding: 1.5rem; border: 1px solid #f1f5f9; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
-        .iosi-float { position: fixed; bottom: 100px; right: 20px; width: 60px; height: 60px; background: #1e293b; border-radius: 20px; display: flex; items-center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 1000; animation: bounce 2s infinite; }
+        .iosi-float { position: fixed; bottom: 100px; right: 20px; width: 60px; height: 60px; background: #1e293b; border-radius: 20px; display: flex; items-center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 1000; animation: bounce 2s infinite; cursor: pointer; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        /* Modal Iosi */
+        #modal-iosi { display: none; }
+        #modal-iosi.active { display: flex; }
     </style>
 </head>
 <body>
@@ -28,13 +32,31 @@
             <i class="fas fa-heart"></i>
         </div>
         <h2 class="text-3xl font-black tracking-tighter mb-2">Comunidad Caro</h2>
-        <p class="text-slate-400 text-center text-sm mb-8">Ingresá con el email registrado en la institución</p>
+        <p class="text-slate-400 text-center text-sm mb-8">Ingresá con el email registrado</p>
         <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-blue-500 font-bold transition-all" placeholder="ejemplo@gmail.com">
         <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar</button>
     </div>
 
     <div class="iosi-float" onclick="abrirIosi()">
         <i class="fas fa-robot"></i>
+    </div>
+
+    <div id="modal-iosi" class="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[3000] flex-col p-6">
+        <div class="flex justify-between items-center mb-8 text-white">
+            <h2 class="font-black text-2xl">Iosi AI</h2>
+            <button onclick="cerrarIosi()" class="text-3xl">&times;</button>
+        </div>
+        <div id="chat-iosi" class="flex-1 overflow-y-auto space-y-4 mb-4">
+            <div class="bg-white/10 p-4 rounded-2xl rounded-tl-none text-white/90 max-w-[80%]">
+                ¡Hola! Soy Iosi. ¿En qué puedo ayudarte hoy?
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <input type="text" id="pregunta-iosi" class="flex-1 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Escribí tu duda...">
+            <button onclick="preguntarIosi()" class="bg-blue-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
     </div>
 
     <header class="bg-white/80 backdrop-blur-md p-6 sticky top-0 z-50 flex justify-between items-center border-b border-slate-100">
@@ -48,10 +70,8 @@
     </header>
 
     <main class="p-4 max-w-lg mx-auto min-h-screen">
-        
         <section id="tab-muro" class="tab-content active">
-            <div id="muro-container">
-                </div>
+            <div id="muro-container"></div>
         </section>
 
         <section id="tab-agenda" class="tab-content">
@@ -60,10 +80,9 @@
         </section>
 
         <section id="tab-notas" class="tab-content">
-            <h3 class="font-black text-2xl mb-6">Desempeño Académico</h3>
+            <h3 class="font-black text-2xl mb-6">Desempeño de mi hijo</h3>
             <div id="notas-container" class="space-y-4"></div>
         </section>
-
     </main>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-100 flex justify-around p-3 z-[1000]">
@@ -102,7 +121,7 @@
                 document.getElementById('user-name').innerText = "Familia " + userData.nombre;
                 cargarMuro();
             } else {
-                alert("Email no registrado. Contactate con administración.");
+                alert("Acceso denegado. Verificá tu email con administración.");
             }
         }
 
@@ -119,11 +138,9 @@
 
         async function cargarMuro() {
             const container = document.getElementById('muro-container');
-            container.innerHTML = '<p class="text-center py-10 text-slate-400">Cargando novedades...</p>';
-            
+            container.innerHTML = '<p class="text-center py-10 text-slate-400">Actualizando muro...</p>';
             const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
             container.innerHTML = "";
-            
             snap.forEach(doc => {
                 const post = doc.data();
                 container.innerHTML += `
@@ -132,11 +149,10 @@
                         <h2 class="text-xl font-black mt-3 leading-tight">${post.titulo}</h2>
                         <p class="text-slate-500 text-sm mt-2 mb-4">${post.texto}</p>
                         <div class="flex gap-2">
-                            ${post.link ? `<a href="${post.link}" target="_blank" class="flex-1 bg-slate-900 text-white text-center py-3 rounded-xl font-bold text-xs"><i class="fas fa-play-circle mr-2"></i>Multimedia</a>` : ''}
-                            ${post.form ? `<a href="${post.form}" target="_blank" class="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-bold text-xs"><i class="fas fa-file-alt mr-2"></i>Formulario</a>` : ''}
+                            ${post.link ? `<a href="${post.link}" target="_blank" class="flex-1 bg-slate-900 text-white text-center py-3 rounded-xl font-bold text-xs"><i class="fas fa-play-circle mr-2"></i>Ver Fotos/Video</a>` : ''}
+                            ${post.form ? `<a href="${post.form}" target="_blank" class="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-bold text-xs"><i class="fas fa-poll mr-2"></i>Completar</a>` : ''}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
@@ -154,45 +170,59 @@
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-800">${ev.titulo}</h4>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">${ev.tipo || 'Evento'}</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">${ev.tipo || 'General'}</span>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
         async function cargarNotas() {
             const container = document.getElementById('notas-container');
-            // Aquí podrías filtrar por el nombre del hijo si lo tuviéramos vinculado
-            const snap = await db.collection('alumnos').get();
+            if(!userData.hijoReferencia) {
+                container.innerHTML = "<p class='text-center text-slate-400 py-10'>No tenés alumnos vinculados. Avisá en administración.</p>";
+                return;
+            }
+
+            const snap = await db.collection('alumnos').where('nombre', '==', userData.hijoReferencia).get();
             container.innerHTML = "";
+
+            if(snap.empty) {
+                container.innerHTML = `<p class='text-center text-slate-400 py-10'>No encontramos notas para ${userData.hijoReferencia}.</p>`;
+                return;
+            }
+
             snap.forEach(doc => {
                 const al = doc.data();
                 container.innerHTML += `
                     <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
                         <h4 class="font-black text-lg mb-4 text-blue-600">${al.nombre}</h4>
                         <div class="grid grid-cols-3 gap-2 mb-4">
-                            <div class="bg-slate-50 p-3 rounded-xl text-center">
-                                <span class="text-[9px] font-bold text-slate-400 block">1° TRIM</span>
-                                <span class="font-black text-xl">${al.n1 || '-'}</span>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center">
-                                <span class="text-[9px] font-bold text-slate-400 block">2° TRIM</span>
-                                <span class="font-black text-xl">${al.n2 || '-'}</span>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center">
-                                <span class="text-[9px] font-bold text-slate-400 block">3° TRIM</span>
-                                <span class="font-black text-xl">${al.n3 || '-'}</span>
-                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-center"><span class="text-[9px] font-bold text-slate-400 block uppercase">1° Trim</span><span class="font-black text-xl">${al.n1 || '-'}</span></div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-center"><span class="text-[9px] font-bold text-slate-400 block uppercase">2° Trim</span><span class="font-black text-xl">${al.n2 || '-'}</span></div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-center"><span class="text-[9px] font-bold text-slate-400 block uppercase">3° Trim</span><span class="font-black text-xl">${al.n3 || '-'}</span></div>
                         </div>
-                        ${al.observaciones ? `<div class="p-3 bg-blue-50 rounded-xl text-xs text-blue-700 italic">" ${al.observaciones} "</div>` : ''}
-                    </div>
-                `;
+                        ${al.observaciones ? `<div class="p-3 bg-blue-50 rounded-xl text-[11px] text-blue-700 italic">" ${al.observaciones} "</div>` : ''}
+                    </div>`;
             });
         }
 
-        function abrirIosi() {
-            alert("¡Hola! Soy Iosi. Próximamente estaré integrado con IA para responder todas tus dudas sobre el colegio.");
+        // FUNCIONES IOSI
+        function abrirIosi() { document.getElementById('modal-iosi').classList.add('active'); }
+        function cerrarIosi() { document.getElementById('modal-iosi').classList.remove('active'); }
+
+        function preguntarIosi() {
+            const input = document.getElementById('pregunta-iosi');
+            const chat = document.getElementById('chat-iosi');
+            if(!input.value) return;
+
+            chat.innerHTML += `<div class="bg-blue-600 p-4 rounded-2xl rounded-tr-none text-white text-right ml-auto max-w-[80%]">${input.value}</div>`;
+            const userMsg = input.value;
+            input.value = "";
+
+            setTimeout(() => {
+                chat.innerHTML += `<div class="bg-white/10 p-4 rounded-2xl rounded-tl-none text-white/90 max-w-[80%]">Estoy analizando tu consulta sobre "${userMsg}". Pronto tendré una respuesta basada en el reglamento escolar.</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            }, 1000);
         }
     </script>
 </body>
