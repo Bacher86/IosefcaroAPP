@@ -176,35 +176,91 @@
             });
         }
 
-        async function cargarNotas() {
-            const container = document.getElementById('notas-container');
-            if(!userData.hijoReferencia) {
-                container.innerHTML = "<p class='text-center text-slate-400 py-10'>No tenés alumnos vinculados. Avisá en administración.</p>";
-                return;
-            }
+       <main class="p-4 max-w-lg mx-auto">
+    <div class="grid grid-cols-2 gap-3 mb-6">
+        <select id="select-curso" onchange="cargarAlumnos()" class="input-pro"></select>
+        <select id="select-materia" class="input-pro">
+            <option value="MATEMATICA">Matemática</option>
+            <option value="LENGUA">Lengua</option>
+            <option value="INGLES">Inglés</option>
+            <option value="SOCIALES">Soc./Naturales</option>
+        </select>
+    </div>
 
-            const snap = await db.collection('alumnos').where('nombre', '==', userData.hijoReferencia).get();
-            container.innerHTML = "";
+    <div id="lista-alumnos" class="space-y-6"></div>
+</main>
 
-            if(snap.empty) {
-                container.innerHTML = `<p class='text-center text-slate-400 py-10'>No encontramos notas para ${userData.hijoReferencia}.</p>`;
-                return;
-            }
+<script>
+// ... (Firebase Init igual) ...
 
-            snap.forEach(doc => {
-                const al = doc.data();
-                container.innerHTML += `
-                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                        <h4 class="font-black text-lg mb-4 text-blue-600">${al.nombre}</h4>
-                        <div class="grid grid-cols-3 gap-2 mb-4">
-                            <div class="bg-slate-50 p-3 rounded-xl text-center"><span class="text-[9px] font-bold text-slate-400 block uppercase">1° Trim</span><span class="font-black text-xl">${al.n1 || '-'}</span></div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center"><span class="text-[9px] font-bold text-slate-400 block uppercase">2° Trim</span><span class="font-black text-xl">${al.n2 || '-'}</span></div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center"><span class="text-[9px] font-bold text-slate-400 block uppercase">3° Trim</span><span class="font-black text-xl">${al.n3 || '-'}</span></div>
-                        </div>
-                        ${al.observaciones ? `<div class="p-3 bg-blue-50 rounded-xl text-[11px] text-blue-700 italic">" ${al.observaciones} "</div>` : ''}
-                    </div>`;
-            });
-        }
+async function cargarAlumnos() {
+    const curso = document.getElementById('select-curso').value;
+    const container = document.getElementById('lista-alumnos');
+    const snap = await db.collection('alumnos').where('curso', '==', curso).get();
+    container.innerHTML = "";
+
+    snap.forEach(doc => {
+        const al = doc.data();
+        const id = doc.id;
+        container.innerHTML += `
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-black text-slate-800">${al.nombre}</h3>
+                    <div class="flex gap-1">
+                        <button onclick="registrarAsis('${id}','P')" class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 text-[10px] font-bold">P</button>
+                        <button onclick="registrarAsis('${id}','A')" class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 text-[10px] font-bold">A</button>
+                        <button onclick="registrarAsis('${id}','T')" class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 text-[10px] font-bold">T</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="number" placeholder="1T" onchange="guardarNotaMateria('${id}', 'n1', this.value)" class="input-nota">
+                    <input type="number" placeholder="2T" onchange="guardarNotaMateria('${id}', 'n2', this.value)" class="input-nota">
+                    <input type="number" placeholder="3T" onchange="guardarNotaMateria('${id}', 'n3', this.value)" class="input-nota">
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="ponerSancion('${id}', '${al.nombre}')" class="flex-1 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase">Sanción</button>
+                    <button onclick="verObs('${id}', '${al.nombre}')" class="flex-1 py-2 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-bold uppercase">Observación</button>
+                </div>
+            </div>`;
+    });
+}
+
+async function guardarNotaMateria(id, trim, valor) {
+    const materia = document.getElementById('select-materia').value;
+    // Guardamos en una sub-colección o campo dinámico
+    await db.collection('alumnos').doc(id).collection('notas').doc(materia).set({
+        [trim]: valor,
+        materia: materia,
+        actualizado: new Date()
+    }, { merge: true });
+}
+
+async function registrarAsis(id, tipo) {
+    const just = (tipo === 'A' || tipo === 'T') ? prompt("¿Justificativo? (Opcional)") : "";
+    await db.collection('asistencia').add({
+        alumnoId: id,
+        fecha: new Date().toISOString().split('T')[0],
+        estado: tipo, // P, A, T
+        justificativo: just || "Sin justificar",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert("Asistencia grabada");
+}
+
+async function ponerSancion(id, nombre) {
+    const motivo = prompt("Motivo de la sanción para " + nombre + ":");
+    if(!motivo) return;
+    await db.collection('alumnos').doc(id).collection('sanciones').add({
+        motivo: motivo,
+        fecha: new Date().toLocaleDateString(),
+        docente: docenteData.nombre
+    });
+    alert("Sanción registrada");
+}
+</script>
+
 
         // FUNCIONES IOSI
         function abrirIosi() { document.getElementById('modal-iosi').classList.add('active'); }
