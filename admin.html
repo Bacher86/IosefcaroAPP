@@ -2,202 +2,193 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Maestro v10.0 - Iosef Caro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Maestro - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; padding-bottom: 50px; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; color: #101828; }
+        .sidebar-item { transition: all 0.2s ease; border-radius: 0.75rem; margin-bottom: 0.25rem; }
+        .sidebar-item.active { background: #1e293b; color: white; }
+        .glass-card { background: white; border: 1px solid #eaecf0; border-radius: 1.5rem; box-shadow: 0 1px 3px rgba(16,24,40,0.05); }
+        .input-pro { border: 1px solid #d0d5dd; border-radius: 0.75rem; padding: 0.75rem 1rem; width: 100%; outline: none; transition: all 0.2s; background: white; }
+        .input-pro:focus { border-color: #1e293b; ring: 2px ring-slate-100; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .card { background: white; border-radius: 2.5rem; border: 1px solid #f1f5f9; padding: 2rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02); }
-        input, select, textarea { background: #f1f5f9; border: none; border-radius: 1.2rem; padding: 1rem; font-weight: 700; width: 100%; outline: none; margin-bottom: 1rem; }
-        .btn-tab.active { background: #0f172a; color: white; border-color: #0f172a; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="flex min-h-screen">
 
-    <header class="p-8">
-        <h1 class="text-3xl font-black text-slate-800 tracking-tighter">Panel de Gestión</h1>
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Control Centralizado Institucional</p>
-    </header>
-
-    <nav class="flex gap-2 px-8 overflow-x-auto no-scrollbar mb-8 pb-2">
-        <button onclick="switchTab('comunicacion')" class="btn-tab active whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all">Comunicación</button>
-        <button onclick="switchTab('calendario')" class="btn-tab whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all">Calendario</button>
-        <button onclick="switchTab('usuarios')" class="btn-tab whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all">Usuarios y Vínculos</button>
-        <button onclick="switchTab('cursos')" class="btn-tab whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest border transition-all">Cursos y Alumnos</button>
-    </nav>
-
-    <main class="px-6 max-w-5xl mx-auto">
-
-        <section id="tab-comunicacion" class="tab-content active space-y-6">
-            <div class="card">
-                <h3 class="text-xs font-black text-pink-500 uppercase tracking-widest mb-6"><i class="fas fa-bullhorn mr-2"></i>Nuevo Posteo Multimedia</h3>
-                <input type="text" id="post-tit" placeholder="Título del comunicado">
-                <textarea id="post-msg" placeholder="Contenido del mensaje..." rows="3"></textarea>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="url" id="post-link" placeholder="Link Fotos/Video (Drive/YouTube)">
-                    <input type="url" id="post-form" placeholder="Link Formulario (Google Forms)">
-                </div>
-                <div class="flex gap-4 items-center">
-                    <select id="post-tag" class="flex-1">
-                        <option value="TODOS">Toda la Escuela</option>
-                        <option value="SALA 5">Sala 5</option>
-                        <option value="1er GRADO">1er Grado</option>
-                        <option value="2do GRADO">2do Grado</option>
-                    </select>
-                    <button onclick="enviarComunicado()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">Publicar</button>
-                </div>
+    <aside class="w-72 border-r bg-white p-6 hidden md:flex flex-col sticky top-0 h-screen">
+        <div class="mb-10 flex items-center gap-3 px-2">
+            <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">
+                <i class="fas fa-shield-alt"></i>
             </div>
-        </section>
-
-        <section id="tab-calendario" class="tab-content space-y-6">
-            <div class="card">
-                <h3 class="text-xs font-black text-indigo-500 uppercase tracking-widest mb-6"><i class="fas fa-calendar-alt mr-2"></i>Agendar Evento / Fecha</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="event-tit" placeholder="Ej: Prueba de Geografía">
-                    <input type="date" id="event-date">
-                    <select id="event-type">
-                        <option value="EVENTO">Evento Especial</option>
-                        <option value="FERIADO">Feriado / Asueto</option>
-                        <option value="PRUEBA">Examen / Evaluación</option>
-                    </select>
-                    <select id="event-dest">
-                        <option value="TODOS">Para Todos</option>
-                        <option value="SALA 5">Sala 5</option>
-                        <option value="1er GRADO">1er Grado</option>
-                    </select>
-                    <button onclick="crearEvento()" class="md:col-span-2 bg-indigo-600 text-white p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Guardar en Agenda</button>
-                </div>
+            <div>
+                <span class="font-extrabold text-lg tracking-tight block leading-none">Iosef Caro</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Panel de Control</span>
             </div>
-        </section>
+        </div>
 
-        <section id="tab-usuarios" class="tab-content space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="card border-l-4 border-l-blue-500">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Registrar Docente</h3>
-                    <input type="text" id="doc-nom" placeholder="Nombre del Docente">
-                    <input type="email" id="doc-mail" placeholder="Email (Usuario)">
-                    <p class="text-[9px] font-bold text-slate-400 mb-2 uppercase">Asignar Cursos (Ej: 1A, 2B)</p>
-                    <input type="text" id="doc-cursos" placeholder="Separados por coma">
-                    <button onclick="crearUsuario('docente')" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Crear Docente</button>
-                </div>
+        <nav class="space-y-1 flex-1">
+            <button onclick="switchTab('comunicacion')" id="btn-comunicacion" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 transition-all">
+                <i class="fas fa-paper-plane w-5"></i> <span class="text-sm font-semibold">Comunicación</span>
+            </button>
+            <button onclick="switchTab('usuarios')" id="btn-usuarios" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 transition-all">
+                <i class="fas fa-users w-5"></i> <span class="text-sm font-semibold">Usuarios y Vínculos</span>
+            </button>
+            <button onclick="switchTab('alumnos')" id="btn-alumnos" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 transition-all">
+                <i class="fas fa-graduation-cap w-5"></i> <span class="text-sm font-semibold">Alumnos</span>
+            </button>
+            <button onclick="switchTab('calendario')" id="btn-calendario" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 transition-all">
+                <i class="fas fa-calendar w-5"></i> <span class="text-sm font-semibold">Calendario</span>
+            </button>
+        </nav>
 
-                <div class="card border-l-4 border-l-pink-500">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Registrar Familia</h3>
-                    <input type="text" id="fam-nom" placeholder="Nombre Responsable">
-                    <input type="email" id="fam-mail" placeholder="Email (Usuario)">
-                    <div class="bg-slate-50 p-4 rounded-2xl mb-4">
-                        <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Vincular Hijos</p>
-                        <input type="text" placeholder="Buscar alumno..." onkeyup="buscarHijo(this.value)" class="bg-white !mb-2 !p-2 !text-xs">
-                        <div id="res-alumnos" class="flex flex-wrap gap-1"></div>
-                        <div id="hijos-vinc" class="mt-3 flex flex-wrap gap-1 border-t pt-2"></div>
+        <div class="pt-6 border-t">
+            <button onclick="window.location.href='index.html'" class="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+                <i class="fas fa-sign-out-alt w-5"></i> <span class="text-sm font-bold">Salir del Panel</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-12 overflow-y-auto">
+        
+        <header class="mb-10 flex justify-between items-center">
+            <div>
+                <h2 id="current-tab-name" class="text-3xl font-extrabold text-slate-900 tracking-tight">Comunicación</h2>
+                <p id="current-tab-desc" class="text-slate-500 text-sm mt-1">Publicá novedades y comunicados para las familias.</p>
+            </div>
+        </header>
+
+        <div id="tab-comunicacion" class="tab-content active">
+            <div class="glass-card p-8 max-w-3xl">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Título del Comunicado</label>
+                        <input type="text" id="post-tit" class="input-pro" placeholder="Ej: Invitación Acto del 25 de Mayo">
                     </div>
-                    <button onclick="crearUsuario('familia')" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Sincronizar Familia</button>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Mensaje Principal</label>
+                        <textarea id="post-msg" rows="5" class="input-pro" placeholder="Escribí aquí el contenido..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Link Fotos/Videos</label>
+                            <input type="url" id="post-link" class="input-pro" placeholder="Drive, YouTube, etc.">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Link Formulario</label>
+                            <input type="url" id="post-form" class="input-pro" placeholder="Google Forms">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Destinatarios</label>
+                        <select id="post-tag" class="input-pro">
+                            <option value="TODOS">Toda la Escuela</option>
+                            <option value="SALA 5">Sala 5</option>
+                            <option value="1er GRADO">1er Grado</option>
+                        </select>
+                    </div>
+                    <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Publicar Ahora
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <section id="tab-cursos" class="tab-content space-y-6">
-            <div class="card">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Alta de Alumno</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="alum-nom" placeholder="Nombre Completo">
-                    <select id="alum-curso">
-                        <option value="SALA 5">Sala 5</option>
-                        <option value="1er GRADO">1er Grado</option>
-                        <option value="2do GRADO">2do Grado</option>
-                    </select>
-                    <button onclick="crearAlumno()" class="md:col-span-2 bg-emerald-600 text-white p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Cargar Alumno</button>
+        <div id="tab-usuarios" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card p-8">
+                    <h3 class="font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-apple-alt text-blue-500"></i> Nuevo Docente</h3>
+                    <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
+                    <input type="email" id="doc-mail" class="input-pro" placeholder="Email institucional">
+                    <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 5, 1A)">
+                    <button onclick="crearUsuario('docente')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-2">Registrar Docente</button>
+                </div>
+                <div class="glass-card p-8">
+                    <h3 class="font-bold text-lg mb-6 flex items-center gap-2"><i class="fas fa-home text-pink-500"></i> Nueva Familia</h3>
+                    <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre del Responsable">
+                    <input type="email" id="fam-mail" class="input-pro" placeholder="Email de acceso">
+                    <button onclick="crearUsuario('familia')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold mt-2">Registrar Familia</button>
+                    <p class="text-[10px] text-slate-400 mt-4 text-center">Recuerda vincular a los hijos después de crearlos.</p>
                 </div>
             </div>
-        </section>
+        </div>
+
+        <div id="tab-alumnos" class="tab-content">
+            <div class="glass-card p-8 max-w-xl">
+                <h3 class="font-bold text-lg mb-6">Alta de Alumno</h3>
+                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo del alumno">
+                <select id="alum-curso" class="input-pro">
+                    <option value="SALA 5">Sala 5</option>
+                    <option value="1er GRADO">1er Grado</option>
+                </select>
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mt-2">Cargar al Sistema</button>
+            </div>
+        </div>
 
     </main>
 
     <script>
-        // CONFIGURACION FIREBASE
+        // CONFIGURACIÓN OFICIAL
         const firebaseConfig = {
-            apiKey: "AIzaSyCLeGKE5NoGUQT0GRdMDIHn4zhxF3ZOp6k",
-            authDomain: "app-academica-interna.firebaseapp.com",
-            projectId: "app-academica-interna",
-            storageBucket: "app-academica-interna.firebasestorage.app",
-            messagingSenderId: "169882587504",
-            appId: "1:169882587504:web:0fcdf32efdc81ad0a0bfb5"
+            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
+            authDomain: "app-iosefcaro.firebaseapp.com",
+            projectId: "app-iosefcaro",
+            storageBucket: "app-iosefcaro.firebasestorage.app",
+            messagingSenderId: "651320124248",
+            appId: "1:651320124248:web:97c8ca00e29114e1983b2d",
+            measurementId: "G-0VKGY3WECC"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let hijosSeleccionados = [];
+        // NAVEGACIÓN
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + id).classList.add('active');
+            
+            document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+            
+            const titles = {
+                'comunicacion': ['Comunicación', 'Publicá novedades y comunicados para las familias.'],
+                'usuarios': ['Usuarios', 'Gestioná los permisos de docentes y familias.'],
+                'alumnos': ['Alumnos', 'Mantené actualizada la base de datos de estudiantes.'],
+                'calendario': ['Calendario', 'Agendá eventos, feriados y exámenes.']
+            };
+            document.getElementById('current-tab-name').innerText = titles[id][0];
+            document.getElementById('current-tab-desc').innerText = titles[id][1];
+        }
 
-        // --- COMUNICACION ---
+        // FUNCIONES DE BASE DE DATOS
         async function enviarComunicado() {
-            const tit = document.getElementById('post-tit').value;
-            const msg = document.getElementById('post-msg').value;
-            const link = document.getElementById('post-link').value;
-            const form = document.getElementById('post-form').value;
-            const tag = document.getElementById('post-tag').value;
-
-            if(!tit || !msg) return alert("Completa los campos básicos");
-
-            await db.collection('comunicados').add({
-                titulo: tit, texto: msg, link: link, form: form, tag: tag,
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-                likes: 0, vistos: 0
-            });
-            alert("Publicado con éxito");
+            const data = {
+                titulo: document.getElementById('post-tit').value,
+                texto: document.getElementById('post-msg').value,
+                link: document.getElementById('post-link').value || "",
+                form: document.getElementById('post-form').value || "",
+                tag: document.getElementById('post-tag').value,
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if(!data.titulo || !data.texto) return alert("Completa los campos obligatorios.");
+            await db.collection('comunicados').add(data);
+            alert("¡Comunicado publicado con éxito!");
             location.reload();
         }
 
-        // --- CALENDARIO ---
-        async function crearEvento() {
-            const tit = document.getElementById('event-tit').value;
-            const fecha = document.getElementById('event-date').value;
-            const tipo = document.getElementById('event-type').value;
-            const dest = document.getElementById('event-dest').value;
-
-            if(!tit || !fecha) return alert("Completa título y fecha");
-
-            await db.collection('eventos').add({
-                titulo: tit, fecha: fecha, tipo: tipo, destino: dest,
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("Agregado al calendario");
-        }
-
-        // --- ALUMNOS ---
         async function crearAlumno() {
             const nom = document.getElementById('alum-nom').value;
             const cur = document.getElementById('alum-curso').value;
             if(!nom) return;
-
-            const docRef = await db.collection('alumnos').add({
-                nombre: nom, curso: cur
-            });
-            alert("Alumno ID: " + docRef.id + " creado.");
-        }
-
-        // --- VINCULOS (FAMILIA / DOCENTE) ---
-        async function buscarHijo(val) {
-            if(val.length < 3) return;
-            const snap = await db.collection('alumnos').where('nombre', '>=', val).limit(4).get();
-            const res = document.getElementById('res-alumnos');
-            res.innerHTML = "";
-            snap.forEach(doc => {
-                res.innerHTML += `<button onclick="vincularHijo('${doc.id}', '${doc.data().nombre}')" class="bg-white border px-2 py-1 rounded-lg text-[9px] font-bold">+ ${doc.data().nombre}</button>`;
-            });
-        }
-
-        function vincularHijo(id, nombre) {
-            if(hijosSeleccionados.includes(id)) return;
-            hijosSeleccionados.push(id);
-            document.getElementById('hijos-vinc').innerHTML += `<span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-lg text-[9px] font-black">${nombre}</span>`;
+            await db.collection('alumnos').add({ nombre: nom, curso: cur });
+            alert("Alumno guardado.");
+            document.getElementById('alum-nom').value = "";
         }
 
         async function crearUsuario(rol) {
@@ -205,25 +196,13 @@
             const mail = (rol === 'familia') ? document.getElementById('fam-mail').value.toLowerCase().trim() : document.getElementById('doc-mail').value.toLowerCase().trim();
             
             let data = { nombre: nom, rol: rol };
-
-            if(rol === 'familia') {
-                if(hijosSeleccionados.length === 0) return alert("Asigna al menos un hijo");
-                data.hijoID = hijosSeleccionados;
-            } else {
-                const cursosArr = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
-                data.cursos = cursosArr;
+            if(rol === 'docente') {
+                data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
             }
 
             await db.collection('usuarios').doc(mail).set(data);
-            alert(rol.toUpperCase() + " creado correctamente.");
+            alert("Usuario " + rol + " creado.");
             location.reload();
-        }
-
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + id).classList.add('active');
-            document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
         }
     </script>
 </body>
