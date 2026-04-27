@@ -5,82 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Maestro - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; color: #101828; }
-        .sidebar-item { border-radius: 0.75rem; margin-bottom: 0.25rem; cursor: pointer; }
-        .sidebar-item.active { background: #1e293b; color: white; }
-        .glass-card { background: white; border: 1px solid #eaecf0; border-radius: 1.5rem; box-shadow: 0 1px 3px rgba(16,24,40,0.05); }
-        .input-pro { border: 1px solid #d0d5dd; border-radius: 0.75rem; padding: 0.75rem 1rem; width: 100%; outline: none; margin-bottom: 1rem; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
+        .sidebar-item { cursor: pointer; transition: 0.2s; }
+        .sidebar-item.active { background: #1e293b; color: white; border-radius: 12px; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; } }
+        .tab-content.active { display: block; }
+        .input-pro { border: 1px solid #d0d5dd; border-radius: 12px; padding: 12px; width: 100%; margin-bottom: 16px; outline: none; }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <aside class="w-72 border-r bg-white p-6 hidden md:flex flex-col sticky top-0 h-screen">
-        <div class="mb-10 flex items-center gap-3 px-2">
-            <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-shield-alt"></i></div>
-            <div><span class="font-extrabold text-lg block leading-none">Iosef Caro</span><span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Panel Admin</span></div>
-        </div>
-        <nav class="space-y-1 flex-1">
-            <button onclick="switchTab('comunicacion')" id="btn-comunicacion" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 text-slate-500">
-                <i class="fas fa-paper-plane w-5"></i> <span class="text-sm font-semibold">Comunicación</span>
-            </button>
-            <button onclick="switchTab('usuarios')" id="btn-usuarios" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 text-slate-500">
-                <i class="fas fa-users w-5"></i> <span class="text-sm font-semibold">Usuarios</span>
-            </button>
-            <button onclick="switchTab('alumnos')" id="btn-alumnos" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 text-slate-500">
-                <i class="fas fa-graduation-cap w-5"></i> <span class="text-sm font-semibold">Alumnos</span>
-            </button>
+    <aside class="w-64 border-r bg-white p-6 hidden md:flex flex-col sticky top-0 h-screen">
+        <h1 class="font-extrabold text-xl mb-10 text-slate-800">Iosef Caro Admin</h1>
+        <nav class="space-y-2">
+            <div onclick="switchTab('comunicacion')" id="btn-comunicacion" class="sidebar-item active p-3 text-slate-500 font-bold">Comunicación</div>
+            <div onclick="switchTab('usuarios')" id="btn-usuarios" class="sidebar-item p-3 text-slate-500 font-bold">Usuarios</div>
+            <div onclick="switchTab('alumnos')" id="btn-alumnos" class="sidebar-item p-3 text-slate-500 font-bold">Alumnos</div>
         </nav>
     </aside>
 
-    <main class="flex-1 p-6 md:p-12">
-        <h2 id="current-tab-name" class="text-3xl font-extrabold text-slate-900 mb-8">Comunicación</h2>
+    <main class="flex-1 p-8">
+        <h2 id="title-display" class="text-3xl font-extrabold mb-8">Comunicación</h2>
 
         <div id="tab-comunicacion" class="tab-content active">
-            <div class="glass-card p-8 max-w-2xl">
+            <div class="bg-white p-6 rounded-3xl border max-w-xl">
                 <input type="text" id="post-tit" class="input-pro" placeholder="Título">
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje"></textarea>
-                <select id="post-tag" class="input-pro"><option value="TODOS">Toda la Escuela</option><option value="SALA 5">Sala 5</option></select>
-                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold">Publicar</button>
+                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-xl font-bold">Publicar</button>
             </div>
         </div>
 
         <div id="tab-usuarios" class="tab-content">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="glass-card p-8">
+            <div class="grid grid-cols-1 gap-6">
+                <div class="bg-white p-6 rounded-3xl border">
                     <h3 class="font-bold mb-4">Registrar Docente</h3>
                     <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre">
                     <input type="email" id="doc-mail" class="input-pro" placeholder="Email">
-                    <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 5, 1A)">
-                    <button onclick="crearUsuarioDocente()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Guardar Docente</button>
-                </div>
-                <div class="glass-card p-8">
-                    <h3 class="font-bold mb-4">Registrar Familia</h3>
-                    <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre">
-                    <input type="email" id="fam-mail" class="input-pro" placeholder="Email">
-                    <button onclick="crearUsuarioFamilia()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Guardar Familia</button>
+                    <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 5)">
+                    <button onclick="crearDocente()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold">Guardar Docente</button>
                 </div>
             </div>
         </div>
 
         <div id="tab-alumnos" class="tab-content">
-            <div class="glass-card p-8 max-w-xl">
+            <div class="bg-white p-6 rounded-3xl border max-w-xl">
                 <h3 class="font-bold mb-4">Nuevo Alumno</h3>
                 <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo">
-                <select id="alum-curso" class="input-pro"><option value="SALA 5">Sala 5</option></select>
-                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Cargar Alumno</button>
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold">Cargar Alumno</button>
             </div>
         </div>
     </main>
 
     <script>
+        // TUS CREDENCIALES REALES
         const firebaseConfig = {
             apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
             authDomain: "app-iosefcaro.firebaseapp.com",
@@ -89,52 +73,53 @@
             messagingSenderId: "651320124248",
             appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
         };
+
+        // INICIALIZACION SEGURA
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + id).classList.add('active');
             document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-' + id).classList.add('active');
-            document.getElementById('current-tab-name').innerText = id.charAt(0).toUpperCase() + id.slice(1);
+            document.getElementById('tab-'+id).classList.add('active');
+            document.getElementById('btn-'+id).classList.add('active');
+            document.getElementById('title-display').innerText = id.toUpperCase();
         }
 
         async function enviarComunicado() {
-            const tit = document.getElementById('post-tit').value;
-            const msg = document.getElementById('post-msg').value;
-            if(!tit || !msg) return alert("Completá título y mensaje");
-            await db.collection('comunicados').add({
-                titulo: tit, texto: msg, tag: document.getElementById('post-tag').value,
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("Publicado");
-            location.reload();
+            const t = document.getElementById('post-tit').value;
+            const m = document.getElementById('post-msg').value;
+            if(!t || !m) return alert("Faltan datos");
+            
+            try {
+                await db.collection('comunicados').add({
+                    titulo: t, texto: m, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), tag: "TODOS"
+                });
+                alert("¡Publicado en Firebase!");
+                location.reload();
+            } catch(e) { alert("Error: " + e.message); }
         }
 
-        async function crearUsuarioDocente() {
-            const nom = document.getElementById('doc-nom').value;
-            const mail = document.getElementById('doc-mail').value.toLowerCase().trim();
-            const cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
-            if(!nom || !mail) return alert("Faltan datos");
-            await db.collection('usuarios').doc(mail).set({ nombre: nom, rol: 'docente', cursos: cursos });
-            alert("Docente creado");
-        }
+        async function crearDocente() {
+            const n = document.getElementById('doc-nom').value;
+            const m = document.getElementById('doc-mail').value.toLowerCase().trim();
+            const c = document.getElementById('doc-cursos').value.split(',');
+            if(!n || !m) return alert("Faltan datos");
 
-        async function crearUsuarioFamilia() {
-            const nom = document.getElementById('fam-nom').value;
-            const mail = document.getElementById('fam-mail').value.toLowerCase().trim();
-            if(!nom || !mail) return alert("Faltan datos");
-            await db.collection('usuarios').doc(mail).set({ nombre: nom, rol: 'familia' });
-            alert("Familia creada");
+            try {
+                await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: c });
+                alert("Docente registrado");
+            } catch(e) { alert("Error: " + e.message); }
         }
 
         async function crearAlumno() {
-            const nom = document.getElementById('alum-nom').value;
-            const cur = document.getElementById('alum-curso').value;
-            if(!nom) return alert("Faltan datos");
-            await db.collection('alumnos').add({ nombre: nom, curso: cur });
-            alert("Alumno creado");
+            const n = document.getElementById('alum-nom').value;
+            if(!n) return alert("Faltan datos");
+
+            try {
+                await db.collection('alumnos').add({ nombre: n, curso: "SALA 5" });
+                alert("Alumno registrado");
+            } catch(e) { alert("Error: " + e.message); }
         }
     </script>
 </body>
