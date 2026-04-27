@@ -207,24 +207,50 @@
             if(!alumnoId) return;
 
             // 1. Cargar Notas por Materia
-            const notasContainer = document.getElementById('notas-container');
-            notasContainer.innerHTML = '<p class="text-xs text-slate-400">Cargando materias...</p>';
-            const notasSnap = await db.collection('alumnos').doc(alumnoId).collection('notas').get();
-            notasContainer.innerHTML = "";
             
-            notasSnap.forEach(doc => {
-                const n = doc.data();
-                notasContainer.innerHTML += `
-                    <div class="bg-white p-5 rounded-[2rem] border shadow-sm">
-                        <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">${n.materia}</span>
-                        <div class="grid grid-cols-3 gap-3 mt-3">
-                            <div class="bg-slate-50 p-3 rounded-xl text-center"><p class="text-[8px] font-bold text-slate-400">1° TRIM</p><p class="font-black text-xl">${n.n1 || '-'}</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center"><p class="text-[8px] font-bold text-slate-400">2° TRIM</p><p class="font-black text-xl">${n.n2 || '-'}</p></div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center"><p class="text-[8px] font-bold text-slate-400">3° TRIM</p><p class="font-black text-xl">${n.n3 || '-'}</p></div>
-                        </div>
-                    </div>`;
-            });
+async function cargarNotasYBoletin() {
+    if(!alumnoId) return;
 
+    const notasContainer = document.getElementById('notas-container');
+    notasContainer.innerHTML = '<p class="text-xs text-slate-400">Cargando boletín...</p>';
+    
+    // Traemos TODAS las materias guardadas en la subcolección
+    const notasSnap = await db.collection('alumnos').doc(alumnoId).collection('notas').get();
+    
+    if(notasSnap.empty) {
+        notasContainer.innerHTML = '<p class="text-center py-10 text-slate-400 text-xs">Aún no hay notas cargadas.</p>';
+    } else {
+        notasContainer.innerHTML = ""; // Limpiamos el "Cargando..."
+        notasSnap.forEach(doc => {
+            const n = doc.data();
+            // Creamos una tarjeta por cada materia encontrada
+            notasContainer.innerHTML += `
+                <div class="bg-white p-5 rounded-[2rem] border shadow-sm mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">${n.materia}</span>
+                        <span class="text-[8px] text-slate-300 font-bold">${n.fechaUpdate || ''}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <p class="text-[8px] font-bold text-slate-400 uppercase">1° T</p>
+                            <p class="font-black text-xl">${n.n1 || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <p class="text-[8px] font-bold text-slate-400 uppercase">2° T</p>
+                            <p class="font-black text-xl">${n.n2 || '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <p class="text-[8px] font-bold text-slate-400 uppercase">3° T</p>
+                            <p class="font-black text-xl">${n.n3 || '-'}</p>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    }
+    
+    // (Mantené aquí abajo el código de Asistencia y Sanciones que ya tenías)
+}
+            
             // 2. Cargar Asistencias
             const asisContainer = document.getElementById('asistencia-container');
             const asisSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoId).orderBy('fecha', 'desc').limit(10).get();
