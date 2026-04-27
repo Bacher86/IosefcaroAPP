@@ -12,72 +12,85 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding-bottom: 110px; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .nav-btn.active { color: #1e40af; }
+        .tab-content.active { display: block; }
+        
+        /* CORRECCIÓN IOSI CHAT */
+        #iosi-modal { 
+            position: fixed; inset: 0; background: #0f172a; z-index: 6000; 
+            display: none; flex-direction: column; 
+        }
+        #iosi-chat { 
+            flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px;
+        }
+        .bubble-iosi { 
+            background: #1e293b; color: #f1f5f9; padding: 14px; border-radius: 20px; 
+            border-top-left-radius: 4px; max-width: 85%; align-self: flex-start;
+            border: 1px solid #334155; line-height: 1.5; font-size: 14px;
+        }
+        .bubble-user { 
+            background: #2563eb; color: white; padding: 14px; border-radius: 20px; 
+            border-top-right-radius: 4px; max-width: 85%; align-self: flex-end;
+            font-weight: 500; font-size: 14px;
+        }
         .iosi-btn { position: fixed; bottom: 100px; right: 20px; width: 65px; height: 65px; background: #0f172a; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); z-index: 2000; cursor: pointer; }
-        .read-post { opacity: 0.6; border-left: 4px solid #cbd5e1 !important; filter: grayscale(0.5); }
+        .read-post { opacity: 0.6; filter: grayscale(0.5); }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="fixed inset-0 bg-white z-[5000] flex flex-col items-center justify-center p-8 text-center">
-        <div class="w-20 h-20 bg-slate-900 rounded-[2rem] mb-6 flex items-center justify-center text-white text-3xl shadow-xl"><i class="fas fa-university"></i></div>
-        <h2 class="text-3xl font-black mb-2">Portal de Familias</h2>
-        <p class="text-slate-400 text-xs mb-8 uppercase tracking-widest font-bold">Instituto Iosef Caro</p>
-        <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Correo electrónico institucional">
-        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-lg">Acceder al Sistema</button>
+    <div id="login-screen" class="fixed inset-0 bg-white z-[7000] flex flex-col items-center justify-center p-8 text-center">
+        <div class="w-20 h-20 bg-slate-900 rounded-[2rem] mb-6 flex items-center justify-center text-white text-3xl"><i class="fas fa-university"></i></div>
+        <h2 class="text-3xl font-black mb-2 tracking-tighter">Portal de Familias</h2>
+        <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Email institucional">
+        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold">Acceder</button>
     </div>
 
-    <div id="iosi-modal" class="fixed inset-0 bg-slate-900/98 backdrop-blur-2xl z-[6000] hidden flex-col p-6 text-white">
-        <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+    <div id="iosi-modal">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
             <div class="flex items-center gap-3">
-                <i class="fas fa-robot text-2xl text-blue-400"></i>
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><i class="fas fa-robot text-white"></i></div>
                 <div>
-                    <h2 class="font-black text-lg">Asistente Virtual</h2>
-                    <span class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Atención Institucional</span>
+                    <h2 class="text-white font-black text-lg">Asistente Iosi</h2>
+                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Atención Institucional</p>
                 </div>
             </div>
-            <button onclick="toggleIosi()" class="text-3xl">&times;</button>
+            <button onclick="toggleIosi()" class="text-white text-3xl">&times;</button>
         </div>
-        <div id="iosi-chat" class="flex-1 overflow-y-auto space-y-4 text-sm leading-relaxed">
-            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">Estimada familia, soy el asistente del Instituto. Estoy a su disposición para informarle sobre la situación académica y administrativa. ¿En qué puedo asistirle?</div>
+        
+        <div id="iosi-chat">
+            <div class="bubble-iosi">Estimada familia, ¿en qué puedo asistirle hoy respecto a la información académica de sus hijos?</div>
         </div>
-        <div class="flex gap-2 bg-white/10 p-2 rounded-2xl mt-4 border border-white/10">
-            <input type="text" id="iosi-input" class="flex-1 bg-transparent p-3 outline-none text-sm" placeholder="Escriba su consulta aquí...">
-            <button onclick="enviarIosi()" class="bg-blue-700 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"><i class="fas fa-paper-plane"></i></button>
+
+        <div class="p-4 bg-slate-800/50 border-t border-white/10 flex gap-2">
+            <input type="text" id="iosi-input" class="flex-1 bg-slate-900 border border-white/10 p-4 rounded-2xl text-white outline-none" placeholder="Escriba su consulta...">
+            <button onclick="enviarIosi()" class="bg-blue-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
     <div class="iosi-btn" onclick="toggleIosi()"><i class="fas fa-robot"></i></div>
 
-    <header class="p-6 bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b flex justify-between items-start">
+    <header class="p-6 bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b flex justify-between items-center">
         <div>
-            <h1 id="user-name" class="font-black text-xl tracking-tighter">Bienvenido</h1>
-            <div id="hijo-selector-container" class="mt-2 flex items-center gap-2">
-                <select id="select-hijo" onchange="cambiarHijo(this.value)" class="bg-slate-100 text-slate-700 font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg border-none outline-none cursor-pointer">
-                    </select>
-            </div>
+            <h1 id="user-name" class="font-black text-xl">Hola...</h1>
+            <select id="select-hijo" onchange="cambiarHijo(this.value)" class="mt-2 bg-slate-100 text-slate-700 font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg border-none outline-none"></select>
         </div>
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
         <section id="tab-muro" class="tab-content active space-y-4"></section>
-
-        <section id="tab-agenda" class="tab-content">
-            <h3 class="font-black text-2xl mb-6">Agenda de Actividades</h3>
-            <div id="container-agenda" class="space-y-4"></div>
+        <section id="tab-agenda" class="tab-content space-y-4">
+            <h3 class="font-black text-2xl mb-4">Agenda Institucional</h3>
+            <div id="container-agenda" class="space-y-3"></div>
         </section>
-
         <section id="tab-academico" class="tab-content space-y-6">
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-5 rounded-3xl border text-center shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Inasistencias</p>
-                    <p id="count-faltas" class="text-3xl font-black text-slate-900">0</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Faltas</p>
+                    <p id="count-faltas" class="text-3xl font-black">0</p>
                 </div>
                 <div class="bg-white p-5 rounded-3xl border text-center shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Tardanzas</p>
-                    <p id="count-tardes" class="text-3xl font-black text-slate-900">0</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Tardes</p>
+                    <p id="count-tardes" class="text-3xl font-black">0</p>
                 </div>
             </div>
             <div id="container-notas" class="space-y-4"></div>
@@ -105,11 +118,9 @@
                 userData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('user-name').innerText = "Familia " + userData.nombre;
-                
                 const nombresHijos = userData.hijoReferencia.split(',');
                 const select = document.getElementById('select-hijo');
                 select.innerHTML = "";
-                
                 for (let nombre of nombresHijos) {
                     const snap = await db.collection('alumnos').where('nombre', '==', nombre.trim()).get();
                     snap.forEach(alDoc => {
@@ -118,13 +129,10 @@
                     });
                 }
                 if(listaHijos.length > 0) { alumnoSeleccionadoId = listaHijos[0].id; cargarMuro(); }
-            } else { alert("Sus credenciales no coinciden con nuestros registros."); }
+            } else { alert("Credenciales incorrectas."); }
         }
 
-        function cambiarHijo(id) {
-            alumnoSeleccionadoId = id;
-            if(document.getElementById('tab-academico').classList.contains('active')) cargarAcademico();
-        }
+        function cambiarHijo(id) { alumnoSeleccionadoId = id; if(document.getElementById('tab-academico').classList.contains('active')) cargarAcademico(); }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -154,9 +162,8 @@
             container.innerHTML = "";
             snap.forEach(doc => {
                 const ev = doc.data();
-                container.innerHTML += `<div class="bg-white p-5 rounded-2xl flex items-center gap-5 border shadow-sm">
-                    <div class="text-center min-w-[45px]"><p class="text-[10px] font-bold text-slate-400 uppercase">${ev.fecha.split('-')[1]}</p><p class="text-2xl font-black text-slate-800">${ev.fecha.split('-')[2]}</p></div>
-                    <div class="h-10 w-[2px] bg-slate-100"></div>
+                container.innerHTML += `<div class="bg-white p-4 rounded-2xl flex items-center gap-4 border shadow-sm">
+                    <div class="text-center min-w-[40px]"><p class="text-[10px] font-bold text-slate-400">${ev.fecha.split('-')[1]}</p><p class="text-xl font-black">${ev.fecha.split('-')[2]}</p></div>
                     <p class="font-bold text-slate-700 text-sm">${ev.titulo}</p></div>`;
             });
         }
@@ -167,12 +174,12 @@
             document.getElementById('container-notas').innerHTML = "";
             nSnap.forEach(doc => {
                 const n = doc.data();
-                document.getElementById('container-notas').innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm">
-                    <p class="text-xs font-black text-blue-900 uppercase mb-4">${n.materia}</p>
+                document.getElementById('container-notas').innerHTML += `<div class="bg-white p-5 rounded-3xl border">
+                    <p class="text-xs font-black text-blue-900 uppercase mb-3">${n.materia}</p>
                     <div class="grid grid-cols-3 gap-2 text-center text-sm">
-                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[8px] font-bold text-slate-400">1° TRIM</p><p class="font-black">${n.n1||'-'}</p></div>
-                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[8px] font-bold text-slate-400">2° TRIM</p><p class="font-black">${n.n2||'-'}</p></div>
-                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[8px] font-bold text-slate-400">3° TRIM</p><p class="font-black">${n.n3||'-'}</p></div>
+                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[8px] font-bold text-slate-400 uppercase">1° Trim</p><p class="font-black">${n.n1||'-'}</p></div>
+                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[8px] font-bold text-slate-400 uppercase">2° Trim</p><p class="font-black">${n.n2||'-'}</p></div>
+                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[8px] font-bold text-slate-400 uppercase">3° Trim</p><p class="font-black">${n.n3||'-'}</p></div>
                     </div></div>`;
             });
 
@@ -188,32 +195,35 @@
         }
 
         function marcarLeido(id) { localStorage.setItem('read_'+id, 'true'); cargarMuro(); }
-        function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display==='flex'?'none':'flex'; }
+        
+        function toggleIosi() { 
+            const m = document.getElementById('iosi-modal'); 
+            m.style.display = m.style.display==='flex'?'none':'flex'; 
+        }
         
         function enviarIosi() {
             const inp = document.getElementById('iosi-input');
             const chat = document.getElementById('iosi-chat');
             const val = inp.value.toLowerCase();
             if(!val) return;
-            chat.innerHTML += `<div class="bg-blue-700/50 p-4 rounded-2xl rounded-tr-none ml-auto max-w-[85%] text-white font-medium">${inp.value}</div>`;
+            
+            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
             
             setTimeout(() => {
-                let r = "Disculpe, no he comprendido su solicitud. Por favor, consulte sobre inasistencias o calificaciones.";
+                let r = "Disculpe, no he comprendido su solicitud. Puede consultar por inasistencias o boletín.";
                 const nombreHijo = listaHijos.find(h => h.id === alumnoSeleccionadoId).nombre;
 
                 if(val.includes("falta") || val.includes("inasistencia")) {
-                    if(fechasInasistencias.length > 0) {
-                        r = `Informamos que el alumno/a ${nombreHijo} registra un total de ${fechasInasistencias.length} inasistencias. Las mismas corresponden a las siguientes fechas: ${fechasInasistencias.join(", ")}.`;
-                    } else {
-                        r = `Le informamos que el alumno/a ${nombreHijo} no registra inasistencias a la fecha.`;
-                    }
-                } else if(val.includes("calendario") || val.includes("agenda") || val.includes("evento")) {
-                    r = "Puede consultar el cronograma de actividades institucionales en la pestaña 'Agenda' de la barra inferior.";
+                    r = fechasInasistencias.length > 0 
+                        ? `Le informamos que el alumno/a ${nombreHijo} registra inasistencias en las siguientes fechas: ${fechasInasistencias.join(", ")}.`
+                        : `El alumno/a ${nombreHijo} no registra inasistencias a la fecha.`;
+                } else if(val.includes("hola")) {
+                    r = `Buenos días. Soy el asistente del Instituto Caro. ¿Desea consultar la situación de ${nombreHijo}?`;
                 }
                 
-                chat.innerHTML += `<div class="bg-white/5 p-4 rounded-2xl rounded-tl-none max-w-[85%] border border-white/5 italic">${r}</div>`;
+                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
                 chat.scrollTop = chat.scrollHeight;
-            }, 800);
+            }, 600);
             inp.value = "";
         }
     </script>
