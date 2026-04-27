@@ -25,36 +25,19 @@
             <h1 class="font-extrabold text-xl tracking-tighter">Iosef Caro</h1>
             <p id="tab-title" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Comunicación</p>
         </div>
-        <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
-            <i class="fas fa-user-shield"></i>
-        </div>
     </header>
 
     <main class="p-4 max-w-xl mx-auto">
         
-        <section id="comunicacion" class="tab-content active space-y-4">
+        <section id="comunicacion" class="tab-content active">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                 <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-bullhorn text-blue-500"></i> Nuevo Posteo</h3>
                 <input type="text" id="post-tit" class="input-pro" placeholder="Título del comunicado">
-                <textarea id="post-msg" rows="4" class="input-pro" placeholder="Escribí el mensaje para las familias..."></textarea>
-                
-                <div class="grid grid-cols-1 gap-2 mb-4">
-                    <div class="relative">
-                        <i class="fas fa-image absolute left-4 top-4 text-slate-400"></i>
-                        <input type="url" id="post-link" class="input-pro pl-12" placeholder="Link Fotos o Video (Drive/YT)">
-                    </div>
-                    <div class="relative">
-                        <i class="fas fa-poll-h absolute left-4 top-4 text-slate-400"></i>
-                        <input type="url" id="post-form" class="input-pro pl-12" placeholder="Link Encuesta (Google Forms)">
-                    </div>
-                </div>
-
-                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Destinatarios (Curso o TODOS)</label>
-                <input type="text" id="post-tag" class="input-pro" placeholder="Ej: SALA 5 o TODOS" value="TODOS">
-                
-                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
-                    Publicar en el Muro
-                </button>
+                <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
+                <input type="url" id="post-link" class="input-pro" placeholder="Link Fotos/Video">
+                <input type="url" id="post-form" class="input-pro" placeholder="Link Encuesta">
+                <input type="text" id="post-tag" class="input-pro" placeholder="Destinatarios (SALA 5 o TODOS)" value="TODOS">
+                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">Publicar</button>
             </div>
         </section>
 
@@ -63,15 +46,20 @@
                 <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-chalkboard-teacher text-indigo-500"></i> Registrar Docente</h3>
                 <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
                 <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
-                <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 4, SALA 5)">
-                <button onclick="crearUser('docente')" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Dar de Alta Docente</button>
+                <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 4, 1A)">
+                <button onclick="crearUser('docente')" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Alta Docente</button>
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                 <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-users text-rose-500"></i> Registrar Familia</h3>
-                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre Responsable">
+                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre Madre/Padre">
                 <input type="email" id="fam-mail" class="input-pro" placeholder="Email de acceso">
-                <button onclick="crearUser('familia')" class="w-full bg-rose-500 text-white p-4 rounded-2xl font-bold">Dar de Alta Familia</button>
+                <div class="p-4 bg-rose-50 rounded-2xl mb-4 border border-rose-100">
+                    <label class="text-[10px] font-black text-rose-400 uppercase block mb-2">Vínculo con Alumno</label>
+                    <input type="text" id="fam-hijo" class="input-pro mb-0" placeholder="Nombre completo del alumno">
+                    <p class="text-[9px] text-rose-400 mt-2"> Debe coincidir exacto con el nombre cargado en 'Alumnos'.</p>
+                </div>
+                <button onclick="crearUser('familia')" class="w-full bg-rose-500 text-white p-4 rounded-2xl font-bold">Alta Familia</button>
             </div>
         </section>
 
@@ -79,28 +67,23 @@
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                 <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-graduate text-emerald-500"></i> Nuevo Alumno</h3>
                 <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo del niño/a">
-                <input type="text" id="alum-curso" class="input-pro" placeholder="Curso exacto (Ej: SALA 5)">
+                <input type="text" id="alum-curso" class="input-pro" placeholder="Curso (Ej: SALA 5)">
                 <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
             </div>
         </section>
 
         <section id="calendario" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-calendar-star text-orange-500"></i> Evento Institucional</h3>
-                <input type="text" id="event-tit" class="input-pro" placeholder="¿Qué sucede?">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-calendar-star text-orange-500"></i> Evento</h3>
+                <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento">
                 <input type="date" id="event-fecha" class="input-pro">
-                <select id="event-tipo" class="input-pro">
-                    <option value="EVENTO">Evento / Acto</option>
-                    <option value="FERIADO">Feriado / Sin clase</option>
-                    <option value="PRUEBA">Evaluación</option>
-                </select>
-                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Agendar Fecha</button>
+                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Agendar</button>
             </div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 shadow-2xl z-50">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50">
         <button onclick="switchTab('comunicacion')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400 nav-active">
             <i class="fas fa-comment-alt"></i><span class="text-[9px] font-bold">MURO</span>
         </button>
@@ -132,63 +115,58 @@
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
             event.currentTarget.classList.add('nav-active');
-            document.getElementById('tab-title').innerText = id;
+            document.getElementById('tab-title').innerText = id.toUpperCase();
         }
 
-        async function enviarComunicado() {
-            const tit = document.getElementById('post-tit').value;
-            const msg = document.getElementById('post-msg').value;
-            const tag = document.getElementById('post-tag').value.toUpperCase();
-            if(!tit || !msg) return alert("Faltan datos");
+        async function crearUser(rol) {
+            const nom = (rol === 'docente') ? document.getElementById('doc-nom').value : document.getElementById('fam-nom').value;
+            const mail = (rol === 'docente') ? document.getElementById('doc-mail').value.toLowerCase().trim() : document.getElementById('fam-mail').value.toLowerCase().trim();
+            
+            if(!nom || !mail) return alert("Faltan datos");
 
-            await db.collection('comunicados').add({
-                titulo: tit, texto: msg, tag: tag,
-                link: document.getElementById('post-link').value || "",
-                form: document.getElementById('post-form').value || "",
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("¡Publicado!");
+            let data = { nombre: nom, rol: rol };
+            
+            if(rol === 'docente') {
+                data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
+            } else {
+                // AQUÍ SE GUARDA EL VÍNCULO CON EL HIJO
+                const hijo = document.getElementById('fam-hijo').value.trim().toUpperCase();
+                if(!hijo) return alert("Debes vincular a un alumno");
+                data.hijoReferencia = hijo;
+            }
+
+            await db.collection('usuarios').doc(mail).set(data);
+            alert("Usuario guardado con éxito.");
             location.reload();
         }
 
-        // Dentro de la función crearUser(rol) en admin.html
-async function crearUser(rol) {
-    const nom = (rol === 'docente') ? document.getElementById('doc-nom').value : document.getElementById('fam-nom').value;
-    const mail = (rol === 'docente') ? document.getElementById('doc-mail').value.toLowerCase().trim() : document.getElementById('fam-mail').value.toLowerCase().trim();
-    
-    if(!nom || !mail) return alert("Faltan datos");
-
-    let data = { nombre: nom, rol: rol };
-    
-    if(rol === 'docente') {
-        data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
-    } else {
-        // AQUÍ VINCULAMOS AL HIJO
-        const hijo = prompt("Ingrese el nombre completo del ALUMNO vinculado a esta familia:");
-        if(!hijo) return alert("Es obligatorio asignar un hijo a la familia");
-        data.hijoReferencia = hijo.toUpperCase();
-    }
-
-    await db.collection('usuarios').doc(mail).set(data);
-    alert("Usuario registrado y vinculado.");
-    location.reload();
-}
-
-
         async function crearAlumno() {
-            const nom = document.getElementById('alum-nom').value;
-            const cur = document.getElementById('alum-curso').value.toUpperCase();
+            const nom = document.getElementById('alum-nom').value.trim().toUpperCase();
+            const cur = document.getElementById('alum-curso').value.trim().toUpperCase();
             if(!nom || !cur) return alert("Faltan datos");
             await db.collection('alumnos').add({ nombre: nom, curso: cur });
             alert("Alumno guardado.");
         }
 
+        async function enviarComunicado() {
+            const tit = document.getElementById('post-tit').value;
+            const msg = document.getElementById('post-msg').value;
+            if(!tit || !msg) return alert("Faltan datos");
+            await db.collection('comunicados').add({
+                titulo: tit, texto: msg,
+                tag: document.getElementById('post-tag').value.toUpperCase(),
+                link: document.getElementById('post-link').value || "",
+                form: document.getElementById('post-form').value || "",
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("Publicado.");
+        }
+
         async function crearEvento() {
             const tit = document.getElementById('event-tit').value;
             const fec = document.getElementById('event-fecha').value;
-            const tip = document.getElementById('event-tipo').value;
             if(!tit || !fec) return alert("Faltan datos");
-            await db.collection('eventos').add({ titulo: tit, fecha: fec, tipo: tip });
+            await db.collection('eventos').add({ titulo: tit, fecha: fec });
             alert("Agendado.");
         }
     </script>
