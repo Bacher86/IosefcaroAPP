@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Maestro - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -10,103 +10,110 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
-        .sidebar-item { cursor: pointer; transition: 0.2s; border-radius: 12px; }
-        .sidebar-item.active { background: #1e293b; color: white; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        .input-pro { border: 1px solid #d0d5dd; border-radius: 12px; padding: 12px; width: 100%; margin-bottom: 16px; outline: none; background: white; }
-        .input-pro:focus { border-color: #1e293b; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.8rem 1rem; width: 100%; margin-bottom: 1rem; outline: none; background: white; font-size: 16px; }
+        .nav-active { color: #1e293b; border-top: 3px solid #1e293b; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="flex min-h-screen">
+<body class="pb-24">
 
-    <aside class="w-64 border-r bg-white p-6 hidden md:flex flex-col sticky top-0 h-screen shadow-sm">
-        <div class="mb-10 px-2">
-            <h1 class="font-extrabold text-xl text-slate-800 tracking-tighter leading-none">Iosef Caro</h1>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Panel de Control</span>
+    <header class="bg-white p-6 border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <div>
+            <h1 class="font-extrabold text-xl tracking-tighter">Iosef Caro</h1>
+            <p id="tab-title" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Comunicación</p>
         </div>
-        <nav class="space-y-2">
-            <div onclick="switchTab('comunicacion')" id="btn-comunicacion" class="sidebar-item active p-3 text-slate-500 font-bold flex items-center gap-3">
-                <i class="fas fa-paper-plane w-5"></i> Comunicación
-            </div>
-            <div onclick="switchTab('usuarios')" id="btn-usuarios" class="sidebar-item p-3 text-slate-500 font-bold flex items-center gap-3">
-                <i class="fas fa-users w-5"></i> Usuarios
-            </div>
-            <div onclick="switchTab('alumnos')" id="btn-alumnos" class="sidebar-item p-3 text-slate-500 font-bold flex items-center gap-3">
-                <i class="fas fa-graduation-cap w-5"></i> Alumnos
-            </div>
-            <div onclick="switchTab('calendario')" id="btn-calendario" class="sidebar-item p-3 text-slate-500 font-bold flex items-center gap-3">
-                <i class="fas fa-calendar-alt w-5"></i> Calendario
-            </div>
-        </nav>
-    </aside>
+        <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
+            <i class="fas fa-user-shield"></i>
+        </div>
+    </header>
 
-    <main class="flex-1 p-8">
-        <h2 id="title-display" class="text-3xl font-extrabold mb-8 tracking-tighter">COMUNICACIÓN</h2>
-
-        <div id="tab-comunicacion" class="tab-content active">
-            <div class="bg-white p-8 rounded-3xl border max-w-2xl shadow-sm">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Información del Posteo</label>
+    <main class="p-4 max-w-xl mx-auto">
+        
+        <section id="comunicacion" class="tab-content active space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-bullhorn text-blue-500"></i> Nuevo Posteo</h3>
                 <input type="text" id="post-tit" class="input-pro" placeholder="Título del comunicado">
-                <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje para las familias..."></textarea>
+                <textarea id="post-msg" rows="4" class="input-pro" placeholder="Escribí el mensaje para las familias..."></textarea>
                 
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Multimedia y Enlaces</label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="url" id="post-link" class="input-pro" placeholder="Link Fotos/Videos (Drive)">
-                    <input type="url" id="post-form" class="input-pro" placeholder="Link Formulario (Google)">
+                <div class="grid grid-cols-1 gap-2 mb-4">
+                    <div class="relative">
+                        <i class="fas fa-image absolute left-4 top-4 text-slate-400"></i>
+                        <input type="url" id="post-link" class="input-pro pl-12" placeholder="Link Fotos o Video (Drive/YT)">
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-poll-h absolute left-4 top-4 text-slate-400"></i>
+                        <input type="url" id="post-form" class="input-pro pl-12" placeholder="Link Encuesta (Google Forms)">
+                    </div>
                 </div>
 
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Destinatarios</label>
-                <select id="post-tag" class="input-pro">
-                    <option value="TODOS">Toda la Escuela</option>
-                    <option value="SALA 5">Sala 5</option>
-                    <option value="1er GRADO">1er Grado</option>
-                </select>
-
-                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-upload"></i> Publicar en el Muro
+                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Destinatarios (Curso o TODOS)</label>
+                <input type="text" id="post-tag" class="input-pro" placeholder="Ej: SALA 5 o TODOS" value="TODOS">
+                
+                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
+                    Publicar en el Muro
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div id="tab-usuarios" class="tab-content">
-            <div class="bg-white p-8 rounded-3xl border max-w-xl shadow-sm">
-                <h3 class="font-bold text-lg mb-4">Registrar Docente</h3>
+        <section id="usuarios" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-chalkboard-teacher text-indigo-500"></i> Registrar Docente</h3>
                 <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
                 <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
-                <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos asignados (Ej: SALA 5, 1A)">
-                <button onclick="crearDocente()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold">Guardar Docente</button>
+                <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 4, SALA 5)">
+                <button onclick="crearUser('docente')" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Dar de Alta Docente</button>
             </div>
-        </div>
 
-        <div id="tab-alumnos" class="tab-content">
-            <div class="bg-white p-8 rounded-3xl border max-w-xl shadow-sm">
-                <h3 class="font-bold text-lg mb-4">Alta de Alumno</h3>
-                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo">
-                <select id="alum-curso" class="input-pro">
-                    <option value="SALA 5">SALA 5</option>
-                    <option value="1er GRADO">1er GRADO</option>
-                </select>
-                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-xl font-bold">Cargar al Sistema</button>
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-users text-rose-500"></i> Registrar Familia</h3>
+                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre Responsable">
+                <input type="email" id="fam-mail" class="input-pro" placeholder="Email de acceso">
+                <button onclick="crearUser('familia')" class="w-full bg-rose-500 text-white p-4 rounded-2xl font-bold">Dar de Alta Familia</button>
             </div>
-        </div>
+        </section>
 
-        <div id="tab-calendario" class="tab-content">
-            <div class="bg-white p-8 rounded-3xl border max-w-xl shadow-sm">
-                <h3 class="font-bold text-lg mb-4">Nuevo Evento en Agenda</h3>
-                <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento">
+        <section id="alumnos" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-graduate text-emerald-500"></i> Nuevo Alumno</h3>
+                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo del niño/a">
+                <input type="text" id="alum-curso" class="input-pro" placeholder="Curso exacto (Ej: SALA 5)">
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
+            </div>
+        </section>
+
+        <section id="calendario" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-calendar-star text-orange-500"></i> Evento Institucional</h3>
+                <input type="text" id="event-tit" class="input-pro" placeholder="¿Qué sucede?">
                 <input type="date" id="event-fecha" class="input-pro">
                 <select id="event-tipo" class="input-pro">
-                    <option value="EVENTO">Evento Especial</option>
-                    <option value="FERIADO">Feriado / Sin Actividad</option>
+                    <option value="EVENTO">Evento / Acto</option>
+                    <option value="FERIADO">Feriado / Sin clase</option>
                     <option value="PRUEBA">Evaluación</option>
                 </select>
-                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-xl font-bold">Agregar a la Agenda</button>
+                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Agendar Fecha</button>
             </div>
-        </div>
+        </section>
+
     </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 shadow-2xl z-50">
+        <button onclick="switchTab('comunicacion')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400 nav-active">
+            <i class="fas fa-comment-alt"></i><span class="text-[9px] font-bold">MURO</span>
+        </button>
+        <button onclick="switchTab('usuarios')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
+            <i class="fas fa-user-friends"></i><span class="text-[9px] font-bold">USERS</span>
+        </button>
+        <button onclick="switchTab('alumnos')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
+            <i class="fas fa-graduation-cap"></i><span class="text-[9px] font-bold">ALUMNOS</span>
+        </button>
+        <button onclick="switchTab('calendario')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
+            <i class="fas fa-calendar-day"></i><span class="text-[9px] font-bold">AGENDA</span>
+        </button>
+    </nav>
 
     <script>
         const firebaseConfig = {
@@ -122,63 +129,58 @@
 
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-'+id).classList.add('active');
-            document.getElementById('btn-'+id).classList.add('active');
-            document.getElementById('title-display').innerText = id.toUpperCase();
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
+            event.currentTarget.classList.add('nav-active');
+            document.getElementById('tab-title').innerText = id;
         }
 
         async function enviarComunicado() {
             const tit = document.getElementById('post-tit').value;
             const msg = document.getElementById('post-msg').value;
-            const link = document.getElementById('post-link').value;
-            const form = document.getElementById('post-form').value;
-            const tag = document.getElementById('post-tag').value;
+            const tag = document.getElementById('post-tag').value.toUpperCase();
+            if(!tit || !msg) return alert("Faltan datos");
 
-            if(!tit || !msg) return alert("El título y el mensaje son obligatorios");
-
-            try {
-                await db.collection('comunicados').add({
-                    titulo: tit,
-                    texto: msg,
-                    link: link || "",
-                    form: form || "",
-                    tag: tag,
-                    creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert("¡Comunicado publicado con éxito!");
-                location.reload();
-            } catch(e) { alert("Error al publicar: " + e.message); }
+            await db.collection('comunicados').add({
+                titulo: tit, texto: msg, tag: tag,
+                link: document.getElementById('post-link').value || "",
+                form: document.getElementById('post-form').value || "",
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("¡Publicado!");
+            location.reload();
         }
 
-        async function crearDocente() {
-            const nom = document.getElementById('doc-nom').value;
-            const mail = document.getElementById('doc-mail').value.toLowerCase().trim();
-            const cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
-            
-            if(!nom || !mail) return alert("Faltan datos del docente");
-            
-            try {
-                await db.collection('usuarios').doc(mail).set({ nombre: nom, rol: 'docente', cursos: cursos });
-                alert("Docente registrado correctamente.");
-            } catch(e) { alert("Error: " + e.message); }
+        async function crearUser(rol) {
+            const nom = (rol === 'docente') ? document.getElementById('doc-nom').value : document.getElementById('fam-nom').value;
+            const mail = (rol === 'docente') ? document.getElementById('doc-mail').value.toLowerCase().trim() : document.getElementById('fam-mail').value.toLowerCase().trim();
+            if(!nom || !mail) return alert("Faltan datos");
+
+            let data = { nombre: nom, rol: rol };
+            if(rol === 'docente') {
+                data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
+            }
+
+            await db.collection('usuarios').doc(mail).set(data);
+            alert("Usuario registrado.");
+            location.reload();
         }
 
         async function crearAlumno() {
             const nom = document.getElementById('alum-nom').value;
-            const cur = document.getElementById('alum-curso').value;
-            if(!nom) return alert("Falta el nombre del alumno");
+            const cur = document.getElementById('alum-curso').value.toUpperCase();
+            if(!nom || !cur) return alert("Faltan datos");
             await db.collection('alumnos').add({ nombre: nom, curso: cur });
-            alert("Alumno cargado.");
+            alert("Alumno guardado.");
         }
 
         async function crearEvento() {
             const tit = document.getElementById('event-tit').value;
             const fec = document.getElementById('event-fecha').value;
             const tip = document.getElementById('event-tipo').value;
-            if(!tit || !fec) return alert("Faltan datos del evento");
+            if(!tit || !fec) return alert("Faltan datos");
             await db.collection('eventos').add({ titulo: tit, fecha: fec, tipo: tip });
-            alert("Evento agendado.");
+            alert("Agendado.");
         }
     </script>
 </body>
