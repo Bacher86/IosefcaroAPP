@@ -13,9 +13,10 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.8rem 1rem; width: 100%; margin-bottom: 1rem; outline: none; background: white; font-size: 16px; transition: border 0.2s; }
-        .input-pro:focus { border-color: #3b82f6; }
+        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.8rem 1rem; width: 100%; margin-bottom: 1rem; outline: none; background: white; font-size: 16px; transition: all 0.2s; }
+        .input-pro:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
         .nav-active { color: #1e293b; border-top: 3px solid #1e293b; }
+        .course-badge { background: #4f46e5; color: white; padding: 4px 10px; border-radius: 99px; font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -35,10 +36,16 @@
                 <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-bullhorn text-blue-500"></i> Nuevo Posteo</h3>
                 <input type="text" id="post-tit" class="input-pro" placeholder="Título del comunicado">
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
-                <input type="url" id="post-link" class="input-pro" placeholder="Link Fotos/Video">
-                <input type="url" id="post-form" class="input-pro" placeholder="Link Encuesta">
-                <input type="text" id="post-tag" class="input-pro" placeholder="Destinatarios (SALA 5 o TODOS)" value="TODOS">
-                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar</button>
+                <input type="url" id="post-link" class="input-pro" placeholder="Link Fotos/Video (Opcional)">
+                
+                <div class="p-4 bg-blue-50 rounded-2xl mb-4 border border-blue-100">
+                    <label class="text-[10px] font-black text-blue-500 uppercase block mb-2 tracking-widest">Destinatarios</label>
+                    <select id="post-tag" class="input-pro mb-0">
+                        <option value="TODOS">📢 ENVIAR A TODOS</option>
+                        </select>
+                </div>
+                
+                <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar en el Muro</button>
             </div>
         </section>
 
@@ -47,7 +54,13 @@
                 <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-chalkboard-teacher text-indigo-500"></i> Registrar Docente</h3>
                 <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
                 <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
-                <input type="text" id="doc-cursos" class="input-pro" placeholder="Cursos (Ej: SALA 4, 1A)">
+                
+                <div class="p-5 bg-indigo-50/50 rounded-2xl mb-4 border border-indigo-100">
+                    <label class="text-[10px] font-black text-indigo-500 uppercase block mb-3 tracking-widest">Asignar Cursos</label>
+                    <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-white rounded-xl border border-indigo-100 mb-3">
+                        </div>
+                    <div id="cursos-doc-badge" class="flex flex-wrap gap-2"></div>
+                </div>
                 <button onclick="crearUser('docente')" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold active:scale-95 transition-transform">Alta Docente</button>
             </div>
 
@@ -57,24 +70,14 @@
                 <input type="email" id="fam-mail" class="input-pro" placeholder="Email de acceso">
                 
                 <div class="p-5 bg-rose-50/50 rounded-2xl mb-4 border border-rose-100">
-                    <label class="text-[10px] font-black text-rose-500 uppercase block mb-3 tracking-widest">Asignación de Alumno</label>
-                    
+                    <label class="text-[10px] font-black text-rose-500 uppercase block mb-3 tracking-widest">Vincular Hijo/a</label>
                     <select id="fam-select-curso" onchange="buscarAlumnosParaFamilia(this.value)" class="input-pro">
                         <option value="">1° Seleccionar Curso...</option>
-                        <option value="SALA 3">Sala 3</option>
-                        <option value="SALA 4">Sala 4</option>
-                        <option value="SALA 5">Sala 5</option>
-                        <option value="1A">1° A</option>
-                        <option value="1B">1° B</option>
-                        <option value="2A">2° A</option>
-                        <option value="2B">2° B</option>
-                    </select>
-
+                        </select>
                     <select id="fam-hijo-referencia" class="input-pro mb-0">
                         <option value="">2° Seleccionar Alumno...</option>
                     </select>
                 </div>
-                
                 <button onclick="crearUser('familia')" class="w-full bg-rose-500 text-white p-4 rounded-2xl font-bold active:scale-95 transition-transform">Vincular Familia</button>
             </div>
         </section>
@@ -83,34 +86,39 @@
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                 <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-user-graduate text-emerald-500"></i> Nuevo Alumno</h3>
                 <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo del niño/a">
-                <input type="text" id="alum-curso" class="input-pro" placeholder="Curso (Ej: SALA 5)">
-                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold active:scale-95 transition-transform">Guardar Alumno</button>
+                <select id="alum-curso" class="input-pro">
+                    <option value="">Asignar Curso...</option>
+                    </select>
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
             </div>
         </section>
 
         <section id="calendario" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-calendar-star text-orange-500"></i> Evento</h3>
-                <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento">
+                <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-calendar-star text-orange-500"></i> Agendar Evento</h3>
+                <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento (Ej: Acto 25 de Mayo)">
                 <input type="date" id="event-fecha" class="input-pro">
-                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold active:scale-95 transition-transform">Agendar</button>
+                <select id="event-tag" class="input-pro">
+                    <option value="GENERAL">📅 Evento General</option>
+                    </select>
+                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Añadir a la Agenda</button>
             </div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50 shadow-2xl">
         <button onclick="switchTab('comunicacion')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400 nav-active">
-            <i class="fas fa-comment-alt"></i><span class="text-[9px] font-bold">MURO</span>
+            <i class="fas fa-comment-alt"></i><span class="text-[9px] font-bold uppercase">Muro</span>
         </button>
         <button onclick="switchTab('usuarios')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-user-friends"></i><span class="text-[9px] font-bold">USERS</span>
+            <i class="fas fa-user-friends"></i><span class="text-[9px] font-bold uppercase">Usuarios</span>
         </button>
         <button onclick="switchTab('alumnos')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-graduation-cap"></i><span class="text-[9px] font-bold">ALUMNOS</span>
+            <i class="fas fa-graduation-cap"></i><span class="text-[9px] font-bold uppercase">Alumnos</span>
         </button>
         <button onclick="switchTab('calendario')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-calendar-day"></i><span class="text-[9px] font-bold">AGENDA</span>
+            <i class="fas fa-calendar-day"></i><span class="text-[9px] font-bold uppercase">Agenda</span>
         </button>
     </nav>
 
@@ -126,6 +134,42 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // LISTADO OFICIAL DE CURSOS
+        const CURSOS_OFICIALES = [
+            "SALA 18 MESES", "2 AÑOS", "3 AÑOS", "4 AÑOS", "5 AÑOS V", "5 AÑOS M",
+            "1 GRADO A", "1 GRADO B", "2 GRADO A", "2 GRADO B", "3 GRADO A", "4 GRADO B", "5A", "5B", "6A", "6B", "7A", "7B",
+            "1AÑO A", "1 AÑO B", "2AÑO A", "2 AÑOS B", "3 AÑO A", "3 AÑO B", "4 AÑO A", "4 AÑO B", "5 AÑO A", "5 AÑO B"
+        ];
+
+        let cursosDocenteElegidos = [];
+
+        // Inicialización de selectores dinámicos
+        window.onload = () => {
+            const selects = ['post-tag', 'fam-select-curso', 'alum-curso', 'event-tag'];
+            const docLista = document.getElementById('doc-lista-cursos');
+
+            CURSOS_OFICIALES.forEach(c => {
+                selects.forEach(s => {
+                    const el = document.getElementById(s);
+                    if(el) el.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+
+                docLista.innerHTML += `
+                    <label class="flex items-center gap-2 text-[10px] font-bold text-slate-600 p-1 bg-slate-50 rounded-lg">
+                        <input type="checkbox" value="${c}" onchange="toggleCursoDoc(this)" class="accent-indigo-600"> ${c}
+                    </label>
+                `;
+            });
+        };
+
+        function toggleCursoDoc(cb) {
+            if(cb.checked) cursosDocenteElegidos.push(cb.value);
+            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
+            
+            const box = document.getElementById('cursos-doc-badge');
+            box.innerHTML = cursosDocenteElegidos.map(c => `<span class="course-badge">${c}</span>`).join('');
+        }
+
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -134,92 +178,67 @@
             document.getElementById('tab-title').innerText = id.toUpperCase();
         }
 
-        // --- NUEVA LÓGICA DE BÚSQUEDA DE ALUMNOS ---
         async function buscarAlumnosParaFamilia(curso) {
             const selectHijo = document.getElementById('fam-hijo-referencia');
-            selectHijo.innerHTML = '<option value="">Cargando...</option>';
-            
-            if(!curso) {
-                selectHijo.innerHTML = '<option value="">2° Seleccionar Alumno...</option>';
-                return;
-            }
+            selectHijo.innerHTML = '<option value="">Cargando alumnos...</option>';
+            if(!curso) return;
 
-            try {
-                const snap = await db.collection('alumnos')
-                                   .where('curso', '==', curso.toUpperCase())
-                                   .get();
-                
-                if(snap.empty) {
-                    selectHijo.innerHTML = '<option value="">No hay alumnos en este curso</option>';
-                    return;
-                }
-
-                selectHijo.innerHTML = '<option value="">2° Seleccionar Alumno...</option>';
-                snap.forEach(doc => {
-                    const al = doc.data();
-                    selectHijo.innerHTML += `<option value="${al.nombre}">${al.nombre}</option>`;
-                });
-            } catch (e) {
-                alert("Error al obtener alumnos");
-            }
+            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
+            selectHijo.innerHTML = snap.empty ? '<option>No hay alumnos</option>' : '<option value="">Seleccionar Alumno...</option>';
+            snap.forEach(doc => {
+                selectHijo.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`;
+            });
         }
 
         async function crearUser(rol) {
-            const nom = (rol === 'docente') ? document.getElementById('doc-nom').value.trim() : document.getElementById('fam-nom').value.trim();
-            const mail = (rol === 'docente') ? document.getElementById('doc-mail').value.toLowerCase().trim() : document.getElementById('fam-mail').value.toLowerCase().trim();
-            
-            if(!nom || !mail) return alert("Faltan datos básicos");
+            const mail = (rol==='docente'?document.getElementById('doc-mail'):document.getElementById('fam-mail')).value.toLowerCase().trim();
+            const nom = (rol==='docente'?document.getElementById('doc-nom'):document.getElementById('fam-nom')).value.trim();
+            if(!mail || !nom) return alert("Faltan datos básicos");
 
             let data = { nombre: nom, rol: rol };
-            
             if(rol === 'docente') {
-                data.cursos = document.getElementById('doc-cursos').value.split(',').map(c => c.trim().toUpperCase());
+                if(cursosDocenteElegidos.length === 0) return alert("Asigna al menos un curso");
+                data.cursos = cursosDocenteElegidos;
             } else {
-                // Se guarda el valor seleccionado del desplegable de alumnos
                 const hijo = document.getElementById('fam-hijo-referencia').value;
-                if(!hijo) return alert("Debe seleccionar un alumno para vincular");
-                data.hijoReferencia = hijo.toUpperCase();
+                if(!hijo) return alert("Vincula a un alumno");
+                data.hijoReferencia = hijo;
             }
 
-            try {
-                await db.collection('usuarios').doc(mail).set(data);
-                alert("Usuario registrado con éxito.");
-                location.reload();
-            } catch (e) {
-                alert("Error al guardar usuario");
-            }
+            await db.collection('usuarios').doc(mail).set(data);
+            alert("Usuario registrado.");
+            location.reload();
         }
 
         async function crearAlumno() {
             const nom = document.getElementById('alum-nom').value.trim().toUpperCase();
-            const cur = document.getElementById('alum-curso').value.trim().toUpperCase();
-            if(!nom || !cur) return alert("Faltan datos");
+            const cur = document.getElementById('alum-curso').value;
+            if(!nom || !cur) return alert("Datos incompletos");
             await db.collection('alumnos').add({ nombre: nom, curso: cur });
-            alert("Alumno guardado exitosamente.");
+            alert("Alumno guardado.");
             document.getElementById('alum-nom').value = "";
-            document.getElementById('alum-curso').value = "";
         }
 
         async function enviarComunicado() {
             const tit = document.getElementById('post-tit').value;
             const msg = document.getElementById('post-msg').value;
-            if(!tit || !msg) return alert("Faltan datos");
+            if(!tit || !msg) return alert("Escribe el comunicado");
             await db.collection('comunicados').add({
                 titulo: tit, texto: msg,
-                tag: document.getElementById('post-tag').value.toUpperCase(),
+                tag: document.getElementById('post-tag').value,
                 link: document.getElementById('post-link').value || "",
-                form: document.getElementById('post-form').value || "",
                 creadoEn: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("Publicado en el muro.");
+            alert("Publicado con éxito.");
             location.reload();
         }
 
         async function crearEvento() {
             const tit = document.getElementById('event-tit').value;
             const fec = document.getElementById('event-fecha').value;
-            if(!tit || !fec) return alert("Faltan datos");
-            await db.collection('eventos').add({ titulo: tit, fecha: fec });
+            const tag = document.getElementById('event-tag').value;
+            if(!tit || !fec) return alert("Datos de evento incompletos");
+            await db.collection('eventos').add({ titulo: tit, fecha: fec, tag: tag });
             alert("Evento agendado.");
             location.reload();
         }
