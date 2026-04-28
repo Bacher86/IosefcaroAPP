@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
@@ -19,121 +19,93 @@
         .nav-active { color: #1e293b; border-top: 3px solid #1e293b; }
         .badge-pro { background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Estilos para el PDF (oculto en web) */
-        #boletin-pdf-template { display: none; }
-        .pdf-page { padding: 40px; color: #1e293b; background: white; }
     </style>
+
 </head>
 <body class="pb-24">
-
     <header class="bg-white p-6 border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
         <div>
             <h1 class="font-extrabold text-xl tracking-tighter text-slate-900">Iosef Caro Admin</h1>
             <p id="tab-title" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Comunicación</p>
         </div>
     </header>
-
     <main class="p-4 max-w-xl mx-auto">
-        
         <section id="comunicacion" class="tab-content active">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                 <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-bullhorn text-blue-500"></i> Nuevo Posteo</h3>
                 <input type="text" id="post-tit" class="input-pro" placeholder="Título del comunicado">
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
-                <input type="url" id="post-link" class="input-pro" placeholder="Link Fotos/Video (Opcional)">
+                <input type="url" id="post-link" class="input-pro" placeholder="Link Fotos/Video (Opcional)">   
                 <div class="p-4 bg-blue-50 rounded-2xl mb-4 border border-blue-100">
                     <label class="text-[10px] font-black text-blue-500 uppercase block mb-2 tracking-widest">Destinatarios</label>
-                    <select id="post-tag" class="input-pro mb-0"><option value="TODOS">📢 ENVIAR A TODOS</option></select>
+                    <select id="post-tag" class="input-pro mb-0">
+                        <option value="TODOS">📢 ENVIAR A TODOS</option>
+                    </select>
                 </div>
                 <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar y Notificar</button>
             </div>
         </section>
-
-        <section id="informes" class="tab-content space-y-4">
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-indigo-200">
-                <h3 class="font-bold mb-4 flex items-center gap-2 text-indigo-700"><i class="fas fa-file-signature"></i> Carga Académica</h3>
-                
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <select id="inf-tipo" class="input-pro text-sm" onchange="actualizarListaCarga()">
-                        <option value="NUMERICO">📊 Numérico</option>
-                        <option value="RITE">📝 RITE</option>
-                    </select>
-                    <select id="inf-periodo" class="input-pro text-sm">
-                        <option value="1">1° Bimestre</option>
-                        <option value="2">2° Bimestre</option>
-                        <option value="3">3° Bimestre</option>
-                        <option value="4">4° Bimestre</option>
-                    </select>
-                </div>
-
-                <select id="inf-curso" class="input-pro" onchange="buscarAlumnosInforme(this.value)">
-                    <option value="">Seleccionar Curso...</option>
-                </select>
-
-                <select id="inf-materia" class="input-pro">
-                    <option value="">Seleccionar Materia...</option>
-                    <option value="MATEMÁTICA">Matemática</option>
-                    <option value="LENGUA">Lengua / PL</option>
-                    <option value="INGLÉS">Inglés</option>
-                    <option value="CIENCIAS SOCIALES">Ciencias Sociales</option>
-                    <option value="CIENCIAS NATURALES">Ciencias Naturales</option>
-                </select>
-
-                <div id="lista-alumnos-informe" class="space-y-3 mt-4">
-                    <p class="text-center text-slate-400 text-xs italic">Elegí un curso para cargar notas</p>
-                </div>
-
-                <button onclick="guardarNotasBatch()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4 shadow-lg active:scale-95">Guardar Notas</button>
-            </div>
-
-            <div class="bg-slate-900 p-6 rounded-[2rem] text-white shadow-xl">
-                <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-file-pdf text-red-400"></i> Exportar Boletines</h3>
-                <p class="text-[10px] mb-4 opacity-70">Genera el archivo PDF completo del alumno seleccionado con todas sus materias.</p>
-                <select id="pdf-alumno-select" class="input-pro text-slate-900"></select>
-                <button onclick="generarBoletinPDF()" class="w-full bg-red-500 text-white p-4 rounded-2xl font-bold flex justify-center items-center gap-2">
-                    <i class="fas fa-download"></i> Descargar PDF
-                </button>
-            </div>
-        </section>
-
-        <section id="usuarios" class="tab-content space-y-6">
+        <section id="usuarios" class="tab-content space-y-6">    
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-rose-100">
                 <h3 class="font-bold mb-4 text-rose-600 flex items-center gap-2"><i class="fas fa-users"></i> Alta de Familia</h3>
-                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia">
+                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia (Ej: Pérez García)">         
                 <div class="bg-slate-50 p-4 rounded-2xl mb-4">
-                    <input type="email" id="fam-mail-1" class="input-pro mb-2" placeholder="Email Principal">
-                    <input type="email" id="fam-mail-2" class="input-pro mb-0" placeholder="Email Secundario (Opcional)">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Correos Electrónicos</p>
+                    <input type="email" id="fam-mail-1" class="input-pro mb-2" placeholder="Email Principal (Obligatorio)">
+                    <input type="email" id="fam-mail-2" class="input-pro mb-2" placeholder="Email Secundario (Opcional)">
+                    <input type="email" id="fam-mail-3" class="input-pro mb-0" placeholder="Email Tutor/Otro (Opcional)">
                 </div>
                 <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100 mb-4">
+                    <label class="text-[9px] font-black text-rose-500 uppercase block mb-3 tracking-widest">Vincular Hijos (Multiselección)</label>
                     <div class="flex gap-2 mb-3">
-                        <select id="fam-select-curso" onchange="buscarAlumnosParaFamilia(this.value)" class="input-pro mb-0 text-xs"></select>
-                        <select id="fam-hijo-select" class="input-pro mb-0 text-xs"></select>
+                        <select id="fam-select-curso" onchange="buscarAlumnosParaFamilia(this.value)" class="input-pro mb-0 text-sm">
+                            <option value="">Curso...</option>
+                        </select>
+                        <select id="fam-hijo-select" class="input-pro mb-0 text-sm">
+                            <option value="">Alumno...</option>
+                        </select>
                         <button onclick="agregarHijoALista()" class="bg-rose-500 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
                     </div>
                     <div id="lista-hijos-visual" class="flex flex-wrap gap-2"></div>
                 </div>
                 <button onclick="crearFamiliaCompleta()" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold shadow-lg">Guardar Familia</button>
             </div>
-        </section>
-
-        <section id="alumnos" class="tab-content space-y-4">
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <h3 class="font-bold mb-4 text-emerald-600 flex items-center gap-2"><i class="fas fa-user-graduate"></i> Nuevo Alumno</h3>
-                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo">
-                <select id="alum-curso" class="input-pro"></select>
-                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar</button>
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-indigo-100">
+                <h3 class="font-bold mb-4 text-indigo-600 flex items-center gap-2"><i class="fas fa-chalkboard-teacher"></i> Registrar Docente</h3>
+                <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
+                <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
+                <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <label class="text-[9px] font-black text-indigo-500 uppercase block mb-2 tracking-widest">Cursos a Cargo</label>
+                    <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1"></div>
+                </div>
+                <button onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Alta Docente</button>
             </div>
         </section>
-
+        <section id="alumnos" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-user-graduate text-emerald-500"></i> Nuevo Alumno</h3>
+                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo del niño/a">
+                <select id="alum-curso" class="input-pro">
+                    <option value="">Asignar Curso...</option>
+                </select>
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
+            </div>
+        </section>
+        <section id="calendario" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-calendar-star text-orange-500"></i> Agendar Evento</h3>
+                <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento">
+                <input type="date" id="event-fecha" class="input-pro">
+                <select id="event-tag" class="input-pro">
+                    <option value="GENERAL">📅 Evento General</option>
+                </select>
+                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Añadir y Notificar</button>
+            </div>
+        </section>
     </main>
-
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50 shadow-2xl">
         <button onclick="switchTab('comunicacion')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400 nav-active">
             <i class="fas fa-comment-alt"></i><span class="text-[9px] font-bold">MURO</span>
-        </button>
-        <button onclick="switchTab('informes')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
-            <i class="fas fa-file-invoice"></i><span class="text-[9px] font-bold">NOTAS</span>
         </button>
         <button onclick="switchTab('usuarios')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
             <i class="fas fa-user-friends"></i><span class="text-[9px] font-bold">USERS</span>
@@ -141,29 +113,10 @@
         <button onclick="switchTab('alumnos')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
             <i class="fas fa-graduation-cap"></i><span class="text-[9px] font-bold">ALUMNOS</span>
         </button>
+        <button onclick="switchTab('calendario')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
+            <i class="fas fa-calendar-day"></i><span class="text-[9px] font-bold">AGENDA</span>
+        </button>
     </nav>
-
-    <div id="boletin-pdf-template">
-        <div class="pdf-page">
-            <h1 style="text-align: center; font-size: 24px; font-weight: 800;">INSTITUTO IOSEF CARO</h1>
-            <p style="text-align: center; font-size: 14px; margin-bottom: 20px;">Boletín de Calificaciones - Ciclo Lectivo 2026</p>
-            <div style="border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px;">
-                <p><strong>Alumno:</strong> <span id="pdf-alum-nom"></span></p>
-                <p><strong>Curso:</strong> <span id="pdf-alum-cur"></span></p>
-            </div>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: #f1f5f9;">
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Materia</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Nota/RITE</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Observación Pedagógica</th>
-                    </tr>
-                </thead>
-                <tbody id="pdf-tabla-body"></tbody>
-            </table>
-        </div>
-    </div>
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
@@ -173,27 +126,31 @@
             messagingSenderId: "651320124248",
             appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
         };
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-
         const CURSOS_OFICIALES = [
             "SALA 18 MESES", "2 AÑOS", "3 AÑOS", "4 AÑOS", "5 AÑOS V", "5 AÑOS M",
             "1 GRADO A", "1 GRADO B", "2 GRADO A", "2 GRADO B", "3 GRADO A", "4 GRADO B", "5A", "5B", "6A", "6B", "7A", "7B",
             "1AÑO A", "1 AÑO B", "2AÑO A", "2 AÑOS B", "3 AÑO A", "3 AÑO B", "4 AÑO A", "4 AÑO B", "5 AÑO A", "5 AÑO B"
         ];
-
         let listaHijosTemp = [];
-        let alumnosInforme = [];
-
+        let cursosDocenteElegidos = [];
         window.onload = () => {
-            const selects = ['fam-select-curso', 'alum-curso', 'inf-curso'];
-            selects.forEach(s => {
-                const el = document.getElementById(s);
-                CURSOS_OFICIALES.forEach(c => el.innerHTML += `<option value="${c}">${c}</option>`);
+            const selects = ['post-tag', 'fam-select-curso', 'alum-curso', 'event-tag'];
+            const docLista = document.getElementById('doc-lista-cursos');
+            CURSOS_OFICIALES.forEach(c => {
+                selects.forEach(s => {
+                    const el = document.getElementById(s);
+                    if(el) el.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+                docLista.innerHTML += `
+                    <label class="flex items-center gap-2 text-[10px] font-bold text-slate-600 p-2 bg-white rounded-lg border border-indigo-50 mb-1">
+                        <input type="checkbox" value="${c}" onchange="toggleCursoDoc(this)"> ${c}
+                    </label>
+                `;
             });
-            cargarListaAlumnosPDF();
         };
-
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -201,162 +158,101 @@
             event.currentTarget.classList.add('nav-active');
             document.getElementById('tab-title').innerText = id.toUpperCase();
         }
-
-        // --- LÓGICA DE INFORMES ACADÉMICOS ---
-        async function buscarAlumnosInforme(curso) {
-            if(!curso) return;
-            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
-            alumnosInforme = [];
-            snap.forEach(doc => alumnosInforme.push({id: doc.id, ...doc.data()}));
-            actualizarListaCarga();
-        }
-
-        function actualizarListaCarga() {
-            const box = document.getElementById('lista-alumnos-informe');
-            const tipo = document.getElementById('inf-tipo').value;
-            if(alumnosInforme.length === 0) return;
-
-            box.innerHTML = alumnosInforme.map(alum => `
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200" data-alum-id="${alum.id}" data-alum-nom="${alum.nombre}">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-black text-slate-700">${alum.nombre}</span>
-                        ${tipo === 'NUMERICO' 
-                            ? `<input type="number" class="nota-val w-16 p-2 rounded-lg border text-center font-bold" min="1" max="10">`
-                            : `<select class="nota-val w-20 p-2 rounded-lg border text-xs font-bold">
-                                <option value="TEA">TEA</option><option value="TEP">TEP</option><option value="TED">TED</option>
-                               </select>`
-                        }
-                    </div>
-                    <textarea class="nota-obs w-full p-2 text-[11px] rounded-lg border" placeholder="Observación pedagógica..."></textarea>
-                </div>
-            `).join('');
-        }
-
-        async function guardarNotasBatch() {
-            const materia = document.getElementById('inf-materia').value;
-            const periodo = document.getElementById('inf-periodo').value;
-            const tipo = document.getElementById('inf-tipo').value;
-            if(!materia) return alert("Elegí una materia");
-
-            const items = document.querySelectorAll('#lista-alumnos-informe > div');
-            const batch = db.batch();
-
-            items.forEach(el => {
-                const alumId = el.getAttribute('data-alum-id');
-                const alumNom = el.getAttribute('data-alum-nom');
-                const valor = el.querySelector('.nota-val').value;
-                const obs = el.querySelector('.nota-obs').value;
-
-                const ref = db.collection('notas').doc(`${alumId}_${periodo}_${materia}`);
-                batch.set(ref, {
-                    alumId, alumNom, materia, periodo, tipo, valor, obs,
-                    fecha: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
-
-            await batch.commit();
-            alert("Notas guardadas correctamente");
-        }
-
-        // --- GENERACIÓN DE PDF ---
-        async function cargarListaAlumnosPDF() {
-            const select = document.getElementById('pdf-alumno-select');
-            const snap = await db.collection('alumnos').get();
-            select.innerHTML = '<option value="">Elegir alumno para PDF...</option>';
-            snap.forEach(doc => {
-                select.innerHTML += `<option value="${doc.id}" data-curso="${doc.data().curso}" data-nom="${doc.data().nombre}">${doc.data().nombre} (${doc.data().curso})</option>`;
-            });
-        }
-
-        async function generarBoletinPDF() {
-            const select = document.getElementById('pdf-alumno-select');
-            const alumId = select.value;
-            if(!alumId) return alert("Seleccioná un alumno");
-
-            const option = select.options[select.selectedIndex];
-            const alumNom = option.getAttribute('data-nom');
-            const alumCur = option.getAttribute('data-curso');
-
-            // Buscar todas las notas del alumno
-            const snap = await db.collection('notas').where('alumId', '==', alumId).get();
-            const tabla = document.getElementById('pdf-tabla-body');
-            tabla.innerHTML = "";
-
-            if(snap.empty) return alert("Este alumno no tiene notas cargadas");
-
-            snap.forEach(doc => {
-                const n = doc.data();
-                tabla.innerHTML += `
-                    <tr>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px; font-size:12px">${n.materia} (${n.periodo}°)</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight:bold; text-align:center">${n.valor}</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px; font-size:10px">${n.obs || '-'}</td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('pdf-alum-nom').innerText = alumNom;
-            document.getElementById('pdf-alum-cur').innerText = alumCur;
-
-            const element = document.getElementById('boletin-pdf-template');
-            element.style.display = 'block';
-
-            const opt = {
-                margin: 10,
-                filename: `Boletin_${alumNom}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                element.style.display = 'none';
-            });
-        }
-
-        // --- FUNCIONES DE GESTIÓN (REUTILIZADAS) ---
+        // --- LÓGICA DE HIJOS MÚLTIPLES ---
         async function buscarAlumnosParaFamilia(curso) {
             const selectHijo = document.getElementById('fam-hijo-select');
+            if(!curso) return;
+            selectHijo.innerHTML = '<option>Buscando...</option>';
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             selectHijo.innerHTML = '<option value="">Alumno...</option>';
             snap.forEach(doc => selectHijo.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
         }
-
         function agregarHijoALista() {
             const nom = document.getElementById('fam-hijo-select').value;
             const cur = document.getElementById('fam-select-curso').value;
-            if(nom && cur) {
+            if(!nom || !cur) return;
+            if(!listaHijosTemp.some(h => h.nombre === nom)){
                 listaHijosTemp.push({nombre: nom, curso: cur});
-                document.getElementById('lista-hijos-visual').innerHTML = listaHijosTemp.map(h => `<div class="badge-pro">${h.nombre}</div>`).join('');
+                actualizarVistaHijos();
             }
         }
-
+        function actualizarVistaHijos() {
+            const box = document.getElementById('lista-hijos-visual');
+            box.innerHTML = listaHijosTemp.map((h, i) => `
+                <div class="badge-pro">
+                    ${h.nombre} (${h.curso})
+                    <i class="fas fa-times-circle cursor-pointer text-rose-400" onclick="quitarHijo(${i})"></i>
+                </div>
+            `).join('');
+        }
+        function quitarHijo(index) {
+            listaHijosTemp.splice(index, 1);
+            actualizarVistaHijos();
+        }
+        // --- ACCIONES DE GUARDADO ---
         async function crearFamiliaCompleta() {
+            const nomFam = document.getElementById('fam-nom').value.trim();
             const m1 = document.getElementById('fam-mail-1').value.toLowerCase().trim();
-            const nom = document.getElementById('fam-nom').value;
-            if(!m1 || !nom || listaHijosTemp.length === 0) return alert("Faltan datos");
+            const m2 = document.getElementById('fam-mail-2').value.toLowerCase().trim();
+            const m3 = document.getElementById('fam-mail-3').value.toLowerCase().trim();
+            if(!nomFam || !m1 || listaHijosTemp.length === 0) return alert("Faltan datos o hijos");
+            const mails = [m1];
+            if(m2) mails.push(m2);
+            if(m3) mails.push(m3);
             await db.collection('usuarios').doc(m1).set({
-                nombre: nom, rol: 'familia', emails: [m1, document.getElementById('fam-mail-2').value], hijos: listaHijosTemp
+                nombre: nomFam,
+                rol: 'familia',
+                emails: mails,
+                hijos: listaHijosTemp,
+                fechaAlta: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("Familia guardada");
+
+            alert("Familia guardada con éxito");
             location.reload();
         }
-
+        function toggleCursoDoc(cb) {
+            if(cb.checked) cursosDocenteElegidos.push(cb.value);
+            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
+        }
+        async function crearDocente() {
+            const nom = document.getElementById('doc-nom').value.trim();
+            const mail = document.getElementById('doc-mail').value.toLowerCase().trim();
+            if(!nom || !mail || cursosDocenteElegidos.length === 0) return alert("Faltan datos");
+            await db.collection('usuarios').doc(mail).set({
+                nombre: nom, rol: 'docente', cursos: cursosDocenteElegidos
+            });
+            alert("Docente guardado");
+            location.reload();
+        }
         async function crearAlumno() {
             const nom = document.getElementById('alum-nom').value.trim().toUpperCase();
             const cur = document.getElementById('alum-curso').value;
+            if(!nom || !cur) return alert("Faltan datos");
             await db.collection('alumnos').add({ nombre: nom, curso: cur });
             alert("Alumno guardado");
-            location.reload();
+            document.getElementById('alum-nom').value = "";
         }
-
         async function enviarComunicado() {
             const tit = document.getElementById('post-tit').value;
             const msg = document.getElementById('post-msg').value;
+            if(!tit || !msg) return alert("Datos incompletos");
             await db.collection('comunicados').add({
-                titulo: tit, texto: msg, tag: "TODOS", creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+                titulo: tit, texto: msg,
+                tag: document.getElementById('post-tag').value,
+                link: document.getElementById('post-link').value || "",
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("Publicado");
+            alert("Comunicado publicado");
+            location.reload();
+        }
+        async function crearEvento() {
+            const tit = document.getElementById('event-tit').value;
+            const fec = document.getElementById('event-fecha').value;
+            if(!tit || !fec) return alert("Faltan datos");
+            await db.collection('eventos').add({
+                titulo: tit, fecha: fec, tag: document.getElementById('event-tag').value
+            });
+            alert("Evento agendado");
             location.reload();
         }
     </script>
