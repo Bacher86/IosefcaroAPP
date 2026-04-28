@@ -209,7 +209,15 @@
                 <input type="hidden" id="event-id">
                 <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento">
                 <input type="date" id="event-fecha" class="input-pro">
-                <select id="event-tag" class="input-pro"></select>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2 px-2">
+                        <label class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Asignar a Cursos:</label>
+                        <button onclick="marcarTodosCalendario(true)" class="text-[9px] font-black bg-slate-100 px-2 py-1 rounded-md">TODOS</button>
+                    </div>
+                    <div id="calendar-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-dashed custom-scroll"></div>
+                </div>
+
                 <div class="flex gap-2">
                     <button id="btn-evento" onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Guardar</button>
                     <button id="btn-cancel-edit" onclick="resetFormCalendario()" class="hidden bg-slate-200 text-slate-600 p-4 rounded-2xl font-bold">X</button>
@@ -246,16 +254,19 @@
 
         let listaHijosTemp = [];
         let cursosPostElegidos = [];
+        let cursosCalendarElegidos = [];
         let asignacionesDocenteTemp = [];
 
         window.onload = () => {
-    const selects = ['fam-select-curso', 'alum-curso', 'event-tag'];
+    const selects = ['fam-select-curso', 'alum-curso'];
     const muroLista = document.getElementById('post-lista-cursos');
+    const calendarLista = document.getElementById('calendar-lista-cursos');
     const docenteListaCursos = document.getElementById('doc-lista-cursos-multi');
     
     CURSOS_OFICIALES.forEach(c => {
         selects.forEach(s => { if(document.getElementById(s)) document.getElementById(s).innerHTML += `<option value="${c}">${c}</option>`; });
         muroLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200"><input type="checkbox" class="check-muro" value="${c}" onchange="toggleCursoPost(this)"> ${c}</label>`;
+        calendarLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200"><input type="checkbox" class="check-calendar" value="${c}" onchange="toggleCursoCalendar(this)"> ${c}</label>`;
         docenteListaCursos.innerHTML += `<label class="flex items-center gap-2 text-[9px] font-bold p-2 bg-white rounded-lg border border-slate-100"><input type="checkbox" class="check-doc-multi" value="${c}"> ${c}</label>`;
     });
 
@@ -264,7 +275,7 @@
     cargarGestionAlumnos();
     cargarMateriasEnSelects();
 
-    // --- BLOQUE DE NOTIFICACIONES (DENTRO DEL ONLOAD) ---
+    // --- BLOQUE DE NOTIFICACIONES ---
     const messaging = firebase.messaging();
 
     messaging.requestPermission()
@@ -274,10 +285,18 @@
         })
         .then((token) => {
             console.log('Token del dispositivo:', token);
+            // Si quieres guardar el token del admin en la DB:
+            // db.collection('admin_tokens').doc('main').set({token: token});
         })
         .catch((err) => {
             console.warn('Error o permiso denegado:', err);
         });
+    
+    // Escuchar mensajes cuando la pestaña está abierta
+    messaging.onMessage((payload) => {
+        console.log('Mensaje recibido en primer plano: ', payload);
+        alert("Notificación: " + payload.notification.title);
+    });
     // ---------------------------------------------------
 };
         
@@ -443,6 +462,15 @@
             document.getElementById('post-hora-prog').value = d.horaPublicacion;
             document.getElementById('post-form-title').innerText = "Editando Posteo";
             document.getElementById('btn-cancel-post').classList.remove('hidden');
+            
+            // Marcar checkboxes de cursos
+            marcarTodosPost(false);
+            if(d.tag) {
+                d.tag.forEach(t => {
+                    const cb = document.querySelector(`.check-muro[value="${t}"]`);
+                    if(cb) { cb.checked = true; cursosPostElegidos.push(t); }
+                });
+            }
             window.scrollTo(0,0);
         }
 
@@ -626,14 +654,32 @@
             });
         }
 
-        // --- CALENDARIO ---
+        // --- CALENDARIO MULTI-CURSO ---
+        function toggleCursoCalendar(cb) {
+            if(cb.checked) cursosCalendarElegidos.push(cb.value);
+            else cursosCalendarElegidos = cursosCalendarElegidos.filter(c => c !== cb.value);
+        }
+
+        function marcarTodosCalendario(valor) {
+            const checks = document.querySelectorAll('.check-calendar');
+            cursosCalendarElegidos = [];
+            checks.forEach(c => { c.checked = valor; if(valor) cursosCalendarElegidos.push(c.value); });
+        }
+
         async function crearEvento() {
             const t = document.getElementById('event-tit').value;
             const f = document.getElementById('event-fecha').value;
             const id = document.getElementById('event-id').value;
-            const data = { titulo: t, fecha: f, tag: document.getElementById('event-tag').value };
+            const data = { 
+                titulo: t, 
+                fecha: f, 
+                tag: cursosCalendarElegidos // Ahora es un array de cursos
+            };
+            if(!t || !f || cursosCalendarElegidos.length === 0) return alert("Faltan datos");
+
             if(id) await db.collection('eventos').doc(id).update(data);
             else await db.collection('eventos').add(data);
+            alert("✅ Evento guardado");
             location.reload();
         }
 
@@ -643,8 +689,9 @@
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
+                const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
                 cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border border-orange-100">
-                    <div class="text-xs"><b>${d.titulo}</b><br><span class="opacity-50 text-[10px]">${d.fecha} - ${d.tag}</span></div>
+                    <div class="text-xs"><b>${d.titulo}</b><br><span class="opacity-50 text-[10px]">${d.fecha} - [${tags}]</span></div>
                     <div class="flex gap-4">
                         <button onclick="editarEvento('${doc.id}')" class="text-orange-500"><i class="fas fa-edit"></i></button>
                         <button onclick="eliminarDoc('eventos','${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button>
@@ -657,8 +704,9 @@
             document.getElementById('event-id').value = "";
             document.getElementById('event-tit').value = "";
             document.getElementById('event-fecha').value = "";
-            document.getElementById('calendar-form-title').innerText = "Agendar Evento";
+            document.getElementById('calendar-form-title').innerHTML = `<i class="fas fa-calendar-star"></i> Agendar Evento`;
             document.getElementById('btn-cancel-edit').classList.add('hidden');
+            marcarTodosCalendario(false);
         }
 
         async function editarEvento(id) {
@@ -667,9 +715,18 @@
             document.getElementById('event-id').value = id;
             document.getElementById('event-tit').value = d.titulo;
             document.getElementById('event-fecha').value = d.fecha;
-            document.getElementById('event-tag').value = d.tag;
             document.getElementById('calendar-form-title').innerText = "Editando Evento";
             document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            marcarTodosCalendario(false);
+            if(d.tag) {
+                const tags = Array.isArray(d.tag) ? d.tag : [d.tag];
+                tags.forEach(t => {
+                    const cb = document.querySelector(`.check-calendar[value="${t}"]`);
+                    if(cb) { cb.checked = true; cursosCalendarElegidos.push(t); }
+                });
+            }
+            window.scrollTo(0,0);
         }
 
         // --- GENERAL ---
