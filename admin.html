@@ -30,6 +30,23 @@
         </div>
     </header>
     <main class="p-4 max-w-xl mx-auto">
+        <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
+    <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
+        <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 mb-2">Acceso Admin</h2>
+        <p class="text-slate-400 text-sm mb-6 font-medium">Ingresá tus credenciales para gestionar la institución.</p>
+        
+        <input type="email" id="login-mail" class="input-pro" placeholder="Email">
+        <input type="password" id="login-pass" class="input-pro mb-6" placeholder="Contraseña">
+        
+        <button onclick="verificarAcceso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold active:scale-95 transition-transform">
+            Entrar al Panel
+        </button>
+        <p id="login-error" class="text-rose-500 text-[10px] font-black uppercase mt-4 hidden">Acceso Denegado</p>
+    </div>
+</div>
         <section id="comunicacion" class="tab-content active">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                 <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-bullhorn text-blue-500"></i> Nuevo Posteo</h3>
@@ -125,6 +142,18 @@
             <span class="text-[10px] font-black text-slate-400 uppercase">Eventos</span>
             <span id="stat-eventos" class="text-3xl font-black text-orange-600">...</span>
         </div>
+<div class="grid grid-cols-1 gap-4 mt-6">
+    <button onclick="exportarBaseDatos()" class="bg-emerald-100 text-emerald-700 p-4 rounded-2xl font-black text-xs flex items-center justify-center gap-3 border border-emerald-200">
+        <i class="fas fa-file-excel text-lg"></i> EXPORTAR LISTADO (EXCEL/CSV)
+    </button>
+    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <h3 class="font-bold mb-4 text-slate-700 flex items-center gap-2"><i class="fas fa-user-shield text-blue-500"></i> Crear Nuevo Admin</h3>
+        <input type="email" id="new-admin-mail" class="input-pro" placeholder="Email del nuevo director">
+        <input type="password" id="new-admin-pass" class="input-pro" placeholder="Asignar Contraseña">
+        <button onclick="crearNuevoAdmin()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold text-sm">Dar de alta Admin</button>
+    </div>
+</div>
+        
     </div>
 
     <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
@@ -360,6 +389,69 @@ async function actualizarStats() {
             </div>
         `;
     });
+}
+        // --- SEGURIDAD: LOGIN ---
+async function verificarAcceso() {
+    const mail = document.getElementById('login-mail').value.trim().toLowerCase();
+    const pass = document.getElementById('login-pass').value;
+    const errorMsg = document.getElementById('login-error');
+
+    // 1. Acceso Maestro (Uriel)
+    if(mail === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+        document.getElementById('login-overlay').style.display = 'none';
+        return;
+    }
+
+    // 2. Verificar otros Admins en Firebase
+    try {
+        const adminSnap = await db.collection('administradores').doc(mail).get();
+        if(adminSnap.exists && adminSnap.data().pass === pass) {
+            document.getElementById('login-overlay').style.display = 'none';
+        } else {
+            errorMsg.classList.remove('hidden');
+        }
+    } catch (e) {
+        errorMsg.classList.remove('hidden');
+    }
+}
+
+// --- GESTIÓN DE ADMINS ---
+async function crearNuevoAdmin() {
+    const mail = document.getElementById('new-admin-mail').value.trim().toLowerCase();
+    const pass = document.getElementById('new-admin-pass').value;
+
+    if(!mail || !pass) return alert("Completá los datos");
+
+    await db.collection('administradores').doc(mail).set({
+        pass: pass,
+        creadoPor: "Uriel",
+        fecha: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    alert("Nuevo administrador creado correctamente.");
+    document.getElementById('new-admin-mail').value = "";
+    document.getElementById('new-admin-pass').value = "";
+}
+
+// --- EXPORTACIÓN A CSV (Excel) ---
+async function exportarBaseDatos() {
+    const snap = await db.collection('usuarios').where('rol', '==', 'familia').get();
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Familia,Email Principal,Hijos\n"; // Encabezados
+
+    snap.forEach(doc => {
+        const d = doc.data();
+        const hijosNombres = d.hijos.map(h => h.nombre).join(" | ");
+        const fila = `"${d.nombre}","${d.emails[0]}","${hijosNombres}"`;
+        csvContent += fila + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Listado_Familias_IosefCaro.csv`);
+    document.body.appendChild(link);
+    link.click();
 }
     </script>
 </body>
