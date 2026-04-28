@@ -18,6 +18,9 @@
         .nav-active { color: #1e293b; border-top: 3px solid #1e293b; }
         .badge-pro { background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Scrollbar suave para las listas de cursos */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="pb-24">
@@ -50,15 +53,18 @@
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
                 <input type="url" id="post-link" class="input-pro" placeholder="https://... (JPG, PNG o YouTube)">
 
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Programar Fecha</label>
-                        <input type="date" id="post-fecha-prog" class="input-pro mb-0">
+                <div class="mb-4">
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Programar Fecha de Publicación</label>
+                    <input type="date" id="post-fecha-prog" class="input-pro">
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2 px-2">
+                        <label class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Enviar a:</label>
+                        <button onclick="marcarTodosPost(true)" class="text-[9px] font-black bg-slate-100 px-2 py-1 rounded-md">TODOS</button>
                     </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Destinatarios</label>
-                        <select id="post-tag" class="input-pro mb-0"><option value="TODOS">📢 TODOS</option></select>
-                    </div>
+                    <div id="post-lista-cursos" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-dashed custom-scroll">
+                        </div>
                 </div>
 
                 <button id="btn-publicar" onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar / Programar</button>
@@ -92,7 +98,7 @@
                 <h3 class="font-bold mb-4 text-indigo-600 flex items-center gap-2"><i class="fas fa-chalkboard-teacher"></i> Registrar Docente</h3>
                 <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
                 <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
-                <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-indigo-50 rounded-2xl"></div>
+                <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-indigo-50 rounded-2xl custom-scroll"></div>
                 <button onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Alta Docente</button>
             </div>
         </section>
@@ -168,19 +174,33 @@
 
         let listaHijosTemp = [];
         let cursosDocenteElegidos = [];
+        let cursosPostElegidos = []; // Nueva lista para el muro
 
         window.onload = () => {
-            const selects = ['post-tag', 'fam-select-curso', 'alum-curso', 'event-tag'];
+            const selects = ['fam-select-curso', 'alum-curso', 'event-tag'];
+            const muroLista = document.getElementById('post-lista-cursos');
+            const docLista = document.getElementById('doc-lista-cursos');
+
             CURSOS_OFICIALES.forEach(c => {
+                // Llenar Selects
                 selects.forEach(s => {
                     const el = document.getElementById(s);
                     if(el) el.innerHTML += `<option value="${c}">${c}</option>`;
                 });
-                document.getElementById('doc-lista-cursos').innerHTML += `
+
+                // Llenar Checks para Muro
+                muroLista.innerHTML += `
+                    <label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200">
+                        <input type="checkbox" class="check-muro" value="${c}" onchange="toggleCursoPost(this)"> ${c}
+                    </label>`;
+
+                // Llenar Checks para Docentes
+                docLista.innerHTML += `
                     <label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-indigo-100">
                         <input type="checkbox" value="${c}" onchange="toggleCursoDoc(this)"> ${c}
                     </label>`;
             });
+
             cargarGestionComunicados();
             cargarGestionCalendario();
             cargarGestionAlumnos();
@@ -204,20 +224,39 @@
         }
 
         // --- COMUNICADOS (MURO) ---
+        function toggleCursoPost(cb) {
+            if(cb.checked) cursosPostElegidos.push(cb.value);
+            else cursosPostElegidos = cursosPostElegidos.filter(c => c !== cb.value);
+        }
+
+        function marcarTodosPost(valor) {
+            const checks = document.querySelectorAll('.check-muro');
+            cursosPostElegidos = [];
+            checks.forEach(c => {
+                c.checked = valor;
+                if(valor) cursosPostElegidos.push(c.value);
+            });
+        }
+
         async function enviarComunicado() {
             const tit = document.getElementById('post-tit').value;
             const msg = document.getElementById('post-msg').value;
             const link = document.getElementById('post-link').value;
             const prog = document.getElementById('post-fecha-prog').value;
+            
             if(!tit || !msg) return alert("Completa título y mensaje");
+            if(cursosPostElegidos.length === 0) return alert("Selecciona al menos un destinatario");
 
             await db.collection('comunicados').add({
-                titulo: tit, texto: msg, link: link,
-                tag: document.getElementById('post-tag').value,
-                vistas: 0, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+                titulo: tit, 
+                texto: msg, 
+                link: link,
+                tag: cursosPostElegidos, // Ahora se guarda como Array [curso1, curso2...]
+                vistas: 0, 
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
                 fechaPublicacion: prog || new Date().toISOString().split('T')[0]
             });
-            alert("✅ Publicación registrada");
+            alert("✅ Publicación registrada para " + cursosPostElegidos.length + " cursos.");
             location.reload();
         }
 
