@@ -197,12 +197,38 @@
             const container = document.getElementById('tab-muro');
             const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
             container.innerHTML = "";
+            
             snap.forEach(doc => {
-                const p = doc.data(); const id = doc.id; const isRead = localStorage.getItem('read_'+id);
-                container.innerHTML += `<div class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead?'read-post':''}">
-                    <div class="flex justify-between mb-4"><span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag}</span>
-                    <button onclick="marcarLeido('${id}')" class="text-[9px] font-bold uppercase text-slate-400">${isRead?'✓ Leído':'Confirmar'}</button></div>
-                    <h2 class="text-xl font-black">${p.titulo}</h2><p class="text-slate-500 text-sm mt-2 leading-relaxed">${p.texto}</p></div>`;
+                const p = doc.data(); 
+                const id = doc.id; 
+                const isRead = localStorage.getItem('read_'+id);
+
+                // Lógica para la imagen: si existe el campo 'link', generamos el HTML
+                let imagenHtml = "";
+                if (p.link && p.link.trim() !== "") {
+                    imagenHtml = `
+                        <img src="${p.link}" 
+                             class="w-full h-52 object-cover rounded-2xl mb-4 shadow-sm" 
+                             alt="Imagen del comunicado"
+                             onerror="this.style.display='none'">
+                    `;
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead ? 'read-post' : ''}">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag}</span>
+                            <button onclick="marcarLeido('${id}')" class="text-[9px] font-bold uppercase text-slate-400">
+                                ${isRead ? '✓ Leído' : 'Confirmar'}
+                            </button>
+                        </div>
+                        
+                        ${imagenHtml} 
+
+                        <h2 class="text-xl font-black">${p.titulo}</h2>
+                        <p class="text-slate-500 text-sm mt-2 leading-relaxed">${p.texto}</p>
+                    </div>
+                `;
             });
         }
 
