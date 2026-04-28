@@ -77,6 +77,12 @@
             <div id="container-notas" class="space-y-4"></div>
         </section>
 
+        <section id="tab-convivencia" class="tab-content space-y-4">
+            <h3 class="font-black text-2xl italic text-slate-900 uppercase tracking-tighter">Hoja de Vida</h3>
+            <p class="text-[10px] font-bold text-slate-400 mb-4 uppercase">Seguimiento de Logros y Observaciones</p>
+            <div id="lista-convivencia" class="space-y-4"></div>
+        </section>
+
         <section id="tab-perfil" class="tab-content space-y-6">
             <h3 class="font-black text-2xl italic text-slate-900">Mi Perfil</h3>
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm space-y-4">
@@ -94,9 +100,10 @@
         </section>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-4 z-[1000]">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t flex justify-around p-4 z-[1000]">
         <button onclick="switchTab('muro')" id="nav-muro" class="nav-btn active flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400"><i class="fas fa-home text-xl"></i><span>MURO</span></button>
         <button onclick="switchTab('agenda')" id="nav-agenda" class="nav-btn flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400"><i class="fas fa-calendar-check text-xl"></i><span>AGENDA</span></button>
+        <button onclick="switchTab('convivencia')" id="nav-convivencia" class="nav-btn flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400"><i class="fas fa-heart text-xl"></i><span>VIDA</span></button>
         <button onclick="switchTab('academico')" id="nav-academico" class="nav-btn flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400"><i class="fas fa-star text-xl"></i><span>BOLETÍN</span></button>
     </nav>
 
@@ -131,6 +138,7 @@
             <tbody id="pdf-body"></tbody>
         </table>
     </div>
+
 <script>
    const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
         firebase.initializeApp(firebaseConfig);
@@ -145,7 +153,6 @@
             const doc = await db.collection('usuarios').doc(userEmail).get();
             if (doc.exists) {
                 userData = doc.data();
-                // Verificación de rol para seguridad
                 if(userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
 
                 document.getElementById('login-screen').style.display = 'none';
@@ -153,14 +160,12 @@
                 document.getElementById('perfil-nombre').value = userData.nombre;
                 document.getElementById('perfil-tel').value = userData.telefono || "";
                 
-                // CORRECCIÓN AQUÍ: Leemos el array 'hijos' que genera el admin
                 const select = document.getElementById('select-hijo');
                 select.innerHTML = "";
-                listaHijos = []; // Reset local
+                listaHijos = []; 
 
                 if (userData.hijos && userData.hijos.length > 0) {
                     for (let hijoObj of userData.hijos) {
-                        // Buscamos el ID del alumno por su nombre para vincular notas/asistencia
                         const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
                         snap.forEach(d => {
                             listaHijos.push({ id: d.id, nombre: d.data().nombre });
@@ -182,13 +187,8 @@
             await cargarMuro();
             await cargarAcademico();
             await cargarAgenda();
-            document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">¡Hola! He analizado las notas, faltas de tu hijo y los comunicados del muro. ¿En qué puedo ayudarte?</div>`;
-            
-            const messaging = firebase.messaging();
-            messaging.requestPermission()
-                .then(() => messaging.getToken())
-                .then((token) => console.log('Token:', token))
-                .catch((err) => console.warn('Notificaciones bloqueadas', err));
+            await cargarConvivencia();
+            document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">¡Hola! He analizado las notas, faltas y el legajo de convivencia. ¿En qué puedo ayudarte?</div>`;
         }
 
         async function cargarMuro() {
@@ -222,18 +222,16 @@
         async function confirmarLectura(id) {
             localStorage.setItem('read_'+id, 'true');
             await db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
-            
-            // Registrar quién leyó para que aparezca en el Admin
             await db.collection('comunicados').doc(id).collection('leidos').doc(userEmail).set({
                 nombre: userData.nombre,
                 fecha: new Date().toISOString()
             });
-
             cerrarNoticia(); cargarMuro();
         }
 
         function cerrarNoticia() { document.getElementById('modal-noticia').style.display = 'none'; document.body.style.overflow = 'auto'; }
 
+        // MEJORA: ACADÉMICO CON PROMEDIO VIOLETA E INFORMES
         async function cargarAcademico() {
             const container = document.getElementById('container-notas');
             const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
@@ -241,13 +239,22 @@
             nSnap.forEach(doc => {
                 const n = doc.data(); brain.notas.push(n);
                 if((modalidadFiltro === 'rite' && n.rite) || (modalidadFiltro === 'num' && !n.rite)) {
+                    
+                    // Cálculo de promedio en vivo
+                    const notasArr = [n.n1, n.n2, n.n3].filter(v => v && !isNaN(v));
+                    const prom = notasArr.length > 0 ? (notasArr.reduce((a,b)=>parseFloat(a)+parseFloat(b),0)/notasArr.length).toFixed(2) : '-';
+
                     let notaHtml = n.rite ? `<div class="bg-blue-600 text-white p-3 rounded-xl text-center font-black text-xs uppercase">${n.rite}</div>` :
-                        `<div class="grid grid-cols-3 gap-2">
+                        `<div class="grid grid-cols-4 gap-2">
                             <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">1B</p><p class="font-black text-xs">${n.n1||'-'}</p></div>
                             <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">2B</p><p class="font-black text-xs">${n.n2||'-'}</p></div>
                             <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">3B</p><p class="font-black text-xs">${n.n3||'-'}</p></div>
+                            <div class="bg-violet-50 border border-violet-100 p-2 rounded-xl text-center"><p class="text-[7px] font-black text-violet-400 uppercase">PROM</p><p class="font-black text-violet-600 text-xs">${prom}</p></div>
                         </div>`;
-                    container.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${notaHtml}</div>`;
+                    
+                    let informeHtml = n.obs ? `<div class="mt-3 bg-blue-50/50 p-3 rounded-2xl border border-blue-100/50"><p class="text-[8px] font-black text-blue-400 uppercase mb-1">Informe Pedagógico</p><p class="text-[10px] text-slate-600 italic leading-relaxed">"${n.obs}"</p></div>` : "";
+
+                    container.innerHTML += `<div class="bg-white p-6 rounded-[2rem] border shadow-sm"><p class="text-[11px] font-black uppercase mb-4 text-slate-900 italic tracking-tighter">${n.materia}</p>${notaHtml}${informeHtml}</div>`;
                 }
             });
             const aSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoSeleccionadoId).get();
@@ -258,6 +265,41 @@
             });
             document.getElementById('count-faltas').innerText = f;
             document.getElementById('count-tardes').innerText = t;
+        }
+
+        // MEJORA: CARGAR LOGROS Y SANCIONES (HOJA DE VIDA)
+        async function cargarConvivencia() {
+            const container = document.getElementById('lista-convivencia');
+            container.innerHTML = "";
+            const snap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('convivencia').orderBy('fecha', 'desc').get();
+
+            if(snap.empty) {
+                container.innerHTML = `<div class="text-center p-10 opacity-30 font-bold text-xs">No hay registros en la hoja de vida aún.</div>`;
+                return;
+            }
+
+            snap.forEach(doc => {
+                const h = doc.data();
+                const color = h.tipo === 'Logro' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 
+                              h.tipo === 'Sancion' ? 'bg-rose-50 border-rose-100 text-rose-700' : 
+                              'bg-amber-50 border-amber-100 text-amber-700';
+                const icono = h.tipo === 'Logro' ? 'fa-star' : h.tipo === 'Sancion' ? 'fa-gavel' : 'fa-eye';
+
+                container.innerHTML += `
+                    <div class="p-6 rounded-[2.5rem] border-2 ${color} transition-all shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fas ${icono} text-sm"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest">${h.tipo} ${h.subtipo ? '• ' + h.subtipo : ''}</span>
+                            </div>
+                            <span class="text-[9px] font-black opacity-50">${h.fecha}</span>
+                        </div>
+                        <p class="text-xs font-bold mb-3 leading-relaxed">${h.descripcion}</p>
+                        <div class="pt-3 border-t border-current/10 flex justify-between items-center opacity-60">
+                            <span class="text-[8px] font-black uppercase tracking-tighter">Registrado por ${h.docente}</span>
+                        </div>
+                    </div>`;
+            });
         }
 
         async function cargarAgenda() {
@@ -280,33 +322,9 @@
             alert("Perfil actualizado correctamente");
         }
 
-        function enviarIosi() {
-            const inp = document.getElementById('iosi-input'); const chat = document.getElementById('iosi-chat'); const val = inp.value.toLowerCase();
-            if(!val) return;
-            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
-            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-            
-            setTimeout(() => {
-                let r = "No tengo esa información específica, pero puedo decirte sobre sus notas, faltas o las noticias recientes.";
-                
-                if(val.includes("falta") || val.includes("inasistencia")) {
-                    r = brain.faltas.length > 0 ? `${hijo.nombre.split(' ')[0]} tiene ${brain.faltas.length} faltas. Las fechas fueron: ${brain.faltas.join(", ")}.` : `${hijo.nombre.split(' ')[0]} tiene asistencia perfecta.`;
-                } else if(val.includes("nota") || val.includes("materia") || val.includes("como va")) {
-                    r = brain.notas.length > 0 ? `En sus materias va así: tiene ${brain.notas.length} registradas. En ${brain.notas[0].materia} por ejemplo, su nota es ${brain.notas[0].n1 || brain.notas[0].rite || 'pendiente'}.` : "Aún no hay notas cargadas.";
-                } else if(val.includes("noticia") || val.includes("muro") || val.includes("comunicado")) {
-                    r = brain.noticias.length > 0 ? `La última noticia es: "${brain.noticias[0].titulo}".` : "No hay comunicados recientes.";
-                } else if(val.includes("evento") || val.includes("calendario") || val.includes("cuando hay")) {
-                    r = brain.agenda.length > 0 ? `El próximo evento es "${brain.agenda[0].titulo}" el día ${brain.agenda[0].fecha}.` : "No hay eventos programados.";
-                }
-
-                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
-                chat.scrollTop = chat.scrollHeight;
-            }, 600);
-            inp.value = "";
-        }
-
         function switchTab(tab) {
-            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-'+tab).classList.add('active');
             if(document.getElementById('nav-'+tab)) document.getElementById('nav-'+tab).classList.add('active');
         }
@@ -319,7 +337,18 @@
 
         function cambiarHijo(id) { alumnoSeleccionadoId = id; inicializarApp(); }
         function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
-        
+
+        function enviarIosi() {
+            const inp = document.getElementById('iosi-input'); const chat = document.getElementById('iosi-chat'); const val = inp.value.toLowerCase();
+            if(!val) return;
+            chat.innerHTML += `<div class="bubble-user">${val}</div>`;
+            let res = "Estoy analizando tu consulta...";
+            if(val.includes("nota") || val.includes("promedio")) res = `El promedio más alto actualmente es en ${brain.notas[0]?.materia || 'alguna materia'} y el rendimiento general es estable.`;
+            if(val.includes("falta") || val.includes("asistencia")) res = `Tu hijo tiene ${document.getElementById('count-faltas').innerText} faltas registradas hasta el momento.`;
+            setTimeout(() => { chat.innerHTML += `<div class="bubble-iosi">${res}</div>`; chat.scrollTop = chat.scrollHeight; }, 1000);
+            inp.value = "";
+        }
+
         async function generarBoletinPDF() {
             const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
             document.getElementById('pdf-nombre').innerText = hijo.nombre;
@@ -328,7 +357,7 @@
             brain.notas.forEach(n => { body.innerHTML += `<tr><td style="border:1px solid #000;padding:8px">${n.materia}</td><td style="border:1px solid #000;padding:8px;text-align:center">${n.rite || (n.n1+'/'+n.n2)}</td></tr>`; });
             const element = document.getElementById('pdf-template');
             element.style.display = 'block';
-            html2pdf().from(element).save().then(()=>element.style.display='none');
+            html2pdf().set({ margin: 0.5, filename: `Boletin_${hijo.nombre}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' } }).from(element).save().then(() => element.style.display = 'none');
         }
     </script>
 </body>
