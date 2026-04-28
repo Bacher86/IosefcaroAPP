@@ -249,21 +249,38 @@
         let asignacionesDocenteTemp = [];
 
         window.onload = () => {
-            const selects = ['fam-select-curso', 'alum-curso', 'event-tag'];
-            const muroLista = document.getElementById('post-lista-cursos');
-            const docenteListaCursos = document.getElementById('doc-lista-cursos-multi');
-            
-            CURSOS_OFICIALES.forEach(c => {
-                selects.forEach(s => { if(document.getElementById(s)) document.getElementById(s).innerHTML += `<option value="${c}">${c}</option>`; });
-                muroLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200"><input type="checkbox" class="check-muro" value="${c}" onchange="toggleCursoPost(this)"> ${c}</label>`;
-                // Checkbox para docente
-                docenteListaCursos.innerHTML += `<label class="flex items-center gap-2 text-[9px] font-bold p-2 bg-white rounded-lg border border-slate-100"><input type="checkbox" class="check-doc-multi" value="${c}"> ${c}</label>`;
-            });
-            cargarGestionComunicados();
-            cargarGestionCalendario();
-            cargarGestionAlumnos();
-            cargarMateriasEnSelects();
-        };
+    const selects = ['fam-select-curso', 'alum-curso', 'event-tag'];
+    const muroLista = document.getElementById('post-lista-cursos');
+    const docenteListaCursos = document.getElementById('doc-lista-cursos-multi');
+    
+    CURSOS_OFICIALES.forEach(c => {
+        selects.forEach(s => { if(document.getElementById(s)) document.getElementById(s).innerHTML += `<option value="${c}">${c}</option>`; });
+        muroLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200"><input type="checkbox" class="check-muro" value="${c}" onchange="toggleCursoPost(this)"> ${c}</label>`;
+        docenteListaCursos.innerHTML += `<label class="flex items-center gap-2 text-[9px] font-bold p-2 bg-white rounded-lg border border-slate-100"><input type="checkbox" class="check-doc-multi" value="${c}"> ${c}</label>`;
+    });
+
+    cargarGestionComunicados();
+    cargarGestionCalendario();
+    cargarGestionAlumnos();
+    cargarMateriasEnSelects();
+
+    // --- BLOQUE DE NOTIFICACIONES (DENTRO DEL ONLOAD) ---
+    const messaging = firebase.messaging();
+
+    messaging.requestPermission()
+        .then(() => {
+            console.log('Permiso de notificaciones concedido');
+            return messaging.getToken();
+        })
+        .then((token) => {
+            console.log('Token del dispositivo:', token);
+        })
+        .catch((err) => {
+            console.warn('Error o permiso denegado:', err);
+        });
+    // ---------------------------------------------------
+};
+        
 
         function verificarAcceso() {
             const m = document.getElementById('login-mail').value.trim().toLowerCase();
