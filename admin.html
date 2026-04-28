@@ -52,7 +52,6 @@
                 <div class="mb-4">
                     <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Vínculo de Imagen o Video</label>
                     <input type="url" id="post-link" class="input-pro" placeholder="https://... (JPG, PNG o YouTube)">
-                    <p class="text-[9px] text-slate-400 px-2 leading-tight">Pegá el link directo de una imagen o la URL de un video de YouTube.</p>
                 </div>
 
                 <div class="p-4 bg-blue-50 rounded-2xl mb-4 border border-blue-100">
@@ -72,7 +71,7 @@
         <section id="usuarios" class="tab-content space-y-6">  
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-rose-100">
                 <h3 class="font-bold mb-4 text-rose-600 flex items-center gap-2"><i class="fas fa-users"></i> Alta de Familia</h3>
-                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia">             
+                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia">               
                 <div class="bg-slate-50 p-4 rounded-2xl mb-4">
                     <input type="email" id="fam-mail-1" class="input-pro mb-2" placeholder="Email Principal">
                     <input type="email" id="fam-mail-2" class="input-pro mb-2" placeholder="Email Secundario">
@@ -91,7 +90,7 @@
                     </div>
                     <div id="lista-hijos-visual" class="flex flex-wrap gap-2"></div>
                 </div>
-                <button onclick="crearFamiliaCompleta()" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold shadow-lg">Guardar Familia</button>
+                <button id="btn-familia" onclick="crearFamiliaCompleta()" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold shadow-lg">Guardar Familia</button>
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-indigo-100">
@@ -102,7 +101,7 @@
                     <label class="text-[9px] font-black text-indigo-500 uppercase block mb-2 tracking-widest">Cursos a Cargo</label>
                     <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1"></div>
                 </div>
-                <button onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Alta Docente</button>
+                <button id="btn-docente" onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Alta Docente</button>
             </div>
         </section>
 
@@ -130,7 +129,7 @@
                 <select id="alum-curso" class="input-pro">
                     <option value="">Asignar Curso...</option>
                 </select>
-                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
+                <button id="btn-alumno" onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
             </div>
         </section>
 
@@ -142,7 +141,7 @@
                 <select id="event-tag" class="input-pro">
                     <option value="GENERAL">📅 Evento General</option>
                 </select>
-                <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Añadir y Notificar</button>
+                <button id="btn-evento" onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Añadir y Notificar</button>
             </div>
         </section>
     </main>
@@ -223,7 +222,7 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
-            if(event) event.currentTarget.classList.add('nav-active');
+            event.currentTarget.classList.add('nav-active');
             document.getElementById('tab-title').innerText = id.toUpperCase();
         }
 
@@ -236,11 +235,19 @@
             if(!tit || !msg) return alert("Faltan datos");
             btn.disabled = true; btn.innerText = "Publicando...";
 
-            await db.collection('comunicados').add({
-                titulo: tit, texto: msg, tag: document.getElementById('post-tag').value,
-                link: link, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), vistas: 0
-            });
-            location.reload();
+            try {
+                await db.collection('comunicados').add({
+                    titulo: tit, texto: msg, tag: document.getElementById('post-tag').value,
+                    link: link, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), vistas: 0
+                });
+                document.getElementById('post-tit').value = "";
+                document.getElementById('post-msg').value = "";
+                document.getElementById('post-link').value = "";
+                alert("✅ Publicado con éxito");
+                cargarGestionComunicados();
+                actualizarStats();
+            } catch(e) { alert("Error al publicar"); }
+            btn.disabled = false; btn.innerText = "Publicar y Notificar";
         }
 
         async function buscarAlumnosParaFamilia(curso) {
@@ -278,7 +285,15 @@
                 nombre: nom, rol: 'familia', emails: mails, hijos: listaHijosTemp,
                 fechaAlta: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("Familia guardada"); location.reload();
+
+            document.getElementById('fam-nom').value = "";
+            document.getElementById('fam-mail-1').value = "";
+            document.getElementById('fam-mail-2').value = "";
+            document.getElementById('fam-mail-3').value = "";
+            listaHijosTemp = [];
+            actualizarVistaHijos();
+            actualizarStats();
+            alert("👨‍👩‍👧‍👦 Familia guardada");
         }
 
         async function crearAlumno() {
@@ -286,7 +301,9 @@
             const c = document.getElementById('alum-curso').value;
             if(n && c) {
                 await db.collection('alumnos').add({ nombre: n, curso: c });
-                alert("Alumno creado"); actualizarStats();
+                document.getElementById('alum-nom').value = "";
+                alert("👶 Alumno creado"); 
+                actualizarStats();
             }
         }
 
@@ -295,7 +312,11 @@
             const m = document.getElementById('doc-mail').value.toLowerCase();
             if(n && m && cursosDocenteElegidos.length > 0) {
                 await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: cursosDocenteElegidos });
-                alert("Docente creado"); location.reload();
+                document.getElementById('doc-nom').value = "";
+                document.getElementById('doc-mail').value = "";
+                cursosDocenteElegidos = [];
+                document.querySelectorAll('#doc-lista-cursos input').forEach(cb => cb.checked = false);
+                alert("👩‍🏫 Docente creado");
             }
         }
 
@@ -309,7 +330,9 @@
             const f = document.getElementById('event-fecha').value;
             if(t && f) {
                 await db.collection('eventos').add({ titulo: t, fecha: f, tag: document.getElementById('event-tag').value });
-                alert("Evento creado"); location.reload();
+                document.getElementById('event-tit').value = "";
+                document.getElementById('event-fecha').value = "";
+                alert("📅 Evento agendado");
             }
         }
 
@@ -342,7 +365,11 @@
         }
 
         async function eliminarComunicado(id) {
-            if(confirm("¿Borrar?")) { await db.collection('comunicados').doc(id).delete(); cargarGestionComunicados(); }
+            if(confirm("¿Borrar?")) { 
+                await db.collection('comunicados').doc(id).delete(); 
+                cargarGestionComunicados(); 
+                actualizarStats();
+            }
         }
     </script>
 </body>
