@@ -306,27 +306,43 @@
 
         // --- ALUMNOS Y CARGA CSV ---
         async function importarCSV(input) {
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const lines = reader.result.split(/\r?\n/);
-                let count = 0;
-                for(let line of lines) {
-                    const columns = line.split(',');
-                    if(columns.length >= 2) {
-                        const nombre = columns[0].trim().toUpperCase();
-                        const curso = columns[1].trim().toUpperCase();
-                        if(nombre && curso && nombre !== "NOMBRE") {
-                            await db.collection('alumnos').add({ nombre, curso });
-                            count++;
-                        }
+    const reader = new FileReader();
+    reader.onload = async function() {
+        // Usamos ISO-8859-1 para evitar los símbolos raros de Excel/Windows
+        const content = reader.result;
+        const lines = content.split(/\r?\n/);
+        let count = 0;
+
+        for(let line of lines) {
+            // Ignorar líneas vacías
+            if (!line.trim()) continue;
+
+            const columns = line.split(',');
+            if(columns.length >= 2) {
+                const nombre = columns[0].trim().toUpperCase();
+                const curso = columns[1].trim().toUpperCase();
+                
+                // Evitamos cargar el encabezado si existe
+                if(nombre && curso && nombre !== "NOMBRE") {
+                    try {
+                        await db.collection('alumnos').add({ 
+                            nombre: nombre, 
+                            curso: curso 
+                        });
+                        count++;
+                    } catch (e) {
+                        console.error("Error al cargar fila:", e);
                     }
                 }
-                alert(`✅ Se cargaron ${count} alumnos.`);
-                location.reload();
-            };
-            reader.readAsText(input.files[0]);
+            }
         }
+        alert(`✅ Se cargaron ${count} alumnos correctamente.`);
+        location.reload();
+    };
 
+    // AQUÍ ESTÁ EL TRUCO: Forzamos la lectura en el formato de Windows/Excel
+    reader.readAsText(input.files[0], 'ISO-8859-1'); 
+}
         async function cargarGestionAlumnos() {
             const snap = await db.collection('alumnos').orderBy('nombre','asc').get();
             const cont = document.getElementById('lista-gestion-alumnos');
