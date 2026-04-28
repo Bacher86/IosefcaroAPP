@@ -226,27 +226,36 @@
             actualizarStats();
         };
 
-        async function verificarAcceso() {
-            const mail = document.getElementById('login-mail').value.trim().toLowerCase();
-            const pass = document.getElementById('login-pass').value.trim();
-            const errorMsg = document.getElementById('login-error');
+       async function verificarAcceso() {
+    const mailInput = document.getElementById('login-mail').value.trim().toLowerCase();
+    const passInput = document.getElementById('login-pass').value.trim();
+    const errorMsg = document.getElementById('login-error');
 
-            if(mail === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-                document.getElementById('login-overlay').style.display = 'none';
-                return;
-            }
+    // ESTO ES PARA DEBUGEAR: Te dirá qué estás escribiendo realmente
+    console.log("Mail ingresado:", mailInput);
+    console.log("Pass ingresado:", passInput);
 
-            try {
-                const adminSnap = await db.collection('administradores').doc(mail).get();
-                if(adminSnap.exists && adminSnap.data().pass === pass) {
-                    document.getElementById('login-overlay').style.display = 'none';
-                } else {
-                    errorMsg.classList.remove('hidden');
-                }
-            } catch (e) {
-                errorMsg.classList.remove('hidden');
-            }
+    // 1. Acceso Maestro (Uriel) - Forzamos la comparación limpia
+    if (mailInput === "uriel.bacher@gmail.com" && passInput === "Gallardo10") {
+        document.getElementById('login-overlay').style.display = 'none';
+        return;
+    }
+
+    // 2. Verificar otros Admins en Firebase
+    try {
+        const adminSnap = await db.collection('administradores').doc(mailInput).get();
+        if (adminSnap.exists && adminSnap.data().pass === passInput) {
+            document.getElementById('login-overlay').style.display = 'none';
+        } else {
+            errorMsg.classList.remove('hidden');
+            // Alerta temporal para saber por qué rebota
+            alert("Credenciales incorrectas para: " + mailInput);
         }
+    } catch (e) {
+        console.error("Error en Firebase:", e);
+        errorMsg.classList.remove('hidden');
+    }
+}
 
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
