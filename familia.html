@@ -338,16 +338,75 @@
         function cambiarHijo(id) { alumnoSeleccionadoId = id; inicializarApp(); }
         function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
 
-        function enviarIosi() {
-            const inp = document.getElementById('iosi-input'); const chat = document.getElementById('iosi-chat'); const val = inp.value.toLowerCase();
+                function enviarIosi() {
+            const inp = document.getElementById('iosi-input'); 
+            const chat = document.getElementById('iosi-chat'); 
+            const val = inp.value.toLowerCase().trim();
             if(!val) return;
-            chat.innerHTML += `<div class="bubble-user">${val}</div>`;
-            let res = "Estoy analizando tu consulta...";
-            if(val.includes("nota") || val.includes("promedio")) res = `El promedio más alto actualmente es en ${brain.notas[0]?.materia || 'alguna materia'} y el rendimiento general es estable.`;
-            if(val.includes("falta") || val.includes("asistencia")) res = `Tu hijo tiene ${document.getElementById('count-faltas').innerText} faltas registradas hasta el momento.`;
-            setTimeout(() => { chat.innerHTML += `<div class="bubble-iosi">${res}</div>`; chat.scrollTop = chat.scrollHeight; }, 1000);
+
+            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
+            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+            const primerNombre = hijo.nombre.split(' ')[0];
+            
+            setTimeout(() => {
+                let r = `Hola. He analizado el perfil de ${primerNombre}. Puedo darte detalles sobre su rendimiento académico, su legajo de convivencia o las próximas fechas del calendario. ¿Qué necesitás saber específicamente?`;
+                
+                // LÓGICA DE ASISTENCIA
+                if(val.includes("falta") || val.includes("inasistencia") || val.includes("asistencia")) {
+                    const totalFaltas = brain.faltas.length;
+                    if(totalFaltas === 0) {
+                        r = `¡Excelentes noticias! **${primerNombre}** tiene asistencia perfecta hasta la fecha. No registra ninguna inasistencia en el sistema.`;
+                    } else {
+                        r = `**${primerNombre}** registra un total de **${totalFaltas} faltas**. Las fechas registradas son: ${brain.faltas.join(", ")}. Recordá que la regularidad es clave para el proceso pedagógico.`;
+                    }
+                } 
+                
+                // LÓGICA ACADÉMICA (DETECCIÓN DE ALERTAS Y PROMEDIOS)
+                else if(val.includes("nota") || val.includes("materia") || val.includes("como va") || val.includes("rendimiento")) {
+                    const conNotas = brain.notas.filter(n => n.n1 || n.n2 || n.n3 || n.rite);
+                    if(conNotas.length === 0) {
+                        r = `Aún no se han cargado calificaciones para este período en ninguna materia. Te sugiero estar atento a las próximas actualizaciones.`;
+                    } else {
+                        // Buscar la materia con nota más baja (Alerta)
+                        const alertas = brain.notas.filter(n => n.n1 && parseFloat(n.n1) < 6);
+                        let alertaTexto = alertas.length > 0 ? ` He detectado que en **${alertas[0].materia}** necesitaría un refuerzo (nota: ${alertas[0].n1}).` : " No detecto ninguna materia en riesgo actualmente.";
+                        
+                        r = `He analizado las **${conNotas.length} materias** con calificaciones. Su rendimiento general es estable.${alertaTexto} ¿Querés que te detalle alguna materia en particular?`;
+                    }
+                } 
+
+                // LÓGICA DE CONVIVENCIA (HITOS)
+                else if(val.includes("comportamiento") || val.includes("convivencia") || val.includes("hitos") || val.includes("vida")) {
+                    // Nota: Esta parte asume que ya sincronizaste la colección 'convivencia' en tu objeto brain
+                    r = `Estoy monitoreando el legajo de convivencia. Para ver el detalle completo de logros y observaciones, te sugiero visitar la nueva pestaña **"VIDA"** en el menú inferior.`;
+                }
+
+                // LÓGICA DE COMUNICADOS
+                else if(val.includes("noticia") || val.includes("muro") || val.includes("comunicado") || val.includes("dijo el cole")) {
+                    if(brain.noticias.length > 0) {
+                        const ultima = brain.noticias[0];
+                        r = `Lo más importante ahora es el comunicado: **"${ultima.titulo}"**. Dice: "${ultima.texto.substring(0, 80)}...". ¿Querés que te lo muestre completo?`;
+                    } else {
+                        r = "No hay comunicados recientes en el muro de noticias.";
+                    }
+                } 
+
+                // LÓGICA DE EVENTOS
+                else if(val.includes("evento") || val.includes("calendario") || val.includes("feriado") || val.includes("cuando hay")) {
+                    if(brain.agenda.length > 0) {
+                        const proximo = brain.agenda[0];
+                        r = `El próximo evento importante es **"${proximo.titulo}"** programado para el día **${proximo.fecha}**. ¡Agendalo!`;
+                    } else {
+                        r = "No hay eventos programados en el calendario institucional por el momento.";
+                    }
+                }
+
+                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            }, 750);
             inp.value = "";
         }
+
 
         async function generarBoletinPDF() {
             const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
