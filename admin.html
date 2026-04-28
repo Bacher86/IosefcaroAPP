@@ -20,6 +20,8 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        /* Estilos Ask Iosi */
+        #ask-iosi-results { max-height: 300px; overflow-y: auto; display: none; }
     </style>
 </head>
 <body class="pb-24">
@@ -36,10 +38,18 @@
         </div>
     </div>
 
-    <header class="bg-white p-6 border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
-        <div>
-            <h1 class="font-extrabold text-xl tracking-tighter text-slate-900">Iosef Caro Admin</h1>
-            <p id="tab-title" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Comunicación</p>
+    <header class="bg-white p-6 border-b sticky top-0 z-50 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="font-extrabold text-xl tracking-tighter text-slate-900">Iosef Caro Admin</h1>
+                <p id="tab-title" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Comunicación</p>
+            </div>
+            <div class="text-blue-600"><i class="fas fa-robot fa-lg"></i></div>
+        </div>
+        <div class="relative">
+            <input type="text" id="ask-iosi-input" onkeyup="askIosi(this.value)" class="w-full bg-slate-100 border-none rounded-2xl py-3 px-10 text-sm outline-none focus:ring-2 ring-blue-400 transition-all" placeholder="Preguntale a Iosi (ej: Familia de Juan...)">
+            <i class="fas fa-search absolute left-4 top-4 text-slate-400 text-xs"></i>
+            <div id="ask-iosi-results" class="absolute top-full left-0 right-0 bg-white border mt-2 rounded-2xl shadow-xl z-50 p-2 space-y-1"></div>
         </div>
     </header>
 
@@ -114,16 +124,20 @@
                 <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
                 
                 <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 mb-4">
-                    <p class="text-[10px] font-black text-indigo-400 uppercase mb-2 ml-2">Asignar Materia y Curso:</p>
-                    <div class="flex gap-2 mb-3">
-                        <select id="doc-select-materia" class="input-pro mb-0">
-                            <option value="">Materia...</option>
-                        </select>
-                        <select id="doc-select-curso" class="input-pro mb-0">
-                            <option value="">Curso...</option>
-                        </select>
-                        <button onclick="agregarAsignacionDocente()" class="bg-indigo-500 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
+                    <p class="text-[10px] font-black text-indigo-400 uppercase mb-2 ml-2">Asignar Materia y Cursos:</p>
+                    <select id="doc-select-materia" class="input-pro mb-3">
+                        <option value="">Seleccionar Materia...</option>
+                    </select>
+                    
+                    <div class="bg-white rounded-xl p-3 border mb-3">
+                         <p class="text-[9px] font-bold text-slate-400 mb-2">Tildar cursos para asignar:</p>
+                         <div id="doc-lista-cursos-multi" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto custom-scroll p-1"></div>
                     </div>
+
+                    <button onclick="agregarAsignacionDocente()" class="w-full bg-indigo-500 text-white p-3 rounded-xl font-bold text-sm mb-4">
+                        <i class="fas fa-plus mr-2"></i>Vincular Cursos Seleccionados
+                    </button>
+                    
                     <div id="lista-asignaciones-docente" class="flex flex-wrap gap-2"></div>
                 </div>
                 <button onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Guardar Docente</button>
@@ -234,11 +248,15 @@
         let asignacionesDocenteTemp = [];
 
         window.onload = () => {
-            const selects = ['fam-select-curso', 'alum-curso', 'event-tag', 'doc-select-curso'];
+            const selects = ['fam-select-curso', 'alum-curso', 'event-tag'];
             const muroLista = document.getElementById('post-lista-cursos');
+            const docenteListaCursos = document.getElementById('doc-lista-cursos-multi');
+            
             CURSOS_OFICIALES.forEach(c => {
                 selects.forEach(s => { if(document.getElementById(s)) document.getElementById(s).innerHTML += `<option value="${c}">${c}</option>`; });
                 muroLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200"><input type="checkbox" class="check-muro" value="${c}" onchange="toggleCursoPost(this)"> ${c}</label>`;
+                // Checkbox para docente
+                docenteListaCursos.innerHTML += `<label class="flex items-center gap-2 text-[9px] font-bold p-2 bg-white rounded-lg border border-slate-100"><input type="checkbox" class="check-doc-multi" value="${c}"> ${c}</label>`;
             });
             cargarGestionComunicados();
             cargarGestionCalendario();
@@ -262,6 +280,33 @@
             if(id === 'stats') actualizarStats();
         }
 
+        // --- ASK IOSI ---
+        async function askIosi(val) {
+            const res = document.getElementById('ask-iosi-results');
+            if(val.length < 2) { res.style.display = 'none'; return; }
+            res.style.display = 'block';
+            res.innerHTML = '<p class="text-[10px] p-2 animate-pulse">Pensando...</p>';
+            
+            const search = val.toUpperCase();
+            let html = "";
+
+            // Buscar en Alumnos
+            const snapAl = await db.collection('alumnos').get();
+            snapAl.forEach(doc => {
+                if(doc.data().nombre.includes(search)) html += `<div class="p-2 hover:bg-slate-50 text-xs rounded-xl flex justify-between"><span>🎓 ${doc.data().nombre}</span><span class="opacity-50">${doc.data().curso}</span></div>`;
+            });
+
+            // Buscar en Familias (usuarios rol familia)
+            const snapFa = await db.collection('usuarios').where('rol','==','familia').get();
+            snapFa.forEach(doc => {
+                if(doc.data().nombre.toUpperCase().includes(search) || doc.id.toUpperCase().includes(search)) {
+                    html += `<div class="p-2 hover:bg-slate-50 text-xs rounded-xl flex flex-col"><span class="font-bold">👨‍👩‍👦 Familia ${doc.data().nombre}</span><span class="text-[10px] opacity-60">${doc.id}</span></div>`;
+                }
+            });
+
+            res.innerHTML = html || '<p class="text-[10px] p-2">No encontré nada con ese nombre...</p>';
+        }
+
         // --- MATERIAS ---
         async function crearMateria() {
             const nombre = document.getElementById('mat-nom').value.trim().toUpperCase();
@@ -277,7 +322,7 @@
         async function cargarMateriasEnSelects() {
             const selectMat = document.getElementById('doc-select-materia');
             const snap = await db.collection('materias').orderBy('nombre').get();
-            selectMat.innerHTML = '<option value="">Materia...</option>';
+            selectMat.innerHTML = '<option value="">Seleccionar Materia...</option>';
             snap.forEach(doc => {
                 selectMat.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`;
             });
@@ -326,6 +371,16 @@
                     </div>
                 </div>`;
             });
+        }
+
+        function resetFormPost() {
+            document.getElementById('post-id').value = "";
+            document.getElementById('post-tit').value = "";
+            document.getElementById('post-msg').value = "";
+            document.getElementById('post-link').value = "";
+            document.getElementById('post-form-title').innerText = "Nuevo Posteo";
+            document.getElementById('btn-cancel-post').classList.add('hidden');
+            marcarTodosPost(false);
         }
 
         async function editarPost(id) {
@@ -442,21 +497,32 @@
             });
         }
 
-        // --- DOCENTES Y ASIGNACIONES ---
+        // --- DOCENTES Y ASIGNACIONES MULTICURSO ---
         function agregarAsignacionDocente() {
             const mat = document.getElementById('doc-select-materia').value;
-            const cur = document.getElementById('doc-select-curso').value;
-            if (mat && cur) {
+            const checks = document.querySelectorAll('.check-doc-multi:checked');
+            
+            if (!mat || checks.length === 0) return alert("Seleccioná materia y al menos un curso");
+            
+            checks.forEach(cb => {
+                const cur = cb.value;
                 const existe = asignacionesDocenteTemp.some(a => a.materia === mat && a.curso === cur);
-                if (existe) return alert("Ya agregada");
-                asignacionesDocenteTemp.push({ materia: mat, curso: cur });
-                const cont = document.getElementById('lista-asignaciones-docente');
-                cont.innerHTML += `
-                    <div class="bg-white border border-indigo-200 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2">
-                        ${mat} - ${cur}
-                        <i class="fas fa-times text-rose-500 cursor-pointer" onclick="this.parentElement.remove()"></i>
-                    </div>`;
-            }
+                if (!existe) {
+                    asignacionesDocenteTemp.push({ materia: mat, curso: cur });
+                    const cont = document.getElementById('lista-asignaciones-docente');
+                    cont.innerHTML += `
+                        <div class="bg-white border border-indigo-200 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2">
+                            ${mat} - ${cur}
+                            <i class="fas fa-times text-rose-500 cursor-pointer" onclick="removerAsignacion(this, '${mat}', '${cur}')"></i>
+                        </div>`;
+                }
+                cb.checked = false; // Limpiar check
+            });
+        }
+
+        function removerAsignacion(el, mat, cur) {
+            asignacionesDocenteTemp = asignacionesDocenteTemp.filter(a => !(a.materia === mat && a.curso === cur));
+            el.parentElement.remove();
         }
 
         async function crearDocente() {
@@ -524,22 +590,43 @@
 
         async function cargarGestionCalendario() {
             const cont = document.getElementById('lista-gestion-eventos');
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').limit(20).get();
+            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border text-xs">
-                    <div><b>${d.fecha}</b> - ${d.titulo}</div>
-                    <button onclick="eliminarDoc('eventos','${doc.id}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border border-orange-100">
+                    <div class="text-xs"><b>${d.titulo}</b><br><span class="opacity-50 text-[10px]">${d.fecha} - ${d.tag}</span></div>
+                    <div class="flex gap-4">
+                        <button onclick="editarEvento('${doc.id}')" class="text-orange-500"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarDoc('eventos','${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button>
+                    </div>
                 </div>`;
             });
         }
 
-        async function eliminarDoc(col, id) {
-            if(confirm("¿Eliminar?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+        function resetFormCalendario() {
+            document.getElementById('event-id').value = "";
+            document.getElementById('event-tit').value = "";
+            document.getElementById('event-fecha').value = "";
+            document.getElementById('calendar-form-title').innerText = "Agendar Evento";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
         }
 
-        function resetFormPost() { location.reload(); }
+        async function editarEvento(id) {
+            const doc = await db.collection('eventos').doc(id).get();
+            const d = doc.data();
+            document.getElementById('event-id').value = id;
+            document.getElementById('event-tit').value = d.titulo;
+            document.getElementById('event-fecha').value = d.fecha;
+            document.getElementById('event-tag').value = d.tag;
+            document.getElementById('calendar-form-title').innerText = "Editando Evento";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        }
+
+        // --- GENERAL ---
+        async function eliminarDoc(col, id) {
+            if(confirm("¿Estás seguro?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+        }
     </script>
 </body>
 </html>
