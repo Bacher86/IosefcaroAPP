@@ -161,7 +161,7 @@
                         select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
                     });
                 }
-                if(listaHijos.length > 0) { alumnoSeleccionadoId = listaHijos[0].id; cargarMuro(); }
+                if(listaHijos.length > 0) { alumnoSeleccionadoId = listaHijos[0].id; (); }
             } else { alert("Acceso denegado."); }
         }
 
@@ -193,43 +193,58 @@
             if(tab === 'academico') cargarAcademico();
         }
 
-        async function cargarMuro() {
+       async function cargarMuro() {
             const container = document.getElementById('tab-muro');
-            const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
-            container.innerHTML = "";
+            // Agregamos un indicador de carga por si internet está lento
+            container.innerHTML = `<div class="text-center py-10 text-slate-400 font-bold text-xs animate-pulse">CARGANDO MURO...</div>`;
             
-            snap.forEach(doc => {
-                const p = doc.data(); 
-                const id = doc.id; 
-                const isRead = localStorage.getItem('read_'+id);
-
-                // Lógica para la imagen: si existe el campo 'link', generamos el HTML
-                let imagenHtml = "";
-                if (p.link && p.link.trim() !== "") {
-                    imagenHtml = `
-                        <img src="${p.link}" 
-                             class="w-full h-52 object-cover rounded-2xl mb-4 shadow-sm" 
-                             alt="Imagen del comunicado"
-                             onerror="this.style.display='none'">
-                    `;
+            try {
+                const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
+                container.innerHTML = "";
+                
+                if (snap.empty) {
+                    container.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold text-xs">NO HAY COMUNICADOS</div>`;
+                    return;
                 }
 
-                container.innerHTML += `
-                    <div class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead ? 'read-post' : ''}">
-                        <div class="flex justify-between mb-4">
-                            <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag}</span>
-                            <button onclick="marcarLeido('${id}')" class="text-[9px] font-bold uppercase text-slate-400">
-                                ${isRead ? '✓ Leído' : 'Confirmar'}
-                            </button>
-                        </div>
-                        
-                        ${imagenHtml} 
+                snap.forEach(doc => {
+                    const p = doc.data(); 
+                    const id = doc.id; 
+                    const isRead = localStorage.getItem('read_'+id);
 
-                        <h2 class="text-xl font-black">${p.titulo}</h2>
-                        <p class="text-slate-500 text-sm mt-2 leading-relaxed">${p.texto}</p>
-                    </div>
-                `;
-            });
+                    // Lógica mejorada para la imagen
+                    let imagenHtml = "";
+                    if (p.link && p.link.trim() !== "") {
+                        imagenHtml = `
+                            <div class="relative w-full mb-4 overflow-hidden rounded-2xl shadow-sm bg-slate-100">
+                                <img src="${p.link}" 
+                                     class="w-full h-auto max-h-[400px] object-contain block mx-auto" 
+                                     alt="Comunicado"
+                                     onerror="this.parentElement.style.display='none'">
+                            </div>
+                        `;
+                    }
+
+                    container.innerHTML += `
+                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead ? 'read-post' : ''}">
+                            <div class="flex justify-between mb-4">
+                                <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'GENERAL'}</span>
+                                <button onclick="marcarLeido('${id}'); registrarVista('${id}')" class="text-[9px] font-bold uppercase text-slate-400">
+                                    ${isRead ? '✓ Leído' : 'Confirmar'}
+                                </button>
+                            </div>
+                            
+                            ${imagenHtml} 
+
+                            <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
+                            <p class="text-slate-500 text-sm mt-2 leading-relaxed">${p.texto}</p>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error al cargar muro:", error);
+                container.innerHTML = `<div class="text-center py-10 text-red-400 font-bold text-xs">ERROR AL CARGAR DATOS</div>`;
+            }
         }
 
         async function cargarAcademico() {
