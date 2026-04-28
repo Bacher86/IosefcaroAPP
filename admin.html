@@ -239,26 +239,30 @@
         }
 
         async function enviarComunicado() {
-            const tit = document.getElementById('post-tit').value;
-            const msg = document.getElementById('post-msg').value;
-            const link = document.getElementById('post-link').value;
-            const prog = document.getElementById('post-fecha-prog').value;
-            
-            if(!tit || !msg) return alert("Completa título y mensaje");
-            if(cursosPostElegidos.length === 0) return alert("Selecciona al menos un destinatario");
+    const tit = document.getElementById('post-tit').value;
+    const msg = document.getElementById('post-msg').value;
+    const link = document.getElementById('post-link').value;
+    const prog = document.getElementById('post-fecha-prog').value; // Captura la fecha del input
+    
+    if(!tit || !msg) return alert("Completa título y mensaje");
+    if(cursosPostElegidos.length === 0) return alert("Selecciona al menos un destinatario");
 
-            await db.collection('comunicados').add({
-                titulo: tit, 
-                texto: msg, 
-                link: link,
-                tag: cursosPostElegidos, // Ahora se guarda como Array [curso1, curso2...]
-                vistas: 0, 
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-                fechaPublicacion: prog || new Date().toISOString().split('T')[0]
-            });
-            alert("✅ Publicación registrada para " + cursosPostElegidos.length + " cursos.");
-            location.reload();
-        }
+    // Si no eligen fecha, usamos la de hoy por defecto
+    const fechaFinal = prog || new Date().toISOString().split('T')[0];
+
+    await db.collection('comunicados').add({
+        titulo: tit, 
+        texto: msg, 
+        link: link,
+        tag: cursosPostElegidos, 
+        vistas: 0, 
+        creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaPublicacion: fechaFinal // Se guarda la fecha elegida
+    });
+    
+    alert("✅ Publicación registrada para el día: " + fechaFinal);
+    location.reload();
+}
 
         async function cargarGestionComunicados() {
             const cont = document.getElementById('lista-gestion-comunicados');
