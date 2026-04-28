@@ -100,9 +100,39 @@
                 <button onclick="crearFamiliaCompleta()" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold">Guardar Familia</button>
             </div>
 
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-indigo-100">
+                <h3 class="font-bold mb-4 text-indigo-600 flex items-center gap-2"><i class="fas fa-chalkboard-teacher"></i> Alta de Docente</h3>
+                <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre del Docente">
+                <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
+                <div class="mb-4">
+                    <p class="text-[10px] font-black text-indigo-400 uppercase mb-2 ml-2">Cursos asignados:</p>
+                    <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-indigo-50 rounded-2xl border border-dashed custom-scroll"></div>
+                </div>
+                <button onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Guardar Docente</button>
+            </div>
+
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <input type="text" onkeyup="filtrarFamilias(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar familia por email...">
+                <input type="text" onkeyup="filtrarFamilias(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar por email...">
                 <div id="lista-familias-search" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <section id="alumnos" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-emerald-600"><i class="fas fa-user-graduate"></i> Nuevo Alumno</h3>
+                    <label class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-3 py-1 rounded-full cursor-pointer">
+                        <i class="fas fa-file-csv"></i> CARGA CSV
+                        <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="importarCSV(this)">
+                    </label>
+                </div>
+                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo">
+                <select id="alum-curso" class="input-pro"></select>
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
+            </div>
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <input type="text" id="search-alum" onkeyup="filtrarAlumnos(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar alumno...">
+                <div id="lista-gestion-alumnos" class="space-y-2 max-h-80 overflow-y-auto custom-scroll"></div>
             </div>
         </section>
 
@@ -117,29 +147,7 @@
                     <span id="stat-familias" class="text-3xl font-black text-rose-600">...</span>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Alcance de Comunicados</h3>
-                <div id="lista-vistas-comunicados" class="space-y-3"></div>
-            </div>
-        </section>
-
-        <section id="alumnos" class="tab-content space-y-4">
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-emerald-600"><i class="fas fa-user-graduate"></i> Nuevo Alumno</h3>
-                    <label class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-3 py-1 rounded-full cursor-pointer">
-                        <i class="fas fa-file-csv"></i> CARGA EXCEL/CSV
-                        <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="importarCSV(this)">
-                    </label>
-                </div>
-                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo">
-                <select id="alum-curso" class="input-pro"></select>
-                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
-            </div>
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <input type="text" id="search-alum" onkeyup="filtrarAlumnos(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar alumno...">
-                <div id="lista-gestion-alumnos" class="space-y-2 max-h-80 overflow-y-auto custom-scroll"></div>
-            </div>
+            <div id="lista-vistas-comunicados" class="space-y-3"></div>
         </section>
 
         <section id="calendario" class="tab-content space-y-4">
@@ -185,13 +193,16 @@
 
         let listaHijosTemp = [];
         let cursosPostElegidos = [];
+        let cursosDocenteElegidos = [];
 
         window.onload = () => {
             const selects = ['fam-select-curso', 'alum-curso', 'event-tag'];
             const muroLista = document.getElementById('post-lista-cursos');
+            const docLista = document.getElementById('doc-lista-cursos');
             CURSOS_OFICIALES.forEach(c => {
                 selects.forEach(s => { if(document.getElementById(s)) document.getElementById(s).innerHTML += `<option value="${c}">${c}</option>`; });
                 muroLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-slate-200"><input type="checkbox" class="check-muro" value="${c}" onchange="toggleCursoPost(this)"> ${c}</label>`;
+                docLista.innerHTML += `<label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-indigo-200"><input type="checkbox" class="check-doc" value="${c}" onchange="toggleCursoDoc(this)"> ${c}</label>`;
             });
             cargarGestionComunicados();
             cargarGestionCalendario();
@@ -199,7 +210,7 @@
             actualizarStats();
         };
 
-        // --- AUTH ---
+        // AUTH
         async function verificarAcceso() {
             const m = document.getElementById('login-mail').value.trim().toLowerCase();
             const p = document.getElementById('login-pass').value.trim();
@@ -216,7 +227,7 @@
             if(id === 'stats') actualizarStats();
         }
 
-        // --- 1. COMUNICADOS (CON EDICIÓN) ---
+        // COMUNICADOS
         function toggleCursoPost(cb) {
             if(cb.checked) cursosPostElegidos.push(cb.value);
             else cursosPostElegidos = cursosPostElegidos.filter(c => c !== cb.value);
@@ -277,14 +288,29 @@
 
         function resetFormPost() { location.reload(); }
 
-        // --- 2. BUSCADORES (ALUMNOS Y FAMILIAS) ---
+        // DOCENTES
+        function toggleCursoDoc(cb) {
+            if(cb.checked) cursosDocenteElegidos.push(cb.value);
+            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
+        }
+
+        async function crearDocente() {
+            const n = document.getElementById('doc-nom').value;
+            const m = document.getElementById('doc-mail').value.toLowerCase().trim();
+            if(!n || !m || cursosDocenteElegidos.length === 0) return alert("Faltan datos");
+            await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: cursosDocenteElegidos });
+            alert("✅ Docente creado"); location.reload();
+        }
+
+        // ALUMNOS Y CSV
         async function cargarGestionAlumnos() {
             const snap = await db.collection('alumnos').orderBy('nombre','asc').get();
             const cont = document.getElementById('lista-gestion-alumnos');
             cont.innerHTML = "";
             snap.forEach(doc => {
-                cont.innerHTML += `<div class="alum-item flex justify-between text-xs p-2 border-b" data-nombre="${doc.data().nombre}">
-                    <span>${doc.data().nombre}</span><span class="text-slate-400">${doc.data().curso}</span>
+                cont.innerHTML += `<div class="alum-item flex justify-between items-center text-xs p-3 border-b bg-white" data-nombre="${doc.data().nombre}">
+                    <span><b>${doc.data().nombre}</b> <small class="ml-2 opacity-50">${doc.data().curso}</small></span>
+                    <button onclick="eliminarDoc('alumnos','${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
         }
@@ -295,62 +321,48 @@
             items.forEach(it => { it.style.display = it.getAttribute('data-nombre').includes(search) ? 'flex' : 'none'; });
         }
 
-        async function filtrarFamilias(val) {
-            const cont = document.getElementById('lista-familias-search');
-            if(val.length < 3) return cont.innerHTML = "";
-            const snap = await db.collection('usuarios').where('rol','==','familia').get();
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                if(doc.id.includes(val.toLowerCase())) {
-                    cont.innerHTML += `<div class="bg-white p-3 rounded-xl border text-xs flex justify-between">
-                        <span>${doc.data().nombre}</span><span class="opacity-40">${doc.id}</span>
-                    </div>`;
-                }
-            });
-        }
-
-        // --- 3. CONFIRMACIÓN DE LECTURA (STATS) ---
-        async function actualizarStats() {
-            const al = await db.collection('alumnos').get();
-            const fa = await db.collection('usuarios').where('rol','==','familia').get();
-            document.getElementById('stat-alumnos').innerText = al.size;
-            document.getElementById('stat-familias').innerText = fa.size;
-
-            const vCont = document.getElementById('lista-vistas-comunicados');
-            const snapV = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(5).get();
-            vCont.innerHTML = "";
-            snapV.forEach(doc => {
-                const d = doc.data();
-                vCont.innerHTML += `<div class="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-dashed">
-                    <span class="text-xs font-bold text-slate-700">${d.titulo}</span>
-                    <div class="badge-pro"><i class="fas fa-eye"></i> ${d.vistas || 0}</div>
-                </div>`;
-            });
-        }
-
-        // --- 4. CARGA MASIVA (EXCEL/CSV) ---
-        function importarCSV(input) {
+        async function importarCSV(input) {
             const reader = new FileReader();
             reader.onload = async function() {
-                const lines = reader.result.split('\n');
+                const content = reader.result.replace(/\r/g, ""); // Quitar retornos de carro
+                const lines = content.split('\n');
                 let count = 0;
                 for(let line of lines) {
-                    const [nombre, curso] = line.split(',');
-                    if(nombre && curso) {
-                        await db.collection('alumnos').add({ nombre: nombre.trim().toUpperCase(), curso: curso.trim().toUpperCase() });
-                        count++;
+                    const columns = line.split(',');
+                    if(columns.length >= 2) {
+                        const nombre = columns[0].trim().toUpperCase();
+                        const curso = columns[1].trim().toUpperCase();
+                        if(nombre && curso && !nombre.includes("NOMBRE")) { // Saltar encabezado
+                            await db.collection('alumnos').add({ nombre, curso });
+                            count++;
+                        }
                     }
                 }
-                alert(`✅ Cargados ${count} alumnos.`); location.reload();
+                alert(`✅ Cargados ${count} alumnos correctamente.`); location.reload();
             };
             reader.readAsText(input.files[0]);
         }
 
-        // --- AGENDA, HIJOS Y DEMÁS (SIN CAMBIOS) ---
         async function crearAlumno() {
             const n = document.getElementById('alum-nom').value.toUpperCase();
             const c = document.getElementById('alum-curso').value;
             if(n && c) { await db.collection('alumnos').add({ nombre: n, curso: c }); location.reload(); }
+        }
+
+        // FAMILIAS
+        async function filtrarFamilias(val) {
+            const cont = document.getElementById('lista-familias-search');
+            if(val.length < 3) return cont.innerHTML = "";
+            const snap = await db.collection('usuarios').get();
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                if(doc.id.toLowerCase().includes(val.toLowerCase())) {
+                    cont.innerHTML += `<div class="bg-white p-3 rounded-xl border text-xs flex justify-between items-center">
+                        <div><b>${doc.data().nombre}</b> <span class="opacity-40 ml-2">(${doc.id})</span></div>
+                        <button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                }
+            });
         }
 
         async function buscarAlumnosParaFamilia(curso) {
@@ -375,6 +387,14 @@
             if(!m || listaHijosTemp.length === 0) return alert("Email e hijos requeridos");
             await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'familia', emails: [m], hijos: listaHijosTemp });
             alert("✅ Familia guardada"); location.reload();
+        }
+
+        // AGENDA Y STATS
+        async function actualizarStats() {
+            const al = await db.collection('alumnos').get();
+            const fa = await db.collection('usuarios').where('rol','==','familia').get();
+            document.getElementById('stat-alumnos').innerText = al.size;
+            document.getElementById('stat-familias').innerText = fa.size;
         }
 
         async function crearEvento() {
@@ -411,7 +431,7 @@
             window.scrollTo(0,0);
         }
 
-        async function eliminarDoc(col, id) { if(confirm("¿Eliminar?")) { await db.collection(col).doc(id).delete(); location.reload(); } }
+        async function eliminarDoc(col, id) { if(confirm("¿Estás seguro de eliminar este registro?")) { await db.collection(col).doc(id).delete(); location.reload(); } }
     </script>
 </body>
 </html>
