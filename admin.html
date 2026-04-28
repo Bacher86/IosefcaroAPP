@@ -48,22 +48,24 @@
                 <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-bullhorn text-blue-500"></i> Nuevo Posteo</h3>
                 <input type="text" id="post-tit" class="input-pro" placeholder="Título del comunicado">
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
-                
-                <div class="mb-4">
-                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Vínculo de Imagen o Video</label>
-                    <input type="url" id="post-link" class="input-pro" placeholder="https://... (JPG, PNG o YouTube)">
+                <input type="url" id="post-link" class="input-pro" placeholder="https://... (JPG, PNG o YouTube)">
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Programar Fecha</label>
+                        <input type="date" id="post-fecha-prog" class="input-pro mb-0">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Destinatarios</label>
+                        <select id="post-tag" class="input-pro mb-0"><option value="TODOS">📢 TODOS</option></select>
+                    </div>
                 </div>
 
-                <div class="p-4 bg-blue-50 rounded-2xl mb-4 border border-blue-100">
-                    <label class="text-[10px] font-black text-blue-500 uppercase block mb-2 tracking-widest">Destinatarios</label>
-                    <select id="post-tag" class="input-pro mb-0">
-                        <option value="TODOS">📢 ENVIAR A TODOS</option>
-                    </select>
-                </div>
-                <button id="btn-publicar" onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar y Notificar</button>
+                <button id="btn-publicar" onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar / Programar</button>
             </div>
+
             <div class="mt-10">
-                <h4 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Gestionar Publicaciones</h4>
+                <h4 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Gestionar Publicaciones</h4>
                 <div id="lista-gestion-comunicados" class="space-y-3"></div>
             </div>
         </section>
@@ -72,36 +74,26 @@
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-rose-100">
                 <h3 class="font-bold mb-4 text-rose-600 flex items-center gap-2"><i class="fas fa-users"></i> Alta de Familia</h3>
                 <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia">               
-                <div class="bg-slate-50 p-4 rounded-2xl mb-4">
-                    <input type="email" id="fam-mail-1" class="input-pro mb-2" placeholder="Email Principal">
-                    <input type="email" id="fam-mail-2" class="input-pro mb-2" placeholder="Email Secundario">
-                    <input type="email" id="fam-mail-3" class="input-pro mb-0" placeholder="Email Tutor/Otro">
-                </div>
-                <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100 mb-4">
-                    <label class="text-[9px] font-black text-rose-500 uppercase block mb-3 tracking-widest">Vincular Hijos</label>
+                <input type="email" id="fam-mail-1" class="input-pro" placeholder="Email Principal">
+                
+                <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100 mb-4 text-sm text-rose-800">
+                    <label class="text-[9px] font-black uppercase block mb-3 tracking-widest">Vincular Hijos</label>
                     <div class="flex gap-2 mb-3">
-                        <select id="fam-select-curso" onchange="buscarAlumnosParaFamilia(this.value)" class="input-pro mb-0 text-sm">
-                            <option value="">Curso...</option>
-                        </select>
-                        <select id="fam-hijo-select" class="input-pro mb-0 text-sm">
-                            <option value="">Alumno...</option>
-                        </select>
+                        <select id="fam-select-curso" onchange="buscarAlumnosParaFamilia(this.value)" class="input-pro mb-0"></select>
+                        <select id="fam-hijo-select" class="input-pro mb-0"></select>
                         <button onclick="agregarHijoALista()" class="bg-rose-500 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
                     </div>
                     <div id="lista-hijos-visual" class="flex flex-wrap gap-2"></div>
                 </div>
-                <button id="btn-familia" onclick="crearFamiliaCompleta()" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold shadow-lg">Guardar Familia</button>
+                <button onclick="crearFamiliaCompleta()" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold">Guardar Familia</button>
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-indigo-100">
                 <h3 class="font-bold mb-4 text-indigo-600 flex items-center gap-2"><i class="fas fa-chalkboard-teacher"></i> Registrar Docente</h3>
                 <input type="text" id="doc-nom" class="input-pro" placeholder="Nombre completo">
                 <input type="email" id="doc-mail" class="input-pro" placeholder="Email de acceso">
-                <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                    <label class="text-[9px] font-black text-indigo-500 uppercase block mb-2 tracking-widest">Cursos a Cargo</label>
-                    <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1"></div>
-                </div>
-                <button id="btn-docente" onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Alta Docente</button>
+                <div id="doc-lista-cursos" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-indigo-50 rounded-2xl"></div>
+                <button onclick="crearDocente()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Alta Docente</button>
             </div>
         </section>
 
@@ -116,33 +108,32 @@
                     <span id="stat-familias" class="text-3xl font-black text-rose-600">...</span>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm mt-4">
-                <h3 class="font-bold mb-4 text-slate-700 flex items-center gap-2"><i class="fas fa-chart-line text-blue-500"></i> Lectura de Comunicados</h3>
-                <div id="lista-vistas-comunicados" class="space-y-3"></div>
-            </div>
+            <div id="lista-vistas-comunicados" class="space-y-3 bg-white p-6 rounded-[2rem] border shadow-sm"></div>
         </section>
 
         <section id="alumnos" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-user-graduate text-emerald-500"></i> Nuevo Alumno</h3>
-                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo del niño/a">
-                <select id="alum-curso" class="input-pro">
-                    <option value="">Asignar Curso...</option>
-                </select>
-                <button id="btn-alumno" onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
+                <h3 class="font-bold mb-4 text-emerald-600"><i class="fas fa-user-graduate"></i> Nuevo Alumno</h3>
+                <input type="text" id="alum-nom" class="input-pro" placeholder="Nombre completo">
+                <select id="alum-curso" class="input-pro"></select>
+                <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
             </div>
+            <div id="lista-gestion-alumnos" class="space-y-2 bg-white p-6 rounded-[2rem] border shadow-sm"></div>
         </section>
 
         <section id="calendario" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <h3 class="font-bold mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-calendar-star text-orange-500"></i> Agendar Evento</h3>
+                <h3 id="calendar-form-title" class="font-bold mb-4 text-orange-500"><i class="fas fa-calendar-star"></i> Agendar Evento</h3>
+                <input type="hidden" id="event-id">
                 <input type="text" id="event-tit" class="input-pro" placeholder="Nombre del evento">
                 <input type="date" id="event-fecha" class="input-pro">
-                <select id="event-tag" class="input-pro">
-                    <option value="GENERAL">📅 Evento General</option>
-                </select>
-                <button id="btn-evento" onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Añadir y Notificar</button>
+                <select id="event-tag" class="input-pro"></select>
+                <div class="flex gap-2">
+                    <button id="btn-evento" onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Guardar</button>
+                    <button id="btn-cancel-edit" onclick="resetFormCalendario()" class="hidden bg-slate-200 text-slate-600 p-4 rounded-2xl font-bold">X</button>
+                </div>
             </div>
+            <div id="lista-gestion-eventos" class="space-y-3 mt-6"></div>
         </section>
     </main>
 
@@ -165,22 +156,14 @@
     </nav>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
-            authDomain: "app-iosefcaro.firebaseapp.com",
-            projectId: "app-iosefcaro",
-            storageBucket: "app-iosefcaro.appspot.com",
-            messagingSenderId: "651320124248",
-            appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.appspot.com", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
         const CURSOS_OFICIALES = [
             "SALA 18 MESES", "2 AÑOS", "3 AÑOS", "4 AÑOS", "5 AÑOS V", "5 AÑOS M",
-            "1 GRADO A", "1 GRADO B", "2 GRADO A", "2 GRADO B", "3 GRADO A", "4 GRADO B", "5A", "5B", "6A", "6B", "7A", "7B",
-            "1AÑO A", "1 AÑO B", "2AÑO A", "2 AÑOS B", "3 AÑO A", "3 AÑO B", "4 AÑO A", "4 AÑO B", "5 AÑO A", "5 AÑO B"
+            "1 GRADO A", "1 GRADO B", "2 GRADO A", "2 GRADO B", "3 GRADO A", "3 GRADO B", "4 GRADO A", "4 GRADO B", "5 GRADO A", "5 GRADO B", "6 GRADO A", "6 GRADO B", "7 GRADO A", "7 GRADO B",
+            "1 AÑO A", "1 AÑO B", "2 AÑO A", "2 AÑO B", "3 AÑO A", "3 AÑO B", "4 AÑO A", "4 AÑO B", "5 AÑO A", "5 AÑO B"
         ];
 
         let listaHijosTemp = [];
@@ -188,34 +171,28 @@
 
         window.onload = () => {
             const selects = ['post-tag', 'fam-select-curso', 'alum-curso', 'event-tag'];
-            const docLista = document.getElementById('doc-lista-cursos');
             CURSOS_OFICIALES.forEach(c => {
                 selects.forEach(s => {
                     const el = document.getElementById(s);
                     if(el) el.innerHTML += `<option value="${c}">${c}</option>`;
                 });
-                if(docLista) {
-                    docLista.innerHTML += `
-                        <label class="flex items-center gap-2 text-[10px] font-bold text-slate-600 p-2 bg-white rounded-lg border border-indigo-50 mb-1">
-                            <input type="checkbox" value="${c}" onchange="toggleCursoDoc(this)"> ${c}
-                        </label>`;
-                }
+                document.getElementById('doc-lista-cursos').innerHTML += `
+                    <label class="flex items-center gap-2 text-[10px] font-bold p-2 bg-white rounded-lg border border-indigo-100">
+                        <input type="checkbox" value="${c}" onchange="toggleCursoDoc(this)"> ${c}
+                    </label>`;
             });
             cargarGestionComunicados();
+            cargarGestionCalendario();
+            cargarGestionAlumnos();
             actualizarStats();
         };
 
+        // --- AUTH ---
         async function verificarAcceso() {
             const m = document.getElementById('login-mail').value.trim().toLowerCase();
             const p = document.getElementById('login-pass').value.trim();
-            if (m === "uriel.bacher@gmail.com" && p === "Gallardo10") {
-                document.getElementById('login-overlay').style.display = 'none';
-            } else {
-                const snap = await db.collection('administradores').doc(m).get();
-                if (snap.exists && snap.data().pass === p) {
-                    document.getElementById('login-overlay').style.display = 'none';
-                } else { alert("Acceso denegado"); }
-            }
+            if (m === "uriel.bacher@gmail.com" && p === "Gallardo10") document.getElementById('login-overlay').style.display = 'none';
+            else alert("Acceso denegado");
         }
 
         function switchTab(id) {
@@ -226,130 +203,22 @@
             document.getElementById('tab-title').innerText = id.toUpperCase();
         }
 
+        // --- COMUNICADOS (MURO) ---
         async function enviarComunicado() {
             const tit = document.getElementById('post-tit').value;
             const msg = document.getElementById('post-msg').value;
             const link = document.getElementById('post-link').value;
-            const btn = document.getElementById('btn-publicar');
+            const prog = document.getElementById('post-fecha-prog').value;
+            if(!tit || !msg) return alert("Completa título y mensaje");
 
-            if(!tit || !msg) return alert("Faltan datos");
-            btn.disabled = true; btn.innerText = "Publicando...";
-
-            try {
-                await db.collection('comunicados').add({
-                    titulo: tit, texto: msg, tag: document.getElementById('post-tag').value,
-                    link: link, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), vistas: 0
-                });
-                document.getElementById('post-tit').value = "";
-                document.getElementById('post-msg').value = "";
-                document.getElementById('post-link').value = "";
-                alert("✅ Publicado con éxito");
-                cargarGestionComunicados();
-                actualizarStats();
-            } catch(e) { alert("Error al publicar"); }
-            btn.disabled = false; btn.innerText = "Publicar y Notificar";
-        }
-
-        async function buscarAlumnosParaFamilia(curso) {
-            const sel = document.getElementById('fam-hijo-select');
-            if(!curso) return;
-            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
-            sel.innerHTML = '<option value="">Alumno...</option>';
-            snap.forEach(doc => sel.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
-        }
-
-        function agregarHijoALista() {
-            const nom = document.getElementById('fam-hijo-select').value;
-            const cur = document.getElementById('fam-select-curso').value;
-            if(nom && cur) {
-                listaHijosTemp.push({nombre: nom, curso: cur});
-                actualizarVistaHijos();
-            }
-        }
-
-        function actualizarVistaHijos() {
-            document.getElementById('lista-hijos-visual').innerHTML = listaHijosTemp.map((h, i) => `
-                <div class="badge-pro">${h.nombre} (${h.curso}) <i class="fas fa-times-circle" onclick="listaHijosTemp.splice(${i},1);actualizarVistaHijos()"></i></div>
-            `).join('');
-        }
-
-        async function crearFamiliaCompleta() {
-            const nom = document.getElementById('fam-nom').value;
-            const m1 = document.getElementById('fam-mail-1').value.toLowerCase();
-            if(!nom || !m1 || listaHijosTemp.length === 0) return alert("Datos incompletos");
-            const mails = [m1];
-            const m2 = document.getElementById('fam-mail-2').value; if(m2) mails.push(m2.toLowerCase());
-            const m3 = document.getElementById('fam-mail-3').value; if(m3) mails.push(m3.toLowerCase());
-
-            await db.collection('usuarios').doc(m1).set({
-                nombre: nom, rol: 'familia', emails: mails, hijos: listaHijosTemp,
-                fechaAlta: firebase.firestore.FieldValue.serverTimestamp()
+            await db.collection('comunicados').add({
+                titulo: tit, texto: msg, link: link,
+                tag: document.getElementById('post-tag').value,
+                vistas: 0, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+                fechaPublicacion: prog || new Date().toISOString().split('T')[0]
             });
-
-            document.getElementById('fam-nom').value = "";
-            document.getElementById('fam-mail-1').value = "";
-            document.getElementById('fam-mail-2').value = "";
-            document.getElementById('fam-mail-3').value = "";
-            listaHijosTemp = [];
-            actualizarVistaHijos();
-            actualizarStats();
-            alert("👨‍👩‍👧‍👦 Familia guardada");
-        }
-
-        async function crearAlumno() {
-            const n = document.getElementById('alum-nom').value.toUpperCase();
-            const c = document.getElementById('alum-curso').value;
-            if(n && c) {
-                await db.collection('alumnos').add({ nombre: n, curso: c });
-                document.getElementById('alum-nom').value = "";
-                alert("👶 Alumno creado"); 
-                actualizarStats();
-            }
-        }
-
-        async function crearDocente() {
-            const n = document.getElementById('doc-nom').value;
-            const m = document.getElementById('doc-mail').value.toLowerCase();
-            if(n && m && cursosDocenteElegidos.length > 0) {
-                await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: cursosDocenteElegidos });
-                document.getElementById('doc-nom').value = "";
-                document.getElementById('doc-mail').value = "";
-                cursosDocenteElegidos = [];
-                document.querySelectorAll('#doc-lista-cursos input').forEach(cb => cb.checked = false);
-                alert("👩‍🏫 Docente creado");
-            }
-        }
-
-        function toggleCursoDoc(cb) {
-            if(cb.checked) cursosDocenteElegidos.push(cb.value);
-            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
-        }
-
-        async function crearEvento() {
-            const t = document.getElementById('event-tit').value;
-            const f = document.getElementById('event-fecha').value;
-            if(t && f) {
-                await db.collection('eventos').add({ titulo: t, fecha: f, tag: document.getElementById('event-tag').value });
-                document.getElementById('event-tit').value = "";
-                document.getElementById('event-fecha').value = "";
-                alert("📅 Evento agendado");
-            }
-        }
-
-        async function actualizarStats() {
-            const al = await db.collection('alumnos').get();
-            const fa = await db.collection('usuarios').where('rol', '==', 'familia').get();
-            document.getElementById('stat-alumnos').innerText = al.size;
-            document.getElementById('stat-familias').innerText = fa.size;
-            
-            const coms = await db.collection('comunicados').orderBy('creadoEn','desc').limit(5).get();
-            const cont = document.getElementById('lista-vistas-comunicados');
-            cont.innerHTML = "";
-            coms.forEach(doc => {
-                cont.innerHTML += `<div class="flex justify-between p-3 bg-slate-50 rounded-xl text-xs font-bold">
-                    <span>${doc.data().titulo}</span><span class="text-blue-600">${doc.data().vistas || 0} VISTAS</span>
-                </div>`;
-            });
+            alert("✅ Publicación registrada");
+            location.reload();
         }
 
         async function cargarGestionComunicados() {
@@ -357,18 +226,137 @@
             const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(10).get();
             cont.innerHTML = "";
             snap.forEach(doc => {
-                cont.innerHTML += `<div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center border">
-                    <div><p class="font-bold text-sm">${doc.data().titulo}</p></div>
-                    <button onclick="eliminarComunicado('${doc.id}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
+                    <div class="text-xs font-bold"><span>${doc.data().titulo}</span></div>
+                    <button onclick="eliminarDoc('comunicados','${doc.id}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
         }
 
-        async function eliminarComunicado(id) {
-            if(confirm("¿Borrar?")) { 
-                await db.collection('comunicados').doc(id).delete(); 
-                cargarGestionComunicados(); 
-                actualizarStats();
+        // --- CALENDARIO (EDITAR Y ELIMINAR) ---
+        async function crearEvento() {
+            const t = document.getElementById('event-tit').value;
+            const f = document.getElementById('event-fecha').value;
+            const id = document.getElementById('event-id').value;
+            if(!t || !f) return alert("Faltan datos");
+
+            const data = { titulo: t, fecha: f, tag: document.getElementById('event-tag').value };
+
+            if(id) await db.collection('eventos').doc(id).update(data);
+            else await db.collection('eventos').add(data);
+            
+            alert("✅ Agenda actualizada");
+            resetFormCalendario();
+            cargarGestionCalendario();
+        }
+
+        async function cargarGestionCalendario() {
+            const cont = document.getElementById('lista-gestion-eventos');
+            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+            cont.innerHTML = "<p class='text-[10px] font-black text-slate-400 uppercase text-center mb-2'>Lista de Eventos</p>";
+            snap.forEach(doc => {
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
+                    <div><p class="font-bold text-sm">${doc.data().fecha}</p><p class="text-xs">${doc.data().titulo}</p></div>
+                    <div class="flex gap-4">
+                        <button onclick="editarEvento('${doc.id}', '${doc.data().titulo}', '${doc.data().fecha}')" class="text-blue-500"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarDoc('eventos','${doc.id}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function editarEvento(id, tit, fec) {
+            document.getElementById('event-id').value = id;
+            document.getElementById('event-tit').value = tit;
+            document.getElementById('event-fecha').value = fec;
+            document.getElementById('calendar-form-title').innerText = "Editando Evento";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function resetFormCalendario() {
+            document.getElementById('event-id').value = "";
+            document.getElementById('event-tit').value = "";
+            document.getElementById('event-fecha').value = "";
+            document.getElementById('calendar-form-title').innerText = "Agendar Evento";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        // --- ALUMNOS ---
+        async function crearAlumno() {
+            const n = document.getElementById('alum-nom').value.toUpperCase();
+            const c = document.getElementById('alum-curso').value;
+            if(n && c) {
+                await db.collection('alumnos').add({ nombre: n, curso: c });
+                alert("👶 Alumno creado");
+                document.getElementById('alum-nom').value = "";
+                cargarGestionAlumnos(); actualizarStats();
+            }
+        }
+
+        async function cargarGestionAlumnos() {
+            const cont = document.getElementById('lista-gestion-alumnos');
+            const snap = await db.collection('alumnos').orderBy('nombre','asc').limit(15).get();
+            cont.innerHTML = "<p class='text-[10px] font-black text-slate-400'>ÚLTIMOS ALUMNOS</p>";
+            snap.forEach(doc => {
+                cont.innerHTML += `<div class="flex justify-between text-xs py-1 border-b"><span>${doc.data().nombre}</span><span class="text-slate-400">${doc.data().curso}</span></div>`;
+            });
+        }
+
+        // --- FAMILIAS Y DOCENTES ---
+        async function buscarAlumnosParaFamilia(curso) {
+            const sel = document.getElementById('fam-hijo-select');
+            const snap = await db.collection('alumnos').where('curso','==',curso).get();
+            sel.innerHTML = '<option value="">Elegir...</option>';
+            snap.forEach(doc => sel.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
+        }
+
+        function agregarHijoALista() {
+            const n = document.getElementById('fam-hijo-select').value;
+            const c = document.getElementById('fam-select-curso').value;
+            if(n) {
+                listaHijosTemp.push({nombre: n, curso: c});
+                document.getElementById('lista-hijos-visual').innerHTML += `<div class="badge-pro">${n}</div>`;
+            }
+        }
+
+        async function crearFamiliaCompleta() {
+            const m = document.getElementById('fam-mail-1').value.toLowerCase().trim();
+            const n = document.getElementById('fam-nom').value;
+            if(!m || listaHijosTemp.length === 0) return alert("Email y al menos 1 hijo");
+            await db.collection('usuarios').doc(m).set({
+                nombre: n, rol: 'familia', emails: [m], hijos: listaHijosTemp
+            });
+            alert("👨‍👩‍👧‍👦 Familia guardada");
+            location.reload();
+        }
+
+        function toggleCursoDoc(cb) {
+            if(cb.checked) cursosDocenteElegidos.push(cb.value);
+            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
+        }
+
+        async function crearDocente() {
+            const m = document.getElementById('doc-mail').value.toLowerCase().trim();
+            const n = document.getElementById('doc-nom').value;
+            if(!m || cursosDocenteElegidos.length === 0) return alert("Email y Cursos requeridos");
+            await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: cursosDocenteElegidos });
+            alert("👩‍🏫 Docente guardado");
+            location.reload();
+        }
+
+        // --- GENERAL ---
+        async function actualizarStats() {
+            const al = await db.collection('alumnos').get();
+            const fa = await db.collection('usuarios').where('rol','==','familia').get();
+            document.getElementById('stat-alumnos').innerText = al.size;
+            document.getElementById('stat-familias').innerText = fa.size;
+        }
+
+        async function eliminarDoc(col, id) {
+            if(confirm("¿Seguro que deseas eliminar este registro?")) {
+                await db.collection(col).doc(id).delete();
+                location.reload();
             }
         }
     </script>
