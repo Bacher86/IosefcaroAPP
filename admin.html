@@ -479,12 +479,39 @@
         }
 
         async function crearFamiliaCompleta() {
-            const m = document.getElementById('fam-mail-1').value.toLowerCase().trim();
-            const n = document.getElementById('fam-nom').value;
-            if(!m || listaHijosTemp.length === 0) return alert("Email e hijos requeridos");
-            await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'familia', emails: [m], hijos: listaHijosTemp });
-            alert("✅ Familia guardada"); location.reload();
-        }
+    const mailInput = document.getElementById('fam-mail-multi').value.toLowerCase().trim();
+    const nombreFamilia = document.getElementById('fam-nom').value;
+
+    if (!mailInput || listaHijosTemp.length === 0) {
+        return alert("Email e hijos requeridos");
+    }
+
+    // Convertimos el texto en un Array y limpiamos espacios
+    const listaEmails = mailInput.split(',').map(email => email.trim()).filter(email => email !== "");
+
+    if (listaEmails.length === 0) return alert("Ingrese al menos un email válido");
+
+    try {
+        // Usamos un bucle para crear un usuario REAL por cada email
+        const promesas = listaEmails.map(email => {
+            return db.collection('usuarios').doc(email).set({ 
+                nombre: nombreFamilia, 
+                rol: 'familia', 
+                hijos: listaHijosTemp,
+                // Guardamos la referencia de los otros mails por si los necesitas luego
+                vinculos: listaEmails 
+            });
+        });
+
+        await Promise.all(promesas);
+
+        alert(`✅ Éxito: Se crearon ${listaEmails.length} usuarios independientes para esta familia.`);
+        location.reload();
+    } catch (error) {
+        console.error("Error al crear usuarios:", error);
+        alert("Hubo un error al procesar uno de los correos.");
+    }
+}
 
         async function crearEvento() {
             const t = document.getElementById('event-tit').value;
