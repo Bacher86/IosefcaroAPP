@@ -7,8 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
@@ -33,7 +31,6 @@
             <input type="email" id="login-mail" class="input-pro" placeholder="Email">
             <input type="password" id="login-pass" class="input-pro mb-6" placeholder="Contraseña">
             <button onclick="verificarAcceso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold active:scale-95 transition-transform">Entrar al Panel</button>
-            <p id="login-error" class="text-rose-500 text-[10px] font-black uppercase mt-4 hidden">Acceso Denegado</p>
         </div>
     </div>
 
@@ -53,8 +50,9 @@
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
                 
                 <div class="mb-4">
-                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Imagen / Flyer</label>
-                    <input type="file" id="post-img-file" accept="image/*" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Vínculo de Imagen o Video</label>
+                    <input type="url" id="post-link" class="input-pro" placeholder="https://... (JPG, PNG o YouTube)">
+                    <p class="text-[9px] text-slate-400 px-2 leading-tight">Pegá el link directo de una imagen o la URL de un video de YouTube.</p>
                 </div>
 
                 <div class="p-4 bg-blue-50 rounded-2xl mb-4 border border-blue-100">
@@ -74,9 +72,9 @@
         <section id="usuarios" class="tab-content space-y-6">  
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-rose-100">
                 <h3 class="font-bold mb-4 text-rose-600 flex items-center gap-2"><i class="fas fa-users"></i> Alta de Familia</h3>
-                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia (Ej: Pérez García)">             
+                <input type="text" id="fam-nom" class="input-pro" placeholder="Nombre de la Familia">             
                 <div class="bg-slate-50 p-4 rounded-2xl mb-4">
-                    <input type="email" id="fam-mail-1" class="input-pro mb-2" placeholder="Email Principal (Obligatorio)">
+                    <input type="email" id="fam-mail-1" class="input-pro mb-2" placeholder="Email Principal">
                     <input type="email" id="fam-mail-2" class="input-pro mb-2" placeholder="Email Secundario">
                     <input type="email" id="fam-mail-3" class="input-pro mb-0" placeholder="Email Tutor/Otro">
                 </div>
@@ -119,11 +117,6 @@
                     <span id="stat-familias" class="text-3xl font-black text-rose-600">...</span>
                 </div>
             </div>
-
-            <button onclick="exportarExcel()" class="w-full bg-emerald-100 text-emerald-700 p-4 rounded-2xl font-black text-xs flex items-center justify-center gap-3 border border-emerald-200 mt-2">
-                <i class="fas fa-file-excel text-lg"></i> EXPORTAR LISTADO (.XLSX)
-            </button>
-
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm mt-4">
                 <h3 class="font-bold mb-4 text-slate-700 flex items-center gap-2"><i class="fas fa-chart-line text-blue-500"></i> Lectura de Comunicados</h3>
                 <div id="lista-vistas-comunicados" class="space-y-3"></div>
@@ -184,7 +177,6 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
         const CURSOS_OFICIALES = [
             "SALA 18 MESES", "2 AÑOS", "3 AÑOS", "4 AÑOS", "5 AÑOS V", "5 AÑOS M",
@@ -198,7 +190,6 @@
         window.onload = () => {
             const selects = ['post-tag', 'fam-select-curso', 'alum-curso', 'event-tag'];
             const docLista = document.getElementById('doc-lista-cursos');
-            
             CURSOS_OFICIALES.forEach(c => {
                 selects.forEach(s => {
                     const el = document.getElementById(s);
@@ -208,27 +199,23 @@
                     docLista.innerHTML += `
                         <label class="flex items-center gap-2 text-[10px] font-bold text-slate-600 p-2 bg-white rounded-lg border border-indigo-50 mb-1">
                             <input type="checkbox" value="${c}" onchange="toggleCursoDoc(this)"> ${c}
-                        </label>
-                    `;
+                        </label>`;
                 }
             });
             cargarGestionComunicados();
             actualizarStats();
         };
 
-        // --- AUTH ---
         async function verificarAcceso() {
             const m = document.getElementById('login-mail').value.trim().toLowerCase();
             const p = document.getElementById('login-pass').value.trim();
             if (m === "uriel.bacher@gmail.com" && p === "Gallardo10") {
                 document.getElementById('login-overlay').style.display = 'none';
             } else {
-                try {
-                    const snap = await db.collection('administradores').doc(m).get();
-                    if (snap.exists && snap.data().pass === p) {
-                        document.getElementById('login-overlay').style.display = 'none';
-                    } else { alert("Acceso denegado"); }
-                } catch(e) { alert("Error de conexión"); }
+                const snap = await db.collection('administradores').doc(m).get();
+                if (snap.exists && snap.data().pass === p) {
+                    document.getElementById('login-overlay').style.display = 'none';
+                } else { alert("Acceso denegado"); }
             }
         }
 
@@ -240,35 +227,25 @@
             document.getElementById('tab-title').innerText = id.toUpperCase();
         }
 
-        // --- COMUNICACION CON IMAGEN ---
         async function enviarComunicado() {
             const tit = document.getElementById('post-tit').value;
             const msg = document.getElementById('post-msg').value;
-            const file = document.getElementById('post-img-file').files[0];
+            const link = document.getElementById('post-link').value;
             const btn = document.getElementById('btn-publicar');
 
             if(!tit || !msg) return alert("Faltan datos");
-            btn.disabled = true; btn.innerText = "Subiendo...";
-
-            let url = "";
-            if(file) {
-                const ref = storage.ref(`posts/${Date.now()}_${file.name}`);
-                await ref.put(file);
-                url = await ref.getDownloadURL();
-            }
+            btn.disabled = true; btn.innerText = "Publicando...";
 
             await db.collection('comunicados').add({
                 titulo: tit, texto: msg, tag: document.getElementById('post-tag').value,
-                link: url, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), vistas: 0
+                link: link, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), vistas: 0
             });
             location.reload();
         }
 
-        // --- GESTION ALUMNOS Y FAMILIAS ---
         async function buscarAlumnosParaFamilia(curso) {
             const sel = document.getElementById('fam-hijo-select');
             if(!curso) return;
-            sel.innerHTML = '<option>...</option>';
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             sel.innerHTML = '<option value="">Alumno...</option>';
             snap.forEach(doc => sel.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
@@ -336,25 +313,6 @@
             }
         }
 
-        // --- EXPORTAR EXCEL ---
-        async function exportarExcel() {
-            const snap = await db.collection('usuarios').where('rol', '==', 'familia').get();
-            const data = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                data.push({
-                    "Familia": d.nombre,
-                    "Emails": d.emails.join(", "),
-                    "Hijos": d.hijos.map(h => `${h.nombre} (${h.curso})`).join(" | ")
-                });
-            });
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Base Familias");
-            XLSX.writeFile(wb, "Iosef_Caro_Database.xlsx");
-        }
-
-        // --- STATS Y CARGA ---
         async function actualizarStats() {
             const al = await db.collection('alumnos').get();
             const fa = await db.collection('usuarios').where('rol', '==', 'familia').get();
