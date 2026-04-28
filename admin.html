@@ -44,6 +44,11 @@
                 </div>
                 <button onclick="enviarComunicado()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform">Publicar y Notificar</button>
             </div>
+            <div class="mt-10">
+    <h4 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Gestionar Publicaciones</h4>
+    <div id="lista-gestion-comunicados" class="space-y-3">
+        </div>
+</div>
         </section>
         <section id="usuarios" class="tab-content space-y-6">    
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-rose-100">
@@ -102,6 +107,32 @@
                 <button onclick="crearEvento()" class="w-full bg-orange-500 text-white p-4 rounded-2xl font-bold">Añadir y Notificar</button>
             </div>
         </section>
+        <section id="stats" class="tab-content space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white p-6 rounded-[2rem] border shadow-sm flex flex-col items-center">
+            <span class="text-[10px] font-black text-slate-400 uppercase">Alumnos</span>
+            <span id="stat-alumnos" class="text-3xl font-black text-emerald-600">...</span>
+        </div>
+        <div class="bg-white p-6 rounded-[2rem] border shadow-sm flex flex-col items-center">
+            <span class="text-[10px] font-black text-slate-400 uppercase">Familias</span>
+            <span id="stat-familias" class="text-3xl font-black text-rose-600">...</span>
+        </div>
+        <div class="bg-white p-6 rounded-[2rem] border shadow-sm flex flex-col items-center">
+            <span class="text-[10px] font-black text-slate-400 uppercase">Docentes</span>
+            <span id="stat-docentes" class="text-3xl font-black text-indigo-600">...</span>
+        </div>
+        <div class="bg-white p-6 rounded-[2rem] border shadow-sm flex flex-col items-center">
+            <span class="text-[10px] font-black text-slate-400 uppercase">Eventos</span>
+            <span id="stat-eventos" class="text-3xl font-black text-orange-600">...</span>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+        <h3 class="font-bold mb-4 text-slate-700 flex items-center gap-2"><i class="fas fa-chart-line text-blue-500"></i> Vistas por Comunicado</h3>
+        <div id="lista-vistas-comunicados" class="space-y-3">
+            </div>
+    </div>
+</section>
     </main>
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50 shadow-2xl">
         <button onclick="switchTab('comunicacion')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400 nav-active">
@@ -110,6 +141,11 @@
         <button onclick="switchTab('usuarios')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
             <i class="fas fa-user-friends"></i><span class="text-[9px] font-bold">USERS</span>
         </button>
+        
+        <button onclick="switchTab('stats')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
+            <i class="fas fa-chart-bar"></i><span class="text-[9px] font-bold">STATS</span>
+        </button>
+
         <button onclick="switchTab('alumnos')" class="nav-btn p-3 flex flex-col items-center gap-1 text-slate-400">
             <i class="fas fa-graduation-cap"></i><span class="text-[9px] font-bold">ALUMNOS</span>
         </button>
@@ -255,6 +291,76 @@
             alert("Evento agendado");
             location.reload();
         }
+        // Al cargar la página, además de los selectores, traemos datos
+window.onload = () => {
+    // ... (tu código anterior de CURSOS_OFICIALES)
+    cargarGestionComunicados();
+    actualizarStats();
+};
+
+// --- GESTIÓN DE COMUNICADOS (EDITAR/ELIMINAR) ---
+async function cargarGestionComunicados() {
+    const contenedor = document.getElementById('lista-gestion-comunicados');
+    const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(10).get();
+    
+    contenedor.innerHTML = "";
+    snap.forEach(doc => {
+        const data = doc.data();
+        contenedor.innerHTML += `
+            <div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center border border-slate-100">
+                <div class="pr-4">
+                    <p class="font-bold text-sm text-slate-800 line-clamp-1">${data.titulo}</p>
+                    <p class="text-[10px] text-slate-400">${data.tag}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="eliminarComunicado('${doc.id}')" class="w-8 h-8 bg-rose-100 text-rose-600 rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function eliminarComunicado(id) {
+    if(confirm("¿Seguro que querés borrar este comunicado?")) {
+        await db.collection('comunicados').doc(id).delete();
+        cargarGestionComunicados();
+        actualizarStats();
+    }
+}
+
+// --- ESTADÍSTICAS EN TIEMPO REAL ---
+async function actualizarStats() {
+    // Conteos básicos
+    const alumnos = await db.collection('alumnos').get();
+    document.getElementById('stat-alumnos').innerText = alumnos.size;
+
+    const familias = await db.collection('usuarios').where('rol', '==', 'familia').get();
+    document.getElementById('stat-familias').innerText = familias.size;
+
+    const docentes = await db.collection('usuarios').where('rol', '==', 'docente').get();
+    document.getElementById('stat-docentes').innerText = docentes.size;
+
+    const eventos = await db.collection('eventos').get();
+    document.getElementById('stat-eventos').innerText = eventos.size;
+
+    // Vistas por comunicado (Simulado/Real)
+    // Nota: Para que esto sea real, en el Portal de Familia, cuando alguien abre un post, 
+    // deberías hacer un db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
+    const comunicados = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(5).get();
+    const listaVistas = document.getElementById('lista-vistas-comunicados');
+    listaVistas.innerHTML = "";
+    
+    comunicados.forEach(doc => {
+        const d = doc.data();
+        const vistas = d.vistas || 0;
+        listaVistas.innerHTML += `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                <span class="text-xs font-bold text-slate-600 truncate mr-4">${d.titulo}</span>
+                <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full">${vistas} VISTAS</span>
+            </div>
+        `;
+    });
+}
     </script>
 </body>
 </html>
