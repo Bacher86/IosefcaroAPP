@@ -195,56 +195,64 @@
 
        async function cargarMuro() {
             const container = document.getElementById('tab-muro');
-            // Agregamos un indicador de carga por si internet está lento
-            container.innerHTML = `<div class="text-center py-10 text-slate-400 font-bold text-xs animate-pulse">CARGANDO MURO...</div>`;
+            const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
+            container.innerHTML = "";
             
-            try {
-                const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
-                container.innerHTML = "";
-                
-                if (snap.empty) {
-                    container.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold text-xs">NO HAY COMUNICADOS</div>`;
-                    return;
-                }
+            snap.forEach(doc => {
+                const p = doc.data(); 
+                const id = doc.id; 
+                const isRead = localStorage.getItem('read_'+id);
 
-                snap.forEach(doc => {
-                    const p = doc.data(); 
-                    const id = doc.id; 
-                    const isRead = localStorage.getItem('read_'+id);
+                // Miniatura de imagen
+                let imagenHtml = p.link ? `<img src="${p.link}" class="w-full h-40 object-cover rounded-2xl mb-4 shadow-sm">` : "";
 
-                    // Lógica mejorada para la imagen
-                    let imagenHtml = "";
-                    if (p.link && p.link.trim() !== "") {
-                        imagenHtml = `
-                            <div class="relative w-full mb-4 overflow-hidden rounded-2xl shadow-sm bg-slate-100">
-                                <img src="${p.link}" 
-                                     class="w-full h-auto max-h-[400px] object-contain block mx-auto" 
-                                     alt="Comunicado"
-                                     onerror="this.parentElement.style.display='none'">
-                            </div>
-                        `;
-                    }
-
-                    container.innerHTML += `
-                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead ? 'read-post' : ''}">
-                            <div class="flex justify-between mb-4">
-                                <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'GENERAL'}</span>
-                                <button onclick="marcarLeido('${id}'); registrarVista('${id}')" class="text-[9px] font-bold uppercase text-slate-400">
-                                    ${isRead ? '✓ Leído' : 'Confirmar'}
-                                </button>
-                            </div>
-                            
-                            ${imagenHtml} 
-
-                            <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
-                            <p class="text-slate-500 text-sm mt-2 leading-relaxed">${p.texto}</p>
+                container.innerHTML += `
+                    <div onclick="abrirNoticia('${id}')" class="bg-white p-6 rounded-[2rem] border shadow-sm active:scale-[0.98] transition-transform ${isRead ? 'read-post' : ''}">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'GENERAL'}</span>
+                            ${isRead ? '<span class="text-[9px] font-bold text-emerald-500 uppercase">✓ Leído</span>' : ''}
                         </div>
-                    `;
-                });
-            } catch (error) {
-                console.error("Error al cargar muro:", error);
-                container.innerHTML = `<div class="text-center py-10 text-red-400 font-bold text-xs">ERROR AL CARGAR DATOS</div>`;
-            }
+                        
+                        ${imagenHtml} 
+
+                        <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
+                        <p class="text-slate-500 text-sm mt-2 line-clamp-2">${p.texto}</p>
+                        <p class="text-blue-600 text-[10px] font-bold mt-4 uppercase tracking-widest">Tocar para leer más...</p>
+                    </div>
+                `;
+            });
+        }
+
+        async function abrirNoticia(id) {
+            const doc = await db.collection('comunicados').doc(id).get();
+            if (!doc.exists) return;
+            const p = doc.data();
+            
+            const contenido = document.getElementById('modal-contenido');
+            
+            // Imagen completa sin recortes
+            let imagenHtml = p.link ? `<img src="${p.link}" class="w-full h-auto rounded-2xl mb-6 shadow-md">` : "";
+
+            contenido.innerHTML = `
+                ${imagenHtml}
+                <span class="text-[10px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'GENERAL'}</span>
+                <h2 class="text-2xl font-black text-slate-900 mt-4">${p.titulo}</h2>
+                <hr class="my-4 border-slate-100">
+                <p class="text-slate-600 text-base leading-relaxed whitespace-pre-wrap">${p.texto}</p>
+                
+                <button onclick="marcarLeido('${id}'); registrarVista('${id}'); cerrarNoticia()" 
+                        class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold mt-8 shadow-lg">
+                    Entendido / Confirmar Lectura
+                </button>
+            `;
+            
+            document.getElementById('modal-noticia').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Bloquea el scroll del fondo
+        }
+
+        function cerrarNoticia() {
+            document.getElementById('modal-noticia').style.display = 'none';
+            document.body.style.overflow = 'auto'; // Libera el scroll
         }
 
         async function cargarAcademico() {
@@ -353,5 +361,14 @@ async function registrarVista(comunicadoId) {
     });
 }
     </script>
+    <div id="modal-noticia" class="fixed inset-0 bg-slate-900/90 z-[8000] hidden flex-col p-4 backdrop-blur-sm">
+    <div class="flex justify-end p-2">
+        <button onclick="cerrarNoticia()" class="text-white text-4xl">&times;</button>
+    </div>
+    <div class="bg-white rounded-[2.5rem] w-full max-w-lg mx-auto overflow-y-auto flex-1 shadow-2xl">
+        <div id="modal-contenido" class="p-6">
+            </div>
+    </div>
+</div>
 </body>
 </html>
