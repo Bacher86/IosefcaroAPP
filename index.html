@@ -21,6 +21,21 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
             border-color: #e2e8f0;
         }
+        <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e293b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/906/906343.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('App lista para instalar'))
+        .catch(err => console.log('Error de registro', err));
+    });
+  }
+</script>
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
