@@ -302,6 +302,15 @@
             element.style.display = 'block';
             html2pdf().from(element).save().then(()=>element.style.display='none');
         }
+        // Agregá esto en la lógica del Portal de Familias 
+// donde se renderizan los comunicados:
+
+async function registrarVista(comunicadoId) {
+    const ref = db.collection('comunicados').doc(comunicadoId);
+    await ref.update({
+        vistas: firebase.firestore.FieldValue.increment(1)
+    });
+}
     </script>
 </body>
 </html>
