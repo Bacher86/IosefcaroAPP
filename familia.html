@@ -11,26 +11,39 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding-bottom: 110px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding-bottom: 110px; overflow-x: hidden; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        #iosi-modal { position: fixed; inset: 0; background: #0f172a; z-index: 6000; display: none; flex-direction: column; }
-        #iosi-chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .bubble-iosi { background: #1e293b; color: #f1f5f9; padding: 14px; border-radius: 20px; border-top-left-radius: 4px; max-width: 85%; align-self: flex-start; border: 1px solid #334155; line-height: 1.5; font-size: 14px; }
-        .bubble-user { background: #2563eb; color: white; padding: 14px; border-radius: 20px; border-top-right-radius: 4px; max-width: 85%; align-self: flex-end; font-weight: 500; font-size: 14px; }
-        .iosi-btn { position: fixed; bottom: 100px; right: 20px; width: 65px; height: 65px; background: #0f172a; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); z-index: 2000; cursor: pointer; }
+        
+        /* IOST DISEÑO COMPACTO (TIPO BURBUJA) */
+        #iosi-modal { 
+            position: fixed; bottom: 100px; right: 20px; width: 340px; max-width: calc(100% - 40px);
+            height: 500px; background: #0f172a; border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            display: none; flex-direction: column; z-index: 6000; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+        }
+        #iosi-chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background: #0f172a; }
+        .bubble-iosi { background: #1e293b; color: #f1f5f9; padding: 12px 16px; border-radius: 20px; border-bottom-left-radius: 4px; align-self: flex-start; font-size: 13px; line-height: 1.5; border: 1px solid #334155; }
+        .bubble-user { background: #2563eb; color: white; padding: 12px 16px; border-radius: 20px; border-bottom-right-radius: 4px; align-self: flex-end; font-size: 13px; font-weight: 500; }
+        
+        .iosi-btn { position: fixed; bottom: 20px; right: 20px; width: 65px; height: 65px; background: #0f172a; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); z-index: 5000; cursor: pointer; transition: transform 0.3s; }
+        .iosi-btn:active { transform: scale(0.9); }
+
         .read-post { opacity: 0.6; filter: grayscale(0.5); }
         .nav-btn.active { color: #0f172a; }
         .nav-btn.active i { transform: translateY(-5px); color: #2563eb; }
+        
+        /* SWITCH ESTILO APPLE */
+        .switch-bg { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body>
 
     <div id="login-screen" class="fixed inset-0 bg-white z-[7000] flex flex-col items-center justify-center p-8 text-center">
         <div class="w-20 h-20 bg-slate-900 rounded-[2rem] mb-6 flex items-center justify-center text-white text-3xl"><i class="fas fa-university"></i></div>
-        <h2 class="text-3xl font-black mb-2 tracking-tighter">Portal de Familias</h2>
+        <h2 class="text-3xl font-black mb-2 tracking-tighter text-slate-900">Portal de Familias</h2>
+        <p class="text-slate-400 text-sm mb-8 font-medium">Ingresá con tu mail para ver el progreso de tus hijos</p>
         <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Email institucional">
-        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold">Acceder</button>
+        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl shadow-slate-200">Acceder</button>
     </div>
 
     <header class="p-6 bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b flex justify-between items-center">
@@ -53,13 +66,19 @@
             <div class="flex justify-between items-end">
                 <h3 class="font-black text-2xl italic">Desempeño</h3>
                 <button onclick="generarBoletinPDF()" class="bg-blue-600 text-white text-[10px] font-bold px-4 py-2 rounded-xl shadow-lg shadow-blue-200 uppercase">
-                    <i class="fas fa-download mr-1"></i> Descargar Boletín
+                    <i class="fas fa-download mr-1"></i> PDF
                 </button>
+            </div>
+
+            <div class="relative bg-slate-200 p-1 rounded-2xl flex items-center">
+                <div id="switch-selector" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1"></div>
+                <button onclick="setModalidad('num')" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 transition-colors" id="txt-num">Numérico</button>
+                <button onclick="setModalidad('rite')" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500 transition-colors" id="txt-rite">RITE</button>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-5 rounded-3xl border text-center shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Inasistencias</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Faltas Totales</p>
                     <p id="count-faltas" class="text-3xl font-black">0</p>
                 </div>
                 <div class="bg-white p-5 rounded-3xl border text-center shadow-sm">
@@ -81,42 +100,37 @@
     <div class="iosi-btn" onclick="toggleIosi()"><i class="fas fa-robot"></i></div>
 
     <div id="iosi-modal">
-        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
+        <div class="p-5 border-b border-white/10 flex justify-between items-center bg-slate-900">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><i class="fas fa-robot text-white"></i></div>
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center"><i class="fas fa-robot text-white text-xs"></i></div>
                 <div>
-                    <h2 class="text-white font-black text-lg">Asistente Iosi</h2>
-                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Información en línea</p>
+                    <h2 class="text-white font-black text-sm">Asistente Iosi</h2>
+                    <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><p class="text-green-500 text-[8px] font-black uppercase tracking-widest">En línea</p></div>
                 </div>
             </div>
-            <button onclick="toggleIosi()" class="text-white text-3xl">&times;</button>
+            <button onclick="toggleIosi()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
         </div>
         <div id="iosi-chat">
-            <div class="bubble-iosi">Hola familia, puedo informarle sobre faltas y rendimiento académico. ¿Qué desea consultar?</div>
+            <div class="bubble-iosi">¡Hola! Soy tu asistente. ¿Qué necesitás saber sobre el desempeño de tus hijos?</div>
         </div>
-        <div class="p-4 bg-slate-800/50 border-t border-white/10 flex gap-2">
-            <input type="text" id="iosi-input" class="flex-1 bg-slate-900 border border-white/10 p-4 rounded-2xl text-white outline-none" placeholder="Escriba aquí...">
-            <button onclick="enviarIosi()" class="bg-blue-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
+        <div class="p-3 bg-slate-800/50 flex gap-2">
+            <input type="text" id="iosi-input" class="flex-1 bg-slate-900 border border-white/10 p-3 rounded-xl text-white text-xs outline-none focus:border-blue-500" placeholder="Ej: ¿Cuántas faltas tiene?">
+            <button onclick="enviarIosi()" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
         </div>
     </div>
 
-    <div id="pdf-template" style="display:none; padding: 40px; color: #1e293b; font-family: sans-serif;">
-        <div style="text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-            <h1 style="margin: 0; font-size: 22px;">INSTITUTO IOSEF CARO</h1>
-            <p style="font-size: 10px; text-transform: uppercase;">Informe de Trayectoria Educativa</p>
+    <div id="pdf-template" style="display:none; padding: 40px; color: #1e293b;">
+        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+            <h1 style="font-size: 20px; margin:0">INFORME DE CALIFICACIONES - IOSEF CARO</h1>
         </div>
-        <div style="margin-bottom: 20px; font-size: 12px;">
-            <p><strong>Alumno/a:</strong> <span id="pdf-nombre"></span></p>
-            <p><strong>Fecha:</strong> <span id="pdf-fecha"></span></p>
-        </div>
+        <p style="font-size: 12px"><b>Alumno:</b> <span id="pdf-nombre"></span></p>
+        <p style="font-size: 12px; margin-bottom: 20px"><b>Fecha de emisión:</b> <span id="pdf-fecha"></span></p>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-            <thead>
-                <tr style="background: #f1f5f9;">
-                    <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Materia</th>
-                    <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">Nota/RITE</th>
-                    <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Observaciones</th>
-                </tr>
-            </thead>
+            <thead><tr style="background: #eee;">
+                <th style="border: 1px solid #999; padding: 8px;">Materia</th>
+                <th style="border: 1px solid #999; padding: 8px;">Calificación</th>
+                <th style="border: 1px solid #999; padding: 8px;">Observaciones</th>
+            </tr></thead>
             <tbody id="pdf-body"></tbody>
         </table>
     </div>
@@ -127,7 +141,7 @@
         const db = firebase.firestore();
 
         let userData = null; let listaHijos = []; let alumnoSeleccionadoId = null;
-        let fechasInasistencias = [];
+        let fechasInasistencias = []; let modalidadFiltro = 'num';
 
         async function login() {
             const email = document.getElementById('login-email').value.toLowerCase().trim();
@@ -135,34 +149,46 @@
             if (doc.exists && doc.data().rol === 'familia') {
                 userData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('user-name').innerText = "Familia " + userData.nombre;
+                document.getElementById('user-name').innerText = "Familia " + userData.nombre.split(' ')[0];
                 
                 const nombresHijos = userData.hijoReferencia.split(',');
                 const select = document.getElementById('select-hijo');
                 select.innerHTML = "";
-                listaHijos = [];
-
-                for (let nombre of nombresHijos) {
-                    const snap = await db.collection('alumnos').where('nombre', '==', nombre.trim()).get();
-                    snap.forEach(alDoc => {
-                        listaHijos.push({ id: alDoc.id, nombre: alDoc.data().nombre, curso: alDoc.data().curso });
-                        select.innerHTML += `<option value="${alDoc.id}">${alDoc.data().nombre}</option>`;
+                for (let n of nombresHijos) {
+                    const snap = await db.collection('alumnos').where('nombre', '==', n.trim()).get();
+                    snap.forEach(d => {
+                        listaHijos.push({ id: d.id, nombre: d.data().nombre });
+                        select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
                     });
                 }
                 if(listaHijos.length > 0) { alumnoSeleccionadoId = listaHijos[0].id; cargarMuro(); }
-            } else { alert("Acceso no autorizado para familias."); }
+            } else { alert("Acceso denegado."); }
         }
 
-        function cambiarHijo(id) { 
-            alumnoSeleccionadoId = id; 
-            if(document.getElementById('tab-academico').classList.contains('active')) cargarAcademico(); 
+        function setModalidad(m) {
+            modalidadFiltro = m;
+            const sel = document.getElementById('switch-selector');
+            const tNum = document.getElementById('txt-num');
+            const tRite = document.getElementById('txt-rite');
+            
+            if(m === 'num') {
+                sel.style.left = '4px';
+                tNum.classList.add('text-blue-600'); tNum.classList.remove('text-slate-500');
+                tRite.classList.add('text-slate-500'); tRite.classList.remove('text-blue-600');
+            } else {
+                sel.style.left = 'calc(50% + 0px)';
+                tRite.classList.add('text-blue-600'); tRite.classList.remove('text-slate-500');
+                tNum.classList.add('text-slate-500'); tNum.classList.remove('text-blue-600');
+            }
+            cargarAcademico();
         }
+
+        function cambiarHijo(id) { alumnoSeleccionadoId = id; cargarAcademico(); }
 
         function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            document.getElementById('nav-' + tab).classList.add('active');
+            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-'+tab).classList.add('active');
+            document.getElementById('nav-'+tab).classList.add('active');
             if(tab === 'agenda') cargarAgenda();
             if(tab === 'academico') cargarAcademico();
         }
@@ -173,13 +199,83 @@
             container.innerHTML = "";
             snap.forEach(doc => {
                 const p = doc.data(); const id = doc.id; const isRead = localStorage.getItem('read_'+id);
-                container.innerHTML += `<div id="post-${id}" class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead?'read-post':''}">
+                container.innerHTML += `<div class="bg-white p-6 rounded-[2rem] border shadow-sm ${isRead?'read-post':''}">
                     <div class="flex justify-between mb-4"><span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag}</span>
-                    <button onclick="marcarLeido('${id}')" class="text-[9px] font-bold uppercase text-slate-400">${isRead?'✓ Leído':'Confirmar lectura'}</button></div>
+                    <button onclick="marcarLeido('${id}')" class="text-[9px] font-bold uppercase text-slate-400">${isRead?'✓ Leído':'Confirmar'}</button></div>
                     <h2 class="text-xl font-black">${p.titulo}</h2><p class="text-slate-500 text-sm mt-2 leading-relaxed">${p.texto}</p></div>`;
             });
         }
 
+        async function cargarAcademico() {
+            if(!alumnoSeleccionadoId) return;
+            const container = document.getElementById('container-notas');
+            container.innerHTML = `<div class="text-center py-10 animate-pulse text-slate-400 font-bold text-xs">BUSCANDO REGISTROS...</div>`;
+            
+            const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
+            container.innerHTML = "";
+            let hayDatos = false;
+
+            nSnap.forEach(doc => {
+                const n = doc.data();
+                // FILTRADO INTELIGENTE POR SWITCH
+                if((modalidadFiltro === 'rite' && n.rite) || (modalidadFiltro === 'num' && !n.rite)) {
+                    hayDatos = true;
+                    let notaHtml = n.rite ? 
+                        `<div class="bg-blue-600 text-white p-3 rounded-xl w-full text-center font-black text-sm uppercase">${n.rite}</div>` :
+                        `<div class="grid grid-cols-3 gap-2">
+                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">1B</p><p class="font-black text-xs">${n.n1||'-'}</p></div>
+                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">2B</p><p class="font-black text-xs">${n.n2||'-'}</p></div>
+                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">3B</p><p class="font-black text-xs">${n.n3||'-'}</p></div>
+                        </div>`;
+
+                    container.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm">
+                        <p class="text-[10px] font-black text-slate-800 uppercase mb-3">${n.materia}</p>
+                        ${notaHtml}
+                        ${n.obs ? `<p class="mt-3 text-[9px] text-slate-400 italic font-medium">Docente: "${n.obs}"</p>` : ''}
+                    </div>`;
+                }
+            });
+
+            if(!hayDatos) container.innerHTML = `<div class="text-center py-10 text-slate-300 font-bold text-[10px]">NO HAY CALIFICACIONES ${modalidadFiltro.toUpperCase()} CARGADAS</div>`;
+
+            // Asistencia
+            const aSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoSeleccionadoId).get();
+            let f=0, t=0; fechasInasistencias=[];
+            aSnap.forEach(d => { if(d.data().estado==='A') {f++; fechasInasistencias.push(d.data().fecha);} if(d.data().estado==='T') t++; });
+            document.getElementById('count-faltas').innerText = f;
+            document.getElementById('count-tardes').innerText = t;
+        }
+
+        function toggleIosi() { 
+            const m = document.getElementById('iosi-modal'); 
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; 
+        }
+
+        function enviarIosi() {
+            const inp = document.getElementById('iosi-input');
+            const chat = document.getElementById('iosi-chat');
+            const val = inp.value.toLowerCase();
+            if(!val) return;
+
+            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
+            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+
+            setTimeout(() => {
+                let r = `Lo siento, no entendí. Podés preguntarme cuántas faltas tiene ${hijo.nombre.split(' ')[0]} o cómo va en sus materias.`;
+                if(val.includes("falta") || val.includes("inasistencia")) {
+                    r = fechasInasistencias.length > 0 ? `El alumno tiene ${fechasInasistencias.length} faltas. Las últimas fueron el: ${fechasInasistencias.slice(-3).join(", ")}.` : `¡Buenas noticias! ${hijo.nombre} no tiene faltas registradas.`;
+                } else if(val.includes("nota") || val.includes("boletin") || val.includes("como va")) {
+                    r = `Podés ver el detalle completo en la pestaña BOLETÍN. Recordá que podés elegir entre ver notas numéricas o RITE con el interruptor gris.`;
+                } else if(val.includes("hola")) {
+                    r = `¡Hola! Soy Iosi. Estoy analizando los datos de ${hijo.nombre}. ¿En qué te ayudo hoy?`;
+                }
+                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            }, 600);
+            inp.value = "";
+        }
+
+        function marcarLeido(id) { localStorage.setItem('read_'+id, 'true'); cargarMuro(); }
         async function cargarAgenda() {
             const container = document.getElementById('container-agenda');
             const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
@@ -191,98 +287,20 @@
                     <p class="font-bold text-slate-700 text-sm">${ev.titulo}</p></div>`;
             });
         }
-
-        async function cargarAcademico() {
-            if(!alumnoSeleccionadoId) return;
-            const container = document.getElementById('container-notas');
-            container.innerHTML = `<p class="text-center text-slate-400 text-xs animate-pulse">Cargando informe...</p>`;
-            
-            const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
-            container.innerHTML = "";
-            
-            nSnap.forEach(doc => {
-                const n = doc.data();
-                let notaVisual = "";
-                
-                if(n.rite) {
-                    notaVisual = `<div class="bg-blue-600 text-white p-3 rounded-xl w-full text-center font-black">${n.rite}</div>`;
-                } else {
-                    notaVisual = `
-                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[7px] font-bold text-slate-400 uppercase">1B</p><p class="font-black text-xs">${n.n1||'-'}</p></div>
-                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[7px] font-bold text-slate-400 uppercase">2B</p><p class="font-black text-xs">${n.n2||'-'}</p></div>
-                        <div class="bg-slate-50 p-2 rounded-xl"><p class="text-[7px] font-bold text-slate-400 uppercase">3B</p><p class="font-black text-xs">${n.n3||'-'}</p></div>`;
-                }
-
-                container.innerHTML += `
-                    <div class="bg-white p-5 rounded-3xl border shadow-sm">
-                        <p class="text-[10px] font-black text-blue-900 uppercase mb-3 tracking-wider">${n.materia}</p>
-                        <div class="${n.rite ? 'block' : 'grid grid-cols-3'} gap-2 mb-3">
-                            ${notaVisual}
-                        </div>
-                        ${n.obs ? `<div class="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100"><p class="text-[9px] text-amber-800 leading-tight"><b>Nota del docente:</b> ${n.obs}</p></div>` : ''}
-                    </div>`;
-            });
-
-            // Asistencia
-            const aSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoSeleccionadoId).get();
-            let f = 0; let t = 0; fechasInasistencias = [];
-            aSnap.forEach(doc => { 
-                const d = doc.data();
-                if(d.estado==='A') { f++; fechasInasistencias.push(d.fecha); }
-                if(d.estado==='T') t++; 
-            });
-            document.getElementById('count-faltas').innerText = f;
-            document.getElementById('count-tardes').innerText = t;
-        }
-
         async function generarBoletinPDF() {
             const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-            const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
-            
             document.getElementById('pdf-nombre').innerText = hijo.nombre;
             document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
-            
+            const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
             const body = document.getElementById('pdf-body');
             body.innerHTML = "";
-            
             nSnap.forEach(doc => {
                 const n = doc.data();
-                const calif = n.rite ? n.rite : `${n.n1||'-'} / ${n.n2||'-'} / ${n.n3||'-'}`;
-                body.innerHTML += `
-                    <tr>
-                        <td style="border: 1px solid #e2e8f0; padding: 8px;">${n.materia}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 8px; text-align:center; font-weight:bold;">${calif}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 8px; font-size:9px;">${n.obs || ''}</td>
-                    </tr>`;
+                body.innerHTML += `<tr><td style="border:1px solid #999;padding:8px">${n.materia}</td><td style="border:1px solid #999;padding:8px;text-align:center">${n.rite || (n.n1+'/'+n.n2+'/'+n.n3)}</td><td style="border:1px solid #999;padding:8px">${n.obs||''}</td></tr>`;
             });
-
             const element = document.getElementById('pdf-template');
             element.style.display = 'block';
-            html2pdf().set({ margin: 0.5, filename: `Boletin_${hijo.nombre}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } })
-            .from(element).save().then(() => element.style.display = 'none');
-        }
-
-        function marcarLeido(id) { localStorage.setItem('read_'+id, 'true'); cargarMuro(); }
-        function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display==='flex'?'none':'flex'; }
-        
-        function enviarIosi() {
-            const inp = document.getElementById('iosi-input');
-            const chat = document.getElementById('iosi-chat');
-            const val = inp.value.toLowerCase();
-            if(!val) return;
-            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
-            setTimeout(() => {
-                let r = "Para consultas específicas sobre notas o boletines, puede dirigirse a la pestaña BOLETÍN.";
-                const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-                if(val.includes("falta") || val.includes("inasistencia")) {
-                    r = fechasInasistencias.length > 0 ? `Se registran faltas de ${hijo.nombre} el: ${fechasInasistencias.join(", ")}.` : `${hijo.nombre} no tiene inasistencias registradas.`;
-                } else if(val.includes("hola")) {
-                    r = `¡Hola! Soy Iosi. Estoy aquí para ayudar a la familia de ${hijo.nombre}.`;
-                }
-                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
-                chat.scrollTop = chat.scrollHeight;
-            }, 600);
-            inp.value = "";
+            html2pdf().from(element).save().then(()=>element.style.display='none');
         }
     </script>
 </body>
