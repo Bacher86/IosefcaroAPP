@@ -280,12 +280,12 @@
             if(id === 'stats') actualizarStats();
         }
 
-        // --- ASK IOSI ---
+        // --- MEJORAS ASK IOSI ---
         async function askIosi(val) {
             const res = document.getElementById('ask-iosi-results');
             if(val.length < 2) { res.style.display = 'none'; return; }
             res.style.display = 'block';
-            res.innerHTML = '<p class="text-[10px] p-2 animate-pulse">Pensando...</p>';
+            res.innerHTML = '<p class="text-[10px] p-2 animate-pulse text-blue-500 font-bold"><i class="fas fa-spinner fa-spin mr-2"></i>Iosi está buscando...</p>';
             
             const search = val.toUpperCase();
             let html = "";
@@ -293,18 +293,49 @@
             // Buscar en Alumnos
             const snapAl = await db.collection('alumnos').get();
             snapAl.forEach(doc => {
-                if(doc.data().nombre.includes(search)) html += `<div class="p-2 hover:bg-slate-50 text-xs rounded-xl flex justify-between"><span>🎓 ${doc.data().nombre}</span><span class="opacity-50">${doc.data().curso}</span></div>`;
+                if(doc.data().nombre.includes(search)) {
+                    html += `
+                    <div onclick="actionIosi('ALUMNO', '${doc.data().nombre}')" class="p-3 hover:bg-blue-50 text-xs rounded-xl flex justify-between cursor-pointer border-b border-slate-50 transition-colors">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-graduation-cap mr-2 text-blue-500"></i>${doc.data().nombre}</span>
+                        <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg text-[9px] font-bold self-center">${doc.data().curso}</span>
+                    </div>`;
+                }
             });
 
             // Buscar en Familias (usuarios rol familia)
             const snapFa = await db.collection('usuarios').where('rol','==','familia').get();
             snapFa.forEach(doc => {
                 if(doc.data().nombre.toUpperCase().includes(search) || doc.id.toUpperCase().includes(search)) {
-                    html += `<div class="p-2 hover:bg-slate-50 text-xs rounded-xl flex flex-col"><span class="font-bold">👨‍👩‍👦 Familia ${doc.data().nombre}</span><span class="text-[10px] opacity-60">${doc.id}</span></div>`;
+                    html += `
+                    <div onclick="actionIosi('FAMILIA', '${doc.id}')" class="p-3 hover:bg-rose-50 text-xs rounded-xl flex flex-col cursor-pointer border-b border-slate-50 transition-colors">
+                        <span class="font-bold text-slate-700"><i class="fas fa-home mr-2 text-rose-500"></i>Familia ${doc.data().nombre}</span>
+                        <span class="text-[10px] opacity-60 ml-6">${doc.id}</span>
+                    </div>`;
                 }
             });
 
-            res.innerHTML = html || '<p class="text-[10px] p-2">No encontré nada con ese nombre...</p>';
+            res.innerHTML = html || '<p class="text-[10px] p-3 text-slate-400 italic">No encontré resultados similares...</p>';
+        }
+
+        function actionIosi(tipo, data) {
+            const results = document.getElementById('ask-iosi-results');
+            const input = document.getElementById('ask-iosi-input');
+            results.style.display = 'none';
+            input.value = "";
+
+            if(tipo === 'ALUMNO') {
+                switchTab('alumnos');
+                const searchInput = document.getElementById('search-alum');
+                searchInput.value = data;
+                filtrarAlumnos(data);
+                searchInput.focus();
+            } else if(tipo === 'FAMILIA') {
+                switchTab('usuarios');
+                const searchFam = document.querySelector('[onkeyup^="filtrarFamilias"]');
+                searchFam.value = data;
+                filtrarFamilias(data);
+                searchFam.focus();
+            }
         }
 
         // --- MATERIAS ---
