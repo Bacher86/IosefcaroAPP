@@ -131,7 +131,7 @@
             <tbody id="pdf-body"></tbody>
         </table>
     </div>
-
+<script>
    const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -330,5 +330,6 @@
             element.style.display = 'block';
             html2pdf().from(element).save().then(()=>element.style.display='none');
         }
+    </script>
 </body>
 </html>
