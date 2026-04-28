@@ -112,7 +112,7 @@
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <input type="text" onkeyup="filtrarFamilias(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar por email...">
+                <input type="text" onkeyup="filtrarFamilias(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar familia por email...">
                 <div id="lista-familias-search" class="space-y-2"></div>
             </div>
         </section>
@@ -130,9 +130,15 @@
                 <select id="alum-curso" class="input-pro"></select>
                 <button onclick="crearAlumno()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Guardar Alumno</button>
             </div>
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                <input type="text" id="search-alum" onkeyup="filtrarAlumnos(this.value)" class="input-pro mb-4" placeholder="🔍 Buscar alumno...">
-                <div id="lista-gestion-alumnos" class="space-y-2 max-h-80 overflow-y-auto custom-scroll"></div>
+            
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm relative">
+                <div class="flex justify-between items-center mb-4">
+                    <input type="text" id="search-alum" onkeyup="filtrarAlumnos(this.value)" class="input-pro mb-0 w-2/3" placeholder="🔍 Buscar alumno...">
+                    <button onclick="eliminarAlumnosSeleccionados()" id="btn-bulk-delete" class="hidden bg-rose-500 text-white text-[10px] font-bold px-3 py-2 rounded-xl">
+                        <i class="fas fa-trash mr-1"></i> BORRAR SELEC.
+                    </button>
+                </div>
+                <div id="lista-gestion-alumnos" class="space-y-2 max-h-80 overflow-y-auto custom-scroll mt-4"></div>
             </div>
         </section>
 
@@ -147,7 +153,21 @@
                     <span id="stat-familias" class="text-3xl font-black text-rose-600">...</span>
                 </div>
             </div>
-            <div id="lista-vistas-comunicados" class="space-y-3"></div>
+            
+            <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-center">Alcance de Comunicados</h3>
+                <div id="lista-vistas-comunicados" class="space-y-3"></div>
+            </div>
+
+            <div id="modal-lectores" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-6">
+                <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-slate-800">Confirmaron lectura:</h4>
+                        <button onclick="document.getElementById('modal-lectores').classList.add('hidden')" class="text-slate-400 p-2"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="lista-nombres-lectores" class="space-y-2 max-h-64 overflow-y-auto custom-scroll text-sm"></div>
+                </div>
+            </div>
         </section>
 
         <section id="calendario" class="tab-content space-y-4">
@@ -207,11 +227,9 @@
             cargarGestionComunicados();
             cargarGestionCalendario();
             cargarGestionAlumnos();
-            actualizarStats();
         };
 
-        // AUTH
-        async function verificarAcceso() {
+        function verificarAcceso() {
             const m = document.getElementById('login-mail').value.trim().toLowerCase();
             const p = document.getElementById('login-pass').value.trim();
             if (m === "uriel.bacher@gmail.com" && p === "Gallardo10") document.getElementById('login-overlay').style.display = 'none';
@@ -227,7 +245,7 @@
             if(id === 'stats') actualizarStats();
         }
 
-        // COMUNICADOS
+        // --- COMUNICADOS ---
         function toggleCursoPost(cb) {
             if(cb.checked) cursosPostElegidos.push(cb.value);
             else cursosPostElegidos = cursosPostElegidos.filter(c => c !== cb.value);
@@ -258,7 +276,7 @@
 
         async function cargarGestionComunicados() {
             const cont = document.getElementById('lista-gestion-comunicados');
-            const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(10).get();
+            const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(15).get();
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
@@ -286,33 +304,59 @@
             window.scrollTo(0,0);
         }
 
-        function resetFormPost() { location.reload(); }
-
-        // DOCENTES
-        function toggleCursoDoc(cb) {
-            if(cb.checked) cursosDocenteElegidos.push(cb.value);
-            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
+        // --- ALUMNOS Y CARGA CSV ---
+        async function importarCSV(input) {
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const lines = reader.result.split(/\r?\n/);
+                let count = 0;
+                for(let line of lines) {
+                    const columns = line.split(',');
+                    if(columns.length >= 2) {
+                        const nombre = columns[0].trim().toUpperCase();
+                        const curso = columns[1].trim().toUpperCase();
+                        if(nombre && curso && nombre !== "NOMBRE") {
+                            await db.collection('alumnos').add({ nombre, curso });
+                            count++;
+                        }
+                    }
+                }
+                alert(`✅ Se cargaron ${count} alumnos.`);
+                location.reload();
+            };
+            reader.readAsText(input.files[0]);
         }
 
-        async function crearDocente() {
-            const n = document.getElementById('doc-nom').value;
-            const m = document.getElementById('doc-mail').value.toLowerCase().trim();
-            if(!n || !m || cursosDocenteElegidos.length === 0) return alert("Faltan datos");
-            await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: cursosDocenteElegidos });
-            alert("✅ Docente creado"); location.reload();
-        }
-
-        // ALUMNOS Y CSV
         async function cargarGestionAlumnos() {
             const snap = await db.collection('alumnos').orderBy('nombre','asc').get();
             const cont = document.getElementById('lista-gestion-alumnos');
             cont.innerHTML = "";
             snap.forEach(doc => {
-                cont.innerHTML += `<div class="alum-item flex justify-between items-center text-xs p-3 border-b bg-white" data-nombre="${doc.data().nombre}">
-                    <span><b>${doc.data().nombre}</b> <small class="ml-2 opacity-50">${doc.data().curso}</small></span>
+                const d = doc.data();
+                cont.innerHTML += `
+                <div class="alum-item flex justify-between items-center text-xs p-3 border-b bg-white" data-nombre="${d.nombre}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" class="alum-checkbox w-4 h-4" value="${doc.id}" onchange="toggleBulkBtn()">
+                        <span><b>${d.nombre}</b> <small class="ml-2 opacity-50">${d.curso}</small></span>
+                    </div>
                     <button onclick="eliminarDoc('alumnos','${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
+        }
+
+        function toggleBulkBtn() {
+            const checked = document.querySelectorAll('.alum-checkbox:checked').length;
+            document.getElementById('btn-bulk-delete').style.display = checked > 0 ? 'block' : 'none';
+        }
+
+        async function eliminarAlumnosSeleccionados() {
+            if(!confirm("¿Borrar todos los alumnos seleccionados?")) return;
+            const checkboxes = document.querySelectorAll('.alum-checkbox:checked');
+            for(let cb of checkboxes) {
+                await db.collection('alumnos').doc(cb.value).delete();
+            }
+            alert("Eliminados correctamente");
+            location.reload();
         }
 
         function filtrarAlumnos(val) {
@@ -321,39 +365,76 @@
             items.forEach(it => { it.style.display = it.getAttribute('data-nombre').includes(search) ? 'flex' : 'none'; });
         }
 
-        async function importarCSV(input) {
-            const reader = new FileReader();
-            reader.onload = async function() {
-                const content = reader.result.replace(/\r/g, ""); // Quitar retornos de carro
-                const lines = content.split('\n');
-                let count = 0;
-                for(let line of lines) {
-                    const columns = line.split(',');
-                    if(columns.length >= 2) {
-                        const nombre = columns[0].trim().toUpperCase();
-                        const curso = columns[1].trim().toUpperCase();
-                        if(nombre && curso && !nombre.includes("NOMBRE")) { // Saltar encabezado
-                            await db.collection('alumnos').add({ nombre, curso });
-                            count++;
-                        }
-                    }
-                }
-                alert(`✅ Cargados ${count} alumnos correctamente.`); location.reload();
-            };
-            reader.readAsText(input.files[0]);
-        }
-
         async function crearAlumno() {
             const n = document.getElementById('alum-nom').value.toUpperCase();
             const c = document.getElementById('alum-curso').value;
             if(n && c) { await db.collection('alumnos').add({ nombre: n, curso: c }); location.reload(); }
         }
 
-        // FAMILIAS
+        // --- STATS Y LECTORES ---
+        async function actualizarStats() {
+            const al = await db.collection('alumnos').get();
+            const fa = await db.collection('usuarios').where('rol','==','familia').get();
+            document.getElementById('stat-alumnos').innerText = al.size;
+            document.getElementById('stat-familias').innerText = fa.size;
+
+            const vCont = document.getElementById('lista-vistas-comunicados');
+            const snapV = await db.collection('comunicados').orderBy('creadoEn', 'desc').limit(10).get();
+            vCont.innerHTML = "";
+            snapV.forEach(doc => {
+                const d = doc.data();
+                vCont.innerHTML += `
+                <div onclick="verQuienLeyo('${doc.id}')" class="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-dashed cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-slate-700">${d.titulo}</span>
+                        <span class="text-[9px] text-blue-500 font-bold uppercase tracking-wider">Click para ver lectores</span>
+                    </div>
+                    <div class="badge-pro"><i class="fas fa-eye"></i> ${d.vistas || 0}</div>
+                </div>`;
+            });
+        }
+
+        async function verQuienLeyo(postId) {
+            const modal = document.getElementById('modal-lectores');
+            const lista = document.getElementById('lista-nombres-lectores');
+            lista.innerHTML = "<p class='text-center opacity-50'>Cargando...</p>";
+            modal.classList.remove('hidden');
+
+            try {
+                const snap = await db.collection('comunicados').doc(postId).collection('leidos').get();
+                if(snap.empty) {
+                    lista.innerHTML = "<p class='text-center py-4 text-slate-400'>Nadie ha confirmado la lectura aún.</p>";
+                    return;
+                }
+                lista.innerHTML = "";
+                snap.forEach(doc => {
+                    const l = doc.data();
+                    lista.innerHTML += `<div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                        <span class="font-bold text-slate-700">${l.nombre || 'Usuario'}</span>
+                        <span class="text-[10px] opacity-40">${l.fecha || ''}</span>
+                    </div>`;
+                });
+            } catch (e) { lista.innerHTML = "Error al cargar."; }
+        }
+
+        // --- OTROS (EVENTOS, DOCENTES, FAMILIAS) ---
+        async function crearDocente() {
+            const n = document.getElementById('doc-nom').value;
+            const m = document.getElementById('doc-mail').value.toLowerCase().trim();
+            if(!n || !m || cursosDocenteElegidos.length === 0) return alert("Faltan datos");
+            await db.collection('usuarios').doc(m).set({ nombre: n, rol: 'docente', cursos: cursosDocenteElegidos });
+            alert("✅ Docente creado"); location.reload();
+        }
+
+        function toggleCursoDoc(cb) {
+            if(cb.checked) cursosDocenteElegidos.push(cb.value);
+            else cursosDocenteElegidos = cursosDocenteElegidos.filter(c => c !== cb.value);
+        }
+
         async function filtrarFamilias(val) {
             const cont = document.getElementById('lista-familias-search');
             if(val.length < 3) return cont.innerHTML = "";
-            const snap = await db.collection('usuarios').get();
+            const snap = await db.collection('usuarios').where('rol','==','familia').get();
             cont.innerHTML = "";
             snap.forEach(doc => {
                 if(doc.id.toLowerCase().includes(val.toLowerCase())) {
@@ -389,14 +470,6 @@
             alert("✅ Familia guardada"); location.reload();
         }
 
-        // AGENDA Y STATS
-        async function actualizarStats() {
-            const al = await db.collection('alumnos').get();
-            const fa = await db.collection('usuarios').where('rol','==','familia').get();
-            document.getElementById('stat-alumnos').innerText = al.size;
-            document.getElementById('stat-familias').innerText = fa.size;
-        }
-
         async function crearEvento() {
             const t = document.getElementById('event-tit').value;
             const f = document.getElementById('event-fecha').value;
@@ -409,29 +482,22 @@
 
         async function cargarGestionCalendario() {
             const cont = document.getElementById('lista-gestion-eventos');
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+            const snap = await db.collection('eventos').orderBy('fecha', 'asc').limit(20).get();
             cont.innerHTML = "";
             snap.forEach(doc => {
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
-                    <div><p class="font-bold text-sm">${doc.data().fecha}</p><p class="text-xs">${doc.data().titulo}</p></div>
+                const d = doc.data();
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border text-xs">
+                    <div><p class="font-bold">${d.fecha}</p><p>${d.titulo}</p></div>
                     <div class="flex gap-4">
-                        <button onclick="editarEvento('${doc.id}', '${doc.data().titulo}', '${doc.data().fecha}')" class="text-blue-500"><i class="fas fa-edit"></i></button>
+                        <button onclick="editarEvento('${doc.id}', '${d.titulo}', '${d.fecha}')" class="text-blue-500"><i class="fas fa-edit"></i></button>
                         <button onclick="eliminarDoc('eventos','${doc.id}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`;
             });
         }
 
-        function editarEvento(id, tit, fec) {
-            document.getElementById('event-id').value = id;
-            document.getElementById('event-tit').value = tit;
-            document.getElementById('event-fecha').value = fec;
-            document.getElementById('calendar-form-title').innerText = "Editando Evento";
-            document.getElementById('btn-cancel-edit').classList.remove('hidden');
-            window.scrollTo(0,0);
-        }
-
-        async function eliminarDoc(col, id) { if(confirm("¿Estás seguro de eliminar este registro?")) { await db.collection(col).doc(id).delete(); location.reload(); } }
+        async function eliminarDoc(col, id) { if(confirm("¿Seguro?")) { await db.collection(col).doc(id).delete(); location.reload(); } }
+        function resetFormPost() { location.reload(); }
     </script>
 </body>
 </html>
