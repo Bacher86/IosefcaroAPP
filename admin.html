@@ -53,10 +53,16 @@
                 <textarea id="post-msg" rows="4" class="input-pro" placeholder="Mensaje..."></textarea>
                 <input type="url" id="post-link" class="input-pro" placeholder="https://... (JPG, PNG o YouTube)">
 
-                <div class="mb-4">
-                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2 ml-2">Programar Fecha de Publicación</label>
-                    <input type="date" id="post-fecha-prog" class="input-pro">
-                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+    <div>
+        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1 ml-2">Fecha</label>
+        <input type="date" id="post-fecha-prog" class="input-pro mb-0">
+    </div>
+    <div>
+        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1 ml-2">Horario</label>
+        <input type="time" id="post-hora-prog" class="input-pro mb-0">
+    </div>
+</div>
 
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-2 px-2">
@@ -242,13 +248,15 @@
     const tit = document.getElementById('post-tit').value;
     const msg = document.getElementById('post-msg').value;
     const link = document.getElementById('post-link').value;
-    const prog = document.getElementById('post-fecha-prog').value; // Captura la fecha del input
+    const fechaProg = document.getElementById('post-fecha-prog').value;
+    const horaProg = document.getElementById('post-hora-prog').value; // Captura la hora
     
     if(!tit || !msg) return alert("Completa título y mensaje");
     if(cursosPostElegidos.length === 0) return alert("Selecciona al menos un destinatario");
 
-    // Si no eligen fecha, usamos la de hoy por defecto
-    const fechaFinal = prog || new Date().toISOString().split('T')[0];
+    // Valores por defecto si están vacíos
+    const fechaFinal = fechaProg || new Date().toISOString().split('T')[0];
+    const horaFinal = horaProg || "08:00"; // Si no pone hora, por defecto a las 8 AM
 
     await db.collection('comunicados').add({
         titulo: tit, 
@@ -257,10 +265,11 @@
         tag: cursosPostElegidos, 
         vistas: 0, 
         creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-        fechaPublicacion: fechaFinal // Se guarda la fecha elegida
+        fechaPublicacion: fechaFinal,
+        horaPublicacion: horaFinal // Guardamos la hora exacta
     });
     
-    alert("✅ Publicación registrada para el día: " + fechaFinal);
+    alert(`✅ Programado para el ${fechaFinal} a las ${horaFinal} hs`);
     location.reload();
 }
 
