@@ -16,11 +16,9 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-btn.active { color: #2563eb; background: #eff6ff; border-radius: 1rem; }
-        .input-nota { width: 100%; height: 50px; text-align: center; border-radius: 1rem; border: 2px solid #f1f5f9; font-weight: 800; outline: none; transition: all 0.2s; }
-        .input-nota:focus { border-color: #2563eb; background: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
-        .badge-rite { padding: 12px; border-radius: 0.8rem; font-size: 12px; font-weight: 800; flex: 1; text-align: center; border: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
-        .avg-badge { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        .input-nota { width: 100%; height: 50px; text-align: center; border-radius: 1rem; border: 2px solid #f1f5f9; font-weight: 800; outline: none; }
+        .input-nota:focus { border-color: #2563eb; background: white; }
+        .badge-rite { padding: 10px; border-radius: 0.8rem; font-size: 11px; font-weight: 800; flex: 1; text-align: center; border: 2px solid transparent; transition: all 0.2s; }
     </style>
 </head>
 <body>
@@ -34,19 +32,23 @@
 
     <header class="p-6 bg-white border-b sticky top-0 z-50 flex justify-between items-center">
         <div>
-            <h1 id="doc-nom" class="font-black text-lg leading-none text-slate-800">Hola, Profe</h1>
-            <select id="select-curso" onchange="cargarAlumnos()" class="text-[11px] font-bold text-blue-600 uppercase border-none bg-transparent outline-none cursor-pointer"></select>
+            <h1 id="doc-nom" class="font-black text-lg leading-none">Hola, Profe</h1>
+            <select id="select-curso" onchange="cargarAlumnos()" class="text-[10px] font-bold text-blue-600 uppercase border-none bg-transparent outline-none"></select>
         </div>
         <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
+        
         <section id="tab-notas" class="tab-content active">
             <div class="grid grid-cols-2 gap-2 mb-6">
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Materia</label>
                     <select id="select-materia" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs">
-                        <option value="">Cargando materias...</option>
+                        <option value="MATEMATICA">Matemática</option>
+                        <option value="LENGUA">Lengua</option>
+                        <option value="INGLES">Inglés</option>
+                        <option value="CIENCIAS">Ciencias</option>
                     </select>
                 </div>
                 <div>
@@ -58,71 +60,47 @@
                 </div>
             </div>
 
-            <div id="panel-masivo" class="bg-blue-50/50 p-5 rounded-[2rem] mb-6 border-2 border-dashed border-blue-200">
-                <div class="flex items-center gap-2 mb-3">
-                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xs"><i class="fas fa-bolt"></i></div>
-                    <h4 class="text-[11px] font-black text-blue-900 uppercase">Carga Masiva de Informes</h4>
-                </div>
-                <textarea id="texto-comun" class="w-full p-3 bg-white rounded-xl text-xs border-none shadow-sm outline-none mb-3" placeholder="Escribí aquí el contenido común..."></textarea>
-                <div class="flex items-center justify-between">
-                    <label class="text-[10px] font-bold text-slate-500 flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="check-sobrescribir" class="w-4 h-4 accent-blue-600"> Sobrescribir cargados
-                    </label>
-                    <button onclick="aplicarTextoMasivo()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Replicar</button>
-                </div>
-            </div>
-
             <div id="lista-notas" class="space-y-4"></div>
         </section>
 
         <section id="tab-asis" class="tab-content">
-            <h3 class="font-black text-xl mb-4 text-slate-800">Pasar Lista</h3>
+            <h3 class="font-black text-xl mb-4">Pasar Lista</h3>
             <div id="lista-asis" class="space-y-2"></div>
+            <button onclick="alert('Asistencia guardada')" class="w-full mt-6 bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg">Finalizar Lista</button>
         </section>
     </main>
 
-    <div id="modal-hito" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-            <h3 class="font-black text-xl mb-2 text-slate-800">Registrar Hito</h3>
-            <p id="hito-alumno-nom" class="text-blue-600 font-bold text-xs uppercase mb-6"></p>
-            <div class="grid grid-cols-3 gap-2 mb-6">
-                <button onclick="seleccionarHito('Logro', this)" class="btn-hito p-3 rounded-2xl bg-slate-50 border-2 border-transparent text-[10px] font-black uppercase">🌟 Logro</button>
-                <button onclick="seleccionarHito('Obs', this)" class="btn-hito p-3 rounded-2xl bg-slate-50 border-2 border-transparent text-[10px] font-black uppercase">👀 Obs</button>
-                <button onclick="seleccionarHito('Sancion', this)" class="btn-hito p-3 rounded-2xl bg-slate-50 border-2 border-transparent text-[10px] font-black uppercase">⚠️ Sanción</button>
-            </div>
-            <div id="box-sancion" class="hidden mb-4">
-                <select id="select-sancion" class="w-full p-3 bg-slate-100 rounded-xl text-xs font-bold outline-none">
-                    <option value="Apercibimiento">Apercibimiento</option>
-                    <option value="Amonestación">Amonestación</option>
-                    <option value="Acta de Compromiso">Acta de Compromiso</option>
-                </select>
-            </div>
-            <textarea id="hito-desc" class="w-full p-4 bg-slate-100 rounded-2xl text-xs min-h-[100px] outline-none mb-6" placeholder="Detalle..."></textarea>
-            <div class="flex gap-2">
-                <button onclick="cerrarHito()" class="flex-1 p-4 rounded-2xl font-bold text-slate-400">Cancelar</button>
-                <button onclick="guardarHitoFirebase()" class="flex-1 p-4 bg-slate-900 text-white rounded-2xl font-bold">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <nav class="fixed bottom-0 left-4 right-4 bg-white/80 backdrop-blur-md border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
-        <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-star text-lg"></i>NOTAS</button>
-        <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-list-check text-lg"></i>ASISTENCIA</button>
+    <nav class="fixed bottom-0 left-4 right-4 bg-white border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
+        <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+            <i class="fas fa-star text-lg"></i>NOTAS
+        </button>
+        <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+            <i class="fas fa-list-check text-lg"></i>ASISTENCIA
+        </button>
     </nav>
 
-    <div id="pdf-template" style="display:none; padding: 40px; color: #1e293b; font-family: sans-serif;">
+    <div id="pdf-template" style="display:none; padding: 40px; color: #1e293b;">
         <div style="text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
             <h1 style="margin: 0; font-size: 22px; font-weight: 800;">INSTITUTO IOSEF CARO</h1>
-            <p style="font-size: 10px; text-transform: uppercase;">Informe de Trayectoria Educativa</p>
+            <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Informe de Trayectoria Educativa</p>
         </div>
         <div style="margin-bottom: 20px; font-size: 12px;">
             <p><strong>Alumno/a:</strong> <span id="pdf-nombre"></span></p>
             <p><strong>Curso:</strong> <span id="pdf-curso"></span> | <strong>Fecha:</strong> <span id="pdf-fecha"></span></p>
         </div>
         <table style="width: 100%; border-collapse: collapse;">
-            <thead><tr style="background: #f1f5f9;"><th style="border: 1px solid #ddd; padding: 10px;">Materia</th><th style="border: 1px solid #ddd; padding: 10px;">Calificación</th><th style="border: 1px solid #ddd; padding: 10px;">Obs</th></tr></thead>
+            <thead>
+                <tr style="background: #f1f5f9;">
+                    <th style="border: 1px solid #e2e8f0; padding: 10px; text-align: left;">Área Curricular</th>
+                    <th style="border: 1px solid #e2e8f0; padding: 10px; text-align: center;">Calificación</th>
+                    <th style="border: 1px solid #e2e8f0; padding: 10px; text-align: left;">Observaciones</th>
+                </tr>
+            </thead>
             <tbody id="pdf-body"></tbody>
         </table>
+        <div style="margin-top: 50px; text-align: center; font-size: 10px; opacity: 0.5;">
+            Documento generado digitalmente por el Portal Docente Iosef Caro.
+        </div>
     </div>
 
     <script>
@@ -131,8 +109,6 @@
         const db = firebase.firestore();
 
         let docenteData = null;
-        let hitoSeleccionado = { id: '', nombre: '', tipo: '' };
-
         document.getElementById('fecha-hoy').valueAsDate = new Date();
 
         async function login() {
@@ -141,119 +117,11 @@
             if (doc.exists && doc.data().rol === 'docente') {
                 docenteData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('doc-nom').innerText = `Hola, ${docenteData.nombre.split(' ')[0]}`;
-                
+                document.getElementById('doc-nom').innerText = docenteData.nombre;
                 const select = document.getElementById('select-curso');
                 select.innerHTML = docenteData.cursos.map(c => `<option value="${c}">${c}</option>`).join('');
-                
-                await cargarMateriasDesdeFirebase();
                 cargarAlumnos();
             } else { alert("Acceso denegado."); }
-        }
-
-        async function cargarMateriasDesdeFirebase() {
-            const selectMat = document.getElementById('select-materia');
-            const snap = await db.collection('materias').orderBy('nombre').get();
-            if(!snap.empty) {
-                selectMat.innerHTML = snap.docs.map(doc => {
-                    const nombre = doc.data().nombre;
-                    return `<option value="${nombre}">${nombre}</option>`;
-                }).join('');
-            }
-        }
-
-        async function cargarAlumnos() {
-            const curso = document.getElementById('select-curso').value;
-            const materia = document.getElementById('select-materia').value;
-            const modalidad = document.getElementById('select-modalidad').value;
-            
-            console.log("DEBUG: Buscando alumnos para curso:", curso);
-
-            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
-            
-            if(snap.empty) {
-                console.error("DEBUG: No se encontraron alumnos en el curso", curso);
-                document.getElementById('lista-notas').innerHTML = `<p class="p-4 text-rose-500 font-bold">Error: No hay alumnos en el curso ${curso}</p>`;
-                return;
-            }
-
-            const containerNotas = document.getElementById('lista-notas');
-            const containerAsis = document.getElementById('lista-asis');
-            containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
-
-            const promesas = snap.docs.map(async (docAl) => {
-                const al = docAl.data();
-                const id = docAl.id;
-                const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
-                const n = notaDoc.exists ? notaDoc.data() : {};
-                return { id, al, n };
-            });
-
-            const resultados = await Promise.all(promesas);
-
-            resultados.forEach(({id, al, n}) => {
-                let inputHtml = "";
-                if(modalidad === "NUMERICO") {
-                    const notasArr = [n.n1, n.n2, n.n3].filter(v => v && !isNaN(v));
-                    const prom = notasArr.length > 0 ? (notasArr.reduce((a,b)=>parseFloat(a)+parseFloat(b),0)/notasArr.length).toFixed(2) : '-';
-                    inputHtml = `<div class="grid grid-cols-4 gap-2">
-                        <input type="number" value="${n.n1||''}" oninput="calcProm(this)" onchange="guardarNota('${id}','n1',this.value)" class="input-nota n1" placeholder="1B">
-                        <input type="number" value="${n.n2||''}" oninput="calcProm(this)" onchange="guardarNota('${id}','n2',this.value)" class="input-nota n2" placeholder="2B">
-                        <input type="number" value="${n.n3||''}" oninput="calcProm(this)" onchange="guardarNota('${id}','n3',this.value)" class="input-nota n3" placeholder="3B">
-                        <div class="bg-violet-50 rounded-2xl flex flex-col items-center justify-center border-2 border-violet-100 avg-badge">
-                            <span class="text-[7px] font-black text-violet-400 uppercase">Promedio</span>
-                            <span class="text-violet-600 font-black text-sm val-prom">${prom}</span>
-                        </div>
-                    </div>`;
-                } else {
-                    inputHtml = `<div class="flex gap-2">
-                        ${['TEA','TEP','TED'].map(t => `<button onclick="guardarNota('${id}','rite','${t}',this)" class="badge-rite ${n.rite === t ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}">${t}</button>`).join('')}
-                    </div>`;
-                }
-
-                containerNotas.innerHTML += `
-                    <div class="bg-white p-5 rounded-[2.5rem] border shadow-sm mb-4">
-                        <div class="flex justify-between items-center mb-4">
-                            <div><h4 class="font-bold text-sm text-slate-800">${al.nombre}</h4><p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">${id}</p></div>
-                            <div class="flex gap-3">
-                                <button onclick="abrirHito('${id}','${al.nombre}')" class="text-amber-500 text-[9px] font-black uppercase"><i class="fas fa-exclamation-triangle mr-1"></i>Hito</button>
-                                <button onclick="descargarPDF('${id}','${al.nombre}')" class="text-blue-500 text-[9px] font-black uppercase"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
-                            </div>
-                        </div>
-                        ${inputHtml}
-                        <textarea onchange="guardarNota('${id}','obs',this.value)" class="w-full mt-3 p-4 bg-slate-50 rounded-2xl text-[11px] outline-none informe-individual" placeholder="Informe individual...">${n.obs || ''}</textarea>
-                    </div>`;
-
-                containerAsis.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border shadow-sm mb-2">
-                        <span class="text-xs font-bold text-slate-700 w-1/3">${al.nombre}</span>
-                        <div class="flex gap-2 flex-1 justify-end">
-                            <button onclick="marcarAsis('${id}','P',this)" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold">P</button>
-                            <button onclick="marcarAsis('${id}','A',this)" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold">A</button>
-                        </div>
-                    </div>`;
-            });
-            console.log("DEBUG: Renderizado completo");
-        }
-
-        async function guardarNota(id, campo, val, btn = null) {
-            const mat = document.getElementById('select-materia').value;
-            if(campo === 'rite' && btn) {
-                btn.parentElement.querySelectorAll('button').forEach(b => b.className = "badge-rite bg-slate-100 text-slate-400");
-                btn.className = "badge-rite bg-blue-600 text-white shadow-lg";
-            }
-            await db.collection('alumnos').doc(id).collection('notas').doc(mat).set({
-                [campo]: val, materia: mat, fechaUpdate: new Date().toLocaleDateString()
-            }, { merge: true });
-        }
-
-        async function marcarAsis(id, tipo, btn) {
-            const fecha = document.getElementById('fecha-hoy').value;
-            const mat = document.getElementById('select-materia').value;
-            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha, materia: mat, hora: new Date().toLocaleTimeString() });
-            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold");
-            const color = tipo === 'P' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-rose-500 text-white shadow-lg';
-            btn.className = `w-12 h-12 rounded-xl ${color} font-bold scale-110 transition-all`;
         }
 
         function switchTab(tab) {
@@ -263,68 +131,127 @@
             document.getElementById('btn-' + tab).classList.add('active');
         }
 
-        function calcProm(el) {
-            const card = el.closest('div.grid');
-            const n1 = parseFloat(card.querySelector('.n1').value) || 0;
-            const n2 = parseFloat(card.querySelector('.n2').value) || 0;
-            const n3 = parseFloat(card.querySelector('.n3').value) || 0;
-            const notas = [n1, n2, n3].filter(n => n > 0);
-            const prom = notas.length > 0 ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(2) : '-';
-            card.querySelector('.val-prom').innerText = prom;
-        }
+        async function cargarAlumnos() {
+            const curso = document.getElementById('select-curso').value;
+            const materia = document.getElementById('select-materia').value;
+            const modalidad = document.getElementById('select-modalidad').value;
+            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
+            
+            const containerNotas = document.getElementById('lista-notas');
+            const containerAsis = document.getElementById('lista-asis');
+            containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
 
-        function aplicarTextoMasivo() {
-            const texto = document.getElementById('texto-comun').value;
-            const sobrescribir = document.getElementById('check-sobrescribir').checked;
-            if(!texto) return alert("Ingresá un texto");
-            document.querySelectorAll('.informe-individual').forEach(ta => {
-                if (sobrescribir || ta.value.trim() === "") {
-                    ta.value = texto;
-                    ta.dispatchEvent(new Event('change'));
+            snap.forEach(async (docAl) => {
+                const al = docAl.data();
+                const id = docAl.id;
+                const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
+                const n = notaDoc.exists ? notaDoc.data() : {};
+
+                // Control según modalidad
+                let inputHtml = "";
+                if(modalidad === "NUMERICO") {
+                    inputHtml = `<div class="grid grid-cols-3 gap-2">
+                        <input type="number" value="${n.n1||''}" onchange="guardarNota('${id}','n1',this.value)" class="input-nota" placeholder="1B">
+                        <input type="number" value="${n.n2||''}" onchange="guardarNota('${id}','n2',this.value)" class="input-nota" placeholder="2B">
+                        <input type="number" value="${n.n3||''}" onchange="guardarNota('${id}','n3',this.value)" class="input-nota" placeholder="3B">
+                    </div>`;
+                } else {
+                    inputHtml = `<div class="flex gap-2">
+                        ${['TEA','TEP','TED'].map(t => `
+                            <button onclick="guardarNota('${id}','rite','${t}',this)" 
+                            class="badge-rite ${n.rite === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}">${t}</button>
+                        `).join('')}
+                    </div>`;
                 }
+
+                containerNotas.innerHTML += `
+                    <div class="bg-white p-5 rounded-3xl border shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-sm">${al.nombre}</h4>
+                            <button onclick="descargarPDF('${id}','${al.nombre}')" class="text-blue-500 text-[10px] font-black uppercase tracking-tighter">
+                                <i class="fas fa-file-pdf mr-1"></i>Boletín
+                            </button>
+                        </div>
+                        ${inputHtml}
+                        <textarea onchange="guardarNota('${id}','obs',this.value)" 
+                            class="w-full mt-3 p-3 bg-slate-50 rounded-xl text-[10px] border-none outline-none" 
+                            placeholder="Observación pedagógica...">${n.obs || ''}</textarea>
+                    </div>`;
+
+                containerAsis.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
+                        <span class="text-xs font-bold w-1/2">${al.nombre}</span>
+                        <div class="flex gap-1">
+                            <button onclick="marcarAsis('${id}','P',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">P</button>
+                            <button onclick="marcarAsis('${id}','A',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">A</button>
+                            <button onclick="marcarAsis('${id}','T',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">T</button>
+                        </div>
+                    </div>`;
             });
         }
 
-        function abrirHito(id, nombre) {
-            hitoSeleccionado = { id, nombre, tipo: '' };
-            document.getElementById('hito-alumno-nom').innerText = nombre;
-            document.getElementById('modal-hito').classList.remove('hidden');
+        async function guardarNota(id, campo, val, btn = null) {
+            const mat = document.getElementById('select-materia').value;
+            
+            if(campo === 'rite' && btn) {
+                btn.parentElement.querySelectorAll('button').forEach(b => {
+                    b.classList.replace('bg-blue-600', 'bg-slate-100');
+                    b.classList.replace('text-white', 'text-slate-400');
+                });
+                btn.classList.replace('bg-slate-100', 'bg-blue-600');
+                btn.classList.replace('text-slate-400', 'text-white');
+            }
+
+            await db.collection('alumnos').doc(id).collection('notas').doc(mat).set({
+                [campo]: val, materia: mat, fechaUpdate: new Date().toLocaleDateString()
+            }, { merge: true });
         }
-        function seleccionarHito(tipo, btn) {
-            hitoSeleccionado.tipo = tipo;
-            document.querySelectorAll('.btn-hito').forEach(b => b.classList.remove('border-blue-600', 'bg-blue-50'));
-            btn.classList.add('border-blue-600', 'bg-blue-50');
-            document.getElementById('box-sancion').classList.toggle('hidden', tipo !== 'Sancion');
-        }
-        async function guardarHitoFirebase() {
-            const desc = document.getElementById('hito-desc').value;
-            if(!hitoSeleccionado.tipo || !desc) return alert("Completá los campos");
-            await db.collection('alumnos').doc(hitoSeleccionado.id).collection('convivencia').add({
-                tipo: hitoSeleccionado.tipo,
-                descripcion: desc,
-                subtipo: hitoSeleccionado.tipo === 'Sancion' ? document.getElementById('select-sancion').value : '',
-                fecha: new Date().toLocaleDateString(),
-                docente: docenteData.nombre
-            });
-            cerrarHito();
-            alert("Hito guardado");
-        }
-        function cerrarHito() { document.getElementById('modal-hito').classList.add('hidden'); document.getElementById('hito-desc').value = ""; }
 
         async function descargarPDF(id, nombre) {
             const curso = document.getElementById('select-curso').value;
             const snap = await db.collection('alumnos').doc(id).collection('notas').get();
+            
             document.getElementById('pdf-nombre').innerText = nombre;
             document.getElementById('pdf-curso').innerText = curso;
             document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
-            const body = document.getElementById('pdf-body'); body.innerHTML = "";
+            
+            const body = document.getElementById('pdf-body');
+            body.innerHTML = "";
+            
             snap.forEach(doc => {
                 const n = doc.data();
-                body.innerHTML += `<tr><td style="border:1px solid #ddd;padding:10px;">${n.materia}</td><td style="border:1px solid #ddd;padding:10px;text-align:center;">${n.rite || n.n1 || '-'}</td><td style="border:1px solid #ddd;padding:10px;">${n.obs||''}</td></tr>`;
+                // Si tiene RITE lo mostramos, sino mostramos los bimestres
+                const calif = n.rite ? n.rite : `${n.n1||'-'} / ${n.n2||'-'} / ${n.n3||'-'}`;
+                body.innerHTML += `
+                    <tr>
+                        <td style="border: 1px solid #e2e8f0; padding: 10px; font-weight:bold;">${n.materia}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 10px; text-align:center; font-weight:800; color:#2563eb;">${calif}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 10px; font-size:9px;">${n.obs || ''}</td>
+                    </tr>`;
             });
+
             const element = document.getElementById('pdf-template');
             element.style.display = 'block';
-            html2pdf().from(element).save(`${nombre}_Informe.pdf`).then(() => element.style.display = 'none');
+            
+            const opciones = {
+                margin: 0.5,
+                filename: `Boletin_${nombre}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opciones).from(element).save().then(() => {
+                element.style.display = 'none';
+            });
+        }
+
+        async function marcarAsis(id, tipo, btn) {
+            const fecha = document.getElementById('fecha-hoy').value;
+            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha: fecha });
+            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
+            const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
+            btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
         }
     </script>
 </body>
