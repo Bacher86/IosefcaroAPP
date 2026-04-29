@@ -2,7 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "BOo4_hhC-Ul3OVpIg4jyyMjuQmd96DX8H1m0c6HhgzgmsobIJ960T6mC5Gx3wAegtjxJtJiHaXYZifSpEC6MH00", // <- Ya te puse tu API Key real aquí
+  apiKey: "BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc", // <- Ya te puse tu API Key real aquí
   projectId: "app-iosefcaro",
   messagingSenderId: "651320124248",
   appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
