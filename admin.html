@@ -14,11 +14,9 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
-        .input-pro:focus { border-color: #0f172a; ring: 2px ring-slate-100; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Overlay de Seguridad */
+        .input-pro:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1); }
         #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -26,86 +24,107 @@
     <div id="login-overlay">
         <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
             <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
-                <i class="fas fa-lock"></i>
+                <i class="fas fa-hammer"></i>
             </div>
             <h1 class="text-3xl font-black text-slate-800 tracking-tighter">Panel Maestro</h1>
-            <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Gestión Administrativa</p>
-            
+            <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Administración General</p>
             <div class="space-y-4">
-                <input type="email" id="log-email" placeholder="Usuario / Email" class="input-pro">
+                <input type="email" id="log-email" placeholder="Email" class="input-pro">
                 <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
-                <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">Entrar al Sistema</button>
+                <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">Entrar</button>
             </div>
         </div>
     </div>
 
     <div id="admin-content" class="hidden">
         <nav class="bg-white border-b p-4 flex gap-2 sticky top-0 z-50 overflow-x-auto shadow-sm">
-            <button onclick="switchTab('familias')" class="nav-btn bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
+            <button onclick="switchTab('importar')" class="nav-btn bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
+            <button onclick="switchTab('staff')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff Admin/Com</button>
+            <button onclick="switchTab('materias')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias/Cursos</button>
+            <button onclick="switchTab('docentes')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
             <button onclick="switchTab('alumnos')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
-            <button onclick="switchTab('materias')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
-            <button onclick="switchTab('staff')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff/Docentes</button>
+            <button onclick="switchTab('familias')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
             <button onclick="cerrarSesion()" class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
         </nav>
 
-        <main class="p-4 max-w-5xl mx-auto space-y-6">
-            
-            <section id="tab-familias" class="tab-content active space-y-4">
-                <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Alta de Familia</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="fam-nombre" placeholder="Nombre de la Familia" class="input-pro">
-                        <input type="email" id="fam-email" placeholder="Email (Usuario)" class="input-pro">
-                        <input type="text" id="fam-pass" placeholder="Contraseña" class="input-pro">
-                        <button onclick="crearFamilia()" class="md:col-span-2 bg-blue-600 text-white p-4 rounded-2xl font-bold">Crear Familia</button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-3xl border overflow-hidden">
-                    <div class="p-4 bg-slate-50 border-b">
-                        <input type="text" onkeyup="buscar('search-fam', 'lista-familias')" id="search-fam" placeholder="Buscar familia..." class="input-pro">
-                    </div>
-                    <div id="lista-familias" class="divide-y max-h-[500px] overflow-y-auto"></div>
+        <main class="p-4 max-w-6xl mx-auto space-y-6">
+
+            <section id="tab-importar" class="tab-content active">
+                <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
+                    <i class="fas fa-file-upload text-5xl text-blue-500 mb-4"></i>
+                    <h2 class="text-2xl font-black text-slate-800">Carga Masiva de Datos</h2>
+                    <p class="text-slate-400 mb-8">Estructura CSV: <b>nombre_alumno, curso, nombre_familia, email_familia</b></p>
+                    <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-info').innerText = this.files[0].name">
+                    <label for="csv-file" class="bg-slate-100 text-slate-800 px-8 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-4 transition">Seleccionar Archivo .CSV</label>
+                    <p id="csv-info" class="text-xs font-black text-blue-600 mb-6 uppercase tracking-widest"></p>
+                    <button onclick="procesarCSV()" class="block mx-auto bg-blue-600 text-white px-12 py-4 rounded-2xl font-black shadow-xl shadow-blue-200 hover:scale-105 transition">IMPORTAR AHORA</button>
+                    <div id="csv-status" class="mt-6 text-sm font-bold text-slate-400 uppercase tracking-tighter"></div>
                 </div>
             </section>
 
-            <section id="tab-alumnos" class="tab-content space-y-4">
+            <section id="tab-staff" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Nuevo Alumno</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="alu-nombre" placeholder="Nombre completo" class="input-pro">
-                        <input type="text" id="alu-curso" placeholder="Curso (ej: 1A, 2B)" class="input-pro">
-                        <select id="alu-familia" class="input-pro"></select>
-                        <button onclick="crearAlumno()" class="md:col-span-2 bg-emerald-600 text-white p-4 rounded-2xl font-bold">Vincular Alumno</button>
-                    </div>
-                </div>
-                <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </section>
-
-            <section id="tab-materias" class="tab-content space-y-4">
-                <div class="bg-white p-6 rounded-3xl border shadow-sm text-center">
-                    <h2 class="font-black text-xl mb-2">Materias</h2>
-                    <input type="text" id="new-materia" placeholder="Nombre de la materia" class="input-pro mb-4">
-                    <button onclick="crearMateria()" class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold">Agregar Materia</button>
-                </div>
-                <div id="lista-materias" class="flex flex-wrap gap-2 justify-center"></div>
-            </section>
-
-            <section id="tab-staff" class="tab-content space-y-4">
-                <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Personal Staff / Docentes</h2>
+                    <h2 class="font-black text-xl mb-4 text-slate-800">Crear Acceso Admin o Comunicación</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="staff-nombre" placeholder="Nombre" class="input-pro">
                         <input type="email" id="staff-email" placeholder="Email" class="input-pro">
-                        <input type="text" id="staff-pass" placeholder="Contraseña" class="input-pro">
+                        <input type="text" id="staff-pass" placeholder="Definir Contraseña" class="input-pro">
                         <select id="staff-rol" class="input-pro">
-                            <option value="docente">Docente</option>
-                            <option value="comunicacion">Comunicación / Prensa</option>
-                            <option value="admin">Administrador</option>
+                            <option value="admin">Administrador Total</option>
+                            <option value="comunicacion">Solo Comunicación</option>
                         </select>
-                        <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Dar de Alta</button>
+                        <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Dar de Alta Usuario</button>
                     </div>
                 </div>
-                <div id="lista-staff" class="grid grid-cols-1 gap-3"></div>
+                <div id="lista-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+
+            <section id="tab-materias" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border">
+                        <h3 class="font-black mb-4 flex items-center gap-2"><i class="fas fa-book text-blue-500"></i> Materias</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-materia" placeholder="Nombre de materia" class="input-pro">
+                            <button onclick="crearMaestro('materias', 'new-materia')" class="bg-blue-600 text-white px-4 rounded-xl font-bold">+</button>
+                        </div>
+                        <div id="lista-materias" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border">
+                        <h3 class="font-black mb-4 flex items-center gap-2"><i class="fas fa-layer-group text-emerald-500"></i> Cursos</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-curso" placeholder="Ej: 1A, 2B" class="input-pro">
+                            <button onclick="crearMaestro('cursos', 'new-curso')" class="bg-emerald-600 text-white px-4 rounded-xl font-bold">+</button>
+                        </div>
+                        <div id="lista-cursos" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-docentes" class="tab-content space-y-4">
+                <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                    <h2 class="font-black text-xl mb-4 text-slate-800">Alta de Docente</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="doc-nombre" placeholder="Nombre" class="input-pro">
+                        <input type="email" id="doc-email" placeholder="Email institucional" class="input-pro">
+                        <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Registrar Docente</button>
+                    </div>
+                </div>
+                <div id="lista-docentes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <section id="tab-alumnos" class="tab-content space-y-4">
+                <div class="bg-white p-4 rounded-2xl border flex items-center justify-between shadow-sm">
+                    <input type="text" onkeyup="buscar('search-alu', 'lista-alumnos')" id="search-alu" placeholder="Buscar alumno..." class="input-pro max-w-xs">
+                    <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase">Cargando...</span>
+                </div>
+                <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </section>
+
+            <section id="tab-familias" class="tab-content space-y-4">
+                <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                    <input type="text" onkeyup="buscar('search-fam', 'lista-familias')" id="search-fam" placeholder="Buscar familia por nombre o mail..." class="input-pro">
+                </div>
+                <div id="lista-familias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </section>
 
         </main>
@@ -123,166 +142,63 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- SISTEMA DE ACCESO (PROTEGIDO) ---
+        // --- LOGIN ---
         async function validarIngreso() {
             const email = document.getElementById('log-email').value.trim().toLowerCase();
             const pass = document.getElementById('log-pass').value.trim();
-
-            if (!email || !pass) return alert("Completa los datos");
-
-            // ACCESO MAESTRO (Entra siempre)
-            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-                autorizar("admin");
-                return;
-            }
-
+            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") { autorizar("admin"); return; }
             try {
                 const doc = await db.collection('usuarios').doc(email).get();
-                if(doc.exists) {
-                    const u = doc.data();
-                    if(u.pass === pass && u.rol === 'admin') {
-                        autorizar("admin");
-                    } else {
-                        alert("Acceso denegado: Se requiere rango Admin.");
-                    }
-                } else {
-                    alert("Usuario no registrado en el sistema.");
-                }
-            } catch(e) {
-                console.error(e);
-                alert("Error de conexión. Reintenta.");
-            }
+                if(doc.exists && doc.data().pass === pass && doc.data().rol === 'admin') { autorizar("admin"); } 
+                else { alert("Acceso restringido."); }
+            } catch(e) { alert("Error de servidor."); }
         }
 
         function autorizar(rol) {
             sessionStorage.setItem('iosef_admin_session', rol);
-            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('admin-content').classList.remove('hidden');
             refrescarTodo();
         }
 
-        window.onload = () => {
-            if(sessionStorage.getItem('iosef_admin_session')) {
-                autorizar("admin");
-            }
-        };
+        window.onload = () => { if(sessionStorage.getItem('iosef_admin_session')) autorizar("admin"); };
+        function cerrarSesion() { sessionStorage.clear(); location.reload(); }
 
-        function cerrarSesion() {
-            sessionStorage.clear();
-            location.reload();
-        }
-
-        // --- LÓGICA DE DATOS ---
-        async function refrescarTodo() {
-            // Cada carga en su propio bloque para que una no pise a la otra
-            try { cargarFamilias(); } catch(e) { console.error("Error Familias:", e); }
-            try { cargarAlumnos(); } catch(e) { console.error("Error Alumnos:", e); }
-            try { cargarMaterias(); } catch(e) { console.error("Error Materias:", e); }
-            try { cargarStaff(); } catch(e) { console.error("Error Staff:", e); }
-        }
-
-        async function cargarFamilias() {
-            const snap = await db.collection('usuarios').where('rol','==','familia').get();
-            const cont = document.getElementById('lista-familias');
-            const sel = document.getElementById('alu-familia');
-            cont.innerHTML = "";
-            sel.innerHTML = `<option value="">Seleccionar Familia...</option>`;
-            
-            snap.forEach(doc => {
-                const f = doc.data();
-                let hijosTxt = "Sin hijos";
-                if(f.hijos && Array.isArray(f.hijos)) {
-                    hijosTxt = f.hijos.map(h => h.nombre).join(", ");
+        // --- CARGA MASIVA CSV ---
+        async function procesarCSV() {
+            const file = document.getElementById('csv-file').files[0];
+            if(!file) return alert("Seleccioná un CSV");
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const lines = e.target.result.split(/\r?\n/);
+                let logs = 0;
+                for(let i=1; i<lines.length; i++) {
+                    const [alu, cur, fam, mail] = lines[i].split(',').map(s => s?.trim());
+                    if(mail && alu) {
+                        const m = mail.toLowerCase();
+                        // Crear familia
+                        await db.collection('usuarios').doc(m).set({
+                            nombre: fam, rol: 'familia', hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cur.toUpperCase() })
+                        }, {merge:true});
+                        // Crear alumno vinculado
+                        await db.collection('alumnos').add({ nombre: alu, curso: cur.toUpperCase(), familiaId: m, familiaNombre: fam });
+                        logs++;
+                        document.getElementById('csv-status').innerText = `Procesando: ${logs} filas...`;
+                    }
                 }
-                
-                cont.innerHTML += `
-                    <div class="p-4 flex justify-between items-center" data-search="${f.nombre} ${doc.id}">
-                        <div>
-                            <p class="font-bold text-slate-800">${f.nombre}</p>
-                            <p class="text-[10px] text-blue-500 font-bold uppercase">${doc.id}</p>
-                            <p class="text-[10px] text-slate-400">Hijos: ${hijosTxt}</p>
-                        </div>
-                        <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300 hover:text-rose-500"><i class="fas fa-trash"></i></button>
-                    </div>`;
-                sel.innerHTML += `<option value="${doc.id}">${f.nombre}</option>`;
-            });
+                alert("Carga masiva terminada: " + logs + " registros.");
+                location.reload();
+            };
+            reader.readAsText(file);
         }
 
-        async function crearFamilia() {
-            const n = document.getElementById('fam-nombre').value;
-            const e = document.getElementById('fam-email').value.toLowerCase().trim();
-            const p = document.getElementById('fam-pass').value;
-            if(!n || !e || !p) return alert("Completa todos los campos");
-            await db.collection('usuarios').doc(e).set({ nombre: n, pass: p, rol: 'familia', hijos: [] });
-            location.reload();
-        }
-
-        async function cargarAlumnos() {
-            const snap = await db.collection('alumnos').get();
-            const cont = document.getElementById('lista-alumnos');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const a = doc.data();
-                cont.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl border flex justify-between items-center">
-                        <div>
-                            <p class="font-bold">${a.nombre}</p>
-                            <p class="text-xs text-slate-400">${a.curso} • ${a.familiaNombre || 'Sin familia'}</p>
-                        </div>
-                        <button onclick="eliminarDoc('alumnos', '${doc.id}')" class="text-rose-200"><i class="fas fa-times-circle"></i></button>
-                    </div>`;
-            });
-        }
-
-        async function crearAlumno() {
-            const n = document.getElementById('alu-nombre').value;
-            const c = document.getElementById('alu-curso').value.toUpperCase();
-            const fId = document.getElementById('alu-familia').value;
-            const fNom = document.getElementById('alu-familia').options[document.getElementById('alu-familia').selectedIndex].text;
-            if(!n || !c || !fId) return alert("Completa todos los datos");
-
-            const aluRef = await db.collection('alumnos').add({ nombre: n, curso: c, familiaId: fId, familiaNombre: fNom });
-            const famDoc = await db.collection('usuarios').doc(fId).get();
-            const hijos = famDoc.data().hijos || [];
-            hijos.push({ id: aluRef.id, nombre: n, curso: c });
-            await db.collection('usuarios').doc(fId).update({ hijos: hijos });
-            location.reload();
-        }
-
-        async function cargarMaterias() {
-            const snap = await db.collection('materias').get();
-            const cont = document.getElementById('lista-materias');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                cont.innerHTML += `<span class="bg-slate-100 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
-                    ${doc.data().nombre} 
-                    <i onclick="eliminarDoc('materias', '${doc.id}')" class="fas fa-times cursor-pointer text-slate-400"></i>
-                </span>`;
-            });
-        }
-
-        async function crearMateria() {
-            const n = document.getElementById('new-materia').value;
-            if(!n) return;
-            await db.collection('materias').add({ nombre: n });
-            location.reload();
-        }
-
-        async function cargarStaff() {
-            const snap = await db.collection('usuarios').where('rol', 'in', ['admin', 'docente', 'comunicacion']).get();
-            const cont = document.getElementById('lista-staff');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const s = doc.data();
-                cont.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl border flex justify-between items-center">
-                        <div>
-                            <p class="font-bold">${s.nombre}</p>
-                            <p class="text-[10px] uppercase font-black text-blue-500">${s.rol}</p>
-                        </div>
-                        <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300"><i class="fas fa-trash-alt"></i></button>
-                    </div>`;
-            });
+        // --- FUNCIONES MAESTRAS (MATERIAS, CURSOS, STAFF, DOCENTES) ---
+        async function crearMaestro(col, inpId) {
+            const val = document.getElementById(inpId).value.trim();
+            if(!val) return;
+            await db.collection(col).add({ nombre: val });
+            document.getElementById(inpId).value = "";
+            refrescarTodo();
         }
 
         async function crearStaff() {
@@ -290,11 +206,95 @@
             const m = document.getElementById('staff-email').value.toLowerCase().trim();
             const p = document.getElementById('staff-pass').value;
             const r = document.getElementById('staff-rol').value;
-            if(!n || !m || !p) return alert("Completar campos");
+            if(!n || !m || !p) return alert("Faltan datos");
             await db.collection('usuarios').doc(m).set({ nombre: n, pass: p, rol: r });
-            location.reload();
+            alert("Usuario creado");
+            cargarStaff();
         }
 
+        async function crearDocente() {
+            const n = document.getElementById('doc-nombre').value;
+            const e = document.getElementById('doc-email').value.toLowerCase().trim();
+            if(!n || !e) return alert("Completar nombre y email");
+            await db.collection('usuarios').doc(e).set({ nombre: n, rol: 'docente' });
+            alert("Docente registrado");
+            cargarDocentes();
+        }
+
+        // --- CARGADORES DE LISTAS ---
+        async function cargarStaff() {
+            const snap = await db.collection('usuarios').where('rol', 'in', ['admin', 'comunicacion']).get();
+            const cont = document.getElementById('lista-staff');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
+                    <span><b>${doc.data().nombre}</b> <br><small class="text-blue-600 font-bold uppercase text-[9px]">${doc.data().rol} • ${doc.id}</small></span>
+                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300 hover:text-rose-600"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+        }
+
+        async function cargarDocentes() {
+            const snap = await db.collection('usuarios').where('rol', '==', 'docente').get();
+            const cont = document.getElementById('lista-docentes');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm">
+                    <span><b>${doc.data().nombre}</b><br><span class="text-slate-400 text-xs">${doc.id}</span></span>
+                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300"><i class="fas fa-user-minus"></i></button>
+                </div>`;
+            });
+        }
+
+        async function cargarMaestros(col, contId) {
+            const snap = await db.collection(col).get();
+            const cont = document.getElementById(contId);
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                cont.innerHTML += `<span class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-200">
+                    ${doc.data().nombre} <i onclick="eliminarDoc('${col}', '${doc.id}')" class="fas fa-times text-slate-300 hover:text-rose-500 cursor-pointer"></i>
+                </span>`;
+            });
+        }
+
+        async function cargarAlumnos() {
+            const snap = await db.collection('alumnos').get();
+            const cont = document.getElementById('lista-alumnos');
+            cont.innerHTML = "";
+            document.getElementById('count-alumnos').innerText = snap.size + " Alumnos";
+            snap.forEach(doc => {
+                const a = doc.data();
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border text-center shadow-sm" data-search="${a.nombre} ${a.curso}">
+                    <p class="font-bold text-slate-800 text-sm">${a.nombre}</p>
+                    <p class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full inline-block mt-2 font-black uppercase text-slate-500">${a.curso}</p>
+                    <button onclick="eliminarDoc('alumnos', '${doc.id}')" class="block mx-auto mt-3 text-slate-200 hover:text-rose-400"><i class="fas fa-times-circle"></i></button>
+                </div>`;
+            });
+        }
+
+        async function cargarFamilias() {
+            const snap = await db.collection('usuarios').where('rol','==','familia').get();
+            const cont = document.getElementById('lista-familias');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border shadow-sm" data-search="${doc.data().nombre} ${doc.id}">
+                    <p class="font-bold text-slate-800 text-sm">${doc.data().nombre}</p>
+                    <p class="text-[10px] text-slate-400 font-bold truncate">${doc.id}</p>
+                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="mt-3 text-[10px] font-black text-rose-300 uppercase hover:text-rose-500">Eliminar Familia</button>
+                </div>`;
+            });
+        }
+
+        function refrescarTodo() {
+            cargarStaff();
+            cargarDocentes();
+            cargarAlumnos();
+            cargarFamilias();
+            cargarMaestros('materias', 'lista-materias');
+            cargarMaestros('cursos', 'lista-cursos');
+        }
+
+        // --- UTILIDADES ---
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
             document.getElementById('tab-'+t).classList.add('active');
@@ -304,19 +304,19 @@
             event.currentTarget.classList.add('bg-slate-900', 'text-white');
         }
 
-        function buscar(inpId, contId) {
-            const q = document.getElementById(inpId).value.toLowerCase();
-            const cont = document.getElementById(contId);
-            Array.from(cont.children).forEach(row => {
-                const text = row.getAttribute('data-search') || "";
-                row.style.display = text.toLowerCase().includes(q) ? 'flex' : 'none';
-            });
+        async function eliminarDoc(col, id) {
+            if(confirm("¿Estás seguro de eliminar este registro?")) { 
+                await db.collection(col).doc(id).delete(); 
+                refrescarTodo(); 
+            }
         }
 
-        async function eliminarDoc(col, id) {
-            if(confirm("¿Eliminar este registro permanentemente?")) { 
-                await db.collection(col).doc(id).delete(); 
-                location.reload(); 
+        function buscar(inpId, contId) {
+            const q = document.getElementById(inpId).value.toLowerCase();
+            const items = document.getElementById(contId).children;
+            for (let item of items) {
+                const txt = item.getAttribute('data-search') || "";
+                item.style.display = txt.toLowerCase().includes(q) ? 'block' : 'none';
             }
         }
     </script>
