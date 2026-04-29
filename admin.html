@@ -164,7 +164,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Variables temporales para el formulario de docentes
         let materiasSeleccionadas = [];
         let cursosSeleccionados = [];
 
@@ -225,13 +224,21 @@
                     if(alu && emails.length > 0) {
                         for(let mail of emails) {
                             const m = mail.toLowerCase();
+                            // FIX: arrayUnion asegura que agregamos el hijo al array sin borrar los anteriores
                             await db.collection('usuarios').doc(m).set({
                                 nombre: fam, 
                                 rol: 'familia', 
                                 hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cur.toUpperCase() })
                             }, {merge:true});
                         }
-                        await db.collection('alumnos').add({ nombre: alu, curso: cur.toUpperCase(), familiaNombre: fam });
+                        // FIX: ID único por alumno para que hermanos no se pisen en la colección alumnos
+                        const alumnoId = `${alu}_${cur.toUpperCase()}`.replace(/\s+/g, '_');
+                        await db.collection('alumnos').doc(alumnoId).set({ 
+                            nombre: alu, 
+                            curso: cur.toUpperCase(), 
+                            familiaNombre: fam 
+                        }, {merge: true});
+                        
                         logs++;
                         document.getElementById('csv-status').innerText = `Procesando: ${logs} alumnos...`;
                     }
@@ -261,13 +268,10 @@
             cargarStaff();
         }
 
-        // --- NUEVA LÓGICA DE DOCENTES ---
-        
         function agregarTag(tipo) {
             const select = document.getElementById('doc-' + tipo);
             const val = select.value;
             if(!val) return;
-            
             if(tipo === 'materia') {
                 if(!materiasSeleccionadas.includes(val)) materiasSeleccionadas.push(val);
             } else {
@@ -297,20 +301,16 @@
         async function crearDocente() {
             const n = document.getElementById('doc-nombre').value;
             const e = document.getElementById('doc-email').value.toLowerCase().trim();
-            
             if(!n || !e || materiasSeleccionadas.length === 0 || cursosSeleccionados.length === 0) {
                 return alert("Completa nombre, email y agrega al menos una materia y un curso con el botón (+)");
             }
-
             await db.collection('usuarios').doc(e).set({ 
                 nombre: n, 
                 rol: 'docente',
                 materias: materiasSeleccionadas,
                 cursos: cursosSeleccionados 
             });
-
             alert("Docente registrado con éxito");
-            // Limpiar formulario
             document.getElementById('doc-nombre').value = "";
             document.getElementById('doc-email').value = "";
             materiasSeleccionadas = [];
@@ -323,10 +323,8 @@
             const snap = await db.collection(col).orderBy('nombre', 'asc').get();
             const cont = document.getElementById(contId);
             const selectDoc = col === 'materias' ? document.getElementById('doc-materia') : document.getElementById('doc-curso');
-            
             cont.innerHTML = "";
             if(selectDoc) selectDoc.innerHTML = `<option value="">Seleccionar ${col === 'materias' ? 'Materia' : 'Curso'}</option>`;
-
             snap.forEach(doc => {
                 const name = doc.data().nombre;
                 cont.innerHTML += `<span class="bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border">
@@ -357,7 +355,6 @@
                 const d = doc.data();
                 const mats = d.materias ? d.materias.join(', ') : (d.materia || '---');
                 const curs = d.cursos ? d.cursos.join(', ') : (d.curso || '---');
-
                 cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm">
                     <span><b>${d.nombre}</b><br>
                     <small class="text-blue-600 font-bold uppercase text-[9px]">MATERIAS: ${mats}</small><br>
