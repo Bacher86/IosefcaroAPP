@@ -15,7 +15,6 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
         .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        /* El login ahora está oculto por defecto */
         #login-overlay { display: none; position: fixed; inset: 0; background: #0f172a; z-index: 100; align-items: center; justify-content: center; padding: 20px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -125,16 +124,11 @@
     };
 
     let db;
-    try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        db = firebase.firestore();
-    } catch (e) {
-        alert("Error crítico al conectar con Firebase: " + e.message);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
+    db = firebase.firestore();
 
-    // MODIFICADO: Inicia la app automáticamente al cargar
     window.onload = () => {
         inicializarApp();
     };
@@ -170,7 +164,13 @@
         const titulo = document.getElementById('not-titulo').value;
         const texto = document.getElementById('not-texto').value;
         const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-        if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos");
+        
+        if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos obligatorios.");
+
+        const btn = document.getElementById('btn-noticia');
+        btn.disabled = true;
+        btn.innerText = "Publicando y Notificando...";
+
         const data = {
             titulo, texto, curso: seleccionados,
             programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
@@ -182,9 +182,64 @@
             },
             fechaCreacion: new Date().toISOString()
         };
-        if(id) await db.collection('comunicados').doc(id).update(data);
-        else await db.collection('comunicados').add(data);
-        location.reload();
+
+        try {
+            if(id) {
+                await db.collection('comunicados').doc(id).update(data);
+                alert("Noticia actualizada.");
+            } else {
+                await db.collection('comunicados').add(data);
+                // DISPARAMOS LA NOTIFICACIÓN SOLO SI ES NUEVA
+                await enviarNotificacionesPush(titulo, texto);
+            }
+            location.reload();
+        } catch(e) {
+            alert("Error al guardar: " + e.message);
+            btn.disabled = false;
+            btn.innerText = "Publicar Ahora";
+        }
+    }
+
+    async function enviarNotificacionesPush(titulo, cuerpo) {
+        // PEGÁ ACÁ TU CLAVE DE SERVIDOR (SERVER KEY LEGACY)
+        const SERVER_KEY = "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI"; 
+        
+        if(SERVER_KEY === "TU_CLAVE_LEGACY_AQUI") {
+            console.log("No se configuró la SERVER_KEY, no se enviarán notificaciones.");
+            return;
+        }
+
+        try {
+            const snap = await db.collection('usuarios').get();
+            const tokens = [];
+            snap.forEach(doc => {
+                const u = doc.data();
+                if(u.fcmTokens) tokens.push(...u.fcmTokens);
+            });
+
+            if(tokens.length === 0) return;
+
+            const promesas = tokens.map(t => {
+                return fetch('https://fcm.googleapis.com/fcm/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'key=' + SERVER_KEY
+                    },
+                    body: JSON.stringify({
+                        to: t,
+                        notification: {
+                            title: titulo,
+                            body: cuerpo,
+                            icon: "https://bacher86.github.io/IosefcaroAPP/logo.png",
+                            click_action: "https://bacher86.github.io/IosefcaroAPP/familia.html",
+                            sound: "default"
+                        }
+                    })
+                });
+            });
+            await Promise.all(promesas);
+        } catch(e) { console.error("Error envío push:", e); }
     }
 
     async function cargarNoticias() {
@@ -213,9 +268,21 @@
         document.getElementById('noticia-id').value = id;
         document.getElementById('not-titulo').value = n.titulo;
         document.getElementById('not-texto').value = n.texto;
+        document.getElementById('not-img').value = n.adjuntos?.img || "";
+        document.getElementById('not-video').value = n.adjuntos?.video || "";
+        document.getElementById('not-pdf').value = n.adjuntos?.pdf || "";
+        document.getElementById('not-link').value = n.adjuntos?.link || "";
         document.getElementById('noticia-form-title').innerText = "Editando Publicación";
         document.getElementById('btn-cancel-noticia').classList.remove('hidden');
         window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function resetFormNoticia() {
+        document.getElementById('noticia-id').value = "";
+        document.getElementById('not-titulo').value = "";
+        document.getElementById('not-texto').value = "";
+        document.getElementById('noticia-form-title').innerText = "Nueva Publicación";
+        document.getElementById('btn-cancel-noticia').classList.add('hidden');
     }
 
     async function guardarCalendario() {
@@ -259,8 +326,11 @@
     }
 
     async function eliminarDoc(col, id) {
-        if(confirm("¿Eliminar?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+        if(confirm("¿Eliminar permanentemente?")) { 
+            await db.collection(col).doc(id).delete(); 
+            location.reload(); 
+        }
     }
-</script>
+    </script>
 </body>
 </html>
