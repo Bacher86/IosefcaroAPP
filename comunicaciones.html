@@ -129,258 +129,238 @@
     </div>
 
     <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
-            authDomain: "app-iosefcaro.firebaseapp.com", 
-            projectId: "app-iosefcaro", 
-            storageBucket: "app-iosefcaro.firebasestorage.app", 
-            messagingSenderId: "651320124248", 
-            appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
-        };
+    const firebaseConfig = { 
+        apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
+        authDomain: "app-iosefcaro.firebaseapp.com", 
+        projectId: "app-iosefcaro", 
+        storageBucket: "app-iosefcaro.firebasestorage.app", 
+        messagingSenderId: "651320124248", 
+        appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
+    };
 
-        // Inicialización segura de Firebase
+    // Inicialización ultra-segura
+    let db;
+    try {
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-        const db = firebase.firestore();
+        db = firebase.firestore();
+    } catch (e) {
+        alert("Error crítico al conectar con Firebase: " + e.message);
+    }
 
-        // --- LOGIN REFORZADO ---
-        async function validarIngreso() {
-            const btn = document.getElementById('btn-login');
-            const email = document.getElementById('log-email').value.trim().toLowerCase();
-            const pass = document.getElementById('log-pass').value.trim();
+    async function validarIngreso() {
+        const btn = document.getElementById('btn-login');
+        const email = document.getElementById('log-email').value.trim().toLowerCase();
+        const pass = document.getElementById('log-pass').value.trim();
 
-            if (!email || !pass) {
-                alert("Por favor, completa todos los campos");
-                return;
-            }
-
-            btn.innerText = "Verificando...";
-            btn.disabled = true;
-
-            // 1. Acceso Maestro Directo
-            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-                autorizar("admin");
-                return;
-            }
-
-            try {
-                // 2. Buscamos por ID de documento (email)
-                let doc = await db.collection('usuarios').doc(email).get();
-                let u = doc.exists ? doc.data() : null;
-
-                // 3. Si no aparece, buscamos por el campo 'mail'
-                if (!u) {
-                    const query = await db.collection('usuarios').where('mail', '==', email).get();
-                    if (!query.empty) {
-                        u = query.docs[0].data();
-                    }
-                }
-
-                if (u) {
-                    if (u.pass === pass) {
-                        if (u.rol === 'admin' || u.rol === 'comunicacion') {
-                            autorizar(u.rol);
-                        } else {
-                            alert("Acceso denegado: Tu rol no tiene permisos para este panel.");
-                            btn.disabled = false;
-                            btn.innerText = "Ingresar al Panel";
-                        }
-                    } else {
-                        alert("Contraseña incorrecta.");
-                        btn.disabled = false;
-                        btn.innerText = "Ingresar al Panel";
-                    }
-                } else {
-                    alert("Usuario no encontrado en la base de Staff.");
-                    btn.disabled = false;
-                    btn.innerText = "Ingresar al Panel";
-                }
-            } catch (e) {
-                console.error("Error en login:", e);
-                alert("Error de conexión. Revisa la consola.");
-                btn.disabled = false;
-                btn.innerText = "Ingresar al Panel";
-            }
+        if (!email || !pass) {
+            alert("Completa los datos");
+            return;
         }
 
-        function autorizar(rol) {
-            sessionStorage.setItem('iosef_session', rol);
+        btn.innerText = "Conectando...";
+        btn.disabled = true;
+
+        // 1. Acceso Maestro (Local, no depende de la base de datos)
+        if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+            autorizar("admin");
+            return;
+        }
+
+        try {
+            // timeout de 10 segundos por si la conexión está colgada
+            const timeout = setTimeout(() => {
+                alert("La conexión está tardando demasiado. Revisa tu internet o las reglas de Firebase.");
+                btn.disabled = false;
+                btn.innerText = "Ingresar al Panel";
+            }, 10000);
+
+            console.log("Buscando usuario:", email);
+            
+            // Buscamos directamente en la colección 'usuarios'
+            const usuariosRef = db.collection('usuarios');
+            const query = await usuariosRef.where('mail', '==', email).get();
+
+            clearTimeout(timeout);
+
+            if (!query.empty) {
+                const u = query.docs[0].data();
+                console.log("Datos encontrados:", u);
+
+                if (u.pass === pass) {
+                    if (u.rol === 'admin' || u.rol === 'comunicacion') {
+                        autorizar(u.rol);
+                    } else {
+                        alert("Tu rol (" + u.rol + ") no tiene permiso.");
+                        resetBtn(btn);
+                    }
+                } else {
+                    alert("Contraseña incorrecta");
+                    resetBtn(btn);
+                }
+            } else {
+                // Si no lo encuentra por campo, intenta por ID de documento
+                const docDirecto = await usuariosRef.doc(email).get();
+                if (docDirecto.exists && docDirecto.data().pass === pass) {
+                    autorizar(docDirecto.data().rol);
+                } else {
+                    alert("Usuario no encontrado en la base de datos");
+                    resetBtn(btn);
+                }
+            }
+        } catch (error) {
+            console.error("Error completo:", error);
+            alert("Error de Firebase: " + error.message);
+            resetBtn(btn);
+        }
+    }
+
+    function resetBtn(btn) {
+        btn.disabled = false;
+        btn.innerText = "Ingresar al Panel";
+    }
+
+    function autorizar(rol) {
+        sessionStorage.setItem('iosef_session', rol);
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('comunicaciones-content').classList.remove('hidden');
+        inicializarApp();
+    }
+
+    // El resto de tus funciones (cargarCursos, cargarNoticias, etc) mantenlas igual debajo de esto...
+    window.onload = () => {
+        if(sessionStorage.getItem('iosef_session')) {
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('comunicaciones-content').classList.remove('hidden');
             inicializarApp();
         }
+    };
 
-        window.onload = () => {
-            if(sessionStorage.getItem('iosef_session')) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('comunicaciones-content').classList.remove('hidden');
-                inicializarApp();
-            }
-        };
+    function cerrarSesion() { sessionStorage.clear(); location.reload(); }
 
-        function cerrarSesion() { sessionStorage.clear(); location.reload(); }
+    function inicializarApp() {
+        cargarCursos();
+        cargarNoticias();
+        cargarEventosCalendario();
+    }
 
-        function inicializarApp() {
-            cargarCursos();
-            cargarNoticias();
-            cargarEventosCalendario();
-        }
-
-        async function cargarCursos() {
-            try {
-                const snap = await db.collection('cursos').get();
-                const cursos = snap.docs.map(doc => doc.data().nombre).sort();
-                
-                const contNot = document.getElementById('cursos-noticia');
-                const contCal = document.getElementById('cursos-calendario');
-                
-                [contNot, contCal].forEach(cont => {
-                    if(!cont) return;
-                    cont.innerHTML = `
-                        <label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50 transition">
-                            <input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS
-                        </label>`;
-                    cursos.forEach(c => {
-                        cont.innerHTML += `
-                            <label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition">
-                                <input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}
-                            </label>`;
-                    });
+    async function cargarCursos() {
+        try {
+            const snap = await db.collection('cursos').get();
+            const cursos = snap.docs.map(doc => doc.data().nombre).sort();
+            const contNot = document.getElementById('cursos-noticia');
+            const contCal = document.getElementById('cursos-calendario');
+            [contNot, contCal].forEach(cont => {
+                if(!cont) return;
+                cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
+                cursos.forEach(c => {
+                    cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}</label>`;
                 });
-            } catch(e) { console.error("Error cargando cursos:", e); }
-        }
-
-        function toggleTodos(source, contId) {
-            document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
-        }
-
-        // --- NOTICIAS ---
-        async function guardarNoticia() {
-            const id = document.getElementById('noticia-id').value;
-            const titulo = document.getElementById('not-titulo').value;
-            const texto = document.getElementById('not-texto').value;
-            // Corregido el selector de clases para coincidir con el HTML
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-
-            if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos (Título, Texto o Cursos)");
-
-            const data = {
-                titulo, texto, curso: seleccionados,
-                programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-                adjuntos: {
-                    img: document.getElementById('not-img').value,
-                    video: document.getElementById('not-video').value,
-                    pdf: document.getElementById('not-pdf').value,
-                    link: document.getElementById('not-link').value
-                },
-                fechaCreacion: new Date().toISOString()
-            };
-
-            try {
-                if(id) await db.collection('comunicados').doc(id).update(data);
-                else await db.collection('comunicados').add(data);
-                location.reload();
-            } catch(e) { alert("Error al guardar noticia"); }
-        }
-
-        async function cargarNoticias() {
-            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
-            const cont = document.getElementById('lista-noticias');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const n = doc.data();
-                cont.innerHTML += `
-                    <div class="bg-white p-5 rounded-3xl border shadow-sm relative">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase">PARA: ${n.curso.join(", ")}</span>
-                            <div class="flex gap-2">
-                                <button onclick="editarNoticia('${doc.id}')" class="text-slate-300 hover:text-blue-500"><i class="fas fa-edit"></i></button>
-                                <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <h4 class="font-bold text-slate-800">${n.titulo}</h4>
-                        <p class="text-sm text-slate-500 line-clamp-2 mt-1">${n.texto}</p>
-                        ${n.adjuntos.img ? `<div class="mt-2 text-[10px] text-blue-400 font-bold"><i class="fas fa-image mr-1"></i>Tiene imagen</div>` : ''}
-                    </div>`;
             });
-        }
+        } catch(e) { console.log("Error cursos:", e); }
+    }
 
-        async function editarNoticia(id) {
-            const doc = await db.collection('comunicados').doc(id).get();
+    function toggleTodos(source, contId) {
+        document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
+    }
+
+    async function guardarNoticia() {
+        const id = document.getElementById('noticia-id').value;
+        const titulo = document.getElementById('not-titulo').value;
+        const texto = document.getElementById('not-texto').value;
+        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+        if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos");
+        const data = {
+            titulo, texto, curso: seleccionados,
+            programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
+            adjuntos: {
+                img: document.getElementById('not-img').value,
+                video: document.getElementById('not-video').value,
+                pdf: document.getElementById('not-pdf').value,
+                link: document.getElementById('not-link').value
+            },
+            fechaCreacion: new Date().toISOString()
+        };
+        if(id) await db.collection('comunicados').doc(id).update(data);
+        else await db.collection('comunicados').add(data);
+        location.reload();
+    }
+
+    async function cargarNoticias() {
+        const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+        const cont = document.getElementById('lista-noticias');
+        cont.innerHTML = "";
+        snap.forEach(doc => {
             const n = doc.data();
-            document.getElementById('noticia-id').value = id;
-            document.getElementById('not-titulo').value = n.titulo;
-            document.getElementById('not-texto').value = n.texto;
-            document.getElementById('not-img').value = n.adjuntos.img || '';
-            document.getElementById('not-video').value = n.adjuntos.video || '';
-            document.getElementById('not-pdf').value = n.adjuntos.pdf || '';
-            document.getElementById('not-link').value = n.adjuntos.link || '';
-            if(n.programacion) document.getElementById('not-programacion').value = n.programacion.substring(0,16);
-            
-            document.getElementById('noticia-form-title').innerText = "Editando Publicación";
-            document.getElementById('btn-cancel-noticia').classList.remove('hidden');
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
+            cont.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm relative">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase">PARA: ${n.curso.join(", ")}</span>
+                    <div class="flex gap-2">
+                        <button onclick="editarNoticia('${doc.id}')" class="text-slate-300 hover:text-blue-500"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <h4 class="font-bold text-slate-800">${n.titulo}</h4>
+                <p class="text-sm text-slate-500 line-clamp-2 mt-1">${n.texto}</p>
+            </div>`;
+        });
+    }
 
-        // --- CALENDARIO ---
-        async function guardarCalendario() {
-            const id = document.getElementById('cal-id').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
-            const data = {
-                titulo: document.getElementById('cal-titulo').value,
-                descripcion: document.getElementById('cal-desc').value,
-                fecha: document.getElementById('cal-fecha').value,
-                tipo: document.getElementById('cal-tipo').value,
-                tag: seleccionados
-            };
-            try {
-                if(id) await db.collection('eventos').doc(id).update(data);
-                else await db.collection('eventos').add(data);
-                location.reload();
-            } catch(e) { alert("Error al guardar evento"); }
-        }
+    async function editarNoticia(id) {
+        const doc = await db.collection('comunicados').doc(id).get();
+        const n = doc.data();
+        document.getElementById('noticia-id').value = id;
+        document.getElementById('not-titulo').value = n.titulo;
+        document.getElementById('not-texto').value = n.texto;
+        document.getElementById('noticia-form-title').innerText = "Editando Publicación";
+        document.getElementById('btn-cancel-noticia').classList.remove('hidden');
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
 
-        async function cargarEventosCalendario() {
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-            const cont = document.getElementById('lista-calendario');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const e = doc.data();
-                let cursosTexto = e.tag ? (Array.isArray(e.tag) ? e.tag.join(", ") : e.tag) : "General";
-                cont.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
-                        <div class="bg-slate-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl text-slate-400">
-                            <i class="fas fa-calendar"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha} • ${cursosTexto}</p>
-                            <h4 class="font-bold text-slate-800">${e.titulo}</h4>
-                        </div>
-                        <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash text-xs"></i></button>
-                    </div>`;
-            });
-        }
+    async function guardarCalendario() {
+        const id = document.getElementById('cal-id').value;
+        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
+        const data = {
+            titulo: document.getElementById('cal-titulo').value,
+            descripcion: document.getElementById('cal-desc').value,
+            fecha: document.getElementById('cal-fecha').value,
+            tipo: document.getElementById('cal-tipo').value,
+            tag: seleccionados
+        };
+        if(id) await db.collection('eventos').doc(id).update(data);
+        else await db.collection('eventos').add(data);
+        location.reload();
+    }
 
-        // --- UTILIDADES ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-            document.getElementById('tab-'+tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-blue-50', 'text-blue-600'); b.classList.add('text-slate-500');
-            });
-            event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
-        }
+    async function cargarEventosCalendario() {
+        const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+        const cont = document.getElementById('lista-calendario');
+        cont.innerHTML = "";
+        snap.forEach(doc => {
+            const e = doc.data();
+            cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
+                <div class="flex-1">
+                    <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
+                    <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                </div>
+                <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
+            </div>`;
+        });
+    }
 
-        async function eliminarDoc(col, id) {
-            if(confirm("¿Eliminar definitivamente?")) { 
-                await db.collection(col).doc(id).delete(); 
-                location.reload(); 
-            }
-        }
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+        document.getElementById('tab-'+tabId).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.remove('bg-blue-50', 'text-blue-600'); b.classList.add('text-slate-500');
+        });
+        event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
+    }
 
-        function resetFormNoticia() { location.reload(); }
-        function resetFormCalendario() { location.reload(); }
-    </script>
+    async function eliminarDoc(col, id) {
+        if(confirm("¿Eliminar?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+    }
+</script>
 </body>
 </html>
