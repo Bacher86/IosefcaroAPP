@@ -53,7 +53,7 @@
                 <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
                     <i class="fas fa-file-upload text-5xl text-blue-500 mb-4"></i>
                     <h2 class="text-2xl font-black text-slate-800">Importador de Alumnos</h2>
-                    <p class="text-slate-400 mb-8">Formato CSV: <b>alumno, curso, familia, email_familia</b></p>
+                    <p class="text-slate-400 mb-8">Formato CSV: <b>alumno, curso, familia, mail1, mail2, mail3</b></p>
                     <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-info').innerText = this.files[0].name">
                     <label for="csv-file" class="bg-slate-100 text-slate-800 px-8 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-4 transition">Seleccionar Archivo</label>
                     <p id="csv-info" class="text-xs font-black text-blue-600 mb-6 uppercase"></p>
@@ -106,6 +106,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="doc-nombre" placeholder="Nombre y Apellido" class="input-pro">
                         <input type="email" id="doc-email" placeholder="Email institucional" class="input-pro">
+                        <select id="doc-materia" class="input-pro">
+                            <option value="">Seleccionar Materia</option>
+                        </select>
+                        <select id="doc-curso" class="input-pro">
+                            <option value="">Seleccionar Curso</option>
+                        </select>
                         <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Docente</button>
                     </div>
                 </div>
@@ -142,21 +148,14 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- SISTEMA DE LOGIN BLINDADO ---
         async function validarIngreso() {
             const emailInput = document.getElementById('log-email').value.trim().toLowerCase();
             const passInput = document.getElementById('log-pass').value.trim();
-
             if(!emailInput || !passInput) return alert("Ingresa tus datos.");
-
-            // 1. PUERTA TRASERA (FALLBACK)
             if(emailInput === "uriel.bacher@gmail.com" && passInput === "Gallardo10") {
-                console.log("Acceso concedido por superadmin");
                 autorizar("admin");
                 return;
             }
-
-            // 2. CONSULTA A FIREBASE
             try {
                 const userDoc = await db.collection('usuarios').doc(emailInput).get();
                 if(userDoc.exists) {
@@ -169,12 +168,9 @@
                         alert("Contraseña incorrecta.");
                     }
                 } else {
-                    alert("Usuario no registrado en la base de datos.");
+                    alert("Usuario no registrado.");
                 }
-            } catch(e) {
-                console.error("Error Firebase:", e);
-                alert("Error de conexión. Revisa tu internet.");
-            }
+            } catch(e) { alert("Error de conexión."); }
         }
 
         function autorizar(rol) {
@@ -184,7 +180,6 @@
             refrescarTodo();
         }
 
-        // AUTO-LOGIN SI YA ENTRÓ
         window.onload = () => {
             if(sessionStorage.getItem('iosef_admin_session')) {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -193,12 +188,9 @@
             }
         };
 
-        function cerrarSesion() {
-            sessionStorage.clear();
-            location.reload();
-        }
+        function cerrarSesion() { sessionStorage.clear(); location.reload(); }
 
-        // --- IMPORTACIÓN CSV ---
+        // --- IMPORTACIÓN CSV MEJORADA (Múltiples Mails) ---
         async function procesarCSV() {
             const file = document.getElementById('csv-file').files[0];
             if(!file) return alert("Carga un archivo .csv primero");
@@ -207,24 +199,31 @@
                 const lines = e.target.result.split(/\r?\n/);
                 let logs = 0;
                 for(let i=1; i<lines.length; i++) {
-                    const [alu, cur, fam, mail] = lines[i].split(',').map(s => s?.trim());
-                    if(mail && alu) {
-                        const m = mail.toLowerCase();
-                        await db.collection('usuarios').doc(m).set({
-                            nombre: fam, rol: 'familia', hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cur.toUpperCase() })
-                        }, {merge:true});
-                        await db.collection('alumnos').add({ nombre: alu, curso: cur.toUpperCase(), familiaId: m, familiaNombre: fam });
+                    const columns = lines[i].split(',').map(s => s?.trim());
+                    // Col A: Alumno, B: Curso, C: Familia, D: Mail1, E: Mail2, F: Mail3
+                    const [alu, cur, fam] = columns;
+                    const emails = columns.slice(3).filter(email => email && email.includes('@'));
+
+                    if(alu && emails.length > 0) {
+                        for(let mail of emails) {
+                            const m = mail.toLowerCase();
+                            await db.collection('usuarios').doc(m).set({
+                                nombre: fam, 
+                                rol: 'familia', 
+                                hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cur.toUpperCase() })
+                            }, {merge:true});
+                        }
+                        await db.collection('alumnos').add({ nombre: alu, curso: cur.toUpperCase(), familiaNombre: fam });
                         logs++;
-                        document.getElementById('csv-status').innerText = `Procesando: ${logs} filas...`;
+                        document.getElementById('csv-status').innerText = `Procesando: ${logs} alumnos...`;
                     }
                 }
-                alert("Importación de " + logs + " registros completada.");
+                alert("Importación de " + logs + " alumnos completada.");
                 location.reload();
             };
             reader.readAsText(file);
         }
 
-        // --- FUNCIONES DE CARGA Y GESTIÓN ---
         async function crearMaestro(col, inpId) {
             const val = document.getElementById(inpId).value.trim();
             if(!val) return;
@@ -244,23 +243,37 @@
             cargarStaff();
         }
 
+        // --- REGISTRO DOCENTE CON MATERIA Y CURSO ---
         async function crearDocente() {
             const n = document.getElementById('doc-nombre').value;
             const e = document.getElementById('doc-email').value.toLowerCase().trim();
-            if(!n || !e) return alert("Nombre y email obligatorios");
-            await db.collection('usuarios').doc(e).set({ nombre: n, rol: 'docente' });
+            const mat = document.getElementById('doc-materia').value;
+            const cur = document.getElementById('doc-curso').value;
+            if(!n || !e || !mat || !cur) return alert("Completa todos los datos (incluyendo materia y curso)");
+            await db.collection('usuarios').doc(e).set({ 
+                nombre: n, 
+                rol: 'docente',
+                materia: mat,
+                curso: cur 
+            });
             alert("Docente registrado con éxito");
             cargarDocentes();
         }
 
         async function cargarMaestros(col, contId) {
-            const snap = await db.collection(col).get();
+            const snap = await db.collection(col).orderBy('nombre', 'asc').get();
             const cont = document.getElementById(contId);
+            const selectDoc = col === 'materias' ? document.getElementById('doc-materia') : document.getElementById('doc-curso');
+            
             cont.innerHTML = "";
+            if(selectDoc) selectDoc.innerHTML = `<option value="">Seleccionar ${col === 'materias' ? 'Materia' : 'Curso'}</option>`;
+
             snap.forEach(doc => {
+                const name = doc.data().nombre;
                 cont.innerHTML += `<span class="bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border">
-                    ${doc.data().nombre} <i onclick="eliminarDoc('${col}', '${doc.id}')" class="fas fa-times text-slate-300 hover:text-red-500 cursor-pointer"></i>
+                    ${name} <i onclick="eliminarDoc('${col}', '${doc.id}')" class="fas fa-times text-slate-300 hover:text-red-500 cursor-pointer"></i>
                 </span>`;
+                if(selectDoc) selectDoc.innerHTML += `<option value="${name}">${name}</option>`;
             });
         }
 
@@ -282,8 +295,11 @@
             const cont = document.getElementById('lista-docentes');
             cont.innerHTML = "";
             snap.forEach(doc => {
+                const d = doc.data();
                 cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm">
-                    <span><b>${doc.data().nombre}</b><br><small class="text-slate-400">${doc.id}</small></span>
+                    <span><b>${d.nombre}</b><br>
+                    <small class="text-blue-600 font-bold uppercase text-[9px]">${d.materia || 'Sin materia'} - ${d.curso || 'Sin curso'}</small><br>
+                    <small class="text-slate-400">${doc.id}</small></span>
                     <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-200"><i class="fas fa-user-minus"></i></button>
                 </div>`;
             });
@@ -312,12 +328,11 @@
                 cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border shadow-sm" data-search="${doc.data().nombre} ${doc.id}">
                     <p class="font-bold text-sm">${doc.data().nombre}</p>
                     <p class="text-[10px] text-slate-400 truncate">${doc.id}</p>
-                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="mt-2 text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar Familia</button>
+                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="mt-2 text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar Acceso</button>
                 </div>`;
             });
         }
 
-        // --- UTILIDADES ---
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
             document.getElementById('tab-'+t).classList.add('active');
@@ -328,17 +343,14 @@
         }
 
         async function eliminarDoc(col, id) {
-            if(confirm("¿Seguro que quieres borrarlo?")) { 
-                await db.collection(col).doc(id).delete(); 
-                refrescarTodo(); 
-            }
+            if(confirm("¿Seguro?")) { await db.collection(col).doc(id).delete(); refrescarTodo(); }
         }
 
         function buscar(inpId, contId) {
             const q = document.getElementById(inpId).value.toLowerCase();
             const items = document.getElementById(contId).children;
             for (let item of items) {
-                const txt = item.getAttribute('data-search') || "";
+                const txt = item.getAttribute('data-search') || item.innerText;
                 item.style.display = txt.toLowerCase().includes(q) ? 'block' : 'none';
             }
         }
