@@ -295,24 +295,32 @@
         }
 
         async function cargarEventosCalendario() {
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-            const cont = document.getElementById('lista-calendario');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const e = doc.data();
-                cont.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl border flex items-center gap-4">
-                        <div class="bg-slate-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl text-slate-400">
-                            <i class="fas fa-calendar"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha} • ${e.tag?.join(", ") || 'General'}</p>
-                            <h4 class="font-bold text-slate-800">${e.titulo}</h4>
-                        </div>
-                        <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
-                    </div>`;
-            });
+    const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+    const cont = document.getElementById('lista-calendario');
+    cont.innerHTML = "";
+
+    snap.forEach(doc => {
+        const e = doc.data();
+        
+        // CORRECCIÓN AQUÍ: Validamos si tag existe y si es un array
+        let cursosTexto = "General";
+        if (e.tag) {
+            cursosTexto = Array.isArray(e.tag) ? e.tag.join(", ") : e.tag;
         }
+
+        cont.innerHTML += `
+            <div class="bg-white p-4 rounded-2xl border flex items-center gap-4">
+                <div class="bg-slate-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl text-slate-400">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha} • ${cursosTexto}</p>
+                    <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                </div>
+                <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
+            </div>`;
+    });
+}
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
