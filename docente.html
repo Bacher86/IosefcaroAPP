@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -26,14 +25,14 @@
     <div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8 text-center">
         <div class="w-16 h-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-2xl shadow-xl"><i class="fas fa-apple-alt"></i></div>
         <h2 class="text-2xl font-black mb-6">Panel Docente</h2>
-        <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="profe@gmail.com">
+        <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu email registrado">
         <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold">Entrar</button>
     </div>
 
     <header class="p-6 bg-white border-b sticky top-0 z-50 flex justify-between items-center">
         <div>
             <h1 id="doc-nom" class="font-black text-lg leading-none">Hola, Profe</h1>
-            <select id="select-curso" onchange="cargarAlumnos()" class="text-[10px] font-bold text-blue-600 uppercase border-none bg-transparent outline-none"></select>
+            <p id="doc-materia-label" class="text-[10px] font-bold text-blue-600 uppercase mt-1"></p>
         </div>
         <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
     </header>
@@ -43,13 +42,9 @@
         <section id="tab-notas" class="tab-content active">
             <div class="grid grid-cols-2 gap-2 mb-6">
                 <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Materia</label>
-                    <select id="select-materia" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs">
-                        <option value="MATEMATICA">Matemática</option>
-                        <option value="LENGUA">Lengua</option>
-                        <option value="INGLES">Inglés</option>
-                        <option value="CIENCIAS">Ciencias</option>
-                    </select>
+                    <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Curso Asignado</label>
+                    <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs">
+                        </select>
                 </div>
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
@@ -98,9 +93,6 @@
             </thead>
             <tbody id="pdf-body"></tbody>
         </table>
-        <div style="margin-top: 50px; text-align: center; font-size: 10px; opacity: 0.5;">
-            Documento generado digitalmente por el Portal Docente Iosef Caro.
-        </div>
     </div>
 
     <script>
@@ -113,41 +105,64 @@
 
         async function login() {
             const email = document.getElementById('login-email').value.toLowerCase().trim();
+            if(!email) return alert("Ingresa tu email");
+            
             const doc = await db.collection('usuarios').doc(email).get();
+            
             if (doc.exists && doc.data().rol === 'docente') {
                 docenteData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('doc-nom').innerText = docenteData.nombre;
-                const select = document.getElementById('select-curso');
-                select.innerHTML = docenteData.cursos.map(c => `<option value="${c}">${c}</option>`).join('');
-                cargarAlumnos();
-            } else { alert("Acceso denegado."); }
-        }
+                
+                // Mostramos la materia asignada (la que cargaste en el Admin)
+                document.getElementById('doc-materia-label').innerText = "Materia: " + (docenteData.materia || "No asignada");
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            document.getElementById('btn-' + tab).classList.add('active');
+                // Cargamos el/los curso/s asignado/s
+                const selectCurso = document.getElementById('select-curso');
+                selectCurso.innerHTML = "";
+                
+                // Si guardaste el curso como un solo string o como array, lo manejamos:
+                if (Array.isArray(docenteData.curso)) {
+                    docenteData.curso.forEach(c => {
+                        selectCurso.innerHTML += `<option value="${c}">${c}</option>`;
+                    });
+                } else if (docenteData.curso) {
+                    selectCurso.innerHTML = `<option value="${docenteData.curso}">${docenteData.curso}</option>`;
+                } else {
+                    selectCurso.innerHTML = `<option value="">Sin curso</option>`;
+                }
+
+                cargarAlumnos();
+            } else { 
+                alert("Email no encontrado o no eres docente."); 
+            }
         }
 
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
-            const materia = document.getElementById('select-materia').value;
+            const materia = docenteData.materia; // Usamos la materia del docente, no una del select
             const modalidad = document.getElementById('select-modalidad').value;
-            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             
+            if(!curso) return;
+
+            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             const containerNotas = document.getElementById('lista-notas');
             const containerAsis = document.getElementById('lista-asis');
             containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
 
-            snap.forEach(async (docAl) => {
+            if(snap.empty) {
+                containerNotas.innerHTML = "<p class='text-center text-slate-400 text-xs font-bold p-10'>No hay alumnos en este curso.</p>";
+                return;
+            }
+
+            for (const docAl of snap.docs) {
                 const al = docAl.data();
                 const id = docAl.id;
+                
+                // Buscar nota existente para esa materia específica
                 const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
                 const n = notaDoc.exists ? notaDoc.data() : {};
 
-                // Control según modalidad
                 let inputHtml = "";
                 if(modalidad === "NUMERICO") {
                     inputHtml = `<div class="grid grid-cols-3 gap-2">
@@ -187,11 +202,11 @@
                             <button onclick="marcarAsis('${id}','T',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">T</button>
                         </div>
                     </div>`;
-            });
+            }
         }
 
         async function guardarNota(id, campo, val, btn = null) {
-            const mat = document.getElementById('select-materia').value;
+            const mat = docenteData.materia;
             
             if(campo === 'rite' && btn) {
                 btn.parentElement.querySelectorAll('button').forEach(b => {
@@ -207,48 +222,39 @@
             }, { merge: true });
         }
 
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('btn-' + tab).classList.add('active');
+        }
+
+        // Se mantienen las funciones de PDF y Asistencia
         async function descargarPDF(id, nombre) {
             const curso = document.getElementById('select-curso').value;
             const snap = await db.collection('alumnos').doc(id).collection('notas').get();
-            
             document.getElementById('pdf-nombre').innerText = nombre;
             document.getElementById('pdf-curso').innerText = curso;
             document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
-            
             const body = document.getElementById('pdf-body');
             body.innerHTML = "";
-            
             snap.forEach(doc => {
                 const n = doc.data();
-                // Si tiene RITE lo mostramos, sino mostramos los bimestres
                 const calif = n.rite ? n.rite : `${n.n1||'-'} / ${n.n2||'-'} / ${n.n3||'-'}`;
-                body.innerHTML += `
-                    <tr>
-                        <td style="border: 1px solid #e2e8f0; padding: 10px; font-weight:bold;">${n.materia}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 10px; text-align:center; font-weight:800; color:#2563eb;">${calif}</td>
-                        <td style="border: 1px solid #e2e8f0; padding: 10px; font-size:9px;">${n.obs || ''}</td>
-                    </tr>`;
+                body.innerHTML += `<tr>
+                    <td style="border: 1px solid #e2e8f0; padding: 10px; font-weight:bold;">${n.materia}</td>
+                    <td style="border: 1px solid #e2e8f0; padding: 10px; text-align:center; font-weight:800; color:#2563eb;">${calif}</td>
+                    <td style="border: 1px solid #e2e8f0; padding: 10px; font-size:9px;">${n.obs || ''}</td>
+                </tr>`;
             });
-
             const element = document.getElementById('pdf-template');
             element.style.display = 'block';
-            
-            const opciones = {
-                margin: 0.5,
-                filename: `Boletin_${nombre}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opciones).from(element).save().then(() => {
-                element.style.display = 'none';
-            });
+            html2pdf().from(element).save().then(() => element.style.display = 'none');
         }
 
         async function marcarAsis(id, tipo, btn) {
             const fecha = document.getElementById('fecha-hoy').value;
-            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha: fecha });
+            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha: fecha, materia: docenteData.materia });
             btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
             const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
             btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
