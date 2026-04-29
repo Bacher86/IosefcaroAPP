@@ -179,6 +179,13 @@
            document.getElementById('perfil-nombre').value = userData.nombre;
            document.getElementById('perfil-tel').value = userData.telefono || "";
            
+           // NUEVO: Verificar si ya tiene las notificaciones activas en la base de datos
+           if (userData.fcmTokens && userData.fcmTokens.length > 0 && Notification.permission === 'granted') {
+               const btn = document.getElementById('btn-push');
+               btn.innerText = "ACTIVADO";
+               btn.classList.replace('bg-slate-900', 'bg-emerald-500');
+           }
+
            const select = document.getElementById('select-hijo');
            select.innerHTML = "";
            listaHijos = []; 
@@ -218,32 +225,24 @@
    async function activarNotificaciones() {
     const btn = document.getElementById('btn-push');
     
-    // 1. Validar si el navegador soporta Service Workers
     if (!('serviceWorker' in navigator)) {
         alert("Tu navegador no soporta notificaciones.");
         return;
     }
 
     try {
-        // 2. Pedir permiso al usuario
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
-            // 3. Registrar el Service Worker usando ruta RELATIVA (sin la barra / al principio)
-            // Esto evita el error 404 en GitHub Pages
             const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-            
-            // Esperar a que el SW esté activo
             await navigator.serviceWorker.ready;
 
-            // 4. Obtener el Token
             const token = await messaging.getToken({ 
                 vapidKey: 'BOo4_hhC-Ul3OVpIg4jyyMjuQmd96DX8H1m0c6HhgzgmsobIJ960T6mC5Gx3wAegtjxJtJiHaXYZifSpEC6MH00',
                 serviceWorkerRegistration: registration 
             });
 
             if (token) {
-                // 5. Guardar en Firestore
                 await db.collection('usuarios').doc(userEmail).update({
                     fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
                 });
@@ -257,8 +256,6 @@
         }
     } catch (err) {
         console.error("Error detallado:", err);
-        // Si el error dice "messaging/failed-service-worker-registration"
-        // es porque el archivo todavía no se encuentra en el servidor.
         alert("Error técnico: " + err.message);
     }
 }
