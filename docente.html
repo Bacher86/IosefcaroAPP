@@ -78,7 +78,6 @@
         <section id="tab-asis" class="tab-content">
             <h3 class="font-black text-xl mb-4 text-slate-800">Pasar Lista</h3>
             <div id="lista-asis" class="space-y-2"></div>
-            <button onclick="alert('Asistencia sincronizada')" class="w-full mt-6 bg-emerald-500 text-white p-4 rounded-2xl font-bold">Finalizar Lista</button>
         </section>
     </main>
 
@@ -107,12 +106,8 @@
     </div>
 
     <nav class="fixed bottom-0 left-4 right-4 bg-white/80 backdrop-blur-md border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
-        <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-            <i class="fas fa-star text-lg"></i>NOTAS
-        </button>
-        <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-            <i class="fas fa-list-check text-lg"></i>ASISTENCIA
-        </button>
+        <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-star text-lg"></i>NOTAS</button>
+        <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-list-check text-lg"></i>ASISTENCIA</button>
     </nav>
 
     <div id="pdf-template" style="display:none; padding: 40px; color: #1e293b; font-family: sans-serif;">
@@ -151,9 +146,7 @@
                 const select = document.getElementById('select-curso');
                 select.innerHTML = docenteData.cursos.map(c => `<option value="${c}">${c}</option>`).join('');
                 
-                // VINCULACIÓN: Carga materias del Admin antes de mostrar alumnos
                 await cargarMateriasDesdeFirebase();
-                
                 cargarAlumnos();
             } else { alert("Acceso denegado."); }
         }
@@ -166,29 +159,27 @@
                     const nombre = doc.data().nombre;
                     return `<option value="${nombre}">${nombre}</option>`;
                 }).join('');
-            } else {
-                selectMat.innerHTML = `<option value="">Sin materias en Admin</option>`;
             }
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            document.getElementById('btn-' + tab).classList.add('active');
         }
 
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
             const materia = document.getElementById('select-materia').value;
             const modalidad = document.getElementById('select-modalidad').value;
-            if(!materia) return;
+            
+            console.log("DEBUG: Buscando alumnos para curso:", curso);
 
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
+            
+            if(snap.empty) {
+                console.error("DEBUG: No se encontraron alumnos en el curso", curso);
+                document.getElementById('lista-notas').innerHTML = `<p class="p-4 text-rose-500 font-bold">Error: No hay alumnos en el curso ${curso}</p>`;
+                return;
+            }
+
             const containerNotas = document.getElementById('lista-notas');
             const containerAsis = document.getElementById('lista-asis');
-            containerNotas.innerHTML = "<p class='text-center text-xs p-4'>Buscando alumnos...</p>";
-            containerAsis.innerHTML = "";
+            containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
 
             const promesas = snap.docs.map(async (docAl) => {
                 const al = docAl.data();
@@ -199,7 +190,6 @@
             });
 
             const resultados = await Promise.all(promesas);
-            containerNotas.innerHTML = "";
 
             resultados.forEach(({id, al, n}) => {
                 let inputHtml = "";
@@ -222,9 +212,9 @@
                 }
 
                 containerNotas.innerHTML += `
-                    <div class="bg-white p-5 rounded-[2.5rem] border shadow-sm">
+                    <div class="bg-white p-5 rounded-[2.5rem] border shadow-sm mb-4">
                         <div class="flex justify-between items-center mb-4">
-                            <div><h4 class="font-bold text-sm text-slate-800">${al.nombre}</h4><p class="text-[8px] text-slate-400 uppercase font-bold tracking-widest">${id}</p></div>
+                            <div><h4 class="font-bold text-sm text-slate-800">${al.nombre}</h4><p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">${id}</p></div>
                             <div class="flex gap-3">
                                 <button onclick="abrirHito('${id}','${al.nombre}')" class="text-amber-500 text-[9px] font-black uppercase"><i class="fas fa-exclamation-triangle mr-1"></i>Hito</button>
                                 <button onclick="descargarPDF('${id}','${al.nombre}')" class="text-blue-500 text-[9px] font-black uppercase"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
@@ -243,16 +233,7 @@
                         </div>
                     </div>`;
             });
-        }
-
-        function calcProm(el) {
-            const card = el.closest('div.grid');
-            const n1 = parseFloat(card.querySelector('.n1').value) || 0;
-            const n2 = parseFloat(card.querySelector('.n2').value) || 0;
-            const n3 = parseFloat(card.querySelector('.n3').value) || 0;
-            const notas = [n1, n2, n3].filter(n => n > 0);
-            const prom = notas.length > 0 ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(2) : '-';
-            card.querySelector('.val-prom').innerText = prom;
+            console.log("DEBUG: Renderizado completo");
         }
 
         async function guardarNota(id, campo, val, btn = null) {
@@ -266,6 +247,32 @@
             }, { merge: true });
         }
 
+        async function marcarAsis(id, tipo, btn) {
+            const fecha = document.getElementById('fecha-hoy').value;
+            const mat = document.getElementById('select-materia').value;
+            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha, materia: mat, hora: new Date().toLocaleTimeString() });
+            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold");
+            const color = tipo === 'P' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-rose-500 text-white shadow-lg';
+            btn.className = `w-12 h-12 rounded-xl ${color} font-bold scale-110 transition-all`;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('btn-' + tab).classList.add('active');
+        }
+
+        function calcProm(el) {
+            const card = el.closest('div.grid');
+            const n1 = parseFloat(card.querySelector('.n1').value) || 0;
+            const n2 = parseFloat(card.querySelector('.n2').value) || 0;
+            const n3 = parseFloat(card.querySelector('.n3').value) || 0;
+            const notas = [n1, n2, n3].filter(n => n > 0);
+            const prom = notas.length > 0 ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(2) : '-';
+            card.querySelector('.val-prom').innerText = prom;
+        }
+
         function aplicarTextoMasivo() {
             const texto = document.getElementById('texto-comun').value;
             const sobrescribir = document.getElementById('check-sobrescribir').checked;
@@ -276,15 +283,6 @@
                     ta.dispatchEvent(new Event('change'));
                 }
             });
-        }
-
-        async function marcarAsis(id, tipo, btn) {
-            const fecha = document.getElementById('fecha-hoy').value;
-            const mat = document.getElementById('select-materia').value;
-            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha, materia: mat, hora: new Date().toLocaleTimeString() });
-            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold");
-            const color = tipo === 'P' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-rose-500 text-white shadow-lg';
-            btn.className = `w-12 h-12 rounded-xl ${color} font-bold scale-110 transition-all`;
         }
 
         function abrirHito(id, nombre) {
