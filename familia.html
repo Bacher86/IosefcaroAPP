@@ -24,6 +24,7 @@
         .nav-btn.active { color: #0f172a; }
         .nav-btn.active i { transform: translateY(-5px); color: #2563eb; }
         .switch-bg { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .filter-btn.active { background: #0f172a; color: white; }
     </style>
 </head>
 <body>
@@ -47,7 +48,14 @@
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
-        <section id="tab-muro" class="tab-content active space-y-4"></section>
+        <section id="tab-muro" class="tab-content active space-y-4">
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <button onclick="cargarMuro('todos')" id="filter-todos" class="filter-btn active whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm transition-all">Todos</button>
+                <button onclick="cargarMuro('noleidos')" id="filter-noleidos" class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm transition-all text-blue-600">No leídos</button>
+                <button onclick="cargarMuro('leidos')" id="filter-leidos" class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm transition-all text-slate-400">Leídos</button>
+            </div>
+            <div id="muro-posts" class="space-y-4"></div>
+        </section>
 
         <section id="tab-agenda" class="tab-content space-y-4">
             <h3 class="font-black text-2xl italic text-slate-900">Calendario Institucional</h3>
@@ -145,7 +153,6 @@
             const doc = await db.collection('usuarios').doc(userEmail).get();
             if (doc.exists) {
                 userData = doc.data();
-                // Verificación de rol para seguridad
                 if(userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
 
                 document.getElementById('login-screen').style.display = 'none';
@@ -153,14 +160,12 @@
                 document.getElementById('perfil-nombre').value = userData.nombre;
                 document.getElementById('perfil-tel').value = userData.telefono || "";
                 
-                // CORRECCIÓN AQUÍ: Leemos el array 'hijos' que genera el admin
                 const select = document.getElementById('select-hijo');
                 select.innerHTML = "";
-                listaHijos = []; // Reset local
+                listaHijos = []; 
 
                 if (userData.hijos && userData.hijos.length > 0) {
                     for (let hijoObj of userData.hijos) {
-                        // Buscamos el ID del alumno por su nombre para vincular notas/asistencia
                         const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
                         snap.forEach(d => {
                             listaHijos.push({ id: d.id, nombre: d.data().nombre });
@@ -179,10 +184,26 @@
         }
 
         async function inicializarApp() {
-            await cargarMuro();
+            // Primero cargamos el muro para tener la cuenta de leídos
+            await cargarMuro('todos');
             await cargarAcademico();
             await cargarAgenda();
-            document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">¡Hola! He analizado las notas, faltas de tu hijo y los comunicados del muro. ¿En qué puedo ayudarte?</div>`;
+
+            // Contar noticias no leídas desde Firestore para el saludo de Iosi
+            const snap = await db.collection('comunicados').get();
+            let sinLeerCount = 0;
+            snap.forEach(doc => {
+                if (!localStorage.getItem('read_' + doc.id)) sinLeerCount++;
+            });
+
+            let saludoIosi = `¡Hola! He analizado las notas y faltas de tu hijo. `;
+            if (sinLeerCount > 0) {
+                saludoIosi += `⚠️ <b>Atención:</b> Tenés <b>${sinLeerCount} ${sinLeerCount === 1 ? 'comunicado pendiente' : 'comunicados pendientes'}</b> de lectura en el muro. ¡No olvides revisarlos!`;
+            } else {
+                saludoIosi += `¡Estás al día con todos los comunicados del muro! ¿En qué puedo ayudarte?`;
+            }
+
+            document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">${saludoIosi}</div>`;
             
             const messaging = firebase.messaging();
             messaging.requestPermission()
@@ -191,22 +212,41 @@
                 .catch((err) => console.warn('Notificaciones bloqueadas', err));
         }
 
-        async function cargarMuro() {
-            const container = document.getElementById('tab-muro');
+        async function cargarMuro(filtro = 'todos') {
+            const container = document.getElementById('muro-posts');
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('filter-' + filtro).classList.add('active');
+
             const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
-            container.innerHTML = ""; brain.noticias = [];
+            container.innerHTML = ""; 
+            brain.noticias = [];
+
             snap.forEach(doc => {
-                const p = doc.data(); const id = doc.id;
-                brain.noticias.push(p);
+                const p = doc.data(); 
+                const id = doc.id;
                 const isRead = localStorage.getItem('read_'+id);
+
+                if (filtro === 'leidos' && !isRead) return;
+                if (filtro === 'noleidos' && isRead) return;
+
+                brain.noticias.push(p);
                 let img = p.link ? `<img src="${p.link}" class="w-full h-40 object-cover rounded-2xl mb-4">` : "";
+                
                 container.innerHTML += `
                     <div onclick="abrirNoticia('${id}')" class="bg-white p-6 rounded-[2rem] border shadow-sm transition-all active:scale-95 ${isRead ? 'read-post' : ''}">
-                        <div class="flex justify-between mb-4"><span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'INFO'}</span>${isRead ? '<span class="text-[9px] font-bold text-emerald-500 uppercase">✓ LEÍDO</span>' : ''}</div>
-                        ${img}<h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'INFO'}</span>
+                            ${isRead ? '<span class="text-[9px] font-bold text-emerald-500 uppercase">✓ LEÍDO</span>' : '<span class="text-[9px] font-bold text-blue-600 uppercase">● NUEVO</span>'}
+                        </div>
+                        ${img}
+                        <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
                         <p class="text-slate-500 text-sm mt-2 line-clamp-2">${p.texto}</p>
                     </div>`;
             });
+
+            if (container.innerHTML === "") {
+                container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs font-bold uppercase tracking-widest">No hay comunicados en esta sección</div>`;
+            }
         }
 
         async function abrirNoticia(id) {
@@ -223,13 +263,14 @@
             localStorage.setItem('read_'+id, 'true');
             await db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
             
-            // Registrar quién leyó para que aparezca en el Admin
             await db.collection('comunicados').doc(id).collection('leidos').doc(userEmail).set({
                 nombre: userData.nombre,
                 fecha: new Date().toISOString()
             });
 
-            cerrarNoticia(); cargarMuro();
+            cerrarNoticia(); 
+            const activeFilter = document.querySelector('.filter-btn.active').id.replace('filter-', '');
+            cargarMuro(activeFilter);
         }
 
         function cerrarNoticia() { document.getElementById('modal-noticia').style.display = 'none'; document.body.style.overflow = 'auto'; }
@@ -294,7 +335,9 @@
                 } else if(val.includes("nota") || val.includes("materia") || val.includes("como va")) {
                     r = brain.notas.length > 0 ? `En sus materias va así: tiene ${brain.notas.length} registradas. En ${brain.notas[0].materia} por ejemplo, su nota es ${brain.notas[0].n1 || brain.notas[0].rite || 'pendiente'}.` : "Aún no hay notas cargadas.";
                 } else if(val.includes("noticia") || val.includes("muro") || val.includes("comunicado")) {
-                    r = brain.noticias.length > 0 ? `La última noticia es: "${brain.noticias[0].titulo}".` : "No hay comunicados recientes.";
+                    // Contar sin leer dinámicamente para Iosi
+                    let sinLeer = brain.noticias.filter(n => !localStorage.getItem('read_' + n.id)).length; // Este necesita ID en brain.noticias, vamos a simplificar:
+                    r = brain.noticias.length > 0 ? `Hay ${brain.noticias.length} comunicados en total. El último es: "${brain.noticias[0].titulo}".` : "No hay comunicados recientes.";
                 } else if(val.includes("evento") || val.includes("calendario") || val.includes("cuando hay")) {
                     r = brain.agenda.length > 0 ? `El próximo evento es "${brain.agenda[0].titulo}" el día ${brain.agenda[0].fecha}.` : "No hay eventos programados.";
                 }
