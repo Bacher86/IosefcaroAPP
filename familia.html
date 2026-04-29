@@ -97,7 +97,18 @@
                     <input type="text" id="perfil-tel" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700">
                 </div>
                 <button onclick="guardarPerfil()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg shadow-blue-100">Guardar Cambios</button>
-                <button onclick="location.reload()" class="w-full text-slate-400 text-xs font-bold">Cerrar Sesión</button>
+                
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+                        <div>
+                            <p class="text-xs font-black text-slate-800 uppercase">Notificaciones</p>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Alertas en tu dispositivo</p>
+                        </div>
+                        <button onclick="activarNotificaciones()" id="btn-push" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase active:scale-95 transition-all">Activar</button>
+                    </div>
+                </div>
+
+                <button onclick="location.reload()" class="w-full text-slate-400 text-xs font-bold mt-4">Cerrar Sesión</button>
             </div>
         </section>
     </main>
@@ -139,240 +150,233 @@
             <tbody id="pdf-body"></tbody>
         </table>
     </div>
+
 <script>
    const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+   firebase.initializeApp(firebaseConfig);
+   const db = firebase.firestore();
+   const messaging = firebase.messaging();
 
-        let userData = null; let userEmail = ""; let listaHijos = []; let alumnoSeleccionadoId = null;
-        let brain = { noticias: [], faltas: [], notas: [], agenda: [] }; 
-        let modalidadFiltro = 'num';
+   let userData = null; let userEmail = ""; let listaHijos = []; let alumnoSeleccionadoId = null;
+   let brain = { noticias: [], faltas: [], notas: [], agenda: [] }; 
+   let modalidadFiltro = 'num';
 
-        async function login() {
-            userEmail = document.getElementById('login-email').value.toLowerCase().trim();
-            const doc = await db.collection('usuarios').doc(userEmail).get();
-            if (doc.exists) {
-                userData = doc.data();
-                if(userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
+   // REGISTRO DEL SERVICE WORKER
+   if ('serviceWorker' in navigator) {
+       navigator.serviceWorker.register('firebase-messaging-sw.js')
+       .then(reg => console.log('SW registrado correctamente'))
+       .catch(err => console.warn('Error registrando SW', err));
+   }
 
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('user-display-name').innerText = "Familia " + userData.nombre.split(' ')[0];
-                document.getElementById('perfil-nombre').value = userData.nombre;
-                document.getElementById('perfil-tel').value = userData.telefono || "";
-                
-                const select = document.getElementById('select-hijo');
-                select.innerHTML = "";
-                listaHijos = []; 
+   async function login() {
+       userEmail = document.getElementById('login-email').value.toLowerCase().trim();
+       const doc = await db.collection('usuarios').doc(userEmail).get();
+       if (doc.exists) {
+           userData = doc.data();
+           if(userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
+           document.getElementById('login-screen').style.display = 'none';
+           document.getElementById('user-display-name').innerText = "Familia " + userData.nombre.split(' ')[0];
+           document.getElementById('perfil-nombre').value = userData.nombre;
+           document.getElementById('perfil-tel').value = userData.telefono || "";
+           
+           const select = document.getElementById('select-hijo');
+           select.innerHTML = "";
+           listaHijos = []; 
+           if (userData.hijos && userData.hijos.length > 0) {
+               for (let hijoObj of userData.hijos) {
+                   const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
+                   snap.forEach(d => {
+                       listaHijos.push({ id: d.id, nombre: d.data().nombre });
+                       select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
+                   });
+               }
+           }
+           if(listaHijos.length > 0) { 
+               alumnoSeleccionadoId = listaHijos[0].id; 
+               await inicializarApp();
+           }
+       } else { alert("Acceso denegado. Email no registrado."); }
+   }
 
-                if (userData.hijos && userData.hijos.length > 0) {
-                    for (let hijoObj of userData.hijos) {
-                        const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
-                        snap.forEach(d => {
-                            listaHijos.push({ id: d.id, nombre: d.data().nombre });
-                            select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
-                        });
-                    }
-                }
+   async function inicializarApp() {
+       await cargarMuro('todos');
+       await cargarAcademico();
+       await cargarAgenda();
+       
+       const snap = await db.collection('comunicados').get();
+       let sinLeerCount = 0;
+       snap.forEach(doc => { if (!localStorage.getItem('read_' + doc.id)) sinLeerCount++; });
+       let saludoIosi = `¡Hola! He analizado las notas y faltas de tu hijo. `;
+       if (sinLeerCount > 0) {
+           saludoIosi += `⚠️ <b>Atención:</b> Tenés <b>${sinLeerCount} comunicado/s pendiente/s</b> de lectura.`;
+       } else {
+           saludoIosi += `¡Estás al día con todos los comunicados!`;
+       }
+       document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">${saludoIosi}</div>`;
+   }
 
-                if(listaHijos.length > 0) { 
-                    alumnoSeleccionadoId = listaHijos[0].id; 
-                    await inicializarApp();
-                } else {
-                    alert("No se encontraron alumnos vinculados a esta familia.");
-                }
-            } else { alert("Acceso denegado. Email no registrado."); }
-        }
+   async function activarNotificaciones() {
+       const btn = document.getElementById('btn-push');
+       try {
+           const permission = await Notification.requestPermission();
+           if (permission === 'granted') {
+               const registration = await navigator.serviceWorker.ready;
+               const token = await messaging.getToken({ 
+                   vapidKey: 'hqO1x0iKbdZsxkXK_bQWWH_JEV_eoL4E78UDrD3Yyq4',
+                   serviceWorkerRegistration: registration 
+               });
+               if (token) {
+                   await db.collection('usuarios').doc(userEmail).update({
+                       fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
+                   });
+                   btn.innerText = "ACTIVADO";
+                   btn.classList.replace('bg-slate-900', 'bg-emerald-500');
+                   alert("¡Notificaciones activadas!");
+               }
+           } else {
+               alert("Permiso denegado. Habilitá las notificaciones desde la configuración del navegador.");
+           }
+       } catch (err) {
+           console.error("Error en notificaciones:", err);
+           alert("Error al activar notificaciones. Reintentá en unos minutos.");
+       }
+   }
 
-        async function inicializarApp() {
-            // Primero cargamos el muro para tener la cuenta de leídos
-            await cargarMuro('todos');
-            await cargarAcademico();
-            await cargarAgenda();
+   async function cargarMuro(filtro = 'todos') {
+       const container = document.getElementById('muro-posts');
+       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+       document.getElementById('filter-' + filtro).classList.add('active');
+       const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
+       container.innerHTML = ""; 
+       brain.noticias = [];
+       snap.forEach(doc => {
+           const p = doc.data(); 
+           const id = doc.id;
+           const isRead = localStorage.getItem('read_'+id);
+           if (filtro === 'leidos' && !isRead) return;
+           if (filtro === 'noleidos' && isRead) return;
+           brain.noticias.push({id, ...p});
+           let img = p.link ? `<img src="${p.link}" class="w-full h-40 object-cover rounded-2xl mb-4">` : "";
+           container.innerHTML += `
+               <div onclick="abrirNoticia('${id}')" class="bg-white p-6 rounded-[2rem] border shadow-sm transition-all active:scale-95 ${isRead ? 'read-post' : ''}">
+                   <div class="flex justify-between mb-4">
+                       <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'INFO'}</span>
+                       ${isRead ? '<span class="text-[9px] font-bold text-emerald-500 uppercase">✓ LEÍDO</span>' : '<span class="text-[9px] font-bold text-blue-600 uppercase">● NUEVO</span>'}
+                   </div>
+                   ${img}
+                   <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
+                   <p class="text-slate-500 text-sm mt-2 line-clamp-2">${p.texto}</p>
+               </div>`;
+       });
+   }
 
-            // Contar noticias no leídas desde Firestore para el saludo de Iosi
-            const snap = await db.collection('comunicados').get();
-            let sinLeerCount = 0;
-            snap.forEach(doc => {
-                if (!localStorage.getItem('read_' + doc.id)) sinLeerCount++;
-            });
+   async function abrirNoticia(id) {
+       const doc = await db.collection('comunicados').doc(id).get();
+       const p = doc.data();
+       const contenido = document.getElementById('modal-contenido');
+       let img = p.link ? `<img src="${p.link}" class="w-full h-auto rounded-2xl mb-6">` : "";
+       contenido.innerHTML = `${img}<h2 class="text-2xl font-black">${p.titulo}</h2><hr class="my-4"><p class="text-slate-600 whitespace-pre-wrap">${p.texto}</p>
+           <button onclick="confirmarLectura('${id}')" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold mt-8">Confirmar Lectura</button>`;
+       document.getElementById('modal-noticia').style.display = 'flex';
+       document.body.style.overflow = 'hidden';
+   }
 
-            let saludoIosi = `¡Hola! He analizado las notas y faltas de tu hijo. `;
-            if (sinLeerCount > 0) {
-                saludoIosi += `⚠️ <b>Atención:</b> Tenés <b>${sinLeerCount} ${sinLeerCount === 1 ? 'comunicado pendiente' : 'comunicados pendientes'}</b> de lectura en el muro. ¡No olvides revisarlos!`;
-            } else {
-                saludoIosi += `¡Estás al día con todos los comunicados del muro! ¿En qué puedo ayudarte?`;
-            }
+   async function confirmarLectura(id) {
+       localStorage.setItem('read_'+id, 'true');
+       await db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
+       await db.collection('comunicados').doc(id).collection('leidos').doc(userEmail).set({
+           nombre: userData.nombre,
+           fecha: new Date().toISOString()
+       });
+       cerrarNoticia(); 
+       cargarMuro(document.querySelector('.filter-btn.active').id.replace('filter-', ''));
+   }
 
-            document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">${saludoIosi}</div>`;
-            
-            const messaging = firebase.messaging();
-            messaging.requestPermission()
-                .then(() => messaging.getToken())
-                .then((token) => console.log('Token:', token))
-                .catch((err) => console.warn('Notificaciones bloqueadas', err));
-        }
+   function cerrarNoticia() { document.getElementById('modal-noticia').style.display = 'none'; document.body.style.overflow = 'auto'; }
 
-        async function cargarMuro(filtro = 'todos') {
-            const container = document.getElementById('muro-posts');
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('filter-' + filtro).classList.add('active');
+   async function cargarAcademico() {
+       const container = document.getElementById('container-notas');
+       const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
+       container.innerHTML = ""; brain.notas = [];
+       nSnap.forEach(doc => {
+           const n = doc.data(); brain.notas.push(n);
+           if((modalidadFiltro === 'rite' && n.rite) || (modalidadFiltro === 'num' && !n.rite)) {
+               let notaHtml = n.rite ? `<div class="bg-blue-600 text-white p-3 rounded-xl text-center font-black text-xs uppercase">${n.rite}</div>` :
+                   `<div class="grid grid-cols-3 gap-2">
+                       <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">1B</p><p class="font-black text-xs">${n.n1||'-'}</p></div>
+                       <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">2B</p><p class="font-black text-xs">${n.n2||'-'}</p></div>
+                       <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">3B</p><p class="font-black text-xs">${n.n3||'-'}</p></div>
+                   </div>`;
+               container.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${notaHtml}</div>`;
+           }
+       });
+       const aSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoSeleccionadoId).get();
+       let f=0, t=0; brain.faltas = [];
+       aSnap.forEach(d => { if(d.data().estado==='A') { f++; brain.faltas.push(d.data().fecha); } if(d.data().estado==='T') t++; });
+       document.getElementById('count-faltas').innerText = f;
+       document.getElementById('count-tardes').innerText = t;
+   }
 
-            const snap = await db.collection('comunicados').orderBy('creadoEn', 'desc').get();
-            container.innerHTML = ""; 
-            brain.noticias = [];
+   async function cargarAgenda() {
+       const container = document.getElementById('container-agenda');
+       const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+       container.innerHTML = ""; brain.agenda = [];
+       snap.forEach(doc => {
+           const ev = doc.data(); brain.agenda.push(ev);
+           container.innerHTML += `<div class="bg-white p-4 rounded-2xl flex items-center gap-4 border shadow-sm">
+               <div class="text-center min-w-[45px] bg-slate-100 p-2 rounded-xl"><p class="text-[8px] font-black text-blue-600">${ev.fecha.split('-')[1]}</p><p class="text-xl font-black">${ev.fecha.split('-')[2]}</p></div>
+               <p class="font-bold text-slate-700 text-sm">${ev.titulo}</p></div>`;
+       });
+   }
 
-            snap.forEach(doc => {
-                const p = doc.data(); 
-                const id = doc.id;
-                const isRead = localStorage.getItem('read_'+id);
+   async function guardarPerfil() {
+       const n = document.getElementById('perfil-nombre').value;
+       const t = document.getElementById('perfil-tel').value;
+       await db.collection('usuarios').doc(userEmail).update({ nombre: n, telefono: t });
+       document.getElementById('user-display-name').innerText = "Familia " + n.split(' ')[0];
+       alert("Perfil actualizado");
+   }
 
-                if (filtro === 'leidos' && !isRead) return;
-                if (filtro === 'noleidos' && isRead) return;
+   function enviarIosi() {
+       const inp = document.getElementById('iosi-input'); const chat = document.getElementById('iosi-chat'); const val = inp.value.toLowerCase();
+       if(!val) return;
+       chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
+       const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+       setTimeout(() => {
+           let r = "No tengo esa información, pero puedo decirte sobre notas o faltas.";
+           if(val.includes("falta")) r = brain.faltas.length > 0 ? `${hijo.nombre} tiene ${brain.faltas.length} faltas.` : `${hijo.nombre} tiene asistencia perfecta.`;
+           else if(val.includes("nota")) r = brain.notas.length > 0 ? `Tiene ${brain.notas.length} materias registradas.` : "No hay notas.";
+           chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
+           chat.scrollTop = chat.scrollHeight;
+       }, 600);
+       inp.value = "";
+   }
 
-                brain.noticias.push(p);
-                let img = p.link ? `<img src="${p.link}" class="w-full h-40 object-cover rounded-2xl mb-4">` : "";
-                
-                container.innerHTML += `
-                    <div onclick="abrirNoticia('${id}')" class="bg-white p-6 rounded-[2rem] border shadow-sm transition-all active:scale-95 ${isRead ? 'read-post' : ''}">
-                        <div class="flex justify-between mb-4">
-                            <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'INFO'}</span>
-                            ${isRead ? '<span class="text-[9px] font-bold text-emerald-500 uppercase">✓ LEÍDO</span>' : '<span class="text-[9px] font-bold text-blue-600 uppercase">● NUEVO</span>'}
-                        </div>
-                        ${img}
-                        <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
-                        <p class="text-slate-500 text-sm mt-2 line-clamp-2">${p.texto}</p>
-                    </div>`;
-            });
+   function switchTab(tab) {
+       document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+       document.getElementById('tab-'+tab).classList.add('active');
+       if(document.getElementById('nav-'+tab)) document.getElementById('nav-'+tab).classList.add('active');
+   }
 
-            if (container.innerHTML === "") {
-                container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs font-bold uppercase tracking-widest">No hay comunicados en esta sección</div>`;
-            }
-        }
+   function setModalidad(m) {
+       modalidadFiltro = m;
+       document.getElementById('switch-selector').style.left = m === 'num' ? '4px' : 'calc(50% + 0px)';
+       cargarAcademico();
+   }
 
-        async function abrirNoticia(id) {
-            const doc = await db.collection('comunicados').doc(id).get();
-            const p = doc.data();
-            const contenido = document.getElementById('modal-contenido');
-            let img = p.link ? `<img src="${p.link}" class="w-full h-auto rounded-2xl mb-6">` : "";
-            contenido.innerHTML = `${img}<h2 class="text-2xl font-black">${p.titulo}</h2><hr class="my-4"><p class="text-slate-600 whitespace-pre-wrap">${p.texto}</p>
-                <button onclick="confirmarLectura('${id}')" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold mt-8">Confirmar Lectura</button>`;
-            document.getElementById('modal-noticia').style.display = 'flex';
-        }
+   function cambiarHijo(id) { alumnoSeleccionadoId = id; inicializarApp(); }
+   function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
 
-        async function confirmarLectura(id) {
-            localStorage.setItem('read_'+id, 'true');
-            await db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
-            
-            await db.collection('comunicados').doc(id).collection('leidos').doc(userEmail).set({
-                nombre: userData.nombre,
-                fecha: new Date().toISOString()
-            });
-
-            cerrarNoticia(); 
-            const activeFilter = document.querySelector('.filter-btn.active').id.replace('filter-', '');
-            cargarMuro(activeFilter);
-        }
-
-        function cerrarNoticia() { document.getElementById('modal-noticia').style.display = 'none'; document.body.style.overflow = 'auto'; }
-
-        async function cargarAcademico() {
-            const container = document.getElementById('container-notas');
-            const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
-            container.innerHTML = ""; brain.notas = [];
-            nSnap.forEach(doc => {
-                const n = doc.data(); brain.notas.push(n);
-                if((modalidadFiltro === 'rite' && n.rite) || (modalidadFiltro === 'num' && !n.rite)) {
-                    let notaHtml = n.rite ? `<div class="bg-blue-600 text-white p-3 rounded-xl text-center font-black text-xs uppercase">${n.rite}</div>` :
-                        `<div class="grid grid-cols-3 gap-2">
-                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">1B</p><p class="font-black text-xs">${n.n1||'-'}</p></div>
-                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">2B</p><p class="font-black text-xs">${n.n2||'-'}</p></div>
-                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">3B</p><p class="font-black text-xs">${n.n3||'-'}</p></div>
-                        </div>`;
-                    container.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${notaHtml}</div>`;
-                }
-            });
-            const aSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoSeleccionadoId).get();
-            let f=0, t=0; brain.faltas = [];
-            aSnap.forEach(d => { 
-                if(d.data().estado==='A') { f++; brain.faltas.push(d.data().fecha); } 
-                if(d.data().estado==='T') t++; 
-            });
-            document.getElementById('count-faltas').innerText = f;
-            document.getElementById('count-tardes').innerText = t;
-        }
-
-        async function cargarAgenda() {
-            const container = document.getElementById('container-agenda');
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-            container.innerHTML = ""; brain.agenda = [];
-            snap.forEach(doc => {
-                const ev = doc.data(); brain.agenda.push(ev);
-                container.innerHTML += `<div class="bg-white p-4 rounded-2xl flex items-center gap-4 border shadow-sm">
-                    <div class="text-center min-w-[45px] bg-slate-100 p-2 rounded-xl"><p class="text-[8px] font-black text-blue-600">${ev.fecha.split('-')[1]}</p><p class="text-xl font-black">${ev.fecha.split('-')[2]}</p></div>
-                    <p class="font-bold text-slate-700 text-sm">${ev.titulo}</p></div>`;
-            });
-        }
-
-        async function guardarPerfil() {
-            const n = document.getElementById('perfil-nombre').value;
-            const t = document.getElementById('perfil-tel').value;
-            await db.collection('usuarios').doc(userEmail).update({ nombre: n, telefono: t });
-            document.getElementById('user-display-name').innerText = "Familia " + n.split(' ')[0];
-            alert("Perfil actualizado correctamente");
-        }
-
-        function enviarIosi() {
-            const inp = document.getElementById('iosi-input'); const chat = document.getElementById('iosi-chat'); const val = inp.value.toLowerCase();
-            if(!val) return;
-            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
-            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-            
-            setTimeout(() => {
-                let r = "No tengo esa información específica, pero puedo decirte sobre sus notas, faltas o las noticias recientes.";
-                
-                if(val.includes("falta") || val.includes("inasistencia")) {
-                    r = brain.faltas.length > 0 ? `${hijo.nombre.split(' ')[0]} tiene ${brain.faltas.length} faltas. Las fechas fueron: ${brain.faltas.join(", ")}.` : `${hijo.nombre.split(' ')[0]} tiene asistencia perfecta.`;
-                } else if(val.includes("nota") || val.includes("materia") || val.includes("como va")) {
-                    r = brain.notas.length > 0 ? `En sus materias va así: tiene ${brain.notas.length} registradas. En ${brain.notas[0].materia} por ejemplo, su nota es ${brain.notas[0].n1 || brain.notas[0].rite || 'pendiente'}.` : "Aún no hay notas cargadas.";
-                } else if(val.includes("noticia") || val.includes("muro") || val.includes("comunicado")) {
-                    // Contar sin leer dinámicamente para Iosi
-                    let sinLeer = brain.noticias.filter(n => !localStorage.getItem('read_' + n.id)).length; // Este necesita ID en brain.noticias, vamos a simplificar:
-                    r = brain.noticias.length > 0 ? `Hay ${brain.noticias.length} comunicados en total. El último es: "${brain.noticias[0].titulo}".` : "No hay comunicados recientes.";
-                } else if(val.includes("evento") || val.includes("calendario") || val.includes("cuando hay")) {
-                    r = brain.agenda.length > 0 ? `El próximo evento es "${brain.agenda[0].titulo}" el día ${brain.agenda[0].fecha}.` : "No hay eventos programados.";
-                }
-
-                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
-                chat.scrollTop = chat.scrollHeight;
-            }, 600);
-            inp.value = "";
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-'+tab).classList.add('active');
-            if(document.getElementById('nav-'+tab)) document.getElementById('nav-'+tab).classList.add('active');
-        }
-
-        function setModalidad(m) {
-            modalidadFiltro = m;
-            document.getElementById('switch-selector').style.left = m === 'num' ? '4px' : 'calc(50% + 0px)';
-            cargarAcademico();
-        }
-
-        function cambiarHijo(id) { alumnoSeleccionadoId = id; inicializarApp(); }
-        function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
-        
-        async function generarBoletinPDF() {
-            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-            document.getElementById('pdf-nombre').innerText = hijo.nombre;
-            document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
-            const body = document.getElementById('pdf-body'); body.innerHTML = "";
-            brain.notas.forEach(n => { body.innerHTML += `<tr><td style="border:1px solid #000;padding:8px">${n.materia}</td><td style="border:1px solid #000;padding:8px;text-align:center">${n.rite || (n.n1+'/'+n.n2)}</td></tr>`; });
-            const element = document.getElementById('pdf-template');
-            element.style.display = 'block';
-            html2pdf().from(element).save().then(()=>element.style.display='none');
-        }
-    </script>
+   async function generarBoletinPDF() {
+       const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+       document.getElementById('pdf-nombre').innerText = hijo.nombre;
+       document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
+       const body = document.getElementById('pdf-body'); body.innerHTML = "";
+       brain.notas.forEach(n => { body.innerHTML += `<tr><td style="border:1px solid #000;padding:8px">${n.materia}</td><td style="border:1px solid #000;padding:8px;text-align:center">${n.rite || (n.n1+'/'+n.n2)}</td></tr>`; });
+       const element = document.getElementById('pdf-template');
+       element.style.display = 'block';
+       html2pdf().from(element).save().then(()=>element.style.display='none');
+   }
+</script>
 </body>
 </html>
