@@ -15,7 +15,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: 'logo.png' // Asegurate de que el nombre del archivo sea correcto
+    icon: 'logo.png.png' // Asegurate de que el nombre del archivo sea correcto
   };
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
