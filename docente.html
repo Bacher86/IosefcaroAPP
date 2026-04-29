@@ -11,13 +11,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding-bottom: 100px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding-bottom: 140px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-btn.active { color: #2563eb; background: #eff6ff; border-radius: 1rem; }
         .input-nota { width: 100%; height: 50px; text-align: center; border-radius: 1rem; border: 2px solid #f1f5f9; font-weight: 800; outline: none; }
         .input-nota:focus { border-color: #2563eb; background: white; }
         .badge-rite { padding: 10px; border-radius: 0.8rem; font-size: 11px; font-weight: 800; flex: 1; text-align: center; border: 2px solid transparent; transition: all 0.2s; }
+        .btn-flotante { position: fixed; bottom: 100px; left: 1rem; right: 1rem; z-index: 900; display: none; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -34,21 +36,18 @@
             <h1 id="doc-nom" class="font-black text-lg leading-none">Hola, Profe</h1>
             <div class="flex flex-col mt-1">
                 <label class="text-[8px] font-black text-slate-400 uppercase">Materia Activa</label>
-                <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[10px] font-bold text-blue-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer">
-                </select>
+                <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[10px] font-bold text-blue-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer"></select>
             </div>
         </div>
         <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
-        
         <section id="tab-notas" class="tab-content active">
             <div class="grid grid-cols-2 gap-2 mb-6">
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Curso Asignado</label>
-                    <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs">
-                        </select>
+                    <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs"></select>
                 </div>
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
@@ -58,14 +57,24 @@
                     </select>
                 </div>
             </div>
-
             <div id="lista-notas" class="space-y-4"></div>
+            
+            <div id="btn-guardar-notas" class="btn-flotante">
+                <button onclick="confirmarNotas()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i> GUARDAR NOTAS DEL CURSO
+                </button>
+            </div>
         </section>
 
         <section id="tab-asis" class="tab-content">
             <h3 class="font-black text-xl mb-4">Pasar Lista</h3>
             <div id="lista-asis" class="space-y-2"></div>
-            <button onclick="alert('Asistencia guardada')" class="w-full mt-6 bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg">Finalizar Lista</button>
+            
+            <div id="btn-guardar-asis" class="btn-flotante">
+                <button onclick="confirmarAsistencia()" class="w-full bg-emerald-500 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA
+                </button>
+            </div>
         </section>
     </main>
 
@@ -106,47 +115,30 @@
 
         let docenteData = null;
         let materiaActiva = ""; 
+        let cambiosNotas = {}; // Acumula cambios antes de guardar
+        let cambiosAsis = {}; // Acumula asistencia antes de guardar
 
         document.getElementById('fecha-hoy').valueAsDate = new Date();
 
         async function login() {
             const email = document.getElementById('login-email').value.toLowerCase().trim();
             if(!email) return alert("Ingresa tu email");
-            
             const doc = await db.collection('usuarios').doc(email).get();
-            
             if (doc.exists && doc.data().rol === 'docente') {
                 docenteData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('doc-nom').innerText = docenteData.nombre;
-                
-                // Manejo de MULTI-MATERIA
                 const selectMateria = document.getElementById('select-materia');
                 selectMateria.innerHTML = "";
                 const materias = Array.isArray(docenteData.materias) ? docenteData.materias : (docenteData.materia ? [docenteData.materia] : []);
-                
-                materias.forEach(m => {
-                    selectMateria.innerHTML += `<option value="${m}">${m}</option>`;
-                });
+                materias.forEach(m => selectMateria.innerHTML += `<option value="${m}">${m}</option>`);
                 materiaActiva = selectMateria.value;
-
-                // Manejo de MULTI-CURSO
                 const selectCurso = document.getElementById('select-curso');
                 selectCurso.innerHTML = "";
                 const cursos = Array.isArray(docenteData.cursos) ? docenteData.cursos : (docenteData.curso ? [docenteData.curso] : []);
-                
-                cursos.forEach(c => {
-                    selectCurso.innerHTML += `<option value="${c}">${c}</option>`;
-                });
-
-                if(materias.length === 0 || cursos.length === 0) {
-                    alert("Atención: No tienes materias o cursos asignados correctamente.");
-                }
-
+                cursos.forEach(c => selectCurso.innerHTML += `<option value="${c}">${c}</option>`);
                 cargarAlumnos();
-            } else { 
-                alert("Email no encontrado o no eres docente."); 
-            }
+            } else { alert("Email no encontrado o no eres docente."); }
         }
 
         function actualizarMateriaActiva() {
@@ -156,85 +148,118 @@
 
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
-            const materia = materiaActiva; 
             const modalidad = document.getElementById('select-modalidad').value;
-            
-            if(!curso || !materia) return;
+            if(!curso || !materiaActiva) return;
+
+            cambiosNotas = {}; cambiosAsis = {};
+            document.getElementById('btn-guardar-notas').style.display = 'none';
+            document.getElementById('btn-guardar-asis').style.display = 'none';
 
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             const containerNotas = document.getElementById('lista-notas');
             const containerAsis = document.getElementById('lista-asis');
             containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
 
-            if(snap.empty) {
-                containerNotas.innerHTML = "<p class='text-center text-slate-400 text-xs font-bold p-10'>No hay alumnos en este curso.</p>";
-                return;
-            }
-
             for (const docAl of snap.docs) {
                 const al = docAl.data();
                 const id = docAl.id;
-                
-                const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
+                const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materiaActiva).get();
                 const n = notaDoc.exists ? notaDoc.data() : {};
 
                 let inputHtml = "";
                 if(modalidad === "NUMERICO") {
                     inputHtml = `<div class="grid grid-cols-3 gap-2">
-                        <input type="number" value="${n.n1||''}" onchange="guardarNota('${id}','n1',this.value)" class="input-nota" placeholder="1B">
-                        <input type="number" value="${n.n2||''}" onchange="guardarNota('${id}','n2',this.value)" class="input-nota" placeholder="2B">
-                        <input type="number" value="${n.n3||''}" onchange="guardarNota('${id}','n3',this.value)" class="input-nota" placeholder="3B">
+                        <input type="number" min="1" max="10" value="${n.n1||''}" oninput="pendienciaNota('${id}','n1',this.value)" class="input-nota" placeholder="1B">
+                        <input type="number" min="1" max="10" value="${n.n2||''}" oninput="pendienciaNota('${id}','n2',this.value)" class="input-nota" placeholder="2B">
+                        <input type="number" min="1" max="10" value="${n.n3||''}" oninput="pendienciaNota('${id}','n3',this.value)" class="input-nota" placeholder="3B">
                     </div>`;
                 } else {
                     inputHtml = `<div class="flex gap-2">
                         ${['TEA','TEP','TED'].map(t => `
-                            <button onclick="guardarNota('${id}','rite','${t}',this)" 
-                            class="badge-rite ${n.rite === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}">${t}</button>
+                            <button onclick="pendienciaNota('${id}','rite','${t}',this)" 
+                            class="badge-rite btn-rite-${id} ${n.rite === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}">${t}</button>
                         `).join('')}
                     </div>`;
                 }
 
-                containerNotas.innerHTML += `
-                    <div class="bg-white p-5 rounded-3xl border shadow-sm">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-sm">${al.nombre}</h4>
-                            <button onclick="descargarPDF('${id}','${al.nombre}')" class="text-blue-500 text-[10px] font-black uppercase tracking-tighter">
-                                <i class="fas fa-file-pdf mr-1"></i>Boletín
-                            </button>
-                        </div>
-                        ${inputHtml}
-                        <textarea onchange="guardarNota('${id}','obs',this.value)" 
-                            class="w-full mt-3 p-3 bg-slate-50 rounded-xl text-[10px] border-none outline-none" 
-                            placeholder="Observación pedagógica...">${n.obs || ''}</textarea>
-                    </div>`;
+                containerNotas.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-sm">${al.nombre}</h4>
+                        <button onclick="descargarPDF('${id}','${al.nombre}')" class="text-blue-500 text-[10px] font-black uppercase"><i class="fas fa-file-pdf mr-1"></i>Boletín</button>
+                    </div>
+                    ${inputHtml}
+                    <textarea oninput="pendienciaNota('${id}','obs',this.value)" class="w-full mt-3 p-3 bg-slate-50 rounded-xl text-[10px] outline-none" placeholder="Observación...">${n.obs || ''}</textarea>
+                </div>`;
 
-                containerAsis.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
-                        <span class="text-xs font-bold w-1/2">${al.nombre}</span>
-                        <div class="flex gap-1">
-                            <button onclick="marcarAsis('${id}','P',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">P</button>
-                            <button onclick="marcarAsis('${id}','A',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">A</button>
-                            <button onclick="marcarAsis('${id}','T',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">T</button>
-                        </div>
-                    </div>`;
+                containerAsis.innerHTML += `<div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
+                    <span class="text-xs font-bold w-1/2">${al.nombre}</span>
+                    <div class="flex gap-1">
+                        <button onclick="pendienciaAsis('${id}','P',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">P</button>
+                        <button onclick="pendienciaAsis('${id}','A',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">A</button>
+                        <button onclick="pendienciaAsis('${id}','T',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">T</button>
+                    </div>
+                </div>`;
             }
         }
 
-        async function guardarNota(id, campo, val, btn = null) {
-            const mat = materiaActiva;
+        function pendienciaNota(id, campo, val, btn = null) {
+            if(!cambiosNotas[id]) cambiosNotas[id] = {};
             
+            // Validar max 10 si es n1, n2 o n3
+            if(['n1','n2','n3'].includes(campo)) {
+                if(val > 10) val = 10;
+                if(val < 0) val = 1;
+            }
+
+            cambiosNotas[id][campo] = val;
             if(campo === 'rite' && btn) {
-                btn.parentElement.querySelectorAll('button').forEach(b => {
+                document.querySelectorAll('.btn-rite-'+id).forEach(b => {
                     b.classList.replace('bg-blue-600', 'bg-slate-100');
                     b.classList.replace('text-white', 'text-slate-400');
                 });
                 btn.classList.replace('bg-slate-100', 'bg-blue-600');
                 btn.classList.replace('text-slate-400', 'text-white');
             }
+            document.getElementById('btn-guardar-notas').style.display = 'block';
+        }
 
-            await db.collection('alumnos').doc(id).collection('notas').doc(mat).set({
-                [campo]: val, materia: mat, fechaUpdate: new Date().toLocaleDateString()
-            }, { merge: true });
+        async function confirmarNotas() {
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GUARDANDO...';
+            const batch = db.batch();
+            for (let id in cambiosNotas) {
+                const ref = db.collection('alumnos').doc(id).collection('notas').doc(materiaActiva);
+                batch.set(ref, { ...cambiosNotas[id], materia: materiaActiva, fechaUpdate: new Date().toLocaleDateString() }, { merge: true });
+            }
+            await batch.commit();
+            alert("✅ Notas guardadas.");
+            cambiosNotas = {};
+            document.getElementById('btn-guardar-notas').style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-save"></i> GUARDAR NOTAS DEL CURSO';
+        }
+
+        function pendienciaAsis(id, tipo, btn) {
+            cambiosAsis[id] = tipo;
+            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
+            const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
+            btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
+            document.getElementById('btn-guardar-asis').style.display = 'block';
+        }
+
+        async function confirmarAsistencia() {
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
+            const fecha = document.getElementById('fecha-hoy').value;
+            const batch = db.batch();
+            for (let id in cambiosAsis) {
+                const ref = db.collection('asistencia').doc();
+                batch.set(ref, { alumnoId: id, estado: cambiosAsis[id], fecha: fecha, materia: materiaActiva });
+            }
+            await batch.commit();
+            alert("✅ Asistencia registrada.");
+            cambiosAsis = {};
+            document.getElementById('btn-guardar-asis').style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA';
         }
 
         function switchTab(tab) {
@@ -242,6 +267,14 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             document.getElementById('btn-' + tab).classList.add('active');
+            // Ocultar botones flotantes de la otra pestaña
+            if(tab === 'notas') {
+                document.getElementById('btn-guardar-asis').style.display = 'none';
+                if(Object.keys(cambiosNotas).length > 0) document.getElementById('btn-guardar-notas').style.display = 'block';
+            } else {
+                document.getElementById('btn-guardar-notas').style.display = 'none';
+                if(Object.keys(cambiosAsis).length > 0) document.getElementById('btn-guardar-asis').style.display = 'block';
+            }
         }
 
         async function descargarPDF(id, nombre) {
@@ -264,19 +297,6 @@
             const element = document.getElementById('pdf-template');
             element.style.display = 'block';
             html2pdf().from(element).save().then(() => element.style.display = 'none');
-        }
-
-        async function marcarAsis(id, tipo, btn) {
-            const fecha = document.getElementById('fecha-hoy').value;
-            await db.collection('asistencia').add({ 
-                alumnoId: id, 
-                estado: tipo, 
-                fecha: fecha, 
-                materia: materiaActiva 
-            });
-            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
-            const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
-            btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
         }
     </script>
 </body>
