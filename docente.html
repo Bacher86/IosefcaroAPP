@@ -41,16 +41,12 @@
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
-        
         <section id="tab-notas" class="tab-content active">
             <div class="grid grid-cols-2 gap-2 mb-6">
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Materia</label>
                     <select id="select-materia" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs">
-                        <option value="MATEMATICA">Matemática</option>
-                        <option value="LENGUA">Lengua</option>
-                        <option value="INGLES">Inglés</option>
-                        <option value="CIENCIAS">Ciencias</option>
+                        <option value="">Cargando materias...</option>
                     </select>
                 </div>
                 <div>
@@ -151,10 +147,28 @@
                 docenteData = doc.data();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('doc-nom').innerText = `Hola, ${docenteData.nombre.split(' ')[0]}`;
+                
                 const select = document.getElementById('select-curso');
                 select.innerHTML = docenteData.cursos.map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                // VINCULACIÓN: Carga materias del Admin antes de mostrar alumnos
+                await cargarMateriasDesdeFirebase();
+                
                 cargarAlumnos();
             } else { alert("Acceso denegado."); }
+        }
+
+        async function cargarMateriasDesdeFirebase() {
+            const selectMat = document.getElementById('select-materia');
+            const snap = await db.collection('materias').orderBy('nombre').get();
+            if(!snap.empty) {
+                selectMat.innerHTML = snap.docs.map(doc => {
+                    const nombre = doc.data().nombre;
+                    return `<option value="${nombre}">${nombre}</option>`;
+                }).join('');
+            } else {
+                selectMat.innerHTML = `<option value="">Sin materias en Admin</option>`;
+            }
         }
 
         function switchTab(tab) {
@@ -164,17 +178,16 @@
             document.getElementById('btn-' + tab).classList.add('active');
         }
 
-        // CORRECCIÓN CRÍTICA: Bucle asíncrono optimizado
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
             const materia = document.getElementById('select-materia').value;
             const modalidad = document.getElementById('select-modalidad').value;
-            
+            if(!materia) return;
+
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             const containerNotas = document.getElementById('lista-notas');
             const containerAsis = document.getElementById('lista-asis');
-            
-            containerNotas.innerHTML = "<p class='text-center text-xs font-bold text-slate-400'>Cargando lista...</p>";
+            containerNotas.innerHTML = "<p class='text-center text-xs p-4'>Buscando alumnos...</p>";
             containerAsis.innerHTML = "";
 
             const promesas = snap.docs.map(async (docAl) => {
@@ -193,7 +206,6 @@
                 if(modalidad === "NUMERICO") {
                     const notasArr = [n.n1, n.n2, n.n3].filter(v => v && !isNaN(v));
                     const prom = notasArr.length > 0 ? (notasArr.reduce((a,b)=>parseFloat(a)+parseFloat(b),0)/notasArr.length).toFixed(2) : '-';
-                    
                     inputHtml = `<div class="grid grid-cols-4 gap-2">
                         <input type="number" value="${n.n1||''}" oninput="calcProm(this)" onchange="guardarNota('${id}','n1',this.value)" class="input-nota n1" placeholder="1B">
                         <input type="number" value="${n.n2||''}" oninput="calcProm(this)" onchange="guardarNota('${id}','n2',this.value)" class="input-nota n2" placeholder="2B">
@@ -223,12 +235,11 @@
                     </div>`;
 
                 containerAsis.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border shadow-sm">
+                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border shadow-sm mb-2">
                         <span class="text-xs font-bold text-slate-700 w-1/3">${al.nombre}</span>
                         <div class="flex gap-2 flex-1 justify-end">
                             <button onclick="marcarAsis('${id}','P',this)" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold">P</button>
                             <button onclick="marcarAsis('${id}','A',this)" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold">A</button>
-                            <button onclick="marcarAsis('${id}','T',this)" class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold">T</button>
                         </div>
                     </div>`;
             });
@@ -272,11 +283,10 @@
             const mat = document.getElementById('select-materia').value;
             await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha, materia: mat, hora: new Date().toLocaleTimeString() });
             btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-12 h-12 rounded-xl bg-slate-100 text-slate-400 font-bold");
-            const color = tipo === 'P' ? 'bg-emerald-500 text-white shadow-emerald-200' : tipo === 'A' ? 'bg-rose-500 text-white shadow-rose-200' : 'bg-amber-500 text-white shadow-amber-200';
-            btn.className = `w-12 h-12 rounded-xl ${color} font-bold shadow-lg scale-110 transition-all`;
+            const color = tipo === 'P' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-rose-500 text-white shadow-lg';
+            btn.className = `w-12 h-12 rounded-xl ${color} font-bold scale-110 transition-all`;
         }
 
-        // --- FUNCIONES DE HITOS (RESTAURADAS) ---
         function abrirHito(id, nombre) {
             hitoSeleccionado = { id, nombre, tipo: '' };
             document.getElementById('hito-alumno-nom').innerText = nombre;
