@@ -17,6 +17,7 @@
         .input-pro:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1); }
         #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tag-docente { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
@@ -102,18 +103,32 @@
 
             <section id="tab-docentes" class="tab-content space-y-4">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Asignar Materia/Curso a Docente</h2>
-                    <p class="text-[10px] text-slate-400 mb-4 uppercase font-bold italic">Nota: Si el docente ya existe, se sumarán las nuevas asignaciones.</p>
+                    <h2 class="font-black text-xl mb-4">Registrar Docente (Multi-asignación)</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="doc-nombre" placeholder="Nombre y Apellido" class="input-pro">
                         <input type="email" id="doc-email" placeholder="Email institucional" class="input-pro">
-                        <select id="doc-materia" class="input-pro">
-                            <option value="">Seleccionar Materia</option>
-                        </select>
-                        <select id="doc-curso" class="input-pro">
-                            <option value="">Seleccionar Curso</option>
-                        </select>
-                        <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Asignar y Guardar</button>
+                        
+                        <div class="space-y-2">
+                            <div class="flex gap-2">
+                                <select id="doc-materia" class="input-pro">
+                                    <option value="">Seleccionar Materia</option>
+                                </select>
+                                <button onclick="agregarTag('materia')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button>
+                            </div>
+                            <div id="tags-materias" class="flex flex-wrap gap-1"></div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex gap-2">
+                                <select id="doc-curso" class="input-pro">
+                                    <option value="">Seleccionar Curso</option>
+                                </select>
+                                <button onclick="agregarTag('curso')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button>
+                            </div>
+                            <div id="tags-cursos" class="flex flex-wrap gap-1"></div>
+                        </div>
+
+                        <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Docente con todas las asignaciones</button>
                     </div>
                 </div>
                 <div id="lista-docentes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -148,6 +163,10 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+
+        // Variables temporales para el formulario de docentes
+        let materiasSeleccionadas = [];
+        let cursosSeleccionados = [];
 
         async function validarIngreso() {
             const emailInput = document.getElementById('log-email').value.trim().toLowerCase();
@@ -242,23 +261,61 @@
             cargarStaff();
         }
 
-        // --- REGISTRO DOCENTE MULTI-CURSO Y MULTI-MATERIA ---
+        // --- NUEVA LÓGICA DE DOCENTES ---
+        
+        function agregarTag(tipo) {
+            const select = document.getElementById('doc-' + tipo);
+            const val = select.value;
+            if(!val) return;
+            
+            if(tipo === 'materia') {
+                if(!materiasSeleccionadas.includes(val)) materiasSeleccionadas.push(val);
+            } else {
+                if(!cursosSeleccionados.includes(val)) cursosSeleccionados.push(val);
+            }
+            renderTags();
+        }
+
+        function quitarTag(tipo, val) {
+            if(tipo === 'materia') {
+                materiasSeleccionadas = materiasSeleccionadas.filter(m => m !== val);
+            } else {
+                cursosSeleccionados = cursosSeleccionados.filter(c => c !== val);
+            }
+            renderTags();
+        }
+
+        function renderTags() {
+            document.getElementById('tags-materias').innerHTML = materiasSeleccionadas.map(m => 
+                `<span class="tag-docente">${m} <i onclick="quitarTag('materia', '${m}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`
+            ).join('');
+            document.getElementById('tags-cursos').innerHTML = cursosSeleccionados.map(c => 
+                `<span class="tag-docente">${c} <i onclick="quitarTag('curso', '${c}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`
+            ).join('');
+        }
+
         async function crearDocente() {
             const n = document.getElementById('doc-nombre').value;
             const e = document.getElementById('doc-email').value.toLowerCase().trim();
-            const mat = document.getElementById('doc-materia').value;
-            const cur = document.getElementById('doc-curso').value;
-            if(!n || !e || !mat || !cur) return alert("Completa todos los datos");
+            
+            if(!n || !e || materiasSeleccionadas.length === 0 || cursosSeleccionados.length === 0) {
+                return alert("Completa nombre, email y agrega al menos una materia y un curso con el botón (+)");
+            }
 
-            // Usamos arrayUnion para no sobreescribir lo anterior
             await db.collection('usuarios').doc(e).set({ 
                 nombre: n, 
                 rol: 'docente',
-                materias: firebase.firestore.FieldValue.arrayUnion(mat),
-                cursos: firebase.firestore.FieldValue.arrayUnion(cur) 
-            }, { merge: true });
+                materias: materiasSeleccionadas,
+                cursos: cursosSeleccionados 
+            });
 
-            alert("Asignación completada: " + mat + " en " + cur);
+            alert("Docente registrado con éxito");
+            // Limpiar formulario
+            document.getElementById('doc-nombre').value = "";
+            document.getElementById('doc-email').value = "";
+            materiasSeleccionadas = [];
+            cursosSeleccionados = [];
+            renderTags();
             cargarDocentes();
         }
 
@@ -298,9 +355,8 @@
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
-                // Manejar tanto el formato viejo (string) como el nuevo (array)
-                const mats = d.materias ? d.materias.join(', ') : (d.materia || 'Sin materia');
-                const curs = d.cursos ? d.cursos.join(', ') : (d.curso || 'Sin curso');
+                const mats = d.materias ? d.materias.join(', ') : (d.materia || '---');
+                const curs = d.cursos ? d.cursos.join(', ') : (d.curso || '---');
 
                 cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm">
                     <span><b>${d.nombre}</b><br>
