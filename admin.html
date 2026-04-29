@@ -146,25 +146,40 @@
         const db = firebase.firestore();
 
         // --- SEGURIDAD ---
-        function validarIngreso() {
-            const email = document.getElementById('log-email').value.toLowerCase().trim();
-            const pass = document.getElementById('log-pass').value;
+        async function validarIngreso() {
+    // Obtenemos los valores y limpiamos espacios y mayúsculas
+    const email = document.getElementById('log-email').value.trim().toLowerCase();
+    const pass = document.getElementById('log-pass').value.trim();
 
-            // HARDCODE URIEL
-            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-                autorizar("admin");
+    if (!email || !pass) {
+        alert("Por favor, completa todos los campos");
+        return;
+    }
+
+    // 1. Acceso Directo (Hardcoded)
+    if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+        console.log("Acceso maestro concedido"); // Para debug
+        autorizar("admin");
+        return;
+    }
+
+    // 2. Acceso vía Firebase
+    try {
+        const doc = await db.collection('usuarios').doc(email).get();
+        if(doc.exists) {
+            const u = doc.data();
+            // Comparamos password y rol
+            if(u.pass === pass && (u.rol === 'admin' || u.rol === 'comunicacion')) {
+                autorizar(u.rol);
                 return;
             }
-
-            // BUSCAR EN STAFF
-            db.collection('usuarios').doc(email).get().then(doc => {
-                if(doc.exists && doc.data().pass === pass) {
-                    autorizar(doc.data().rol);
-                } else {
-                    alert("Acceso denegado");
-                }
-            });
         }
+        alert("Credenciales incorrectas o usuario sin permisos.");
+    } catch(e) {
+        console.error("Error en Firebase:", e);
+        alert("Error de conexión con la base de datos.");
+    }
+}
 
         function autorizar(rol) {
             sessionStorage.setItem('iosef_session', rol);
