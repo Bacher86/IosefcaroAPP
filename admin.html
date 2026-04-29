@@ -102,7 +102,8 @@
 
             <section id="tab-docentes" class="tab-content space-y-4">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Registrar Docente</h2>
+                    <h2 class="font-black text-xl mb-4">Asignar Materia/Curso a Docente</h2>
+                    <p class="text-[10px] text-slate-400 mb-4 uppercase font-bold italic">Nota: Si el docente ya existe, se sumarán las nuevas asignaciones.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="doc-nombre" placeholder="Nombre y Apellido" class="input-pro">
                         <input type="email" id="doc-email" placeholder="Email institucional" class="input-pro">
@@ -112,7 +113,7 @@
                         <select id="doc-curso" class="input-pro">
                             <option value="">Seleccionar Curso</option>
                         </select>
-                        <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Docente</button>
+                        <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Asignar y Guardar</button>
                     </div>
                 </div>
                 <div id="lista-docentes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -190,7 +191,6 @@
 
         function cerrarSesion() { sessionStorage.clear(); location.reload(); }
 
-        // --- IMPORTACIÓN CSV MEJORADA (Múltiples Mails) ---
         async function procesarCSV() {
             const file = document.getElementById('csv-file').files[0];
             if(!file) return alert("Carga un archivo .csv primero");
@@ -200,7 +200,6 @@
                 let logs = 0;
                 for(let i=1; i<lines.length; i++) {
                     const columns = lines[i].split(',').map(s => s?.trim());
-                    // Col A: Alumno, B: Curso, C: Familia, D: Mail1, E: Mail2, F: Mail3
                     const [alu, cur, fam] = columns;
                     const emails = columns.slice(3).filter(email => email && email.includes('@'));
 
@@ -243,20 +242,23 @@
             cargarStaff();
         }
 
-        // --- REGISTRO DOCENTE CON MATERIA Y CURSO ---
+        // --- REGISTRO DOCENTE MULTI-CURSO Y MULTI-MATERIA ---
         async function crearDocente() {
             const n = document.getElementById('doc-nombre').value;
             const e = document.getElementById('doc-email').value.toLowerCase().trim();
             const mat = document.getElementById('doc-materia').value;
             const cur = document.getElementById('doc-curso').value;
-            if(!n || !e || !mat || !cur) return alert("Completa todos los datos (incluyendo materia y curso)");
+            if(!n || !e || !mat || !cur) return alert("Completa todos los datos");
+
+            // Usamos arrayUnion para no sobreescribir lo anterior
             await db.collection('usuarios').doc(e).set({ 
                 nombre: n, 
                 rol: 'docente',
-                materia: mat,
-                curso: cur 
-            });
-            alert("Docente registrado con éxito");
+                materias: firebase.firestore.FieldValue.arrayUnion(mat),
+                cursos: firebase.firestore.FieldValue.arrayUnion(cur) 
+            }, { merge: true });
+
+            alert("Asignación completada: " + mat + " en " + cur);
             cargarDocentes();
         }
 
@@ -296,9 +298,14 @@
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
+                // Manejar tanto el formato viejo (string) como el nuevo (array)
+                const mats = d.materias ? d.materias.join(', ') : (d.materia || 'Sin materia');
+                const curs = d.cursos ? d.cursos.join(', ') : (d.curso || 'Sin curso');
+
                 cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm">
                     <span><b>${d.nombre}</b><br>
-                    <small class="text-blue-600 font-bold uppercase text-[9px]">${d.materia || 'Sin materia'} - ${d.curso || 'Sin curso'}</small><br>
+                    <small class="text-blue-600 font-bold uppercase text-[9px]">MATERIAS: ${mats}</small><br>
+                    <small class="text-emerald-600 font-bold uppercase text-[9px]">CURSOS: ${curs}</small><br>
                     <small class="text-slate-400">${doc.id}</small></span>
                     <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-200"><i class="fas fa-user-minus"></i></button>
                 </div>`;
