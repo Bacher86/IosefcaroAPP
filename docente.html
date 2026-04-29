@@ -1,12 +1,14 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Docente Pro - Iosef Caro</title>
+    <title>Docente - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -14,66 +16,92 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-btn.active { color: #2563eb; background: #eff6ff; border-radius: 1rem; }
-        .input-nota { width: 100%; height: 45px; text-align: center; border-radius: 12px; border: 2px solid #f1f5f9; font-weight: 800; outline: none; }
+        .input-nota { width: 100%; height: 50px; text-align: center; border-radius: 1rem; border: 2px solid #f1f5f9; font-weight: 800; outline: none; }
+        .input-nota:focus { border-color: #2563eb; background: white; }
+        .badge-rite { padding: 10px; border-radius: 0.8rem; font-size: 11px; font-weight: 800; flex: 1; text-align: center; border: 2px solid transparent; transition: all 0.2s; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8">
-        <div class="w-16 h-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-2xl shadow-xl"><i class="fas fa-chalkboard-teacher"></i></div>
-        <h2 class="text-2xl font-black mb-6">Acceso Docente</h2>
-        <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="tu-email@colegio.com">
-        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">Ingresar</button>
+    <div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8 text-center">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-2xl shadow-xl"><i class="fas fa-apple-alt"></i></div>
+        <h2 class="text-2xl font-black mb-6">Panel Docente</h2>
+        <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="profe@gmail.com">
+        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold">Entrar</button>
     </div>
 
     <header class="p-6 bg-white border-b sticky top-0 z-50 flex justify-between items-center">
         <div>
-            <h1 id="doc-nom" class="font-black text-lg text-slate-800 tracking-tight">Cargando...</h1>
-            <div class="flex items-center gap-2">
-                <span class="text-[9px] font-black text-slate-400 uppercase">Curso:</span>
-                <select id="select-curso" onchange="cargarAlumnos()" class="text-[11px] font-bold text-blue-600 uppercase border-none bg-transparent outline-none cursor-pointer">
-                    <option>Esperando datos...</option>
-                </select>
-            </div>
+            <h1 id="doc-nom" class="font-black text-lg leading-none">Hola, Profe</h1>
+            <select id="select-curso" onchange="cargarAlumnos()" class="text-[10px] font-bold text-blue-600 uppercase border-none bg-transparent outline-none"></select>
         </div>
-        <div class="text-right">
-            <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none border-none">
-        </div>
+        <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
     </header>
 
     <main class="p-4 max-w-lg mx-auto">
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="bg-white p-3 rounded-2xl shadow-sm border">
-                <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Materia</label>
-                <select id="select-materia" onchange="cargarAlumnos()" class="w-full font-bold text-xs outline-none bg-transparent">
-                    <option value="">Cargando materias...</option>
-                </select>
+        
+        <section id="tab-notas" class="tab-content active">
+            <div class="grid grid-cols-2 gap-2 mb-6">
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Materia</label>
+                    <select id="select-materia" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs">
+                        <option value="MATEMATICA">Matemática</option>
+                        <option value="LENGUA">Lengua</option>
+                        <option value="INGLES">Inglés</option>
+                        <option value="CIENCIAS">Ciencias</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
+                    <select id="select-modalidad" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs text-blue-600">
+                        <option value="NUMERICO">📊 Numérico</option>
+                        <option value="RITE">📝 RITE</option>
+                    </select>
+                </div>
             </div>
-            <div class="bg-white p-3 rounded-2xl shadow-sm border">
-                <label class="text-[9px] font-black text-slate-400 uppercase block mb-1">Tipo de Nota</label>
-                <select id="select-modalidad" onchange="cargarAlumnos()" class="w-full font-bold text-xs outline-none bg-transparent text-blue-600">
-                    <option value="NUMERICO">Calificación (1-10)</option>
-                    <option value="RITE">RITE (TEA/TEP/TED)</option>
-                </select>
-            </div>
-        </div>
 
-        <div id="lista-notas" class="space-y-4">
-            <div class="text-center py-10">
-                <i class="fas fa-users text-slate-200 text-5xl mb-4"></i>
-                <p class="text-slate-400 text-xs font-bold">Seleccioná un curso para ver los alumnos</p>
-            </div>
-        </div>
+            <div id="lista-notas" class="space-y-4"></div>
+        </section>
+
+        <section id="tab-asis" class="tab-content">
+            <h3 class="font-black text-xl mb-4">Pasar Lista</h3>
+            <div id="lista-asis" class="space-y-2"></div>
+            <button onclick="alert('Asistencia guardada')" class="w-full mt-6 bg-emerald-500 text-white p-4 rounded-2xl font-bold shadow-lg">Finalizar Lista</button>
+        </section>
     </main>
 
     <nav class="fixed bottom-0 left-4 right-4 bg-white border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
-        <button class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+        <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
             <i class="fas fa-star text-lg"></i>NOTAS
         </button>
-        <button class="flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px] text-slate-300">
-            <i class="fas fa-list-check text-lg"></i>PRÓXIMAMENTE
+        <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+            <i class="fas fa-list-check text-lg"></i>ASISTENCIA
         </button>
     </nav>
+
+    <div id="pdf-template" style="display:none; padding: 40px; color: #1e293b;">
+        <div style="text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800;">INSTITUTO IOSEF CARO</h1>
+            <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Informe de Trayectoria Educativa</p>
+        </div>
+        <div style="margin-bottom: 20px; font-size: 12px;">
+            <p><strong>Alumno/a:</strong> <span id="pdf-nombre"></span></p>
+            <p><strong>Curso:</strong> <span id="pdf-curso"></span> | <strong>Fecha:</strong> <span id="pdf-fecha"></span></p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f1f5f9;">
+                    <th style="border: 1px solid #e2e8f0; padding: 10px; text-align: left;">Área Curricular</th>
+                    <th style="border: 1px solid #e2e8f0; padding: 10px; text-align: center;">Calificación</th>
+                    <th style="border: 1px solid #e2e8f0; padding: 10px; text-align: left;">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-body"></tbody>
+        </table>
+        <div style="margin-top: 50px; text-align: center; font-size: 10px; opacity: 0.5;">
+            Documento generado digitalmente por el Portal Docente Iosef Caro.
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
@@ -85,167 +113,145 @@
 
         async function login() {
             const email = document.getElementById('login-email').value.toLowerCase().trim();
-            if(!email) return alert("Ingresá tu email");
-
-            try {
-                const doc = await db.collection('usuarios').doc(email).get();
-                
-                if (doc.exists) {
-                    docenteData = doc.data();
-                    document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('doc-nom').innerText = docenteData.nombre || "Docente";
-                    
-                    // --- CORRECCIÓN DE CURSOS ---
-                    const selectC = document.getElementById('select-curso');
-                    // Intentamos obtener el array 'cursos' o el campo 'curso' si es único
-                    const listaCursos = docenteData.cursos || (docenteData.curso ? [docenteData.curso] : []);
-
-                    if(listaCursos.length > 0) {
-                        selectC.innerHTML = listaCursos.map(c => `<option value="${c}">${c}</option>`).join('');
-                        // Cargar materias globales
-                        await cargarMaterias();
-                        // Ejecutar carga inicial de alumnos
-                        cargarAlumnos();
-                    } else {
-                        selectC.innerHTML = '<option value="">ERROR: Sin cursos asignados</option>';
-                        alert("Atención: El Administrador no te ha asignado cursos en tu perfil de usuario.");
-                    }
-
-                } else {
-                    alert("El usuario no existe en la base de datos.");
-                }
-            } catch (e) { 
-                console.error(e); 
-                alert("Error de conexión");
-            }
+            const doc = await db.collection('usuarios').doc(email).get();
+            if (doc.exists && doc.data().rol === 'docente') {
+                docenteData = doc.data();
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('doc-nom').innerText = docenteData.nombre;
+                const select = document.getElementById('select-curso');
+                select.innerHTML = docenteData.cursos.map(c => `<option value="${c}">${c}</option>`).join('');
+                cargarAlumnos();
+            } else { alert("Acceso denegado."); }
         }
 
-        async function cargarMaterias() {
-            const selectM = document.getElementById('select-materia');
-            try {
-                const snap = await db.collection('materias').get();
-                if(!snap.empty) {
-                    selectM.innerHTML = snap.docs.map(doc => `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`).join('');
-                } else {
-                    selectM.innerHTML = '<option value="">No hay materias creadas</option>';
-                }
-            } catch(e) { console.log(e); }
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('btn-' + tab).classList.add('active');
         }
 
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
             const materia = document.getElementById('select-materia').value;
             const modalidad = document.getElementById('select-modalidad').value;
+            const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             
-            if(!curso || !materia) return;
+            const containerNotas = document.getElementById('lista-notas');
+            const containerAsis = document.getElementById('lista-asis');
+            containerNotas.innerHTML = ""; containerAsis.innerHTML = "";
 
-            const container = document.getElementById('lista-notas');
-            container.innerHTML = "<p class='text-center p-10 text-xs font-bold text-slate-400 animate-pulse'>Buscando alumnos de "+curso+"...</p>";
+            snap.forEach(async (docAl) => {
+                const al = docAl.data();
+                const id = docAl.id;
+                const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
+                const n = notaDoc.exists ? notaDoc.data() : {};
 
-            try {
-                // Buscamos alumnos que tengan el campo 'curso' igual al seleccionado
-                const snap = await db.collection('alumnos').where('curso', '==', curso).get();
-                
-                if(snap.empty) {
-                    container.innerHTML = `
-                        <div class="text-center py-10">
-                            <p class="text-rose-500 font-bold text-sm">No se encontraron alumnos</p>
-                            <p class="text-slate-400 text-[10px]">Asegurate que en el Admin los alumnos tengan escrito exactamente: "${curso}"</p>
-                        </div>`;
-                    return;
+                // Control según modalidad
+                let inputHtml = "";
+                if(modalidad === "NUMERICO") {
+                    inputHtml = `<div class="grid grid-cols-3 gap-2">
+                        <input type="number" value="${n.n1||''}" onchange="guardarNota('${id}','n1',this.value)" class="input-nota" placeholder="1B">
+                        <input type="number" value="${n.n2||''}" onchange="guardarNota('${id}','n2',this.value)" class="input-nota" placeholder="2B">
+                        <input type="number" value="${n.n3||''}" onchange="guardarNota('${id}','n3',this.value)" class="input-nota" placeholder="3B">
+                    </div>`;
+                } else {
+                    inputHtml = `<div class="flex gap-2">
+                        ${['TEA','TEP','TED'].map(t => `
+                            <button onclick="guardarNota('${id}','rite','${t}',this)" 
+                            class="badge-rite ${n.rite === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}">${t}</button>
+                        `).join('')}
+                    </div>`;
                 }
 
-                container.innerHTML = "";
-                
-                // Usamos for...of para manejar la asincronía de las notas
-                for (let docAl of snap.docs) {
-                    const al = docAl.data();
-                    const id = docAl.id;
-                    
-                    // Traer nota de este alumno para esta materia
-                    const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
-                    const n = notaDoc.exists ? notaDoc.data() : {};
-
-                    const div = document.createElement('div');
-                    div.className = "bg-white p-5 rounded-[2rem] border shadow-sm border-slate-100";
-                    
-                    let inputsHTML = "";
-                    if(modalidad === "NUMERICO") {
-                        inputsHTML = `
-                        <div class="grid grid-cols-3 gap-2">
-                            <input type="number" value="${n.n1||''}" onchange="saveNota('${id}','n1',this.value)" class="input-nota" placeholder="1° Bim">
-                            <input type="number" value="${n.n2||''}" onchange="saveNota('${id}','n2',this.value)" class="input-nota" placeholder="2° Bim">
-                            <input type="number" value="${n.n3||''}" onchange="saveNota('${id}','n3',this.value)" class="input-nota" placeholder="3° Bim">
-                        </div>`;
-                    } else {
-                        inputsHTML = `
-                        <div class="flex gap-2">
-                            ${['TEA','TEP','TED'].map(t => `
-                                <button onclick="saveNota('${id}','rite','${t}',this)" 
-                                    class="flex-1 p-3 rounded-xl font-extrabold text-xs ${n.rite === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}">
-                                    ${t}
-                                </button>
-                            `).join('')}
-                        </div>`;
-                    }
-
-                    div.innerHTML = `
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-sm">${al.nombre}</h4>
-                                <p class="text-[9px] text-slate-400 font-bold uppercase">ID: ${id}</p>
-                            </div>
-                            <i class="fas fa-check-circle text-slate-200" id="check-${id}"></i>
+                containerNotas.innerHTML += `
+                    <div class="bg-white p-5 rounded-3xl border shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-sm">${al.nombre}</h4>
+                            <button onclick="descargarPDF('${id}','${al.nombre}')" class="text-blue-500 text-[10px] font-black uppercase tracking-tighter">
+                                <i class="fas fa-file-pdf mr-1"></i>Boletín
+                            </button>
                         </div>
-                        ${inputsHTML}
-                        <textarea onchange="saveNota('${id}','obs',this.value)" 
-                            class="w-full mt-3 p-3 bg-slate-50 rounded-xl text-[11px] outline-none h-16 border-none" 
-                            placeholder="Observaciones o informe...">${n.obs||''}</textarea>
-                    `;
-                    container.appendChild(div);
-                }
-            } catch (e) { console.error(e); }
+                        ${inputHtml}
+                        <textarea onchange="guardarNota('${id}','obs',this.value)" 
+                            class="w-full mt-3 p-3 bg-slate-50 rounded-xl text-[10px] border-none outline-none" 
+                            placeholder="Observación pedagógica...">${n.obs || ''}</textarea>
+                    </div>`;
+
+                containerAsis.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
+                        <span class="text-xs font-bold w-1/2">${al.nombre}</span>
+                        <div class="flex gap-1">
+                            <button onclick="marcarAsis('${id}','P',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">P</button>
+                            <button onclick="marcarAsis('${id}','A',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">A</button>
+                            <button onclick="marcarAsis('${id}','T',this)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs">T</button>
+                        </div>
+                    </div>`;
+            });
         }
 
-        async function saveNota(id, campo, val, btn = null) {
-            const materia = document.getElementById('select-materia').value;
+        async function guardarNota(id, campo, val, btn = null) {
+            const mat = document.getElementById('select-materia').value;
             
-            // Visual para RITE
             if(campo === 'rite' && btn) {
                 btn.parentElement.querySelectorAll('button').forEach(b => {
-                    b.classList.remove('bg-blue-600', 'text-white');
-                    b.classList.add('bg-slate-100', 'text-slate-400');
+                    b.classList.replace('bg-blue-600', 'bg-slate-100');
+                    b.classList.replace('text-white', 'text-slate-400');
                 });
-                btn.classList.remove('bg-slate-100', 'text-slate-400');
-                btn.classList.add('bg-blue-600', 'text-white');
+                btn.classList.replace('bg-slate-100', 'bg-blue-600');
+                btn.classList.replace('text-slate-400', 'text-white');
             }
 
-            try {
-                await db.collection('alumnos').doc(id).collection('notas').doc(materia).set({
-                    [campo]: val,
-                    materia: materia,
-                    ultimaModificacion: new Date().toLocaleString()
-                }, { merge: true });
-                
-                // Feedback visual de guardado
-                const check = document.getElementById(`check-${id}`);
-                if(check) {
-                    check.classList.remove('text-slate-200');
-                    check.classList.add('text-emerald-500');
-                    setTimeout(() => check.classList.replace('text-emerald-500', 'text-slate-200'), 2000);
-                }
-            } catch(e) { alert("Error al guardar"); }
+            await db.collection('alumnos').doc(id).collection('notas').doc(mat).set({
+                [campo]: val, materia: mat, fechaUpdate: new Date().toLocaleDateString()
+            }, { merge: true });
         }
 
-        function aplicarTextoMasivo() {
-            const txt = document.getElementById('texto-comun').value;
-            if(!txt) return alert("Escribí algo en el panel de arriba");
-            document.querySelectorAll('textarea').forEach(t => {
-                if(t.id !== 'texto-comun') {
-                    t.value = txt;
-                    t.dispatchEvent(new Event('change'));
-                }
+        async function descargarPDF(id, nombre) {
+            const curso = document.getElementById('select-curso').value;
+            const snap = await db.collection('alumnos').doc(id).collection('notas').get();
+            
+            document.getElementById('pdf-nombre').innerText = nombre;
+            document.getElementById('pdf-curso').innerText = curso;
+            document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
+            
+            const body = document.getElementById('pdf-body');
+            body.innerHTML = "";
+            
+            snap.forEach(doc => {
+                const n = doc.data();
+                // Si tiene RITE lo mostramos, sino mostramos los bimestres
+                const calif = n.rite ? n.rite : `${n.n1||'-'} / ${n.n2||'-'} / ${n.n3||'-'}`;
+                body.innerHTML += `
+                    <tr>
+                        <td style="border: 1px solid #e2e8f0; padding: 10px; font-weight:bold;">${n.materia}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 10px; text-align:center; font-weight:800; color:#2563eb;">${calif}</td>
+                        <td style="border: 1px solid #e2e8f0; padding: 10px; font-size:9px;">${n.obs || ''}</td>
+                    </tr>`;
             });
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block';
+            
+            const opciones = {
+                margin: 0.5,
+                filename: `Boletin_${nombre}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opciones).from(element).save().then(() => {
+                element.style.display = 'none';
+            });
+        }
+
+        async function marcarAsis(id, tipo, btn) {
+            const fecha = document.getElementById('fecha-hoy').value;
+            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha: fecha });
+            btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
+            const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
+            btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
         }
     </script>
 </body>
