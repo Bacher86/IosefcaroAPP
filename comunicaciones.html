@@ -15,28 +15,14 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
         .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        /* El login ahora está oculto por defecto */
+        #login-overlay { display: none; position: fixed; inset: 0; background: #0f172a; z-index: 100; align-items: center; justify-content: center; padding: 20px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
-            <div class="w-20 h-20 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
-                <i class="fas fa-paper-plane"></i>
-            </div>
-            <h1 class="text-3xl font-black text-slate-800 tracking-tighter">Comunicaciones</h1>
-            <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Acceso de Personal</p>
-            <div class="space-y-4">
-                <input type="email" id="log-email" placeholder="Usuario / Email" class="input-pro">
-                <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
-                <button type="button" id="btn-login" onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">Ingresar al Panel</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="comunicaciones-content" class="hidden">
+    <div id="comunicaciones-content">
         <nav class="bg-white border-b p-4 flex gap-4 sticky top-0 z-50 shadow-sm overflow-x-auto">
             <button onclick="switchTab('noticias')" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap">
                 <i class="fas fa-bullhorn mr-2"></i>Noticias y Avisos
@@ -44,8 +30,8 @@
             <button onclick="switchTab('calendario')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">
                 <i class="fas fa-calendar-star mr-2"></i>Calendario Escolar
             </button>
-            <button onclick="cerrarSesion()" class="ml-auto text-rose-500 font-bold px-4 py-2 hover:bg-rose-50 rounded-xl transition">
-                <i class="fas fa-sign-out-alt"></i>
+            <button onclick="location.reload()" class="ml-auto text-rose-500 font-bold px-4 py-2 hover:bg-rose-50 rounded-xl transition">
+                <i class="fas fa-sync"></i>
             </button>
         </nav>
 
@@ -138,7 +124,6 @@
         appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
     };
 
-    // Inicialización ultra-segura
     let db;
     try {
         if (!firebase.apps.length) {
@@ -149,95 +134,10 @@
         alert("Error crítico al conectar con Firebase: " + e.message);
     }
 
-    async function validarIngreso() {
-        const btn = document.getElementById('btn-login');
-        const email = document.getElementById('log-email').value.trim().toLowerCase();
-        const pass = document.getElementById('log-pass').value.trim();
-
-        if (!email || !pass) {
-            alert("Completa los datos");
-            return;
-        }
-
-        btn.innerText = "Conectando...";
-        btn.disabled = true;
-
-        // 1. Acceso Maestro (Local, no depende de la base de datos)
-        if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-            autorizar("admin");
-            return;
-        }
-
-        try {
-            // timeout de 10 segundos por si la conexión está colgada
-            const timeout = setTimeout(() => {
-                alert("La conexión está tardando demasiado. Revisa tu internet o las reglas de Firebase.");
-                btn.disabled = false;
-                btn.innerText = "Ingresar al Panel";
-            }, 10000);
-
-            console.log("Buscando usuario:", email);
-            
-            // Buscamos directamente en la colección 'usuarios'
-            const usuariosRef = db.collection('usuarios');
-            const query = await usuariosRef.where('mail', '==', email).get();
-
-            clearTimeout(timeout);
-
-            if (!query.empty) {
-                const u = query.docs[0].data();
-                console.log("Datos encontrados:", u);
-
-                if (u.pass === pass) {
-                    if (u.rol === 'admin' || u.rol === 'comunicacion') {
-                        autorizar(u.rol);
-                    } else {
-                        alert("Tu rol (" + u.rol + ") no tiene permiso.");
-                        resetBtn(btn);
-                    }
-                } else {
-                    alert("Contraseña incorrecta");
-                    resetBtn(btn);
-                }
-            } else {
-                // Si no lo encuentra por campo, intenta por ID de documento
-                const docDirecto = await usuariosRef.doc(email).get();
-                if (docDirecto.exists && docDirecto.data().pass === pass) {
-                    autorizar(docDirecto.data().rol);
-                } else {
-                    alert("Usuario no encontrado en la base de datos");
-                    resetBtn(btn);
-                }
-            }
-        } catch (error) {
-            console.error("Error completo:", error);
-            alert("Error de Firebase: " + error.message);
-            resetBtn(btn);
-        }
-    }
-
-    function resetBtn(btn) {
-        btn.disabled = false;
-        btn.innerText = "Ingresar al Panel";
-    }
-
-    function autorizar(rol) {
-        sessionStorage.setItem('iosef_session', rol);
-        document.getElementById('login-overlay').classList.add('hidden');
-        document.getElementById('comunicaciones-content').classList.remove('hidden');
-        inicializarApp();
-    }
-
-    // El resto de tus funciones (cargarCursos, cargarNoticias, etc) mantenlas igual debajo de esto...
+    // MODIFICADO: Inicia la app automáticamente al cargar
     window.onload = () => {
-        if(sessionStorage.getItem('iosef_session')) {
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('comunicaciones-content').classList.remove('hidden');
-            inicializarApp();
-        }
+        inicializarApp();
     };
-
-    function cerrarSesion() { sessionStorage.clear(); location.reload(); }
 
     function inicializarApp() {
         cargarCursos();
