@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestión Institucional - Iosef Caro</title>
+    <title>Gestión Maestro - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
@@ -14,85 +14,123 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
-        .input-pro:focus { border-color: #2563eb; ring: 3px ring-blue-100; }
+        .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <nav class="bg-white border-b p-4 flex gap-4 sticky top-0 z-50 shadow-sm overflow-x-auto">
-        <button onclick="switchTab('familias')" class="nav-btn font-bold px-4 py-2 rounded-xl bg-slate-900 text-white whitespace-nowrap">Familias y Carga Masiva</button>
-        <button onclick="switchTab('alumnos')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">Lista de Alumnos</button>
-        <button onclick="switchTab('docentes')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">Docentes y Materias</button>
-    </nav>
-
-    <main class="p-4 max-w-6xl mx-auto">
-
-        <section id="tab-familias" class="tab-content active space-y-6">
-            <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                <h2 class="font-black text-xl mb-2 text-slate-800">Carga Masiva Multihijo</h2>
-                <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Formato: Hijo1, Hijo2, Hijo3, Hijo4, Curso, Familia, Mail1, Mail2, Mail3</p>
-                <textarea id="csv-masivo" class="input-pro h-40 mb-4 bg-slate-50 font-mono text-xs" placeholder="Juan Perez, Maria Perez, , , 1A, Familia Perez, papa@mail.com, mama@mail.com"></textarea>
-                <button onclick="procesarCargaMasiva()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black shadow-lg">Procesar y Vincular Datos</button>
+    <div id="login-overlay">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
+            <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
+                <i class="fas fa-lock"></i>
             </div>
-
-            <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
-                <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700">Usuarios (Familias)</h3>
-                    <input type="text" id="bus-fam" onkeyup="buscarEnTabla('bus-fam', 'lista-familias')" placeholder="Buscar familia..." class="text-xs p-2 border rounded-lg">
-                </div>
-                <div id="lista-familias" class="divide-y max-h-[400px] overflow-y-auto"></div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tighter">Panel de Control</h1>
+            <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Acceso Restringido</p>
+            
+            <div class="space-y-4">
+                <input type="email" id="log-email" placeholder="Usuario / Email" class="input-pro">
+                <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
+                <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">Ingresar al Sistema</button>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section id="tab-alumnos" class="tab-content space-y-6">
-            <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
-                <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700">Alumnos Registrados</h3>
-                    <input type="text" id="bus-al" onkeyup="buscarEnTabla('bus-al', 'lista-alumnos')" placeholder="Buscar alumno..." class="text-xs p-2 border rounded-lg">
-                </div>
-                <div id="lista-alumnos" class="divide-y max-h-[600px] overflow-y-auto"></div>
-            </div>
-        </section>
+    <div id="admin-content" class="hidden">
+        <nav class="bg-white border-b p-4 flex gap-3 sticky top-0 z-50 shadow-sm overflow-x-auto">
+            <button onclick="switchTab('familias')" class="nav-btn font-bold px-4 py-2 rounded-xl bg-slate-900 text-white whitespace-nowrap">Familias</button>
+            <button onclick="switchTab('alumnos')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">Alumnos</button>
+            <button onclick="switchTab('docentes')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">Docentes y Materias</button>
+            <button onclick="switchTab('staff')" class="nav-btn font-bold px-4 py-2 rounded-xl text-blue-500 whitespace-nowrap"><i class="fas fa-users-cog mr-2"></i>Staff</button>
+            <button onclick="cerrarSesion()" class="ml-auto text-rose-500 font-bold px-4 py-2 hover:bg-rose-50 rounded-xl transition"><i class="fas fa-sign-out-alt"></i></button>
+        </nav>
 
-        <section id="tab-docentes" class="tab-content space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <main class="p-4 max-w-6xl mx-auto pb-20">
+
+            <section id="tab-familias" class="tab-content active space-y-6">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h3 class="font-black text-lg mb-4">Gestionar Materias</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="new-materia" placeholder="Nombre de la materia" class="input-pro">
-                        <button onclick="agregarMateria()" class="bg-emerald-500 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <div id="lista-materias" class="flex flex-wrap gap-2"></div>
+                    <h2 class="font-black text-xl mb-2 text-slate-800">Carga Masiva Multihijo</h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">CSV: Hijo1, Hijo2, Hijo3, Hijo4, Curso, Familia, Mail1, Mail2, Mail3</p>
+                    <textarea id="csv-masivo" class="input-pro h-40 mb-4 bg-slate-50 font-mono text-xs" placeholder="Ej: Juan Perez, Maria Perez, , , 1A, Familia Perez, papa@mail.com, mama@mail.com"></textarea>
+                    <button onclick="procesarCargaMasiva()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700 shadow-lg transition">Procesar y Vincular Familias</button>
                 </div>
 
+                <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700">Familias Registradas</h3>
+                        <input type="text" id="bus-fam" onkeyup="buscar('bus-fam', 'lista-familias')" placeholder="Buscar familia..." class="text-xs p-2 border rounded-lg outline-none">
+                    </div>
+                    <div id="lista-familias" class="divide-y max-h-[400px] overflow-y-auto"></div>
+                </div>
+            </section>
+
+            <section id="tab-alumnos" class="tab-content space-y-6">
+                <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700">Lista de Alumnos</h3>
+                        <input type="text" id="bus-al" onkeyup="buscar('bus-al', 'lista-alumnos')" placeholder="Filtrar por nombre..." class="text-xs p-2 border rounded-lg outline-none">
+                    </div>
+                    <div id="lista-alumnos" class="divide-y max-h-[600px] overflow-y-auto"></div>
+                </div>
+            </section>
+
+            <section id="tab-docentes" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <h3 class="font-black text-lg mb-4">Nueva Materia</h3>
+                        <div class="flex gap-2 mb-6">
+                            <input type="text" id="new-materia" placeholder="Nombre de la materia" class="input-pro">
+                            <button onclick="agregarMateria()" class="bg-slate-900 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Materias Actuales</label>
+                        <div id="lista-materias" class="flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <h3 class="font-black text-lg mb-4">Configurar Docente</h3>
+                        <input type="text" id="doc-nom" placeholder="Nombre completo" class="input-pro mb-3">
+                        <input type="email" id="doc-mail" placeholder="Email institucional" class="input-pro mb-3">
+                        
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 ml-2 uppercase">Cursos</label>
+                                <div id="check-cursos" class="h-32 overflow-y-auto border rounded-xl p-2 bg-slate-50 space-y-1"></div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 ml-2 uppercase">Materias</label>
+                                <div id="check-materias" class="h-32 overflow-y-auto border rounded-xl p-2 bg-slate-50 space-y-1"></div>
+                            </div>
+                        </div>
+                        <button onclick="guardarDocente()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">Vincular Docente</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b font-bold text-slate-700">Staff Docente</div>
+                    <div id="lista-docentes" class="divide-y"></div>
+                </div>
+            </section>
+
+            <section id="tab-staff" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h3 class="font-black text-lg mb-4">Alta/Edición Docente</h3>
-                    <input type="hidden" id="doc-id">
-                    <input type="text" id="doc-nom" placeholder="Nombre completo" class="input-pro mb-3">
-                    <input type="email" id="doc-mail" placeholder="Email (ID de acceso)" class="input-pro mb-3">
-                    
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 ml-2">CURSOS (Multiselección)</label>
-                            <div id="check-cursos" class="h-32 overflow-y-auto border rounded-xl p-2 bg-slate-50 space-y-1"></div>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 ml-2">MATERIAS (Multiselección)</label>
-                            <div id="check-materias" class="h-32 overflow-y-auto border rounded-xl p-2 bg-slate-50 space-y-1"></div>
-                        </div>
+                    <h3 class="font-black text-lg mb-4">Crear Usuario de Gestión</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="staff-nom" placeholder="Nombre del usuario" class="input-pro">
+                        <input type="email" id="staff-mail" placeholder="Email" class="input-pro">
+                        <input type="password" id="staff-pass" placeholder="Contraseña" class="input-pro">
+                        <select id="staff-rol" class="input-pro">
+                            <option value="admin">Administrador Total</option>
+                            <option value="comunicacion">Sólo Comunicación</option>
+                        </select>
+                        <button onclick="guardarStaff()" class="md:col-span-2 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-md">Dar de Alta</button>
                     </div>
-                    <button onclick="guardarDocente()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold">Guardar Docente</button>
                 </div>
-            </div>
+                <div id="lista-staff" class="bg-white rounded-3xl border shadow-sm divide-y overflow-hidden"></div>
+            </section>
 
-            <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
-                <div class="p-4 bg-slate-50 border-b font-bold text-slate-700">Staff Docente</div>
-                <div id="lista-docentes" class="divide-y"></div>
-            </div>
-        </section>
-
-    </main>
+        </main>
+    </div>
 
     <script>
         // CONFIGURACIÓN FIREBASE
@@ -107,29 +145,58 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        window.onload = () => {
-            refrescarTodo();
-        };
+        // --- SEGURIDAD ---
+        function validarIngreso() {
+            const email = document.getElementById('log-email').value.toLowerCase().trim();
+            const pass = document.getElementById('log-pass').value;
 
-        function refrescarTodo() {
-            cargarFamilias();
-            cargarAlumnos();
-            cargarMaterias();
-            cargarDocentes();
+            // HARDCODE URIEL
+            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+                autorizar("admin");
+                return;
+            }
+
+            // BUSCAR EN STAFF
+            db.collection('usuarios').doc(email).get().then(doc => {
+                if(doc.exists && doc.data().pass === pass) {
+                    autorizar(doc.data().rol);
+                } else {
+                    alert("Acceso denegado");
+                }
+            });
         }
 
-        // --- CARGA MASIVA ---
+        function autorizar(rol) {
+            sessionStorage.setItem('iosef_session', rol);
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('admin-content').classList.remove('hidden');
+            refrescarTodo();
+        }
+
+        if(sessionStorage.getItem('iosef_session')) {
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('admin-content').classList.remove('hidden');
+            window.onload = refrescarTodo;
+        }
+
+        function cerrarSesion() {
+            sessionStorage.clear();
+            location.reload();
+        }
+
+        // --- CARGA MASIVA (Lógica Multihijo) ---
         async function procesarCargaMasiva() {
+            const btn = event.target;
+            btn.disabled = true; btn.innerText = "Procesando...";
+            
             const texto = document.getElementById('csv-masivo').value;
             const lineas = texto.split('\n');
-            let count = 0;
-
+            
             for (let linea of lineas) {
                 if (!linea.trim()) continue;
                 const [h1, h2, h3, h4, curso, familia, m1, m2, m3] = linea.split(',').map(s => s.trim());
                 
                 let hijosData = [];
-                // Procesar hasta 4 hijos
                 for (let hName of [h1, h2, h3, h4]) {
                     if (hName) {
                         const alRef = await db.collection('alumnos').add({ nombre: hName, curso: curso });
@@ -137,28 +204,25 @@
                     }
                 }
 
-                // Crear/Actualizar usuarios familia por cada mail
-                for (let mail of [m1, m2, m3]) {
-                    if (mail && mail.includes('@')) {
-                        await db.collection('usuarios').doc(mail.toLowerCase()).set({
-                            nombre: familia,
-                            rol: 'familia',
-                            hijos: hijosData
-                        }, { merge: true });
-                    }
+                const mails = [m1, m2, m3].filter(m => m && m.includes('@'));
+                for (let mail of mails) {
+                    await db.collection('usuarios').doc(mail.toLowerCase()).set({
+                        nombre: familia,
+                        rol: 'familia',
+                        hijos: hijosData
+                    }, { merge: true });
                 }
-                count++;
             }
-            alert(`Éxito: Se procesaron ${count} familias.`);
-            refrescarTodo();
+            alert("Carga completada");
+            location.reload();
         }
 
-        // --- MATERIAS ---
+        // --- MATERIAS Y DOCENTES ---
         async function agregarMateria() {
-            const nom = document.getElementById('new-materia').value.trim();
-            if(!nom) return;
+            const m = document.getElementById('new-materia').value.trim();
+            if(!m) return;
             await db.collection('config').doc('materias').set({
-                lista: firebase.firestore.FieldValue.arrayUnion(nom)
+                lista: firebase.firestore.FieldValue.arrayUnion(m)
             }, { merge: true });
             document.getElementById('new-materia').value = "";
             cargarMaterias();
@@ -166,123 +230,143 @@
 
         async function cargarMaterias() {
             const doc = await db.collection('config').doc('materias').get();
-            const materias = doc.exists ? doc.data().lista : [];
+            const mats = doc.exists ? doc.data().lista : [];
             const cont = document.getElementById('lista-materias');
             const checks = document.getElementById('check-materias');
             cont.innerHTML = ""; checks.innerHTML = "";
-            
-            materias.sort().forEach(m => {
-                cont.innerHTML += `<span class="bg-slate-100 px-3 py-1 rounded-full text-xs font-bold text-slate-600">${m}</span>`;
+            mats.sort().forEach(m => {
+                cont.innerHTML += `<span class="bg-slate-100 px-3 py-1 rounded-full text-xs font-bold text-slate-600 border">${m}</span>`;
                 checks.innerHTML += `<label class="flex items-center text-xs gap-2"><input type="checkbox" class="chk-mat" value="${m}"> ${m}</label>`;
             });
         }
 
-        // --- DOCENTES ---
         async function guardarDocente() {
             const nom = document.getElementById('doc-nom').value;
             const mail = document.getElementById('doc-mail').value.toLowerCase().trim();
-            const cursosSel = Array.from(document.querySelectorAll('.chk-cur:checked')).map(c => c.value);
-            const matsSel = Array.from(document.querySelectorAll('.chk-mat:checked')).map(c => c.value);
+            const cur = Array.from(document.querySelectorAll('.chk-cur:checked')).map(c => c.value);
+            const mat = Array.from(document.querySelectorAll('.chk-mat:checked')).map(c => c.value);
 
-            if(!nom || !mail) return alert("Nombre y Mail son obligatorios");
+            if(!nom || !mail) return alert("Faltan datos");
 
             await db.collection('usuarios').doc(mail).set({
-                nombre: nom,
-                email: mail,
-                rol: 'docente',
-                cursos: cursosSel,
-                materias: matsSel
+                nombre: nom, email: mail, rol: 'docente', cursos: cur, materias: mat
             }, { merge: true });
 
-            alert("Docente Guardado");
-            location.reload();
+            alert("Docente vinculado");
+            cargarDocentes();
         }
 
-        async function cargarDocentes() {
-            const snap = await db.collection('usuarios').where('rol', '==', 'docente').get();
-            const cont = document.getElementById('lista-docentes');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                cont.innerHTML += `
-                    <div class="p-4 flex justify-between items-center">
-                        <div>
-                            <p class="font-bold">${d.nombre}</p>
-                            <p class="text-[10px] text-slate-400">${doc.id} • ${d.cursos?.join(", ") || 'Sin curso'}</p>
-                        </div>
-                        <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button>
-                    </div>`;
-            });
-        }
-
-        // --- ALUMNOS Y CURSOS ---
+        // --- CARGAS DE LISTAS ---
         async function cargarAlumnos() {
             const snap = await db.collection('alumnos').orderBy('curso').get();
             const cont = document.getElementById('lista-alumnos');
             const checkCursos = document.getElementById('check-cursos');
             cont.innerHTML = "";
+            let cursosSet = new Set();
             
-            let cursosUnicos = new Set();
             snap.forEach(doc => {
                 const a = doc.data();
-                cursosUnicos.add(a.curso);
-                cont.innerHTML += `
-                    <div class="p-3 flex justify-between text-sm row-al" data-search="${a.nombre}">
-                        <span><b>${a.curso}</b> - ${a.nombre}</span>
-                        <button onclick="eliminarDoc('alumnos', '${doc.id}')" class="text-slate-300"><i class="fas fa-times"></i></button>
-                    </div>`;
+                cursosSet.add(a.curso);
+                cont.innerHTML += `<div class="p-3 flex justify-between text-sm row-item" data-search="${a.nombre}">
+                    <span><b>${a.curso}</b> - ${a.nombre}</span>
+                    <button onclick="eliminarDoc('alumnos','${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
+                </div>`;
             });
 
             checkCursos.innerHTML = "";
-            [...cursosUnicos].sort().forEach(c => {
+            [...cursosSet].sort().forEach(c => {
                 checkCursos.innerHTML += `<label class="flex items-center text-xs gap-2"><input type="checkbox" class="chk-cur" value="${c}"> ${c}</label>`;
             });
         }
 
         async function cargarFamilias() {
-            const snap = await db.collection('usuarios').where('rol', '==', 'familia').get();
+            const snap = await db.collection('usuarios').where('rol','==','familia').get();
             const cont = document.getElementById('lista-familias');
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const f = doc.data();
-                const hijos = f.hijos?.map(h => h.nombre).join(", ") || "Sin hijos vinculados";
-                cont.innerHTML += `
-                    <div class="p-4 row-fam" data-search="${f.nombre} ${doc.id}">
-                        <div class="flex justify-between">
+                cont.innerHTML += `<div class="p-4 row-item" data-search="${f.nombre} ${doc.id}">
+                    <div class="flex justify-between items-start">
+                        <div>
                             <p class="font-bold text-slate-800">${f.nombre}</p>
-                            <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
+                            <p class="text-[10px] text-blue-500 font-bold">${doc.id}</p>
+                            <p class="text-xs text-slate-400 mt-1">Hijos: ${f.hijos?.map(h => h.nombre).join(", ") || 'Ninguno'}</p>
                         </div>
-                        <p class="text-[10px] text-blue-500 font-bold">${doc.id}</p>
-                        <p class="text-xs text-slate-400 mt-1"><i class="fas fa-child mr-1"></i> ${hijos}</p>
+                        <button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        async function cargarDocentes() {
+            const snap = await db.collection('usuarios').where('rol','==','docente').get();
+            const cont = document.getElementById('lista-docentes');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                cont.innerHTML += `<div class="p-4 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold">${d.nombre}</p>
+                        <p class="text-[10px] text-slate-400 uppercase">${d.cursos?.join(", ") || 'Sin cursos'} • ${d.materias?.join(", ") || 'Sin materias'}</p>
+                    </div>
+                    <button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+        }
+
+        async function cargarStaff() {
+            const snap = await db.collection('usuarios').get();
+            const cont = document.getElementById('lista-staff');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                const u = doc.data();
+                if(u.rol === 'admin' || u.rol === 'comunicacion') {
+                    cont.innerHTML += `<div class="p-4 flex justify-between items-center">
+                        <div><p class="font-bold">${u.nombre} <span class="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-2 uppercase">${u.rol}</span></p><p class="text-[10px] text-slate-400">${doc.id}</p></div>
+                        <button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
                     </div>`;
-            });
-        }
-
-        // --- UTILIDADES ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-            document.getElementById('tab-'+tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-slate-900', 'text-white');
-                b.classList.add('text-slate-500');
-            });
-            event.currentTarget.classList.add('bg-slate-900', 'text-white');
-        }
-
-        function buscarEnTabla(inputId, containerId) {
-            const q = document.getElementById(inputId).value.toLowerCase();
-            document.getElementById(containerId).childNodes.forEach(row => {
-                if(row.dataset?.search) {
-                    row.style.display = row.dataset.search.toLowerCase().includes(q) ? 'block' : 'none';
                 }
             });
         }
 
+        async function guardarStaff() {
+            const m = document.getElementById('staff-mail').value.toLowerCase().trim();
+            const n = document.getElementById('staff-nom').value;
+            const p = document.getElementById('staff-pass').value;
+            const r = document.getElementById('staff-rol').value;
+            if(!m || !n || !p) return alert("Completar campos");
+            await db.collection('usuarios').doc(m).set({ nombre: n, pass: p, rol: r });
+            alert("Usuario Staff creado");
+            cargarStaff();
+        }
+
+        // --- UTILIDADES ---
+        function switchTab(t) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+            document.getElementById('tab-'+t).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white'); b.classList.add('text-slate-500');
+            });
+            event.currentTarget.classList.add('bg-slate-900', 'text-white');
+        }
+
+        function buscar(inpId, contId) {
+            const q = document.getElementById(inpId).value.toLowerCase();
+            document.getElementById(contId).childNodes.forEach(row => {
+                if(row.dataset?.search) row.style.display = row.dataset.search.toLowerCase().includes(q) ? 'block' : 'none';
+            });
+        }
+
         async function eliminarDoc(col, id) {
-            if(confirm("¿Eliminar permanentemente?")) {
-                await db.collection(col).doc(id).delete();
-                location.reload();
-            }
+            if(confirm("¿Eliminar registro?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+        }
+
+        function refrescarTodo() {
+            cargarFamilias();
+            cargarAlumnos();
+            cargarMaterias();
+            cargarDocentes();
+            cargarStaff();
         }
     </script>
 </body>
