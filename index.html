@@ -42,6 +42,28 @@
             .catch(err => console.log('Error de registro', err));
         });
       }
+        function setupNotifications() {
+    messaging.requestPermission()
+        .then(() => {
+            console.log('Permiso concedido.');
+            // Aquí pegué tu clave completa
+            return messaging.getToken({ 
+                vapidKey: 'hqO1x0iKbdZsxkXK_bQWWH_JEV_eoL4E78UDrD3Yyq4' 
+            });
+        })
+        .then((token) => {
+            if (token) {
+                console.log('Token generado:', token);
+                // Guardamos el token en Firestore vinculado al usuario
+                db.collection('usuarios').doc(userEmail).update({
+                    fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
+                });
+            }
+        })
+        .catch((err) => {
+            console.error('Error al configurar notificaciones:', err);
+        });
+}
     </script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
