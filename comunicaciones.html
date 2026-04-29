@@ -31,7 +31,7 @@
             <div class="space-y-4">
                 <input type="email" id="log-email" placeholder="Usuario / Email" class="input-pro">
                 <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
-                <button type="button" onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">Ingresar al Panel</button>
+                <button type="button" id="btn-login" onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">Ingresar al Panel</button>
             </div>
         </div>
     </div>
@@ -137,57 +137,72 @@
             messagingSenderId: "651320124248", 
             appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
         };
-        firebase.initializeApp(firebaseConfig);
+
+        // Inicialización segura de Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
 
-        // --- LOGIN ---
+        // --- LOGIN REFORZADO ---
         async function validarIngreso() {
-    const email = document.getElementById('log-email').value.trim().toLowerCase();
-    const pass = document.getElementById('log-pass').value.trim();
+            const btn = document.getElementById('btn-login');
+            const email = document.getElementById('log-email').value.trim().toLowerCase();
+            const pass = document.getElementById('log-pass').value.trim();
 
-    if (!email || !pass) {
-        alert("Por favor, completa todos los campos");
-        return;
-    }
-
-    // 1. Acceso Maestro Directo
-    if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-        autorizar("admin");
-        return;
-    }
-
-    try {
-        // 2. Intentamos buscar por ID de documento (el email es el ID)
-        let doc = await db.collection('usuarios').doc(email).get();
-        let u = doc.exists ? doc.data() : null;
-
-        // 3. Si no aparece por ID, buscamos por el CAMPO 'mail' (por las dudas)
-        if (!u) {
-            const query = await db.collection('usuarios').where('mail', '==', email).get();
-            if (!query.empty) {
-                u = query.docs[0].data();
+            if (!email || !pass) {
+                alert("Por favor, completa todos los campos");
+                return;
             }
-        }
 
-        if (u) {
-            // Verificamos contraseña y rol (admin o comunicacion)
-            if (u.pass === pass) {
-                if (u.rol === 'admin' || u.rol === 'comunicacion') {
-                    autorizar(u.rol);
-                } else {
-                    alert("Tu usuario no tiene permisos para acceder a Comunicaciones.");
+            btn.innerText = "Verificando...";
+            btn.disabled = true;
+
+            // 1. Acceso Maestro Directo
+            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+                autorizar("admin");
+                return;
+            }
+
+            try {
+                // 2. Buscamos por ID de documento (email)
+                let doc = await db.collection('usuarios').doc(email).get();
+                let u = doc.exists ? doc.data() : null;
+
+                // 3. Si no aparece, buscamos por el campo 'mail'
+                if (!u) {
+                    const query = await db.collection('usuarios').where('mail', '==', email).get();
+                    if (!query.empty) {
+                        u = query.docs[0].data();
+                    }
                 }
-            } else {
-                alert("Contraseña incorrecta.");
+
+                if (u) {
+                    if (u.pass === pass) {
+                        if (u.rol === 'admin' || u.rol === 'comunicacion') {
+                            autorizar(u.rol);
+                        } else {
+                            alert("Acceso denegado: Tu rol no tiene permisos para este panel.");
+                            btn.disabled = false;
+                            btn.innerText = "Ingresar al Panel";
+                        }
+                    } else {
+                        alert("Contraseña incorrecta.");
+                        btn.disabled = false;
+                        btn.innerText = "Ingresar al Panel";
+                    }
+                } else {
+                    alert("Usuario no encontrado en la base de Staff.");
+                    btn.disabled = false;
+                    btn.innerText = "Ingresar al Panel";
+                }
+            } catch (e) {
+                console.error("Error en login:", e);
+                alert("Error de conexión. Revisa la consola.");
+                btn.disabled = false;
+                btn.innerText = "Ingresar al Panel";
             }
-        } else {
-            alert("El usuario no existe en la base de datos del Staff.");
         }
-    } catch (e) {
-        console.error("Error en login:", e);
-        alert("Error de conexión con la base de datos.");
-    }
-}
 
         function autorizar(rol) {
             sessionStorage.setItem('iosef_session', rol);
@@ -212,7 +227,6 @@
             cargarEventosCalendario();
         }
 
-        // --- CARGA DINÁMICA DE CURSOS DESDE LA COLECCIÓN 'CURSOS' ---
         async function cargarCursos() {
             try {
                 const snap = await db.collection('cursos').get();
@@ -222,6 +236,7 @@
                 const contCal = document.getElementById('cursos-calendario');
                 
                 [contNot, contCal].forEach(cont => {
+                    if(!cont) return;
                     cont.innerHTML = `
                         <label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50 transition">
                             <input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS
@@ -245,9 +260,10 @@
             const id = document.getElementById('noticia-id').value;
             const titulo = document.getElementById('not-titulo').value;
             const texto = document.getElementById('not-texto').value;
+            // Corregido el selector de clases para coincidir con el HTML
             const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
 
-            if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos");
+            if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos (Título, Texto o Cursos)");
 
             const data = {
                 titulo, texto, curso: seleccionados,
@@ -261,9 +277,11 @@
                 fechaCreacion: new Date().toISOString()
             };
 
-            if(id) await db.collection('comunicados').doc(id).update(data);
-            else await db.collection('comunicados').add(data);
-            location.reload();
+            try {
+                if(id) await db.collection('comunicados').doc(id).update(data);
+                else await db.collection('comunicados').add(data);
+                location.reload();
+            } catch(e) { alert("Error al guardar noticia"); }
         }
 
         async function cargarNoticias() {
@@ -316,9 +334,11 @@
                 tipo: document.getElementById('cal-tipo').value,
                 tag: seleccionados
             };
-            if(id) await db.collection('eventos').doc(id).update(data);
-            else await db.collection('eventos').add(data);
-            location.reload();
+            try {
+                if(id) await db.collection('eventos').doc(id).update(data);
+                else await db.collection('eventos').add(data);
+                location.reload();
+            } catch(e) { alert("Error al guardar evento"); }
         }
 
         async function cargarEventosCalendario() {
@@ -353,7 +373,10 @@
         }
 
         async function eliminarDoc(col, id) {
-            if(confirm("¿Eliminar definitivamente?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+            if(confirm("¿Eliminar definitivamente?")) { 
+                await db.collection(col).doc(id).delete(); 
+                location.reload(); 
+            }
         }
 
         function resetFormNoticia() { location.reload(); }
