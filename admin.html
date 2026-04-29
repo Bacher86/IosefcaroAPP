@@ -123,11 +123,14 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- SEGURIDAD ---
+        // --- SISTEMA DE ACCESO (PROTEGIDO) ---
         async function validarIngreso() {
             const email = document.getElementById('log-email').value.trim().toLowerCase();
             const pass = document.getElementById('log-pass').value.trim();
 
+            if (!email || !pass) return alert("Completa los datos");
+
+            // ACCESO MAESTRO (Entra siempre)
             if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
                 autorizar("admin");
                 return;
@@ -135,26 +138,32 @@
 
             try {
                 const doc = await db.collection('usuarios').doc(email).get();
-                if(doc.exists && doc.data().pass === pass && doc.data().rol === 'admin') {
-                    autorizar("admin");
+                if(doc.exists) {
+                    const u = doc.data();
+                    if(u.pass === pass && u.rol === 'admin') {
+                        autorizar("admin");
+                    } else {
+                        alert("Acceso denegado: Se requiere rango Admin.");
+                    }
                 } else {
-                    alert("Acceso denegado: Datos incorrectos o no tienes rango Admin.");
+                    alert("Usuario no registrado en el sistema.");
                 }
-            } catch(e) { alert("Error de conexión con el servidor."); }
+            } catch(e) {
+                console.error(e);
+                alert("Error de conexión. Reintenta.");
+            }
         }
 
         function autorizar(rol) {
             sessionStorage.setItem('iosef_admin_session', rol);
-            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('admin-content').classList.remove('hidden');
             refrescarTodo();
         }
 
         window.onload = () => {
             if(sessionStorage.getItem('iosef_admin_session')) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('admin-content').classList.remove('hidden');
-                refrescarTodo();
+                autorizar("admin");
             }
         };
 
@@ -165,40 +174,38 @@
 
         // --- LÓGICA DE DATOS ---
         async function refrescarTodo() {
-            cargarFamilias();
-            cargarAlumnos();
-            cargarMaterias();
-            cargarDocentes();
-            cargarStaff();
+            // Cada carga en su propio bloque para que una no pise a la otra
+            try { cargarFamilias(); } catch(e) { console.error("Error Familias:", e); }
+            try { cargarAlumnos(); } catch(e) { console.error("Error Alumnos:", e); }
+            try { cargarMaterias(); } catch(e) { console.error("Error Materias:", e); }
+            try { cargarStaff(); } catch(e) { console.error("Error Staff:", e); }
         }
 
         async function cargarFamilias() {
-            try {
-                const snap = await db.collection('usuarios').where('rol','==','familia').get();
-                const cont = document.getElementById('lista-familias');
-                const sel = document.getElementById('alu-familia');
-                cont.innerHTML = "";
-                sel.innerHTML = `<option value="">Seleccionar Familia...</option>`;
+            const snap = await db.collection('usuarios').where('rol','==','familia').get();
+            const cont = document.getElementById('lista-familias');
+            const sel = document.getElementById('alu-familia');
+            cont.innerHTML = "";
+            sel.innerHTML = `<option value="">Seleccionar Familia...</option>`;
+            
+            snap.forEach(doc => {
+                const f = doc.data();
+                let hijosTxt = "Sin hijos";
+                if(f.hijos && Array.isArray(f.hijos)) {
+                    hijosTxt = f.hijos.map(h => h.nombre).join(", ");
+                }
                 
-                snap.forEach(doc => {
-                    const f = doc.data();
-                    let hijosTxt = "Sin hijos";
-                    if(f.hijos && Array.isArray(f.hijos)) {
-                        hijosTxt = f.hijos.map(h => h.nombre).join(", ");
-                    }
-                    
-                    cont.innerHTML += `
-                        <div class="p-4 flex justify-between items-center" data-search="${f.nombre} ${doc.id}">
-                            <div>
-                                <p class="font-bold text-slate-800">${f.nombre}</p>
-                                <p class="text-[10px] text-blue-500 font-bold uppercase">${doc.id}</p>
-                                <p class="text-[10px] text-slate-400">Hijos: ${hijosTxt}</p>
-                            </div>
-                            <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300 hover:text-rose-500"><i class="fas fa-trash"></i></button>
-                        </div>`;
-                    sel.innerHTML += `<option value="${doc.id}">${f.nombre}</option>`;
-                });
-            } catch(e) { console.error(e); }
+                cont.innerHTML += `
+                    <div class="p-4 flex justify-between items-center" data-search="${f.nombre} ${doc.id}">
+                        <div>
+                            <p class="font-bold text-slate-800">${f.nombre}</p>
+                            <p class="text-[10px] text-blue-500 font-bold uppercase">${doc.id}</p>
+                            <p class="text-[10px] text-slate-400">Hijos: ${hijosTxt}</p>
+                        </div>
+                        <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-300 hover:text-rose-500"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                sel.innerHTML += `<option value="${doc.id}">${f.nombre}</option>`;
+            });
         }
 
         async function crearFamilia() {
@@ -288,7 +295,6 @@
             location.reload();
         }
 
-        // --- UTILIDADES ---
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
             document.getElementById('tab-'+t).classList.add('active');
@@ -313,8 +319,6 @@
                 location.reload(); 
             }
         }
-
-        function cargarDocentes() {} // Placeholder
     </script>
 </body>
 </html>
