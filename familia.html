@@ -131,9 +131,8 @@
             <tbody id="pdf-body"></tbody>
         </table>
     </div>
-
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
+<script>
+   const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -146,26 +145,37 @@
             const doc = await db.collection('usuarios').doc(userEmail).get();
             if (doc.exists) {
                 userData = doc.data();
+                // Verificación de rol para seguridad
+                if(userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
+
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('user-display-name').innerText = "Familia " + userData.nombre.split(' ')[0];
                 document.getElementById('perfil-nombre').value = userData.nombre;
                 document.getElementById('perfil-tel').value = userData.telefono || "";
                 
-                const nombresHijos = userData.hijoReferencia.split(',');
+                // CORRECCIÓN AQUÍ: Leemos el array 'hijos' que genera el admin
                 const select = document.getElementById('select-hijo');
                 select.innerHTML = "";
-                for (let n of nombresHijos) {
-                    const snap = await db.collection('alumnos').where('nombre', '==', n.trim()).get();
-                    snap.forEach(d => {
-                        listaHijos.push({ id: d.id, nombre: d.data().nombre });
-                        select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
-                    });
+                listaHijos = []; // Reset local
+
+                if (userData.hijos && userData.hijos.length > 0) {
+                    for (let hijoObj of userData.hijos) {
+                        // Buscamos el ID del alumno por su nombre para vincular notas/asistencia
+                        const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
+                        snap.forEach(d => {
+                            listaHijos.push({ id: d.id, nombre: d.data().nombre });
+                            select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
+                        });
+                    }
                 }
+
                 if(listaHijos.length > 0) { 
                     alumnoSeleccionadoId = listaHijos[0].id; 
                     await inicializarApp();
+                } else {
+                    alert("No se encontraron alumnos vinculados a esta familia.");
                 }
-            } else { alert("Acceso denegado."); }
+            } else { alert("Acceso denegado. Email no registrado."); }
         }
 
         async function inicializarApp() {
@@ -173,6 +183,12 @@
             await cargarAcademico();
             await cargarAgenda();
             document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">¡Hola! He analizado las notas, faltas de tu hijo y los comunicados del muro. ¿En qué puedo ayudarte?</div>`;
+            
+            const messaging = firebase.messaging();
+            messaging.requestPermission()
+                .then(() => messaging.getToken())
+                .then((token) => console.log('Token:', token))
+                .catch((err) => console.warn('Notificaciones bloqueadas', err));
         }
 
         async function cargarMuro() {
@@ -206,6 +222,13 @@
         async function confirmarLectura(id) {
             localStorage.setItem('read_'+id, 'true');
             await db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
+            
+            // Registrar quién leyó para que aparezca en el Admin
+            await db.collection('comunicados').doc(id).collection('leidos').doc(userEmail).set({
+                nombre: userData.nombre,
+                fecha: new Date().toISOString()
+            });
+
             cerrarNoticia(); cargarMuro();
         }
 
@@ -269,12 +292,11 @@
                 if(val.includes("falta") || val.includes("inasistencia")) {
                     r = brain.faltas.length > 0 ? `${hijo.nombre.split(' ')[0]} tiene ${brain.faltas.length} faltas. Las fechas fueron: ${brain.faltas.join(", ")}.` : `${hijo.nombre.split(' ')[0]} tiene asistencia perfecta.`;
                 } else if(val.includes("nota") || val.includes("materia") || val.includes("como va")) {
-                    let promedio = brain.notas.filter(n => n.n1).map(n => parseFloat(n.n1));
-                    r = `En sus materias va así: tiene ${brain.notas.length} registradas. En ${brain.notas[0].materia} por ejemplo, su nota es ${brain.notas[0].n1 || brain.notas[0].rite}.`;
+                    r = brain.notas.length > 0 ? `En sus materias va así: tiene ${brain.notas.length} registradas. En ${brain.notas[0].materia} por ejemplo, su nota es ${brain.notas[0].n1 || brain.notas[0].rite || 'pendiente'}.` : "Aún no hay notas cargadas.";
                 } else if(val.includes("noticia") || val.includes("muro") || val.includes("comunicado")) {
-                    r = `La última noticia es: "${brain.noticias[0].titulo}". Dice: ${brain.noticias[0].texto.substring(0, 50)}...`;
+                    r = brain.noticias.length > 0 ? `La última noticia es: "${brain.noticias[0].titulo}".` : "No hay comunicados recientes.";
                 } else if(val.includes("evento") || val.includes("calendario") || val.includes("cuando hay")) {
-                    r = `El próximo evento es "${brain.agenda[0].titulo}" el día ${brain.agenda[0].fecha}.`;
+                    r = brain.agenda.length > 0 ? `El próximo evento es "${brain.agenda[0].titulo}" el día ${brain.agenda[0].fecha}.` : "No hay eventos programados.";
                 }
 
                 chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
