@@ -20,9 +20,12 @@
         .card-btn { 
             background: white; 
             border-radius: 2.5rem; 
-            padding: 2.5rem; 
+            padding: 2rem 1.5rem; 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .card-btn:hover { 
             transform: translateY(-10px); 
@@ -51,14 +54,22 @@
         <p class="text-slate-400 font-bold mt-2 uppercase text-[10px] tracking-[0.3em]">Seleccione su perfil de acceso</p>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
         
+        <a href="comunicaciones.html" class="card-btn group text-center border-emerald-100 bg-emerald-50/10">
+            <div class="w-16 h-16 bg-emerald-50 text-emerald-500 group-hover:bg-emerald-600 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <h3 class="font-black text-slate-800 text-xl tracking-tight">Comunicación</h3>
+            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Muro de noticias, agenda escolar y avisos multimedia.</p>
+        </a>
+
         <a href="admin.html" class="card-btn group text-center">
             <div class="w-16 h-16 bg-slate-50 text-slate-400 group-hover:bg-slate-900 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
                 <i class="fas fa-user-shield"></i>
             </div>
-            <h3 class="font-black text-slate-800 text-xl tracking-tight">Administración</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Gestión de usuarios, cursos y comunicados generales.</p>
+            <h3 class="font-black text-slate-800 text-xl tracking-tight">Gestión</h3>
+            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Base de datos, carga masiva y equipo docente.</p>
         </a>
 
         <a href="docente.html" class="card-btn group text-center">
@@ -66,15 +77,15 @@
                 <i class="fas fa-chalkboard-teacher"></i>
             </div>
             <h3 class="font-black text-slate-800 text-xl tracking-tight">Panel Docente</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Carga de calificaciones, asistencia y muro de curso.</p>
+            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Calificaciones, asistencia y seguimiento de curso.</p>
         </a>
 
         <a href="familia.html" class="card-btn group text-center">
             <div class="w-16 h-16 bg-pink-50 text-pink-400 group-hover:bg-pink-500 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
                 <i class="fas fa-heart"></i>
             </div>
-            <h3 class="font-black text-slate-800 text-xl tracking-tight">Comunidad Familia</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Seguimiento académico, agenda y chat con IOSI.</p>
+            <h3 class="font-black text-slate-800 text-xl tracking-tight">Familias</h3>
+            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Seguimiento académico y comunicación con la escuela.</p>
         </a>
 
     </div>
