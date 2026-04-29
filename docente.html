@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -32,7 +32,11 @@
     <header class="p-6 bg-white border-b sticky top-0 z-50 flex justify-between items-center">
         <div>
             <h1 id="doc-nom" class="font-black text-lg leading-none">Hola, Profe</h1>
-            <p id="doc-materia-label" class="text-[10px] font-bold text-blue-600 uppercase mt-1"></p>
+            <div class="flex flex-col mt-1">
+                <label class="text-[8px] font-black text-slate-400 uppercase">Materia Activa</label>
+                <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[10px] font-bold text-blue-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer">
+                </select>
+            </div>
         </div>
         <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
     </header>
@@ -101,6 +105,8 @@
         const db = firebase.firestore();
 
         let docenteData = null;
+        let materiaActiva = ""; 
+
         document.getElementById('fecha-hoy').valueAsDate = new Date();
 
         async function login() {
@@ -114,22 +120,27 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('doc-nom').innerText = docenteData.nombre;
                 
-                // Mostramos la materia asignada (la que cargaste en el Admin)
-                document.getElementById('doc-materia-label').innerText = "Materia: " + (docenteData.materia || "No asignada");
+                // Manejo de MULTI-MATERIA
+                const selectMateria = document.getElementById('select-materia');
+                selectMateria.innerHTML = "";
+                const materias = Array.isArray(docenteData.materias) ? docenteData.materias : (docenteData.materia ? [docenteData.materia] : []);
+                
+                materias.forEach(m => {
+                    selectMateria.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+                materiaActiva = selectMateria.value;
 
-                // Cargamos el/los curso/s asignado/s
+                // Manejo de MULTI-CURSO
                 const selectCurso = document.getElementById('select-curso');
                 selectCurso.innerHTML = "";
+                const cursos = Array.isArray(docenteData.cursos) ? docenteData.cursos : (docenteData.curso ? [docenteData.curso] : []);
                 
-                // Si guardaste el curso como un solo string o como array, lo manejamos:
-                if (Array.isArray(docenteData.curso)) {
-                    docenteData.curso.forEach(c => {
-                        selectCurso.innerHTML += `<option value="${c}">${c}</option>`;
-                    });
-                } else if (docenteData.curso) {
-                    selectCurso.innerHTML = `<option value="${docenteData.curso}">${docenteData.curso}</option>`;
-                } else {
-                    selectCurso.innerHTML = `<option value="">Sin curso</option>`;
+                cursos.forEach(c => {
+                    selectCurso.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+
+                if(materias.length === 0 || cursos.length === 0) {
+                    alert("Atención: No tienes materias o cursos asignados correctamente.");
                 }
 
                 cargarAlumnos();
@@ -138,12 +149,17 @@
             }
         }
 
+        function actualizarMateriaActiva() {
+            materiaActiva = document.getElementById('select-materia').value;
+            cargarAlumnos();
+        }
+
         async function cargarAlumnos() {
             const curso = document.getElementById('select-curso').value;
-            const materia = docenteData.materia; // Usamos la materia del docente, no una del select
+            const materia = materiaActiva; 
             const modalidad = document.getElementById('select-modalidad').value;
             
-            if(!curso) return;
+            if(!curso || !materia) return;
 
             const snap = await db.collection('alumnos').where('curso', '==', curso).get();
             const containerNotas = document.getElementById('lista-notas');
@@ -159,7 +175,6 @@
                 const al = docAl.data();
                 const id = docAl.id;
                 
-                // Buscar nota existente para esa materia específica
                 const notaDoc = await db.collection('alumnos').doc(id).collection('notas').doc(materia).get();
                 const n = notaDoc.exists ? notaDoc.data() : {};
 
@@ -206,7 +221,7 @@
         }
 
         async function guardarNota(id, campo, val, btn = null) {
-            const mat = docenteData.materia;
+            const mat = materiaActiva;
             
             if(campo === 'rite' && btn) {
                 btn.parentElement.querySelectorAll('button').forEach(b => {
@@ -229,7 +244,6 @@
             document.getElementById('btn-' + tab).classList.add('active');
         }
 
-        // Se mantienen las funciones de PDF y Asistencia
         async function descargarPDF(id, nombre) {
             const curso = document.getElementById('select-curso').value;
             const snap = await db.collection('alumnos').doc(id).collection('notas').get();
@@ -254,7 +268,12 @@
 
         async function marcarAsis(id, tipo, btn) {
             const fecha = document.getElementById('fecha-hoy').value;
-            await db.collection('asistencia').add({ alumnoId: id, estado: tipo, fecha: fecha, materia: docenteData.materia });
+            await db.collection('asistencia').add({ 
+                alumnoId: id, 
+                estado: tipo, 
+                fecha: fecha, 
+                materia: materiaActiva 
+            });
             btn.parentElement.querySelectorAll('button').forEach(b => b.className = "w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs");
             const color = tipo === 'P' ? 'bg-emerald-500 text-white' : tipo === 'A' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white';
             btn.className = `w-10 h-10 rounded-xl ${color} font-bold text-xs shadow-lg`;
