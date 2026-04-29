@@ -142,23 +142,52 @@
 
         // --- LOGIN ---
         async function validarIngreso() {
-            const email = document.getElementById('log-email').value.trim().toLowerCase();
-            const pass = document.getElementById('log-pass').value.trim();
+    const email = document.getElementById('log-email').value.trim().toLowerCase();
+    const pass = document.getElementById('log-pass').value.trim();
 
-            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-                autorizar("admin"); return;
+    if (!email || !pass) {
+        alert("Por favor, completa todos los campos");
+        return;
+    }
+
+    // 1. Acceso Maestro Directo
+    if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+        autorizar("admin");
+        return;
+    }
+
+    try {
+        // 2. Intentamos buscar por ID de documento (el email es el ID)
+        let doc = await db.collection('usuarios').doc(email).get();
+        let u = doc.exists ? doc.data() : null;
+
+        // 3. Si no aparece por ID, buscamos por el CAMPO 'mail' (por las dudas)
+        if (!u) {
+            const query = await db.collection('usuarios').where('mail', '==', email).get();
+            if (!query.empty) {
+                u = query.docs[0].data();
             }
-
-            try {
-                const doc = await db.collection('usuarios').doc(email).get();
-                if(doc.exists) {
-                    const u = doc.data();
-                    if(u.pass === pass && (u.rol === 'admin' || u.rol === 'comunicacion')) {
-                        autorizar(u.rol);
-                    } else { alert("Sin permisos o clave incorrecta"); }
-                } else { alert("Usuario no encontrado"); }
-            } catch(e) { alert("Error de conexión"); }
         }
+
+        if (u) {
+            // Verificamos contraseña y rol (admin o comunicacion)
+            if (u.pass === pass) {
+                if (u.rol === 'admin' || u.rol === 'comunicacion') {
+                    autorizar(u.rol);
+                } else {
+                    alert("Tu usuario no tiene permisos para acceder a Comunicaciones.");
+                }
+            } else {
+                alert("Contraseña incorrecta.");
+            }
+        } else {
+            alert("El usuario no existe en la base de datos del Staff.");
+        }
+    } catch (e) {
+        console.error("Error en login:", e);
+        alert("Error de conexión con la base de datos.");
+    }
+}
 
         function autorizar(rol) {
             sessionStorage.setItem('iosef_session', rol);
