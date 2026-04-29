@@ -1,1 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comunicaciones - Iosef Caro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; padding-bottom: 40px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
+        .input-pro:focus { border-color: #2563eb; ring: 3px ring-blue-100; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .chip-active { background-color: #dbeafe; border-color: #2563eb; color: #1e40af; }
+    </style>
+</head>
+<body>
+    <nav class="bg-white border-b p-4 flex gap-4 sticky top-0 z-50 shadow-sm overflow-x-auto">
+        <button onclick="switchTab('noticias')" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap">
+            <i class="fas fa-bullhorn mr-2"></i>Noticias y Avisos
+        </button>
+        <button onclick="switchTab('calendario')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">
+            <i class="fas fa-calendar-star mr-2"></i>Calendario Escolar
+        </button>
+    </nav>
 
+    <main class="p-4 max-w-5xl mx-auto">
+
+        <section id="tab-noticias" class="tab-content active space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                <h2 id="noticia-form-title" class="font-black text-xl mb-4 text-slate-800">Nueva Publicación</h2>
+                <input type="hidden" id="noticia-id">
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <input type="text" id="not-titulo" placeholder="Asunto o Título de la noticia" class="input-pro">
+                    <textarea id="not-texto" placeholder="Escribe el cuerpo del mensaje..." class="input-pro h-32"></textarea>
+                    
+                    <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Programar Fecha y Hora</label>
+                            <input type="datetime-local" id="not-programacion" class="input-pro">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Cursos Destinatarios</label>
+                            <div id="cursos-noticia" class="flex flex-wrap gap-2 mt-1">
+                                </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="not-img" placeholder="URL de Imagen (ej: Google Drive link)" class="input-pro">
+                        <input type="text" id="not-video" placeholder="URL de Video (YouTube/Vimeo)" class="input-pro">
+                        <input type="text" id="not-pdf" placeholder="URL de Documento PDF" class="input-pro">
+                        <input type="text" id="not-link" placeholder="Enlace Externo (Web/Formulario)" class="input-pro">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="guardarNoticia()" id="btn-noticia" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition">Publicar Ahora</button>
+                        <button onclick="resetFormNoticia()" id="btn-cancel-noticia" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="font-black text-lg text-slate-800 ml-2">Historial de Publicaciones</h3>
+                <div id="lista-noticias" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <section id="tab-calendario" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                <h2 id="cal-form-title" class="font-black text-xl mb-4 text-slate-800">Agendar al Calendario</h2>
+                <input type="hidden" id="cal-id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <input type="text" id="cal-titulo" placeholder="Título del evento (ej: Examen de Matemática)" class="input-pro">
+                    </div>
+                    <textarea id="cal-desc" placeholder="Breve descripción del evento..." class="input-pro md:col-span-2 h-20"></textarea>
+                    <input type="date" id="cal-fecha" class="input-pro">
+                    <select id="cal-tipo" class="input-pro">
+                        <option value="evento">Evento General</option>
+                        <option value="examen">Examen / Entrega</option>
+                        <option value="feriado">Feriado / Sin Actividad</option>
+                    </select>
+                    
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Visible para:</label>
+                        <div id="cursos-calendario" class="flex flex-wrap gap-2 mt-1"></div>
+                    </div>
+
+                    <div class="md:col-span-2 flex gap-2">
+                        <button onclick="guardarCalendario()" id="btn-cal" class="flex-1 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-700">Guardar Evento</button>
+                        <button onclick="resetFormCalendario()" id="btn-cancel-cal" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">X</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lista-calendario" class="space-y-3"></div>
+        </section>
+
+    </main>
+
+    <script>
+        // CONFIGURACIÓN FIREBASE (Copiada de tu admin.html)
+        const firebaseConfig = { 
+            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
+            authDomain: "app-iosefcaro.firebaseapp.com", 
+            projectId: "app-iosefcaro", 
+            storageBucket: "app-iosefcaro.firebasestorage.app", 
+            messagingSenderId: "651320124248", 
+            appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let cursosElegidos = [];
+
+        // --- INICIALIZACIÓN ---
+        window.onload = () => {
+            cargarCursos();
+            cargarNoticias();
+            cargarEventosCalendario();
+        };
+
+        async function cargarCursos() {
+            const snap = await db.collection('alumnos').get();
+            const cursos = [...new Set(snap.docs.map(d => d.data().curso))].sort();
+            
+            const contNot = document.getElementById('cursos-noticia');
+            const contCal = document.getElementById('cursos-calendario');
+            
+            [contNot, contCal].forEach(cont => {
+                cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
+                cursos.forEach(c => {
+                    cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}</label>`;
+                });
+            });
+        }
+
+        function toggleTodos(source, contId) {
+            document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
+        }
+
+        // --- LÓGICA DE NOTICIAS ---
+        async function guardarNoticia() {
+            const id = document.getElementById('noticia-id').value;
+            const titulo = document.getElementById('not-titulo').value;
+            const texto = document.getElementById('not-texto').value;
+            const fechaProg = document.getElementById('not-programacion').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+
+            if(!titulo || !texto || seleccionados.length === 0) return alert("Completa Título, Mensaje y al menos un Curso");
+
+            const data = {
+                titulo, texto,
+                curso: seleccionados,
+                programacion: fechaProg || new Date().toISOString(),
+                adjuntos: {
+                    img: document.getElementById('not-img').value,
+                    video: document.getElementById('not-video').value,
+                    pdf: document.getElementById('not-pdf').value,
+                    link: document.getElementById('not-link').value
+                },
+                fechaCreacion: new Date().toISOString()
+            };
+
+            if(id) await db.collection('comunicados').doc(id).update(data);
+            else await db.collection('comunicados').add(data);
+
+            alert("Publicación guardada");
+            location.reload();
+        }
+
+        async function cargarNoticias() {
+            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+            const cont = document.getElementById('lista-noticias');
+            cont.innerHTML = "";
+
+            snap.forEach(doc => {
+                const n = doc.data();
+                const prog = new Date(n.programacion).toLocaleString();
+                cont.innerHTML += `
+                    <div class="bg-white p-5 rounded-3xl border shadow-sm relative group">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase">PARA: ${n.curso.join(", ")}</span>
+                            <div class="flex gap-2">
+                                <button onclick="editarNoticia('${doc.id}')" class="text-slate-400 hover:text-blue-500"><i class="fas fa-edit"></i></button>
+                                <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-slate-800">${n.titulo}</h4>
+                        <p class="text-sm text-slate-500 line-clamp-2 mt-1">${n.texto}</p>
+                        <div class="mt-3 flex items-center text-[10px] text-slate-400 font-bold">
+                            <i class="far fa-clock mr-1"></i> Publicación: ${prog}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function editarNoticia(id) {
+            const doc = await db.collection('comunicados').doc(id).get();
+            const n = doc.data();
+            document.getElementById('noticia-id').value = id;
+            document.getElementById('not-titulo').value = n.titulo;
+            document.getElementById('not-texto').value = n.texto;
+            document.getElementById('not-programacion').value = n.programacion.substring(0,16);
+            document.getElementById('not-img').value = n.adjuntos?.img || "";
+            document.getElementById('not-video').value = n.adjuntos?.video || "";
+            document.getElementById('not-pdf').value = n.adjuntos?.pdf || "";
+            document.getElementById('not-link').value = n.adjuntos?.link || "";
+            
+            document.getElementById('noticia-form-title').innerText = "Editando Publicación";
+            document.getElementById('btn-noticia').innerText = "Actualizar Cambios";
+            document.getElementById('btn-cancel-noticia').classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        // --- LÓGICA DE CALENDARIO ---
+        async function guardarCalendario() {
+            const id = document.getElementById('cal-id').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
+            
+            const data = {
+                titulo: document.getElementById('cal-titulo').value,
+                descripcion: document.getElementById('cal-desc').value,
+                fecha: document.getElementById('cal-fecha').value,
+                tipo: document.getElementById('cal-tipo').value,
+                tag: seleccionados
+            };
+
+            if(id) await db.collection('eventos').doc(id).update(data);
+            else await db.collection('eventos').add(data);
+
+            location.reload();
+        }
+
+        async function cargarEventosCalendario() {
+            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+            const cont = document.getElementById('lista-calendario');
+            cont.innerHTML = "";
+
+            snap.forEach(doc => {
+                const e = doc.data();
+                const icon = e.tipo === 'examen' ? 'fa-file-signature' : (e.tipo === 'feriado' ? 'fa-couch' : 'fa-star');
+                const color = e.tipo === 'examen' ? 'text-red-500 bg-red-50' : (e.tipo === 'feriado' ? 'text-orange-500 bg-orange-50' : 'text-emerald-500 bg-emerald-50');
+
+                cont.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl border flex items-center gap-4">
+                        <div class="${color} w-12 h-12 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha} • ${e.tag?.join(", ") || 'General'}</p>
+                            <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                            <p class="text-xs text-slate-500">${e.descripcion || ''}</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="editarCal('${doc.id}')" class="text-blue-400 p-1"><i class="fas fa-edit"></i></button>
+                            <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-300 p-1"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function editarCal(id) {
+            const doc = await db.collection('eventos').doc(id).get();
+            const e = doc.data();
+            document.getElementById('cal-id').value = id;
+            document.getElementById('cal-titulo').value = e.titulo;
+            document.getElementById('cal-desc').value = e.descripcion || "";
+            document.getElementById('cal-fecha').value = e.fecha;
+            document.getElementById('cal-tipo').value = e.tipo;
+            document.getElementById('cal-form-title').innerText = "Editando Evento";
+            document.getElementById('btn-cancel-cal').classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        // --- GENERAL ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+            document.getElementById('tab-'+tabId).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-blue-50', 'text-blue-600');
+                b.classList.add('text-slate-500');
+            });
+            event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
+        }
+
+        async function eliminarDoc(col, id) {
+            if(confirm("¿Seguro que deseas eliminar este registro?")) {
+                await db.collection(col).doc(id).delete();
+                location.reload();
+            }
+        }
+
+        function resetFormNoticia() { location.reload(); }
+        function resetFormCalendario() { location.reload(); }
+    </script>
+</body>
+</html>
