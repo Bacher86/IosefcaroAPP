@@ -14,6 +14,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
@@ -35,35 +39,47 @@
     </style>
 
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('App lista para instalar'))
-            .catch(err => console.log('Error de registro', err));
-        });
-      }
-        function setupNotifications() {
-    messaging.requestPermission()
-        .then(() => {
-            console.log('Permiso concedido.');
-            // Aquí pegué tu clave completa
-            return messaging.getToken({ 
-                vapidKey: 'hqO1x0iKbdZsxkXK_bQWWH_JEV_eoL4E78UDrD3Yyq4' 
+        // CONFIGURACIÓN DE FIREBASE
+        const firebaseConfig = { 
+            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
+            authDomain: "app-iosefcaro.firebaseapp.com", 
+            projectId: "app-iosefcaro", 
+            storageBucket: "app-iosefcaro.firebasestorage.app", 
+            messagingSenderId: "651320124248", 
+            appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        // REGISTRO DEL SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('firebase-messaging-sw.js')
+                    .then(reg => {
+                        console.log('Service Worker registrado para notificaciones');
+                        // Si ya hay un usuario logueado, podríamos llamar a setupNotifications() aquí
+                    })
+                    .catch(err => console.log('Error de registro SW', err));
             });
-        })
-        .then((token) => {
-            if (token) {
-                console.log('Token generado:', token);
-                // Guardamos el token en Firestore vinculado al usuario
-                db.collection('usuarios').doc(userEmail).update({
-                    fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
-                });
+        }
+
+        async function setupNotifications() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await messaging.getToken({ 
+                        vapidKey: 'hqO1x0iKbdZsxkXK_bQWWH_JEV_eoL4E78UDrD3Yyq4' 
+                    });
+                    if (token) {
+                        console.log('Token generado correctamente');
+                        // Nota: El guardado en base de datos conviene hacerlo en familia.html 
+                        // donde tenemos el email del usuario.
+                    }
+                }
+            } catch (err) {
+                console.error('Error en notificaciones:', err);
             }
-        })
-        .catch((err) => {
-            console.error('Error al configurar notificaciones:', err);
-        });
-}
+        }
     </script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
@@ -108,8 +124,6 @@
             <h3 class="font-black text-slate-800 text-xl tracking-tight">Gestión</h3>
             <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Base de datos, carga masiva y equipo docente.</p>
         </a>
-
-
     </div>
 
     <footer class="mt-16">
