@@ -130,210 +130,178 @@
     </div>
 
     <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
-            authDomain: "app-iosefcaro.firebaseapp.com", 
-            projectId: "app-iosefcaro", 
-            storageBucket: "app-iosefcaro.firebasestorage.app", 
-            messagingSenderId: "651320124248", 
-            appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    const firebaseConfig = { 
+        apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
+        authDomain: "app-iosefcaro.firebaseapp.com", 
+        projectId: "app-iosefcaro", 
+        storageBucket: "app-iosefcaro.firebasestorage.app", 
+        messagingSenderId: "651320124248", 
+        appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        // --- SEGURIDAD ---
-        async function validarIngreso() {
-            const email = document.getElementById('log-email').value.trim().toLowerCase();
-            const pass = document.getElementById('log-pass').value.trim();
+    // --- SEGURIDAD (FUNCIONA SI O SI) ---
+    async function validarIngreso() {
+        console.log("Intentando ingresar...");
+        const email = document.getElementById('log-email').value.trim().toLowerCase();
+        const pass = document.getElementById('log-pass').value.trim();
 
-            if (!email || !pass) {
-                alert("Por favor, completa todos los campos");
-                return;
-            }
-
-            // 1. Acceso Maestro Directo
-            if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
-                autorizar("admin");
-                return;
-            }
-
-            // 2. Acceso vía Firebase
-            try {
-                const doc = await db.collection('usuarios').doc(email).get();
-                if(doc.exists) {
-                    const u = doc.data();
-                    if(u.pass === pass && (u.rol === 'admin' || u.rol === 'comunicacion')) {
-                        autorizar(u.rol);
-                        return;
-                    }
-                }
-                alert("Credenciales incorrectas o usuario sin permisos.");
-            } catch(e) {
-                console.error("Error en Firebase:", e);
-                alert("Error de conexión.");
-            }
+        if (!email || !pass) {
+            alert("Por favor, completa todos los campos");
+            return;
         }
 
-        function autorizar(rol) {
-            sessionStorage.setItem('iosef_comm_session', rol);
+        // Acceso Maestro (Prioritario)
+        if(email === "uriel.bacher@gmail.com" && pass === "Gallardo10") {
+            autorizar("admin");
+            return;
+        }
+
+        try {
+            const doc = await db.collection('usuarios').doc(email).get();
+            if(doc.exists) {
+                const u = doc.data();
+                if(u.pass === pass && (u.rol === 'admin' || u.rol === 'comunicacion')) {
+                    autorizar(u.rol);
+                } else {
+                    alert("Contraseña incorrecta o sin permisos");
+                }
+            } else {
+                alert("El usuario no existe");
+            }
+        } catch(e) {
+            console.error("Error Firebase:", e);
+            alert("Error de conexión");
+        }
+    }
+
+    function autorizar(rol) {
+        sessionStorage.setItem('iosef_session', rol);
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('comunicaciones-content').classList.remove('hidden');
+        inicializarApp();
+    }
+
+    window.onload = () => {
+        const sesion = sessionStorage.getItem('iosef_session');
+        if(sesion) {
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('comunicaciones-content').classList.remove('hidden');
             inicializarApp();
         }
+    };
 
-        window.onload = () => {
-            const sesion = sessionStorage.getItem('iosef_comm_session');
-            if(sesion) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                document.getElementById('comunicaciones-content').classList.remove('hidden');
-                inicializarApp();
-            }
+    function cerrarSesion() {
+        sessionStorage.clear();
+        location.reload();
+    }
+
+    // --- INICIALIZACIÓN PROTEGIDA ---
+    function inicializarApp() {
+        // Envolvemos cada carga en un try/catch para que si una falla, las otras sigan
+        try { cargarCursos(); } catch(e) { console.error("Fallo cargarCursos", e); }
+        try { cargarNoticias(); } catch(e) { console.error("Fallo cargarNoticias", e); }
+        try { cargarEventosCalendario(); } catch(e) { console.error("Fallo cargarEventos", e); }
+    }
+
+    async function cargarCursos() {
+        const snap = await db.collection('alumnos').get();
+        const cursos = [...new Set(snap.docs.map(d => d.data().curso))].filter(c => c).sort();
+        const contNot = document.getElementById('cursos-noticia');
+        const contCal = document.getElementById('cursos-calendario');
+        
+        [contNot, contCal].forEach(cont => {
+            if(!cont) return;
+            cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
+            cursos.forEach(c => {
+                cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}</label>`;
+            });
+        });
+    }
+
+    function toggleTodos(source, contId) {
+        document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
+    }
+
+    async function guardarNoticia() {
+        const id = document.getElementById('noticia-id').value;
+        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+        const data = {
+            titulo: document.getElementById('not-titulo').value,
+            texto: document.getElementById('not-texto').value,
+            curso: seleccionados,
+            programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
+            adjuntos: {
+                img: document.getElementById('not-img').value,
+                video: document.getElementById('not-video').value,
+                pdf: document.getElementById('not-pdf').value,
+                link: document.getElementById('not-link').value
+            },
+            fechaCreacion: new Date().toISOString()
         };
+        if(id) await db.collection('comunicados').doc(id).update(data);
+        else await db.collection('comunicados').add(data);
+        location.reload();
+    }
 
-        function cerrarSesion() {
-            sessionStorage.clear();
-            location.reload();
-        }
-
-        function inicializarApp() {
-            cargarCursos();
-            cargarNoticias();
-            cargarEventosCalendario();
-        }
-
-        // --- LÓGICA DE NEGOCIO ---
-        async function cargarCursos() {
-            const snap = await db.collection('alumnos').get();
-            const cursos = [...new Set(snap.docs.map(d => d.data().curso))].sort();
-            const contNot = document.getElementById('cursos-noticia');
-            const contCal = document.getElementById('cursos-calendario');
-            [contNot, contCal].forEach(cont => {
-                cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
-                cursos.forEach(c => {
-                    cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}</label>`;
-                });
-            });
-        }
-
-        function toggleTodos(source, contId) {
-            document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
-        }
-
-        async function guardarNoticia() {
-            const id = document.getElementById('noticia-id').value;
-            const titulo = document.getElementById('not-titulo').value;
-            const texto = document.getElementById('not-texto').value;
-            const fechaProg = document.getElementById('not-programacion').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-
-            if(!titulo || !texto || seleccionados.length === 0) return alert("Completa Título, Mensaje y Cursos");
-
-            const data = {
-                titulo, texto, curso: seleccionados,
-                programacion: fechaProg || new Date().toISOString(),
-                adjuntos: {
-                    img: document.getElementById('not-img').value,
-                    video: document.getElementById('not-video').value,
-                    pdf: document.getElementById('not-pdf').value,
-                    link: document.getElementById('not-link').value
-                },
-                fechaCreacion: new Date().toISOString()
-            };
-
-            if(id) await db.collection('comunicados').doc(id).update(data);
-            else await db.collection('comunicados').add(data);
-            location.reload();
-        }
-
-        async function cargarNoticias() {
-            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
-            const cont = document.getElementById('lista-noticias');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const n = doc.data();
-                cont.innerHTML += `
-                    <div class="bg-white p-5 rounded-3xl border shadow-sm relative">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase">PARA: ${n.curso.join(", ")}</span>
-                            <div class="flex gap-2">
-                                <button onclick="editarNoticia('${doc.id}')" class="text-slate-400 hover:text-blue-500"><i class="fas fa-edit"></i></button>
-                                <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <h4 class="font-bold text-slate-800">${n.titulo}</h4>
-                        <p class="text-sm text-slate-500 line-clamp-2 mt-1">${n.texto}</p>
-                    </div>`;
-            });
-        }
-
-        async function editarNoticia(id) {
-            const doc = await db.collection('comunicados').doc(id).get();
+    async function cargarNoticias() {
+        const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+        const cont = document.getElementById('lista-noticias');
+        cont.innerHTML = "";
+        snap.forEach(doc => {
             const n = doc.data();
-            document.getElementById('noticia-id').value = id;
-            document.getElementById('not-titulo').value = n.titulo;
-            document.getElementById('not-texto').value = n.texto;
-            document.getElementById('not-programacion').value = n.programacion.substring(0,16);
-            document.getElementById('noticia-form-title').innerText = "Editando Publicación";
-            document.getElementById('btn-cancel-noticia').classList.remove('hidden');
-            window.scrollTo(0,0);
-        }
-
-        async function guardarCalendario() {
-            const id = document.getElementById('cal-id').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
-            const data = {
-                titulo: document.getElementById('cal-titulo').value,
-                descripcion: document.getElementById('cal-desc').value,
-                fecha: document.getElementById('cal-fecha').value,
-                tipo: document.getElementById('cal-tipo').value,
-                tag: seleccionados
-            };
-            if(id) await db.collection('eventos').doc(id).update(data);
-            else await db.collection('eventos').add(data);
-            location.reload();
-        }
-
-        async function cargarEventosCalendario() {
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-            const cont = document.getElementById('lista-calendario');
-            cont.innerHTML = "";
-
-            snap.forEach(doc => {
-                const e = doc.data();
-                let cursosTexto = "General";
-                if (e.tag) {
-                    cursosTexto = Array.isArray(e.tag) ? e.tag.join(", ") : e.tag;
-                }
-
-                cont.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl border flex items-center gap-4">
-                        <div class="bg-slate-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl text-slate-400">
-                            <i class="fas fa-calendar"></i>
+            const cursos = Array.isArray(n.curso) ? n.curso.join(", ") : n.curso;
+            cont.innerHTML += `
+                <div class="bg-white p-5 rounded-3xl border shadow-sm relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase">PARA: ${cursos}</span>
+                        <div class="flex gap-2">
+                            <button onclick="editarNoticia('${doc.id}')" class="text-slate-400 hover:text-blue-500"><i class="fas fa-edit"></i></button>
+                            <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
                         </div>
-                        <div class="flex-1">
-                            <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha} • ${cursosTexto}</p>
-                            <h4 class="font-bold text-slate-800">${e.titulo}</h4>
-                        </div>
-                        <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
-                    </div>`;
-            });
-        }
+                    </div>
+                    <h4 class="font-bold text-slate-800">${n.titulo}</h4>
+                    <p class="text-sm text-slate-500 line-clamp-2 mt-1">${n.texto}</p>
+                </div>`;
+        });
+    }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-            document.getElementById('tab-'+tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-blue-50', 'text-blue-600'); b.classList.add('text-slate-500');
-            });
-            event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
-        }
+    async function cargarEventosCalendario() {
+        const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+        const cont = document.getElementById('lista-calendario');
+        cont.innerHTML = "";
+        snap.forEach(doc => {
+            const e = doc.data();
+            let cursosTexto = e.tag ? (Array.isArray(e.tag) ? e.tag.join(", ") : e.tag) : "General";
+            cont.innerHTML += `
+                <div class="bg-white p-4 rounded-2xl border flex items-center gap-4">
+                    <div class="bg-slate-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl text-slate-400">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha} • ${cursosTexto}</p>
+                        <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                    </div>
+                    <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-300"><i class="fas fa-trash"></i></button>
+                </div>`;
+        });
+    }
 
-        async function eliminarDoc(col, id) {
-            if(confirm("¿Eliminar registro?")) { await db.collection(col).doc(id).delete(); location.reload(); }
-        }
+    async function eliminarDoc(col, id) {
+        if(confirm("¿Eliminar registro?")) { await db.collection(col).doc(id).delete(); location.reload(); }
+    }
 
-        function resetFormNoticia() { location.reload(); }
-        function resetFormCalendario() { location.reload(); }
-    </script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+        document.getElementById('tab-'+tabId).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.remove('bg-blue-50', 'text-blue-600'); b.classList.add('text-slate-500');
+        });
+        event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
+    }
+
+    function resetFormNoticia() { location.reload(); }
+</script>
 </body>
 </html>
