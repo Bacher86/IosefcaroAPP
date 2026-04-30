@@ -208,8 +208,7 @@
     }
 
     async function enviarAvisosPorEmail(titulo, cuerpo) {
-    const API_KEY = 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; // Pegala acá
-    
+    const API_KEY = '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';   
     try {
         const snap = await db.collection('usuarios').get();
         const destinatarios = [];
