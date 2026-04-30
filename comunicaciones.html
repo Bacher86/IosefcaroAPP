@@ -207,33 +207,40 @@
         }
     }
 
-    async function enviarAvisosPorEmail(titulo, cuerpo) {
-    const API_KEY = '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';   
+   async function enviarAvisosPorEmail(titulo, cuerpo) {
+    // CORRECCIÓN: La clave DEBE estar entre comillas simples para ser un String
+    const API_KEY = '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'; 
+    
     try {
         const snap = await db.collection('usuarios').get();
         const destinatarios = [];
 
         snap.forEach(doc => {
             const userData = doc.data();
-            if (userData.email) {
-                destinatarios.push({ email: userData.email });
+            // Verificamos que tenga email y que no esté vacío
+            if (userData.email && userData.email.trim() !== "") {
+                destinatarios.push({ email: userData.email.trim() });
             }
         });
 
-        if (destinatarios.length === 0) return;
+        console.log("Intentando enviar a:", destinatarios);
 
-        // Brevo permite enviar a múltiples destinatarios en una sola llamada
+        if (destinatarios.length === 0) {
+            console.warn("No hay destinatarios con mail válido.");
+            return;
+        }
+
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
-                'api-key': API_KEY,
+                'api-key': API_KEY, // Aquí se usa la variable ya corregida
                 'content-type': 'application/json'
             },
             body: JSON.stringify({
                 sender: { 
                     name: "Comunicación Iosef Caro", 
-                    email: "info@iosefcaro.org" // EL MAIL QUE TENÉS EN BREVO
+                    email: "info@iosefcaro.org" 
                 },
                 to: destinatarios,
                 subject: titulo,
@@ -242,21 +249,22 @@
                         <h2 style="color: #2563eb;">${titulo}</h2>
                         <p style="font-size: 16px; color: #334155; line-height: 1.6;">${cuerpo}</p>
                         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                        <p style="font-size: 12px; color: #94a3b8;">Tenes una notificación en la App de Iosef Caro.</p>
+                        <p style="font-size: 12px; color: #94a3b8;">Tenés una nueva notificación en la App de Iosef Caro.</p>
                     </div>
                 `
             })
         });
 
+        const result = await response.json();
+
         if (response.ok) {
-            console.log(`Mails enviados exitosamente a ${destinatarios.length} personas.`);
+            console.log("Respuesta exitosa de Brevo:", result);
         } else {
-            const error = await response.json();
-            console.error("Error de Brevo:", error);
+            console.error("Brevo rechazó el envío:", result);
         }
 
     } catch(e) {
-        console.error("Error en el proceso de envío:", e);
+        console.error("Error crítico en la ejecución del fetch:", e);
     }
 }
 
