@@ -116,7 +116,7 @@
     </div>
 
     <script>
-    // Inicializar EmailJS con tu llave pública
+    // Inicializar EmailJS
     (function(){
         emailjs.init("hDKMmExBMzhAWF_KH");
     })();
@@ -154,7 +154,7 @@
             const contCal = document.getElementById('cursos-calendario');
             [contNot, contCal].forEach(cont => {
                 if(!cont) return;
-                cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
+                cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="all-${cont.id}" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
                 cursos.forEach(c => {
                     cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}</label>`;
                 });
@@ -171,8 +171,9 @@
         const titulo = document.getElementById('not-titulo').value;
         const texto = document.getElementById('not-texto').value;
         const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+        const esTodos = document.getElementById('all-cursos-noticia')?.checked;
         
-        if(!titulo || !texto || seleccionados.length === 0) return alert("Faltan datos obligatorios.");
+        if(!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
 
         const btn = document.getElementById('btn-noticia');
         btn.disabled = true;
@@ -196,8 +197,8 @@
                 alert("Noticia actualizada.");
             } else {
                 await db.collection('comunicados').add(data);
-                // DISPARAMOS EL ENVÍO POR EMAIL
-                await enviarAvisosPorEmail(titulo, texto);
+                // Pasamos los cursos seleccionados para filtrar el envío
+                await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos);
             }
             location.reload();
         } catch(e) {
@@ -207,66 +208,63 @@
         }
     }
 
-   async function enviarAvisosPorEmail(titulo, cuerpo) {
-    // CORRECCIÓN: La clave DEBE estar entre comillas simples para ser un String
-    const API_KEY = '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'; 
-    
-    try {
-        const snap = await db.collection('usuarios').get();
-        const destinatarios = [];
-
-        snap.forEach(doc => {
-            const userData = doc.data();
-            // Verificamos que tenga email y que no esté vacío
-            if (userData.email && userData.email.trim() !== "") {
-                destinatarios.push({ email: userData.email.trim() });
+    async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
+        const API_KEY = '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'; 
+        
+        try {
+            let query = db.collection('usuarios');
+            // MEJORA 1: Filtro por curso en la base de datos
+            if (!esTodos && cursosFiltro.length > 0) {
+                query = query.where('curso', 'in', cursosFiltro);
             }
-        });
 
-        console.log("Intentando enviar a:", destinatarios);
+            const snap = await query.get();
+            const destinatarios = [];
 
-        if (destinatarios.length === 0) {
-            console.warn("No hay destinatarios con mail válido.");
-            return;
-        }
+            snap.forEach(doc => {
+                const userData = doc.data();
+                if (userData.email && userData.email.trim() !== "") {
+                    destinatarios.push({ email: userData.email.trim() });
+                }
+            });
 
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'api-key': API_KEY, // Aquí se usa la variable ya corregida
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify({
-                sender: { 
-                    name: "Comunicación Iosef Caro", 
-                    email: "info@iosefcaro.org" 
+            if (destinatarios.length === 0) {
+                console.warn("No hay destinatarios en esos cursos con mail válido.");
+                return;
+            }
+
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': API_KEY,
+                    'content-type': 'application/json'
                 },
-                to: destinatarios,
-                subject: titulo,
-                htmlContent: `
-                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                        <h2 style="color: #2563eb;">${titulo}</h2>
-                        <p style="font-size: 16px; color: #334155; line-height: 1.6;">${cuerpo}</p>
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                        <p style="font-size: 12px; color: #94a3b8;">Tenés una nueva notificación en la App de Iosef Caro.</p>
-                    </div>
-                `
-            })
-        });
+                body: JSON.stringify({
+                    sender: { name: "Comunicación Iosef Caro", email: "info@iosefcaro.org" },
+                    // MEJORA 3: Reply-To para recibir respuestas
+                    replyTo: { email: "info@iosefcaro.org" },
+                    to: destinatarios,
+                    subject: titulo,
+                    htmlContent: `
+                        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                            <h2 style="color: #2563eb;">${titulo}</h2>
+                            <p style="font-size: 16px; color: #334155; line-height: 1.6;">${cuerpo}</p>
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                            <p style="font-size: 12px; color: #94a3b8;">Tenés una nueva notificación en la App de Iosef Caro.</p>
+                        </div>
+                    `
+                })
+            });
 
-        const result = await response.json();
+            const result = await response.json();
+            if (response.ok) console.log("Mails enviados exitosamente:", result);
+            else console.error("Error Brevo:", result);
 
-        if (response.ok) {
-            console.log("Respuesta exitosa de Brevo:", result);
-        } else {
-            console.error("Brevo rechazó el envío:", result);
+        } catch(e) {
+            console.error("Error en envío de mail:", e);
         }
-
-    } catch(e) {
-        console.error("Error crítico en la ejecución del fetch:", e);
     }
-}
 
     async function cargarNoticias() {
         const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
