@@ -167,52 +167,59 @@
     }
 
     async function guardarNoticia() {
-        const id = document.getElementById('noticia-id').value;
-        const titulo = document.getElementById('not-titulo').value;
-        const texto = document.getElementById('not-texto').value;
-        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-        const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-        
-        if(!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
+    const id = document.getElementById('noticia-id').value;
+    const titulo = document.getElementById('not-titulo').value;
+    const texto = document.getElementById('not-texto').value;
+    // Capturamos los checks de cursos
+    const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+    const esTodos = document.getElementById('all-cursos-noticia')?.checked;
+    
+    if(!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
 
-        const btn = document.getElementById('btn-noticia');
-        btn.disabled = true;
-        btn.innerText = "Publicando y Enviando Mails...";
+    const btn = document.getElementById('btn-noticia');
+    btn.disabled = true;
+    btn.innerText = "Publicando y Enviando Mails...";
 
-        const data = {
-            titulo, texto, curso: seleccionados,
-            programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-            adjuntos: {
-                img: document.getElementById('not-img').value,
-                video: document.getElementById('not-video').value,
-                pdf: document.getElementById('not-pdf').value,
-                link: document.getElementById('not-link').value
-            },
-            fechaCreacion: new Date().toISOString()
-        };
+    const data = {
+        titulo, 
+        texto, 
+        curso: seleccionados,
+        programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
+        adjuntos: {
+            img: document.getElementById('not-img').value,
+            video: document.getElementById('not-video').value,
+            pdf: document.getElementById('not-pdf').value,
+            link: document.getElementById('not-link').value
+        },
+        fechaCreacion: new Date().toISOString()
+    };
 
-        try {
-            if(id) {
-                await db.collection('comunicados').doc(id).update(data);
-                alert("Noticia actualizada.");
-            } else {
-                await db.collection('comunicados').add(data);
-                // Pasamos los cursos seleccionados para filtrar el envío
-                await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos);
-            }
-            location.reload();
-        } catch(e) {
-            alert("Error: " + e.message);
-            btn.disabled = false;
-            btn.innerText = "Publicar Ahora";
+    try {
+        if(id) {
+            await db.collection('comunicados').doc(id).update(data);
+            alert("Noticia actualizada (No se re-enviaron correos).");
+        } else {
+            // 1. Guardar en Firebase
+            await db.collection('comunicados').add(data);
+            
+            // 2. Ejecutar envío por EmailJS
+            await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos);
+            alert("¡Publicado y correos enviados con éxito!");
         }
+        location.reload();
+    } catch(e) {
+        console.error(e);
+        alert("Error en el proceso: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "Publicar y Enviar Mail";
     }
+}
 
    async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
     try {
         let query = db.collection('usuarios');
         
-        // Filtramos destinatarios según los cursos seleccionados
+        // Si no es para todos, filtramos por los cursos marcados
         if (!esTodos && cursosFiltro.length > 0) {
             query = query.where('curso', 'in', cursosFiltro);
         }
@@ -223,8 +230,6 @@
         snap.forEach(doc => {
             const userData = doc.data();
             if (userData.email && userData.email.trim() !== "") {
-                // Preparamos los parámetros para EmailJS
-                // Asegúrate de que estos nombres coincidan con los de tu plantilla en EmailJS
                 const templateParams = {
                     to_email: userData.email.trim(),
                     subject: titulo,
@@ -232,7 +237,8 @@
                     school_name: "Iosef Caro"
                 };
 
-                // Enviamos el mail (reemplaza 'YOUR_SERVICE_ID' y 'YOUR_TEMPLATE_ID')
+                // Enviamos usando tus IDs de EmailJS
+                // Importante: Chequeá que 'service_brevo' y 'template_noticias' sean los correctos en tu panel
                 promesas.push(
                     emailjs.send("service_brevo", "template_noticias", templateParams)
                 );
@@ -240,16 +246,14 @@
         });
 
         if (promesas.length === 0) {
-            console.warn("No se encontraron destinatarios válidos.");
+            console.warn("No se encontraron usuarios con email en los cursos seleccionados.");
             return;
         }
 
-        const resultados = await Promise.all(promesas);
-        console.log("Correos enviados exitosamente via EmailJS:", resultados);
-
+        return Promise.all(promesas);
     } catch(e) {
-        console.error("Error en el proceso de EmailJS:", e);
-        throw e; // Lanzamos el error para que lo atrape el catch de guardarNoticia
+        console.error("Error detallado en EmailJS:", e);
+        throw e;
     }
 }
 
