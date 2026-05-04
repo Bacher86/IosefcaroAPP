@@ -50,7 +50,8 @@
 
         <main class="p-4 max-w-6xl mx-auto space-y-6">
 
-            <section id="tab-importar" class="tab-content active">
+            <section id="tab-importar" class="tab-content active space-y-6">
+                <!-- CARGA POR CSV -->
                 <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
                     <i class="fas fa-file-upload text-5xl text-blue-500 mb-4"></i>
                     <h2 class="text-2xl font-black text-slate-800">Importador de Alumnos</h2>
@@ -60,6 +61,25 @@
                     <p id="csv-info" class="text-xs font-black text-blue-600 mb-6 uppercase"></p>
                     <button onclick="procesarCSV()" class="block mx-auto bg-blue-600 text-white px-12 py-4 rounded-2xl font-black shadow-xl">INICIAR IMPORTACIÓN</button>
                     <div id="csv-status" class="mt-6 text-sm font-bold text-slate-400"></div>
+                </div>
+
+                <!-- NUEVA CARGA MANUAL -->
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h2 class="text-xl font-black text-slate-800">Carga Manual Individual</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="manual-alu" placeholder="Nombre del Alumno" class="input-pro">
+                        <input type="text" id="manual-cur" placeholder="Curso (Ej: 1A)" class="input-pro">
+                        <input type="text" id="manual-fam" placeholder="Nombre de la Familia" class="input-pro">
+                        <input type="email" id="manual-mail1" placeholder="Email Principal" class="input-pro">
+                        <input type="email" id="manual-mail2" placeholder="Email Secundario (Opcional)" class="input-pro">
+                        <input type="email" id="manual-mail3" placeholder="Email 3 (Opcional)" class="input-pro">
+                        <button onclick="cargaManualAlumno()" class="md:col-span-3 bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg">GUARDAR ALUMNO NUEVO</button>
+                    </div>
                 </div>
             </section>
 
@@ -222,23 +242,7 @@
                     const emails = columns.slice(3).filter(email => email && email.includes('@'));
 
                     if(alu && emails.length > 0) {
-                        for(let mail of emails) {
-                            const m = mail.toLowerCase();
-                            // FIX: arrayUnion asegura que agregamos el hijo al array sin borrar los anteriores
-                            await db.collection('usuarios').doc(m).set({
-                                nombre: fam, 
-                                rol: 'familia', 
-                                hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cur.toUpperCase() })
-                            }, {merge:true});
-                        }
-                        // FIX: ID único por alumno para que hermanos no se pisen en la colección alumnos
-                        const alumnoId = `${alu}_${cur.toUpperCase()}`.replace(/\s+/g, '_');
-                        await db.collection('alumnos').doc(alumnoId).set({ 
-                            nombre: alu, 
-                            curso: cur.toUpperCase(), 
-                            familiaNombre: fam 
-                        }, {merge: true});
-                        
+                        await guardarAlumnoData(alu, cur, fam, emails);
                         logs++;
                         document.getElementById('csv-status').innerText = `Procesando: ${logs} alumnos...`;
                     }
@@ -247,6 +251,51 @@
                 location.reload();
             };
             reader.readAsText(file);
+        }
+
+        // FUNCIÓN AUXILIAR DE CARGA (Usada por CSV y Manual)
+        async function guardarAlumnoData(alu, cur, fam, emails) {
+            const cursoNorm = cur.toUpperCase();
+            // Carga de usuarios (familias)
+            for(let mail of emails) {
+                const m = mail.toLowerCase().trim();
+                await db.collection('usuarios').doc(m).set({
+                    nombre: fam, 
+                    rol: 'familia', 
+                    hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cursoNorm })
+                }, {merge:true});
+            }
+            // Carga de colección Alumnos
+            const alumnoId = `${alu}_${cursoNorm}`.replace(/\s+/g, '_');
+            await db.collection('alumnos').doc(alumnoId).set({ 
+                nombre: alu, 
+                curso: cursoNorm, 
+                familiaNombre: fam 
+            }, {merge: true});
+        }
+
+        // NUEVA FUNCIÓN: CARGA MANUAL INDIVIDUAL
+        async function cargaManualAlumno() {
+            const alu = document.getElementById('manual-alu').value.trim();
+            const cur = document.getElementById('manual-cur').value.trim();
+            const fam = document.getElementById('manual-fam').value.trim();
+            const m1 = document.getElementById('manual-mail1').value.trim();
+            const m2 = document.getElementById('manual-mail2').value.trim();
+            const m3 = document.getElementById('manual-mail3').value.trim();
+
+            if(!alu || !cur || !fam || !m1) return alert("Faltan datos obligatorios (Alumno, Curso, Familia y al menos 1 Mail)");
+
+            const emails = [m1, m2, m3].filter(e => e !== "" && e.includes('@'));
+            
+            try {
+                await guardarAlumnoData(alu, cur, fam, emails);
+                alert("Alumno cargado correctamente.");
+                // Limpiar campos
+                ['manual-alu', 'manual-cur', 'manual-fam', 'manual-mail1', 'manual-mail2', 'manual-mail3'].forEach(id => document.getElementById(id).value = "");
+                refrescarTodo();
+            } catch(e) {
+                alert("Error al cargar: " + e.message);
+            }
         }
 
         async function crearMaestro(col, inpId) {
