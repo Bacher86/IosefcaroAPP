@@ -17,7 +17,6 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
         .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        #login-overlay { display: none; position: fixed; inset: 0; background: #0f172a; z-index: 100; align-items: center; justify-content: center; padding: 20px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -60,10 +59,7 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="relative">
-                                <input type="text" id="not-img" placeholder="URL Imagen (ImgBB)" class="input-pro">
-                                <span class="text-[9px] text-blue-500 absolute -bottom-4 left-2">Usa el 'Direct Link' de ImgBB</span>
-                            </div>
+                            <input type="text" id="not-img" placeholder="URL Imagen (ImgBB)" class="input-pro">
                             <input type="text" id="not-video" placeholder="URL YouTube/Video" class="input-pro">
                             <input type="text" id="not-pdf" placeholder="URL PDF" class="input-pro">
                             <input type="text" id="not-link" placeholder="Enlace Externo" class="input-pro">
@@ -83,10 +79,10 @@
             </section>
 
             <section id="tab-calendario" class="tab-content space-y-6">
+                <!-- Sección Calendario se mantiene igual -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="cal-form-title" class="font-black text-xl mb-4 text-slate-800">Agendar al Calendario</h2>
                     <input type="hidden" id="cal-id">
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <input type="text" id="cal-titulo" placeholder="Título del evento" class="input-pro">
@@ -98,12 +94,10 @@
                             <option value="examen">Examen / Entrega</option>
                             <option value="feriado">Feriado / Sin Actividad</option>
                         </select>
-                        
                         <div class="md:col-span-2">
                             <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Visible para:</label>
                             <div id="cursos-calendario" class="flex flex-wrap gap-2 mt-1"></div>
                         </div>
-
                         <div class="md:col-span-2 flex gap-2">
                             <button onclick="guardarCalendario()" id="btn-cal" class="flex-1 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700">Guardar Evento</button>
                             <button onclick="resetFormCalendario()" id="btn-cancel-cal" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">X</button>
@@ -116,10 +110,7 @@
     </div>
 
     <script>
-    // Inicializar EmailJS
-    (function(){
-        emailjs.init("hDKMmExBMzhAWF_KH");
-    })();
+    (function(){ emailjs.init("hDKMmExBMzhAWF_KH"); })();
 
     const firebaseConfig = { 
         apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
@@ -130,15 +121,10 @@
         appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
     };
 
-    let db;
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    db = firebase.firestore();
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
 
-    window.onload = () => {
-        inicializarApp();
-    };
+    window.onload = () => { inicializarApp(); };
 
     function inicializarApp() {
         cargarCursos();
@@ -146,6 +132,7 @@
         cargarEventosCalendario();
     }
 
+    // --- LOGICA DE CURSOS ---
     async function cargarCursos() {
         try {
             const snap = await db.collection('cursos').get();
@@ -166,104 +153,74 @@
         document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
     }
 
-    async function guardarNoticia() {
-    const id = document.getElementById('noticia-id').value;
-    const titulo = document.getElementById('not-titulo').value;
-    const texto = document.getElementById('not-texto').value;
-    // Capturamos los checks de cursos
-    const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-    const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-    
-    if(!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
-
-    const btn = document.getElementById('btn-noticia');
-    btn.disabled = true;
-    btn.innerText = "Publicando y Enviando Mails...";
-
-    const data = {
-        titulo, 
-        texto, 
-        curso: seleccionados,
-        programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-        adjuntos: {
-            img: document.getElementById('not-img').value,
-            video: document.getElementById('not-video').value,
-            pdf: document.getElementById('not-pdf').value,
-            link: document.getElementById('not-link').value
-        },
-        fechaCreacion: new Date().toISOString()
-    };
-
-    try {
-        if(id) {
-            await db.collection('comunicados').doc(id).update(data);
-            alert("Noticia actualizada (No se re-enviaron correos).");
-        } else {
-            // 1. Guardar en Firebase
-            await db.collection('comunicados').add(data);
-            
-            // 2. Ejecutar envío por EmailJS
-            await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos);
-            alert("¡Publicado y correos enviados con éxito!");
-        }
-        location.reload();
-    } catch(e) {
-        console.error(e);
-        alert("Error en el proceso: " + e.message);
-        btn.disabled = false;
-        btn.innerText = "Publicar y Enviar Mail";
-    }
-}
-
-   async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
-    try {
-        let query = db.collection('usuarios');
-        
-        // Filtro por curso
-        if (!esTodos && cursosFiltro.length > 0) {
-            query = query.where('curso', 'in', cursosFiltro);
-        }
-
-        const snap = await query.get();
-        
-        // Verificación de destinatarios
-        if (snap.empty) {
-            console.warn("No se encontraron usuarios en los cursos seleccionados.");
-            return;
-        }
-
-        const promesas = [];
-
+    // --- SECCIÓN NOTICIAS ---
+    async function cargarNoticias() {
+        const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+        const cont = document.getElementById('lista-noticias');
+        cont.innerHTML = "";
         snap.forEach(doc => {
-            const userData = doc.data();
-            // Verificamos que el usuario tenga un mail cargado
-            if (userData.email && userData.email.trim() !== "") {
-                const templateParams = {
-                    to_email: userData.email.trim(),
-                    subject: titulo,
-                    message: cuerpo,
-                    school_name: "Iosef Caro"
-                };
-
-                // USANDO TU SERVICE ID ACTUALIZADO
-                promesas.push(
-                    emailjs.send("service_5lf6k9v", "template_noticias", templateParams)
-                );
-            }
+            const n = doc.data();
+            cont.innerHTML += `
+                <div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col gap-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-slate-800">${n.titulo}</h4>
+                            <p class="text-xs text-slate-400">${new Date(n.fechaCreacion).toLocaleString()}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editarNoticia('${doc.id}')" class="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><i class="fas fa-edit"></i></button>
+                            <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-rose-400 p-2 hover:bg-rose-50 rounded-lg"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 line-clamp-2">${n.texto}</p>
+                    <div class="flex flex-wrap gap-1">
+                        ${n.curso ? n.curso.map(c => `<span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded text-slate-500">${c}</span>`).join('') : ''}
+                    </div>
+                </div>`;
         });
-
-        // Ejecutar todos los envíos
-        const resultados = await Promise.all(promesas);
-        console.log("Emails enviados con éxito:", resultados);
-        return resultados;
-
-    } catch(e) {
-        console.error("Error al enviar con EmailJS:", e);
-        // Si el error es por el ID del Template, EmailJS lo dirá en e.text
-        if(e.text) alert("Error de EmailJS: " + e.text);
-        throw e;
     }
-}
+
+    async function guardarNoticia() {
+        const id = document.getElementById('noticia-id').value;
+        const titulo = document.getElementById('not-titulo').value;
+        const texto = document.getElementById('not-texto').value;
+        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+        const esTodos = document.getElementById('all-cursos-noticia')?.checked;
+        
+        if(!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
+
+        const btn = document.getElementById('btn-noticia');
+        btn.disabled = true;
+        btn.innerText = "Procesando...";
+
+        const data = {
+            titulo, texto, curso: seleccionados,
+            programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
+            adjuntos: {
+                img: document.getElementById('not-img').value,
+                video: document.getElementById('not-video').value,
+                pdf: document.getElementById('not-pdf').value,
+                link: document.getElementById('not-link').value
+            },
+            fechaCreacion: new Date().toISOString()
+        };
+
+        try {
+            if(id) {
+                await db.collection('comunicados').doc(id).update(data);
+                alert("Publicación actualizada.");
+            } else {
+                await db.collection('comunicados').add(data);
+                await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos);
+                alert("Publicado y mails enviados.");
+            }
+            location.reload();
+        } catch(e) {
+            alert("Error: " + e.message);
+            btn.disabled = false;
+        }
+    }
+
     async function editarNoticia(id) {
         const doc = await db.collection('comunicados').doc(id).get();
         const n = doc.data();
@@ -274,6 +231,12 @@
         document.getElementById('not-video').value = n.adjuntos?.video || "";
         document.getElementById('not-pdf').value = n.adjuntos?.pdf || "";
         document.getElementById('not-link').value = n.adjuntos?.link || "";
+        
+        // Marcar checkboxes guardados
+        document.querySelectorAll('.check-cursos-noticia').forEach(cb => {
+            cb.checked = n.curso && n.curso.includes(cb.value);
+        });
+
         document.getElementById('noticia-form-title').innerText = "Editando Publicación";
         document.getElementById('btn-cancel-noticia').classList.remove('hidden');
         window.scrollTo({top: 0, behavior: 'smooth'});
@@ -283,8 +246,29 @@
         document.getElementById('noticia-id').value = "";
         document.getElementById('not-titulo').value = "";
         document.getElementById('not-texto').value = "";
+        document.querySelectorAll('.check-cursos-noticia').forEach(cb => cb.checked = false);
         document.getElementById('noticia-form-title').innerText = "Nueva Publicación";
         document.getElementById('btn-cancel-noticia').classList.add('hidden');
+    }
+
+    // --- SECCIÓN CALENDARIO ---
+    async function cargarEventosCalendario() {
+        const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+        const cont = document.getElementById('lista-calendario');
+        cont.innerHTML = "";
+        snap.forEach(doc => {
+            const e = doc.data();
+            cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
+                <div class="flex-1">
+                    <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
+                    <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="editarCalendario('${doc.id}')" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
+                    <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
     }
 
     async function guardarCalendario() {
@@ -297,25 +281,71 @@
             tipo: document.getElementById('cal-tipo').value,
             tag: seleccionados
         };
+        if(!data.titulo || !data.fecha) return alert("Título y Fecha son obligatorios.");
+
         if(id) await db.collection('eventos').doc(id).update(data);
         else await db.collection('eventos').add(data);
         location.reload();
     }
 
-    async function cargarEventosCalendario() {
-        const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-        const cont = document.getElementById('lista-calendario');
-        cont.innerHTML = "";
-        snap.forEach(doc => {
-            const e = doc.data();
-            cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
-                <div class="flex-1">
-                    <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
-                    <h4 class="font-bold text-slate-800">${e.titulo}</h4>
-                </div>
-                <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
-            </div>`;
+    async function editarCalendario(id) {
+        const doc = await db.collection('eventos').doc(id).get();
+        const e = doc.data();
+        document.getElementById('cal-id').value = id;
+        document.getElementById('cal-titulo').value = e.titulo;
+        document.getElementById('cal-desc').value = e.descripcion;
+        document.getElementById('cal-fecha').value = e.fecha;
+        document.getElementById('cal-tipo').value = e.tipo;
+        
+        document.querySelectorAll('.check-cursos-calendario').forEach(cb => {
+            cb.checked = e.tag && e.tag.includes(cb.value);
         });
+
+        document.getElementById('cal-form-title').innerText = "Editando Evento";
+        document.getElementById('btn-cancel-cal').classList.remove('hidden');
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function resetFormCalendario() {
+        document.getElementById('cal-id').value = "";
+        document.getElementById('cal-titulo').value = "";
+        document.getElementById('cal-desc').value = "";
+        document.getElementById('cal-fecha').value = "";
+        document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
+        document.getElementById('btn-cancel-cal').classList.add('hidden');
+    }
+
+    // --- UTILIDADES ---
+    async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
+        try {
+            let query = db.collection('usuarios');
+            if (!esTodos && cursosFiltro.length > 0) {
+                query = query.where('curso', 'in', cursosFiltro);
+            }
+            const snap = await query.get();
+            if (snap.empty) return;
+
+            const promesas = [];
+            snap.forEach(doc => {
+                const userData = doc.data();
+                if (userData.email && userData.email.trim() !== "") {
+                    promesas.push(emailjs.send("service_5lf6k9v", "template_noticias", {
+                        to_email: userData.email.trim(),
+                        subject: titulo,
+                        message: cuerpo,
+                        school_name: "Iosef Caro"
+                    }));
+                }
+            });
+            return await Promise.all(promesas);
+        } catch(e) { console.error("EmailJS Error:", e); }
+    }
+
+    async function eliminarDoc(col, id) {
+        if(confirm("¿Eliminar permanentemente?")) { 
+            await db.collection(col).doc(id).delete(); 
+            location.reload(); 
+        }
     }
 
     function switchTab(tabId) {
@@ -325,13 +355,6 @@
             b.classList.remove('bg-blue-50', 'text-blue-600'); b.classList.add('text-slate-500');
         });
         event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
-    }
-
-    async function eliminarDoc(col, id) {
-        if(confirm("¿Eliminar permanentemente?")) { 
-            await db.collection(col).doc(id).delete(); 
-            location.reload(); 
-        }
     }
     </script>
 </body>
