@@ -315,12 +315,14 @@
         document.getElementById('btn-cancel-cal').classList.add('hidden');
     }
 
-    // --- UTILIDADES ---
   async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
-    console.log("Iniciando proceso de envío...");
+    console.log("Iniciando proceso de envío filtrado...");
 
     try {
-        let query = db.collection('usuarios');
+        // Filtramos de entrada para que solo busque usuarios con rol 'familia'
+        let query = db.collection('usuarios').where('rol', '==', 'familia');
+
+        // Si no es para todos, aplicamos el filtro por curso
         if (!esTodos && cursosFiltro.length > 0) {
             query = query.where('curso', 'in', cursosFiltro);
         }
@@ -328,7 +330,7 @@
         const snap = await query.get();
         
         if (snap.empty) {
-            console.warn("No se encontraron usuarios.");
+            console.warn("No se encontraron familiares que coincidan con el curso.");
             return;
         }
 
@@ -336,13 +338,12 @@
         snap.forEach(doc => {
             const userData = doc.data();
             
-            // LÓGICA DE RESCATE:
-            // Si el campo 'email' existe, lo usa. Si no, usa el ID del documento (que es tu mail).
-            let emailDestino = userData.email || doc.id; 
+            // Usamos el ID del documento como email (que es tu estándar)
+            let emailDestino = doc.id; 
 
-            // Validamos que realmente parezca un email (que tenga un @)
-            if (emailDestino && emailDestino.includes('@')) {
-                console.log(`Enviando a: ${emailDestino.trim()}`);
+            // Verificación final de seguridad: debe ser familia y tener un email válido
+            if (userData.rol === 'familia' && emailDestino && emailDestino.includes('@')) {
+                console.log(`Enviando a familia: ${emailDestino.trim()}`);
                 
                 const p = emailjs.send("service_5lf6k9v", "template_noticias", {
                     to_email: emailDestino.trim(),
@@ -354,15 +355,13 @@
                 .catch(err => console.error(`❌ Error para ${emailDestino}:`, err));
                 
                 promesas.push(p);
-            } else {
-                console.warn(`ID ${doc.id} no parece un email válido.`);
             }
         });
 
         return await Promise.all(promesas);
 
     } catch(e) {
-        console.error("Error crítico:", e);
+        console.error("Error crítico en el filtrado de envíos:", e);
     }
 }
 
