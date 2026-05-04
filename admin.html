@@ -163,11 +163,21 @@
             </section>
 
             <section id="tab-familias" class="tab-content space-y-4">
-                <div class="bg-white p-4 rounded-2xl border shadow-sm">
-                    <input type="text" onkeyup="buscar('search-fam', 'lista-familias')" id="search-fam" placeholder="Buscar familia o email..." class="input-pro">
-                </div>
-                <div id="lista-familias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            </section>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+        <input type="text" onkeyup="buscar('search-fam', 'lista-familias')" id="search-fam" placeholder="Buscar familia o email..." class="input-pro">
+        
+        <button id="btn-eliminar-masivo" onclick="eliminarFamiliasSeleccionadas()" class="hidden bg-rose-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2">
+            <i class="fas fa-trash-alt"></i> ELIMINAR SELECCIONADOS (<span id="count-seleccion">0</span>)
+        </button>
+    </div>
+    
+    <div class="flex items-center gap-2 px-2">
+        <input type="checkbox" id="select-all-fam" onclick="toggleSeleccionarTodo(this)" class="w-4 h-4">
+        <label for="select-all-fam" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos los visibles</label>
+    </div>
+
+    <div id="lista-familias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</section>
 
         </main>
     </div>
@@ -430,17 +440,77 @@
         }
 
         async function cargarFamilias() {
-            const snap = await db.collection('usuarios').where('rol','==','familia').get();
-            const cont = document.getElementById('lista-familias');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border shadow-sm" data-search="${doc.data().nombre} ${doc.id}">
-                    <p class="font-bold text-sm">${doc.data().nombre}</p>
-                    <p class="text-[10px] text-slate-400 truncate">${doc.id}</p>
-                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="mt-2 text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar Acceso</button>
-                </div>`;
-            });
+    const snap = await db.collection('usuarios').where('rol', '==', 'familia').get();
+    const cont = document.getElementById('lista-familias');
+    cont.innerHTML = "";
+    
+    snap.forEach(doc => {
+        const data = doc.data();
+        cont.innerHTML += `
+            <div class="bg-white p-4 rounded-2xl border shadow-sm relative group" data-search="${data.nombre} ${doc.id}">
+                <div class="absolute top-4 right-4">
+                    <input type="checkbox" value="${doc.id}" class="fam-checkbox w-5 h-5 cursor-pointer accent-rose-600" onchange="actualizarContadorSeleccion()">
+                </div>
+                <p class="font-bold text-sm pr-8">${data.nombre}</p>
+                <p class="text-[10px] text-slate-400 truncate mb-2">${doc.id}</p>
+                <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-50">
+                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar individual</button>
+                </div>
+            </div>`;
+    });
+    actualizarContadorSeleccion();
+}
+
+// 2. Nueva función para contar seleccionados y mostrar/ocultar el botón
+function actualizarContadorSeleccion() {
+    const seleccionados = document.querySelectorAll('.fam-checkbox:checked').length;
+    const btn = document.getElementById('btn-eliminar-masivo');
+    const countSpan = document.getElementById('count-seleccion');
+    
+    if (seleccionados > 0) {
+        btn.classList.remove('hidden');
+        countSpan.innerText = seleccionados;
+    } else {
+        btn.classList.add('hidden');
+    }
+}
+
+// 3. Función para seleccionar/deseleccionar todos los visibles
+function toggleSeleccionarTodo(master) {
+    const checkboxes = document.querySelectorAll('#lista-familias div[style*="display: block"] .fam-checkbox, #lista-familias div:not([style*="display: none"]) .fam-checkbox');
+    checkboxes.forEach(cb => cb.checked = master.checked);
+    actualizarContadorSeleccion();
+}
+
+// 4. Función principal de eliminación masiva
+async function eliminarFamiliasSeleccionadas() {
+    const seleccionados = Array.from(document.querySelectorAll('.fam-checkbox:checked')).map(cb => cb.value);
+    
+    if (seleccionados.length === 0) return;
+    
+    if (confirm(`¿Estás seguro de que quieres eliminar a estas ${seleccionados.length} familias de forma permanente?`)) {
+        const btn = document.getElementById('btn-eliminar-masivo');
+        btn.disabled = true;
+        btn.innerText = "ELIMINANDO...";
+
+        const batch = db.batch();
+        seleccionados.forEach(id => {
+            const docRef = db.collection('usuarios').doc(id);
+            batch.delete(docRef);
+        });
+
+        try {
+            await batch.commit();
+            alert(`${seleccionados.length} familias eliminadas correctamente.`);
+            refrescarTodo();
+        } catch (error) {
+            console.error("Error en eliminación masiva: ", error);
+            alert("Hubo un error al intentar eliminar los registros.");
+        } finally {
+            btn.disabled = false;
         }
+    }
+}
 
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
