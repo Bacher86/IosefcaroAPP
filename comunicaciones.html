@@ -208,63 +208,50 @@
         }
     }
 
-    async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
-        const API_KEY = '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'; 
+   async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
+    try {
+        let query = db.collection('usuarios');
         
-        try {
-            let query = db.collection('usuarios');
-            // MEJORA 1: Filtro por curso en la base de datos
-            if (!esTodos && cursosFiltro.length > 0) {
-                query = query.where('curso', 'in', cursosFiltro);
-            }
-
-            const snap = await query.get();
-            const destinatarios = [];
-
-            snap.forEach(doc => {
-                const userData = doc.data();
-                if (userData.email && userData.email.trim() !== "") {
-                    destinatarios.push({ email: userData.email.trim() });
-                }
-            });
-
-            if (destinatarios.length === 0) {
-                console.warn("No hay destinatarios en esos cursos con mail válido.");
-                return;
-            }
-
-            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'api-key': API_KEY,
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    sender: { name: "Comunicación Iosef Caro", email: "info@iosefcaro.org" },
-                    // MEJORA 3: Reply-To para recibir respuestas
-                    replyTo: { email: "info@iosefcaro.org" },
-                    to: destinatarios,
-                    subject: titulo,
-                    htmlContent: `
-                        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                            <h2 style="color: #2563eb;">${titulo}</h2>
-                            <p style="font-size: 16px; color: #334155; line-height: 1.6;">${cuerpo}</p>
-                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                            <p style="font-size: 12px; color: #94a3b8;">Tenés una nueva notificación en la App de Iosef Caro.</p>
-                        </div>
-                    `
-                })
-            });
-
-            const result = await response.json();
-            if (response.ok) console.log("Mails enviados exitosamente:", result);
-            else console.error("Error Brevo:", result);
-
-        } catch(e) {
-            console.error("Error en envío de mail:", e);
+        // Filtramos destinatarios según los cursos seleccionados
+        if (!esTodos && cursosFiltro.length > 0) {
+            query = query.where('curso', 'in', cursosFiltro);
         }
+
+        const snap = await query.get();
+        const promesas = [];
+
+        snap.forEach(doc => {
+            const userData = doc.data();
+            if (userData.email && userData.email.trim() !== "") {
+                // Preparamos los parámetros para EmailJS
+                // Asegúrate de que estos nombres coincidan con los de tu plantilla en EmailJS
+                const templateParams = {
+                    to_email: userData.email.trim(),
+                    subject: titulo,
+                    message: cuerpo,
+                    school_name: "Iosef Caro"
+                };
+
+                // Enviamos el mail (reemplaza 'YOUR_SERVICE_ID' y 'YOUR_TEMPLATE_ID')
+                promesas.push(
+                    emailjs.send("service_brevo", "template_noticias", templateParams)
+                );
+            }
+        });
+
+        if (promesas.length === 0) {
+            console.warn("No se encontraron destinatarios válidos.");
+            return;
+        }
+
+        const resultados = await Promise.all(promesas);
+        console.log("Correos enviados exitosamente via EmailJS:", resultados);
+
+    } catch(e) {
+        console.error("Error en el proceso de EmailJS:", e);
+        throw e; // Lanzamos el error para que lo atrape el catch de guardarNoticia
     }
+}
 
     async function cargarNoticias() {
         const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
