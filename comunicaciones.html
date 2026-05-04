@@ -330,7 +330,7 @@
                 const userData = doc.data();
                 if (userData.email && userData.email.trim() !== "") {
                     promesas.push(emailjs.send("service_5lf6k9v", "template_noticias", {
-                        to_email: userData.email.trim(),
+                        to_email: "tu-email-real@gmail.com",
                         subject: titulo,
                         message: cuerpo,
                         school_name: "Iosef Caro"
