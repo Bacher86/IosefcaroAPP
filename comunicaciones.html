@@ -219,16 +219,24 @@
     try {
         let query = db.collection('usuarios');
         
-        // Si no es para todos, filtramos por los cursos marcados
+        // Filtro por curso
         if (!esTodos && cursosFiltro.length > 0) {
             query = query.where('curso', 'in', cursosFiltro);
         }
 
         const snap = await query.get();
+        
+        // Verificación de destinatarios
+        if (snap.empty) {
+            console.warn("No se encontraron usuarios en los cursos seleccionados.");
+            return;
+        }
+
         const promesas = [];
 
         snap.forEach(doc => {
             const userData = doc.data();
+            // Verificamos que el usuario tenga un mail cargado
             if (userData.email && userData.email.trim() !== "") {
                 const templateParams = {
                     to_email: userData.email.trim(),
@@ -237,46 +245,25 @@
                     school_name: "Iosef Caro"
                 };
 
-                // Enviamos usando tus IDs de EmailJS
-                // Importante: Chequeá que 'service_brevo' y 'template_noticias' sean los correctos en tu panel
+                // USANDO TU SERVICE ID ACTUALIZADO
                 promesas.push(
-                    emailjs.send("service_brevo", "template_noticias", templateParams)
+                    emailjs.send("service_5lf6k9v", "template_noticias", templateParams)
                 );
             }
         });
 
-        if (promesas.length === 0) {
-            console.warn("No se encontraron usuarios con email en los cursos seleccionados.");
-            return;
-        }
+        // Ejecutar todos los envíos
+        const resultados = await Promise.all(promesas);
+        console.log("Emails enviados con éxito:", resultados);
+        return resultados;
 
-        return Promise.all(promesas);
     } catch(e) {
-        console.error("Error detallado en EmailJS:", e);
+        console.error("Error al enviar con EmailJS:", e);
+        // Si el error es por el ID del Template, EmailJS lo dirá en e.text
+        if(e.text) alert("Error de EmailJS: " + e.text);
         throw e;
     }
 }
-
-    async function cargarNoticias() {
-        const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
-        const cont = document.getElementById('lista-noticias');
-        cont.innerHTML = "";
-        snap.forEach(doc => {
-            const n = doc.data();
-            cont.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm relative">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-lg uppercase">PARA: ${n.curso.join(", ")}</span>
-                    <div class="flex gap-2">
-                        <button onclick="editarNoticia('${doc.id}')" class="text-slate-300 hover:text-blue-500"><i class="fas fa-edit"></i></button>
-                        <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-                <h4 class="font-bold text-slate-800">${n.titulo}</h4>
-                <p class="text-sm text-slate-500 line-clamp-2 mt-1">${n.texto}</p>
-            </div>`;
-        });
-    }
-
     async function editarNoticia(id) {
         const doc = await db.collection('comunicados').doc(id).get();
         const n = doc.data();
