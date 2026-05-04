@@ -316,30 +316,61 @@
     }
 
     // --- UTILIDADES ---
-    async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
-        try {
-            let query = db.collection('usuarios');
-            if (!esTodos && cursosFiltro.length > 0) {
-                query = query.where('curso', 'in', cursosFiltro);
-            }
-            const snap = await query.get();
-            if (snap.empty) return;
+   async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
+    console.log("Iniciando proceso de envío...");
+    console.log("Filtros:", { cursosFiltro, esTodos });
 
-            const promesas = [];
-            snap.forEach(doc => {
-                const userData = doc.data();
-                if (userData.email && userData.email.trim() !== "") {
-                    promesas.push(emailjs.send("service_5lf6k9v", "template_noticias", {
-                        to_email: "tu-email-real@gmail.com",
-                        subject: titulo,
-                        message: cuerpo,
-                        school_name: "Iosef Caro"
-                    }));
-                }
-            });
-            return await Promise.all(promesas);
-        } catch(e) { console.error("EmailJS Error:", e); }
+    try {
+        let query = db.collection('usuarios');
+        
+        // Si no es para todos, filtramos por los cursos seleccionados
+        if (!esTodos && cursosFiltro.length > 0) {
+            query = query.where('curso', 'in', cursosFiltro);
+        }
+
+        const snap = await query.get();
+        
+        if (snap.empty) {
+            console.warn("No se encontraron usuarios con esos criterios.");
+            alert("Atención: No hay usuarios registrados en los cursos seleccionados.");
+            return;
+        }
+
+        console.log(`Se encontraron ${snap.size} usuarios. Enviando mails...`);
+
+        const promesas = [];
+        snap.forEach(doc => {
+            const userData = doc.data();
+            const emailDestino = userData.email ? userData.email.trim() : null;
+
+            if (emailDestino) {
+                console.log(`Preparando mail para: ${emailDestino}`);
+                
+                const parametros = {
+                    to_email: emailDestino,
+                    subject: titulo,
+                    message: cuerpo,
+                    school_name: "Iosef Caro"
+                };
+
+                // Enviamos y capturamos el resultado de cada mail
+                const p = emailjs.send("service_5lf6k9v", "template_noticias", parametros)
+                    .then(res => console.log(`✅ Enviado a ${emailDestino}:`, res.status, res.text))
+                    .catch(err => console.error(`❌ Error enviando a ${emailDestino}:`, err));
+                
+                promesas.push(p);
+            } else {
+                console.warn(`El usuario ${doc.id} no tiene un email válido.`);
+            }
+        });
+
+        return await Promise.all(promesas);
+
+    } catch(e) {
+        console.error("Error crítico en la función de envío:", e);
+        alert("Error en el proceso de envío. Revisar consola (F12).");
     }
+}
 
     async function eliminarDoc(col, id) {
         if(confirm("¿Eliminar permanentemente?")) { 
