@@ -316,14 +316,11 @@
     }
 
     // --- UTILIDADES ---
-   async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
+  async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
     console.log("Iniciando proceso de envío...");
-    console.log("Filtros:", { cursosFiltro, esTodos });
 
     try {
         let query = db.collection('usuarios');
-        
-        // Si no es para todos, filtramos por los cursos seleccionados
         if (!esTodos && cursosFiltro.length > 0) {
             query = query.where('curso', 'in', cursosFiltro);
         }
@@ -331,44 +328,41 @@
         const snap = await query.get();
         
         if (snap.empty) {
-            console.warn("No se encontraron usuarios con esos criterios.");
-            alert("Atención: No hay usuarios registrados en los cursos seleccionados.");
+            console.warn("No se encontraron usuarios.");
             return;
         }
-
-        console.log(`Se encontraron ${snap.size} usuarios. Enviando mails...`);
 
         const promesas = [];
         snap.forEach(doc => {
             const userData = doc.data();
-            const emailDestino = userData.email ? userData.email.trim() : null;
+            
+            // LÓGICA DE RESCATE:
+            // Si el campo 'email' existe, lo usa. Si no, usa el ID del documento (que es tu mail).
+            let emailDestino = userData.email || doc.id; 
 
-            if (emailDestino) {
-                console.log(`Preparando mail para: ${emailDestino}`);
+            // Validamos que realmente parezca un email (que tenga un @)
+            if (emailDestino && emailDestino.includes('@')) {
+                console.log(`Enviando a: ${emailDestino.trim()}`);
                 
-                const parametros = {
-                    to_email: emailDestino,
+                const p = emailjs.send("service_5lf6k9v", "template_noticias", {
+                    to_email: emailDestino.trim(),
                     subject: titulo,
                     message: cuerpo,
                     school_name: "Iosef Caro"
-                };
-
-                // Enviamos y capturamos el resultado de cada mail
-                const p = emailjs.send("service_5lf6k9v", "template_noticias", parametros)
-                    .then(res => console.log(`✅ Enviado a ${emailDestino}:`, res.status, res.text))
-                    .catch(err => console.error(`❌ Error enviando a ${emailDestino}:`, err));
+                })
+                .then(res => console.log(`✅ Éxito para ${emailDestino}:`, res.status))
+                .catch(err => console.error(`❌ Error para ${emailDestino}:`, err));
                 
                 promesas.push(p);
             } else {
-                console.warn(`El usuario ${doc.id} no tiene un email válido.`);
+                console.warn(`ID ${doc.id} no parece un email válido.`);
             }
         });
 
         return await Promise.all(promesas);
 
     } catch(e) {
-        console.error("Error crítico en la función de envío:", e);
-        alert("Error en el proceso de envío. Revisar consola (F12).");
+        console.error("Error crítico:", e);
     }
 }
 
