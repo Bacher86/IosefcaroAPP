@@ -39,562 +39,569 @@
 </head>
 <body>
 
-    <!-- ══ LOGIN ══ -->
     <div id="login-screen" class="fixed inset-0 bg-white z-[7000] flex flex-col items-center justify-center p-8 text-center">
         <div class="w-20 h-20 bg-slate-900 rounded-[2rem] mb-6 flex items-center justify-center text-white text-3xl"><i class="fas fa-university"></i></div>
         <h2 class="text-3xl font-black mb-2 tracking-tighter text-slate-900">Portal de Familias</h2>
         <p class="text-slate-400 text-sm mb-8 font-medium">Accedé con tu email registrado</p>
-        <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Tu email">
-        <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar al Portal</button>
+        <input type="email" id="login-email" class="w-full max-w-sm p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none border focus:border-slate-800 transition" placeholder="Tu email registrado">
+        <button onclick="login()" class="w-full max-w-sm bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">Entrar al Portal</button>
     </div>
 
-    <header class="p-5 bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b flex justify-between items-center">
-        <div>
-            <h1 id="user-display-name" class="font-black text-xl italic text-slate-900">Hola...</h1>
-            <select id="select-hijo" onchange="cambiarHijo(this.value)" class="mt-2 bg-blue-50 text-blue-700 font-black text-[10px] uppercase px-3 py-1.5 rounded-lg outline-none"></select>
+    <header class="p-4 bg-white border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <div id="hijo-iniciales" class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-sm">--</div>
+            <div>
+                <select id="select-hijo" onchange="cambiarHijo(this.value)" class="block font-black text-base text-slate-900 bg-transparent border-none outline-none cursor-pointer"></select>
+                <p id="hijo-curso" class="text-[10px] text-slate-400 font-extrabold uppercase mt-0.5">CURSO</p>
+            </div>
         </div>
-        <button onclick="switchTab('perfil')" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 shadow-inner">
-            <i class="fas fa-cog"></i>
-        </button>
+        <button onclick="cerrarSesion()" class="w-9 h-9 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center font-bold"><i class="fas fa-power-off"></i></button>
     </header>
 
-    <main class="p-4 max-w-lg mx-auto">
+    <main class="p-4 max-w-md mx-auto space-y-6">
 
-        <!-- ── MURO ── -->
-        <section id="tab-muro" class="tab-content active space-y-4">
-            <div class="flex gap-2 overflow-x-auto pb-2">
-                <button onclick="cargarMuro('todos')"    id="filter-todos"    class="filter-btn active whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm transition-all">Todos</button>
-                <button onclick="cargarMuro('noleidos')" id="filter-noleidos" class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm transition-all text-blue-600">No leídos</button>
-                <button onclick="cargarMuro('leidos')"   id="filter-leidos"   class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm transition-all text-slate-400">Leídos</button>
+        <section id="tab-novedades" class="tab-content active space-y-4">
+            <h2 class="text-xl font-black text-slate-800 tracking-tight">Comunicados Oficiales</h2>
+            <div id="lista-comunicados" class="space-y-3">
+                <div class="text-center py-12 text-slate-400 text-sm font-bold">Cargando novedades...</div>
             </div>
-            <div id="muro-posts" class="space-y-4"></div>
         </section>
 
-        <!-- ── AGENDA ── -->
-        <section id="tab-agenda" class="tab-content space-y-4">
-            <h3 class="font-black text-2xl italic text-slate-900">Calendario Institucional</h3>
-            <div id="container-agenda" class="space-y-3"></div>
-        </section>
-
-        <!-- ── ACADÉMICO ── -->
-        <section id="tab-academico" class="tab-content space-y-6">
-            <div class="flex justify-between items-end">
-                <h3 class="font-black text-2xl italic text-slate-900">Desempeño</h3>
-                <button onclick="generarBoletinPDF()" class="bg-blue-600 text-white text-[10px] font-bold px-4 py-2 rounded-xl shadow-lg uppercase"><i class="fas fa-file-pdf mr-1"></i> Exportar</button>
-            </div>
-            <div class="relative bg-slate-200 p-1 rounded-2xl flex items-center">
-                <div id="switch-selector" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1"></div>
-                <button onclick="setModalidad('num')"  class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 transition-colors" id="txt-num">Numérico</button>
-                <button onclick="setModalidad('rite')" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500 transition-colors" id="txt-rite">RITE</button>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white p-5 rounded-3xl border shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Faltas</p>
-                    <p id="count-faltas" class="text-3xl font-black text-slate-900">0</p>
+        <section id="tab-academico" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-3xl border shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Modalidad de Filtro</span>
+                    <div class="relative bg-slate-100 p-1 rounded-xl flex w-36 h-9 items-center">
+                        <div id="switch-selector" class="absolute w-[68px] h-7 bg-white rounded-lg shadow-sm switch-bg" style="left: 4px;"></div>
+                        <button onclick="setModalidad('num')" class="flex-1 text-center font-bold text-xs z-10 text-slate-700">NUM</button>
+                        <button onclick="setModalidad('rite')" class="flex-1 text-center font-bold text-xs z-10 text-slate-700">RITE</button>
+                    </div>
                 </div>
-                <div class="bg-white p-5 rounded-3xl border shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Tardanzas</p>
-                    <p id="count-tardes" class="text-3xl font-black text-slate-900">0</p>
-                </div>
-            </div>
-            <div id="container-notas" class="space-y-4"></div>
-
-            <!-- Informes pedagógicos -->
-            <div class="mt-2">
-                <h4 class="font-black text-lg text-slate-800 mb-3">Informes de los Docentes</h4>
-                <div id="container-informes" class="space-y-3"></div>
-            </div>
-        </section>
-
-        <!-- ── MENSAJES ── -->
-        <section id="tab-mensajes" class="tab-content" style="padding-bottom:0;">
-            <!-- Estado vacío -->
-            <div id="msg-fam-empty" class="flex flex-col items-center justify-center py-16 text-center px-4">
-                <div class="w-16 h-16 bg-slate-100 rounded-[1.5rem] flex items-center justify-center text-slate-300 text-3xl mb-4"><i class="fas fa-comments"></i></div>
-                <p class="font-black text-slate-700 text-lg">Sin mensajes aún</p>
-                <p class="text-slate-400 text-sm mt-2 mb-6">Escribile directamente a la secretaría de tu nivel.</p>
-                <button onclick="iniciarConvFamilia()" class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
-                    <i class="fas fa-pencil mr-2"></i> Escribir a secretaría
+                
+                <h3 class="font-black text-sm text-slate-800 mb-3 border-b pb-2">Calificaciones</h3>
+                <div id="container-notas" class="space-y-3"></div>
+                
+                <button onclick="generarBoletinPDF()" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-file-pdf"></i> DESCARGAR BOLETÍN (PDF)
                 </button>
             </div>
 
-            <!-- Chat -->
-            <div id="msg-fam-chat" class="hidden flex-col" style="height:calc(100vh - 185px);">
-                <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border mb-4">
-                    <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0">SC</div>
-                    <div>
-                        <p class="font-black text-sm" id="msg-fam-nombre">Secretaría</p>
-                        <p class="text-[10px] text-slate-400 font-bold">Iosef Caro</p>
+            <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+                <h3 class="font-black text-sm text-slate-800 border-b pb-2">Estadísticas de Asistencia</h3>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-slate-50 p-3 rounded-2xl">
+                        <div class="text-2xl font-black text-slate-800" id="total-inasistencias">0</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">Inasistencias</div>
                     </div>
-                </div>
-                <div id="msg-fam-mensajes" class="flex-1 overflow-y-auto flex flex-col gap-2 bg-white rounded-2xl p-4 border" style="scroll-behavior:smooth;"></div>
-                <div class="bg-white border rounded-2xl p-3 mt-3 flex gap-2 items-end">
-                    <textarea id="msg-fam-input" rows="1" placeholder="Escribí tu mensaje..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs resize-none outline-none font-sans" style="max-height:80px; font-family: inherit;"
-                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();msgFamEnviar();}"></textarea>
-                    <button onclick="msgFamEnviar()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0 active:scale-95 transition-all">
-                        <i class="fas fa-paper-plane text-xs"></i>
-                    </button>
+                    <div class="bg-slate-50 p-3 rounded-2xl">
+                        <div class="text-2xl font-black text-slate-800" id="total-tardanzas">0</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">Tardanzas</div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- ── PERFIL ── -->
-        <section id="tab-perfil" class="tab-content space-y-6">
-            <h3 class="font-black text-2xl italic text-slate-900">Mi Perfil</h3>
-            <div class="bg-white p-6 rounded-[2rem] border shadow-sm space-y-4">
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Nombre Completo</label>
-                    <input type="text" id="perfil-nombre" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700">
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Teléfono de Contacto</label>
-                    <input type="text" id="perfil-tel" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-700">
-                </div>
-                <button onclick="guardarPerfil()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg shadow-blue-100">Guardar Cambios</button>
-                <div class="mt-4 pt-4 border-t border-slate-100">
-                    <div class="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
-                        <div>
-                            <p class="text-xs font-black text-slate-800 uppercase">Notificaciones</p>
-                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Alertas en tu dispositivo</p>
-                        </div>
-                        <button onclick="activarNotificaciones()" id="btn-push" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase active:scale-95 transition-all">Activar</button>
-                    </div>
-                </div>
-                <button onclick="location.reload()" class="w-full text-slate-400 text-xs font-bold mt-4">Cerrar Sesión</button>
+        <section id="tab-informes" class="tab-content space-y-4">
+            <h2 class="text-xl font-black text-slate-800 tracking-tight">Informes EOE del Gabinete</h2>
+            <div id="lista-eoe-fam" class="space-y-3">
+                <div class="text-center py-12 text-slate-400 text-sm font-bold">No hay informes de orientación para el alumno seleccionado.</div>
             </div>
         </section>
+
+        <section id="tab-mensajes" class="tab-content space-y-4">
+            <div class="bg-white border rounded-3xl shadow-sm flex flex-col h-[480px] overflow-hidden">
+                <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
+                    <div>
+                        <h3 class="font-black text-sm">Contacto Directo</h3>
+                        <p class="text-[9px] text-slate-400 font-extrabold tracking-wider uppercase">Secretaría de Nivel</p>
+                    </div>
+                    <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                </div>
+                <div id="msg-fam-chat" class="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 flex flex-col">
+                    <div class="text-center py-16 text-slate-400 text-sm font-bold">Cargando chat de secretaría...</div>
+                </div>
+                <div class="p-3 bg-white border-t flex gap-2">
+                    <input type="text" id="msg-fam-input" placeholder="Escribe un mensaje..." class="flex-1 bg-slate-100 px-4 rounded-xl text-xs outline-none focus:bg-white focus:border-slate-800 border transition">
+                    <button onclick="msgFamEnviar()" class="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center shadow"><i class="fas fa-paper-plane text-xs"></i></button>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- ══ NAV ══ -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-[1000]">
-        <button onclick="switchTab('muro')"     id="nav-muro"     class="nav-btn active flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400"><i class="fas fa-home text-xl"></i><span>MURO</span></button>
-        <button onclick="switchTab('agenda')"   id="nav-agenda"   class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400"><i class="fas fa-calendar-check text-xl"></i><span>AGENDA</span></button>
-        <button onclick="switchTab('academico')" id="nav-academico" class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400"><i class="fas fa-star text-xl"></i><span>BOLETÍN</span></button>
-        <button onclick="switchTab('mensajes')" id="nav-mensajes" class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex justify-around items-center z-[5000] shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+        <button onclick="switchTab('novedades')" class="nav-btn active flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1">
+            <i class="fas fa-newspaper text-lg"></i>
+            <span>NOVEDADES</span>
+        </button>
+        <button onclick="switchTab('academico')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1">
+            <i class="fas fa-chart-bar text-lg"></i>
+            <span>ACADÉMICO</span>
+        </button>
+        <button onclick="switchTab('informes')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1">
+            <i class="fas fa-user-shield text-lg"></i>
+            <span>EOE</span>
+        </button>
+        <button onclick="switchTab('mensajes')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1 relative">
             <div class="relative">
-                <i class="fas fa-comments text-xl"></i>
-                <span id="badge-msg-fam" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span>
+                <i class="fas fa-paper-plane text-lg"></i>
+                <span id="badge-msg-fam" class="hidden absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold">!</span>
             </div>
             <span>MENSAJES</span>
         </button>
     </nav>
 
-    <!-- Modal noticia -->
-    <div id="modal-noticia" class="fixed inset-0 bg-slate-900/90 z-[8000] hidden flex-col p-4 backdrop-blur-sm">
-        <div class="flex justify-end p-2"><button onclick="cerrarNoticia()" class="text-white text-4xl">&times;</button></div>
-        <div class="bg-white rounded-[2.5rem] w-full max-w-lg mx-auto overflow-y-auto flex-1 shadow-2xl">
-            <div id="modal-contenido" class="p-6"></div>
-        </div>
-    </div>
-
-    <!-- Iosi -->
-    <div class="iosi-btn" onclick="toggleIosi()"><i class="fas fa-comment-dots"></i></div>
+    <div onclick="toggleIosi()" class="iosi-btn"><i class="fas fa-robot"></i></div>
     <div id="iosi-modal">
-        <div class="p-5 border-b border-white/10 flex justify-between items-center bg-slate-900 text-white">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center"><i class="fas fa-comment-dots text-xs"></i></div>
-                <div><h2 class="font-black text-sm">Iosi Inteligente</h2><p class="text-green-500 text-[8px] font-black uppercase">Analizando datos en tiempo real</p></div>
+        <div class="p-4 bg-slate-950 text-white flex justify-between items-center border-b border-slate-800">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm"><i class="fas fa-robot"></i></div>
+                <div>
+                    <h4 class="font-black text-xs">Asistente Iosi AI</h4>
+                    <p class="text-[9px] text-emerald-400 font-bold uppercase">En línea</p>
+                </div>
             </div>
-            <button onclick="toggleIosi()" class="text-2xl">&times;</button>
+            <button onclick="toggleIosi()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
         </div>
-        <div id="iosi-chat"></div>
-        <div class="p-3 bg-slate-800/50 flex gap-2">
-            <input type="text" id="iosi-input" class="flex-1 bg-slate-900 border border-white/10 p-3 rounded-xl text-white text-xs outline-none" placeholder="Preguntame lo que quieras...">
-            <button onclick="enviarIosi()" class="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-paper-plane text-xs"></i></button>
+        <div id="iosi-chat">
+            <div class="bubble-iosi">¡Hola! Soy Iosi, tu asistente institucional de Iosef Caro. ¿En qué puedo ayudarte hoy sobre el portal escolar?</div>
+        </div>
+        <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+            <input type="text" id="iosi-input" placeholder="Pregúntale algo a Iosi..." class="flex-1 bg-slate-800 text-white text-xs px-4 rounded-xl outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter') enviarPreguntaIosi();">
+            <button onclick="enviarPreguntaIosi()" class="w-9 h-9 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow"><i class="fas fa-paper-plane text-xs"></i></button>
         </div>
     </div>
 
-    <!-- PDF template -->
-    <div id="pdf-template" style="display:none; padding: 40px; font-family: sans-serif;">
-        <h2 style="text-align:center;">INFORME ACADÉMICO - IOSEF CARO</h2>
-        <p><b>Alumno:</b> <span id="pdf-nombre"></span> | <b>Fecha:</b> <span id="pdf-fecha"></span></p>
-        <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
-            <thead><tr style="background:#eee;"><th style="border:1px solid #000;padding:8px;">Materia</th><th style="border:1px solid #000;padding:8px;">Nota</th></tr></thead>
+    <div id="pdf-template" class="hidden p-8 bg-white text-slate-900 text-xs" style="width:595px;font-family:sans-serif;">
+        <div class="text-center mb-6">
+            <h1 class="text-xl font-bold uppercase">Colegio Iosef Caro</h1>
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest">Boletín Oficial de Calificaciones</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6 border-b pb-4">
+            <div>
+                <p><strong>Alumno:</strong> <span id="pdf-nombre">--</span></p>
+                <p><strong>Nivel / Curso:</strong> <span id="pdf-nivel-curso">--</span></p>
+            </div>
+            <div class="text-right">
+                <p><strong>Fecha Emisión:</strong> <span id="pdf-fecha">--</span></p>
+                <p><strong>Periodo:</strong> Activo</p>
+            </div>
+        </div>
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-slate-100">
+                    <th class="border p-2 text-left">Materia</th>
+                    <th class="border p-2 text-center">Calificación</th>
+                </tr>
+            </thead>
             <tbody id="pdf-body"></tbody>
         </table>
+        <div class="mt-12 grid grid-cols-2 gap-8 text-center">
+            <div>
+                <div class="border-t border-slate-400 pt-2 text-[10px]">Firma y Sello Rectoría</div>
+            </div>
+            <div>
+                <div class="border-t border-slate-400 pt-2 text-[10px]">Firma y Sello Coordinador</div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const messaging = firebase.messaging();
+<script>
+const firebaseConfig = {
+  apiKey: "BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc",
+  projectId: "app-iosefcaro",
+  messagingSenderId: "651320124248",
+  appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-        let userData = null, userEmail = "", listaHijos = [], alumnoSeleccionadoId = null;
-        let brain = { noticias: [], faltas: [], notas: [], agenda: [] };
-        let modalidadFiltro = 'num';
-        // Mensajería
-        let msgFamConvId = null, msgFamUnsub = null, msgFamNivelSec = null;
+let familiaEmail = "";
+let listaHijos = [];
+let alumnoSeleccionadoId = "";
+let modalidadFiltro = 'num';
+let brain = { notas: [], asistencias: [] };
+let msgFamConvId = null;
+let msgFamNivelSec = null;
+let msgFamUnsub = null;
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('firebase-messaging-sw.js')
-                .then(reg => console.log('SW registrado'))
-                .catch(err => console.warn('Error SW', err));
+async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    if(!email) return alert("Escribe tu correo electrónico.");
+    try {
+        const snap = await db.collection('usuarios').where('email','==',email).get();
+        if(snap.empty) {
+            alert("No estás registrado.");
+            return;
         }
+        familiaEmail = email;
+        sessionStorage.setItem('familia_logged_email', email);
+        document.getElementById('login-screen').classList.add('hidden');
+        cargarFamilia();
+    } catch(e) {
+        console.error(e);
+        alert("Error de conexión.");
+    }
+}
 
-        // ════ LOGIN ════
-        async function login() {
-            userEmail = document.getElementById('login-email').value.toLowerCase().trim();
-            const doc = await db.collection('usuarios').doc(userEmail).get();
-            if (doc.exists) {
-                userData = doc.data();
-                if (userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('user-display-name').innerText = "Familia " + userData.nombre.split(' ')[0];
-                document.getElementById('perfil-nombre').value = userData.telefono ? userData.nombre : userData.nombre;
-                document.getElementById('perfil-nombre').value = userData.nombre;
-                document.getElementById('perfil-tel').value    = userData.telefono || "";
+window.onload = () => {
+    const guardado = sessionStorage.getItem('familia_logged_email');
+    if(guardado) {
+        familiaEmail = guardado;
+        document.getElementById('login-screen').classList.add('hidden');
+        cargarFamilia();
+    }
+};
 
-                if (userData.fcmTokens?.length > 0 && Notification.permission === 'granted') {
-                    const btn = document.getElementById('btn-push');
-                    btn.innerText = "ACTIVADO";
-                    btn.classList.replace('bg-slate-900', 'bg-emerald-500');
-                }
+function cerrarSesion() {
+    sessionStorage.removeItem('familia_logged_email');
+    location.reload();
+}
 
-                const select = document.getElementById('select-hijo');
-                select.innerHTML = ""; listaHijos = [];
-                if (userData.hijos?.length > 0) {
-                    for (let hijoObj of userData.hijos) {
-                        const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
-                        snap.forEach(d => {
-                            listaHijos.push({ id: d.id, nombre: d.data().nombre });
-                            select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
-                        });
-                    }
-                }
-                if (listaHijos.length > 0) { alumnoSeleccionadoId = listaHijos[0].id; await inicializarApp(); }
-                // Mensajería: buscar secretaría del nivel
-                await inicializarMensajeria();
-            } else { alert("Acceso denegado. Email no registrado."); }
+async function cargarFamilia() {
+    try {
+        const snap = await db.collection('alumnos').where('familiaEmail','==',familiaEmail).get();
+        listaHijos = [];
+        snap.forEach(d => {
+            listaHijos.push({ id: d.id, ...d.data() });
+        });
+        if(listaHijos.length === 0) return alert("No hay alumnos vinculados a tu email.");
+        
+        const sel = document.getElementById('select-hijo');
+        sel.innerHTML = "";
+        listaHijos.forEach(h => {
+            sel.innerHTML += `<option value="${h.id}">${h.nombre}</option>`;
+        });
+        alumnoSeleccionadoId = listaHijos[0].id;
+        inicializarApp();
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function cambiarHijo(id) {
+    alumnoSeleccionadoId = id;
+    inicializarApp();
+}
+
+function inicializarApp() {
+    const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+    if(!hijo) return;
+    
+    document.getElementById('hijo-iniciales').innerText = (hijo.nombre || "?").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
+    document.getElementById('hijo-curso').innerText = hijo.curso || "SIN CURSO";
+    
+    cargarNoticias(hijo.nivel);
+    cargarAcademico();
+    cargarAsistenciaConsolidada();
+    inicializarChatFamilia(hijo.nivel);
+    cargarInformesEOEFamilia();
+}
+
+// CARGAR COMUNICADOS / NOTICIAS
+async function cargarNoticias(nivel) {
+    const cont = document.getElementById('lista-comunicados');
+    cont.innerHTML = "";
+    try {
+        const snap = await db.collection('noticias').where('nivel','==',nivel).orderBy('fecha','desc').get();
+        if(snap.empty) {
+            cont.innerHTML = `<div class="text-center py-12 text-slate-400 font-bold text-xs">Sin comunicados oficiales aún.</div>`;
+            return;
         }
-
-        async function inicializarApp() {
-            await cargarMuro('todos');
-            await cargarAcademico();
-            await cargarAgenda();
-
-            const snap = await db.collection('comunicados').get();
-            let sinLeer = 0;
-            snap.forEach(doc => { if (!localStorage.getItem('read_' + doc.id)) sinLeer++; });
-            let saludo = `¡Hola! He analizado los datos de tu hijo/a. `;
-            saludo += sinLeer > 0 ? `⚠️ Tenés <b>${sinLeer} comunicado/s sin leer</b>.` : `¡Estás al día con todos los comunicados!`;
-            document.getElementById('iosi-chat').innerHTML = `<div class="bubble-iosi">${saludo}</div>`;
-        }
-
-        // ════ MURO ════
-        async function cargarMuro(filtro = 'todos') {
-            const container = document.getElementById('muro-posts');
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('filter-' + filtro).classList.add('active');
-
-            // Filtrar por nivel del alumno/familia
-            const nivelFamilia = userData.nivel || null;
-            let query = db.collection('comunicados').orderBy('creadoEn', 'desc');
-            const snap = await query.get();
-            container.innerHTML = ""; brain.noticias = [];
-
-            snap.forEach(doc => {
-                const p = doc.data(), id = doc.id;
-                const isRead = localStorage.getItem('read_' + id);
-                if (filtro === 'leidos'   && !isRead) return;
-                if (filtro === 'noleidos' && isRead)  return;
-                brain.noticias.push({ id, ...p });
-                let img = p.link ? `<img src="${p.link}" class="w-full h-40 object-cover rounded-2xl mb-4">` : "";
-                container.innerHTML += `
-                <div onclick="abrirNoticia('${id}')" class="bg-white p-6 rounded-[2rem] border shadow-sm transition-all active:scale-95 ${isRead ? 'read-post' : ''}">
-                    <div class="flex justify-between mb-4">
-                        <span class="text-[9px] font-black bg-blue-50 text-blue-800 px-3 py-1 rounded-full uppercase">${p.tag || 'INFO'}</span>
-                        ${isRead ? '<span class="text-[9px] font-bold text-emerald-500 uppercase">✓ LEÍDO</span>' : '<span class="text-[9px] font-bold text-blue-600 uppercase">● NUEVO</span>'}
+        snap.forEach(doc => {
+            const n = doc.data();
+            const f = n.fecha ? (n.fecha.toDate ? n.fecha.toDate().toLocaleDateString() : new Date(n.fecha).toLocaleDateString()) : "";
+            cont.innerHTML += `
+                <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-3">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="bg-blue-50 text-blue-700 font-black text-[9px] px-2 py-0.5 rounded-full uppercase">${n.tipo || 'General'}</span>
+                        <span class="text-[10px] text-slate-400 font-bold">${f}</span>
                     </div>
-                    ${img}
-                    <h2 class="text-xl font-black text-slate-900">${p.titulo}</h2>
-                    <p class="text-slate-500 text-sm mt-2 line-clamp-2">${p.texto}</p>
-                </div>`;
-            });
+                    <h3 class="font-black text-slate-800 text-sm leading-tight">${n.titulo}</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">${n.cuerpo}</p>
+                </div>
+            `;
+        });
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+// NOTAS DEL HIJO
+async function cargarAcademico() {
+    const container = document.getElementById('container-notas');
+    container.innerHTML = "";
+    
+    // Período Activo
+    const perSnap = await db.collection('periodos').where('activo','==',true).limit(1).get();
+    if(perSnap.empty) {
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs font-bold">Sin período activo para calificaciones.</div>`;
+        return;
+    }
+    const pId = perSnap.docs[0].id;
+    const pSlug = perSnap.docs[0].data().slug;
+
+    const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+    
+    // Visibilidad del período por curso
+    const visDoc = await db.collection('config_visibilidad').doc(pId).get();
+    let esVisible = true;
+    if(visDoc.exists) {
+        const visData = visDoc.data();
+        if(visData[`${pSlug}_${hijo.curso}`] === false) {
+            esVisible = false;
+        }
+    }
+
+    if(!esVisible) {
+        container.innerHTML = `
+            <div class="bg-amber-50 text-amber-800 p-4 rounded-2xl text-xs font-bold border border-amber-200">
+                Las calificaciones de este período se encuentran bajo revisión institucional. Próximamente estarán disponibles.
+            </div>
+        `;
+        return;
+    }
+
+    const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
+    brain.notas = [];
+    nSnap.forEach(doc => {
+        const n = doc.data();
+        if(n.periodo === pSlug) {
+            brain.notas.push(n);
+        }
+    });
+
+    if(brain.notas.length === 0) {
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs font-bold">Aún no se han registrado calificaciones para este período.</div>`;
+        return;
+    }
+
+    brain.notas.forEach(n => {
+        let notaStr = "";
+        if(modalidadFiltro === 'num') {
+            notaStr = `
+                <div class="flex gap-2 font-black text-xs text-slate-700">
+                    <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded">N1: ${n.n1 || '-'}</span>
+                    <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded">N2: ${n.n2 || '-'}</span>
+                </div>
+            `;
+        } else {
+            const r = n.rite || '-';
+            let color = 'bg-slate-100 text-slate-600';
+            if(r==='TEA') color='bg-emerald-100 text-emerald-800';
+            if(r==='TEP') color='bg-blue-100 text-blue-800';
+            if(r==='TED') color='bg-amber-100 text-amber-800';
+            notaStr = `<span class="${color} font-black text-xs px-2.5 py-1 rounded-lg uppercase">${r}</span>`;
         }
 
-        async function abrirNoticia(id) {
-            const doc = await db.collection('comunicados').doc(id).get();
-            const p = doc.data();
-            let img = p.link ? `<img src="${p.link}" class="w-full h-auto rounded-2xl mb-6">` : "";
-            document.getElementById('modal-contenido').innerHTML = `${img}<h2 class="text-2xl font-black">${p.titulo}</h2><hr class="my-4"><p class="text-slate-600 whitespace-pre-wrap">${p.texto}</p>
-                <button onclick="confirmarLectura('${id}')" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold mt-8">Confirmar Lectura</button>`;
-            document.getElementById('modal-noticia').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+        container.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border">
+                <div>
+                    <h4 class="font-extrabold text-xs text-slate-800 uppercase">${n.materia}</h4>
+                    <p class="text-[9px] text-slate-400 font-semibold mt-1">Prof: ${n.profesor || 'Docente'}</p>
+                </div>
+                ${notaStr}
+            </div>
+        `;
+    });
+}
+
+// ASISTENCIA ESTADÍSTICAS
+async function cargarAsistenciaConsolidada() {
+    const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+    try {
+        const snap = await db.collection('asistencias').where('alumnoId','==',alumnoSeleccionadoId).where('curso','==',hijo.curso).get();
+        let faltas = 0, tardanzas = 0;
+        snap.forEach(doc => {
+            const d = doc.data();
+            if(d.estado === 'ausente') faltas += 1;
+            if(d.estado === 'media-falta') faltas += 0.5;
+            if(d.tardanza === 'si') tardanzas += 1;
+        });
+        document.getElementById('total-inasistencias').innerText = faltas;
+        document.getElementById('total-tardanzas').innerText = tardanzas;
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+// CARGAR INFORMES EOE DE FAMILIA
+async function cargarInformesEOEFamilia() {
+    const container = document.getElementById('lista-eoe-fam');
+    container.innerHTML = "";
+    try {
+        const snap = await db.collection('eoe').where('alumnoId','==',alumnoSeleccionadoId).orderBy('fecha','desc').get();
+        if(snap.empty) {
+            container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm font-bold">No hay informes de orientación escolar registrados.</div>`;
+            return;
         }
-
-        async function confirmarLectura(id) {
-            localStorage.setItem('read_' + id, 'true');
-            await db.collection('comunicados').doc(id).update({ vistas: firebase.firestore.FieldValue.increment(1) });
-            await db.collection('comunicados').doc(id).collection('leidos').doc(userEmail).set({ nombre: userData.nombre, fecha: new Date().toISOString() });
-            cerrarNoticia();
-            cargarMuro(document.querySelector('.filter-btn.active').id.replace('filter-', ''));
-        }
-
-        function cerrarNoticia() { document.getElementById('modal-noticia').style.display = 'none'; document.body.style.overflow = 'auto'; }
-
-        // ════ ACADÉMICO ════
-        async function cargarAcademico() {
-            const container = document.getElementById('container-notas');
-            const nSnap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas').get();
-            container.innerHTML = ""; brain.notas = [];
-            nSnap.forEach(doc => {
-                const n = doc.data(); brain.notas.push(n);
-                if ((modalidadFiltro === 'rite' && n.rite) || (modalidadFiltro === 'num' && !n.rite)) {
-                    let notaHtml = n.rite
-                        ? `<div class="bg-blue-600 text-white p-3 rounded-xl text-center font-black text-xs uppercase">${n.rite}</div>`
-                        : `<div class="grid grid-cols-3 gap-2">
-                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">1B</p><p class="font-black text-xs">${n.n1||'-'}</p></div>
-                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">2B</p><p class="font-black text-xs">${n.n2||'-'}</p></div>
-                            <div class="bg-slate-50 p-2 rounded-xl text-center"><p class="text-[7px] font-bold text-slate-400 uppercase">3B</p><p class="font-black text-xs">${n.n3||'-'}</p></div>
-                           </div>`;
-                    container.innerHTML += `<div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${notaHtml}</div>`;
-                }
-            });
-
-            const aSnap = await db.collection('asistencia').where('alumnoId', '==', alumnoSeleccionadoId).get();
-            let f = 0, t = 0; brain.faltas = [];
-            aSnap.forEach(d => { if (d.data().estado === 'A') { f++; brain.faltas.push(d.data().fecha); } if (d.data().estado === 'T') t++; });
-            document.getElementById('count-faltas').innerText = f;
-            document.getElementById('count-tardes').innerText = t;
-
-            // Informes pedagógicos (NUEVO)
-            await cargarInformesFamilia();
-        }
-
-        async function cargarInformesFamilia() {
-            const cont = document.getElementById('container-informes');
-            const snap = await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('informes')
-                .where('visibleFamilia', '==', true)
-                .orderBy('fecha', 'desc').limit(10).get();
-            if (snap.empty) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-4">Sin informes cargados aún.</p>`; return; }
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const inf = doc.data();
-                const d   = new Date(inf.fecha).toLocaleDateString('es-AR');
-                const ind = [];
-                if (inf.indicadores?.participacion) ind.push('Participación activa');
-                if (inf.indicadores?.entregas)      ind.push('Entregas a tiempo');
-                if (inf.indicadores?.conducta)      ind.push('Buena conducta');
-                if (inf.indicadores?.progreso)      ind.push('Progreso notable');
-                cont.innerHTML += `<div class="informe-card">
-                    <div class="flex items-start justify-between mb-2">
-                        <div>
-                            <span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span>
-                            <span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span>
-                        </div>
-                        <span class="text-[9px] text-slate-400 font-bold">${d}</span>
+        snap.forEach(doc => {
+            const inf = doc.data();
+            const f = inf.fecha ? (inf.fecha.toDate ? inf.fecha.toDate().toLocaleDateString() : new Date(inf.fecha).toLocaleDateString()) : "";
+            container.innerHTML += `
+                <div class="informe-card space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="bg-violet-100 text-violet-800 font-extrabold text-[9px] px-2.5 py-0.5 rounded-full uppercase">${inf.area}</span>
+                        <span class="text-[10px] text-slate-400 font-bold">${f}</span>
                     </div>
-                    <p class="text-sm text-slate-700 mt-2">${inf.texto}</p>
-                    ${ind.length > 0 ? `<div class="flex flex-wrap gap-1 mt-3">${ind.map(i => `<span class="text-[9px] bg-emerald-50 text-emerald-700 font-black px-2 py-0.5 rounded-full">${i}</span>`).join('')}</div>` : ''}
-                    <p class="text-[10px] text-slate-400 mt-2 font-bold">Prof. ${inf.docenteNombre}</p>
-                </div>`;
-            });
+                    <p class="text-xs text-slate-700 leading-relaxed">${inf.detalle}</p>
+                    <p class="text-[9px] text-slate-400 font-semibold text-right">Por: ${inf.docenteNombre || "EOE"}</p>
+                </div>
+            `;
+        });
+    } catch (e) {
+        console.error("Error al cargar informes EOE:", e);
+    }
+}
+
+// PORTAL DE CHAT CON LA SECRETARÍA
+function inicializarChatFamilia(nivel) {
+    msgFamNivelSec = nivel;
+    msgFamConvId = `conv_${nivel}`;
+    
+    if(msgFamUnsub) msgFamUnsub();
+    
+    msgFamUnsub = db.collection('conversaciones').doc(msgFamConvId).collection('mensajes').orderBy('fecha','asc').onSnapshot(snap => {
+        const chat = document.getElementById('msg-fam-chat');
+        chat.innerHTML = "";
+        
+        if(snap.empty) {
+            chat.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs font-bold">Inicia una conversación con la secretaría del colegio.</div>`;
+            return;
         }
 
-        // ════ AGENDA ════
-        async function cargarAgenda() {
-            const container = document.getElementById('container-agenda');
-            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-            container.innerHTML = ""; brain.agenda = [];
-            snap.forEach(doc => {
-                const ev = doc.data(); brain.agenda.push(ev);
-                const partes = ev.fecha.split('-');
-                container.innerHTML += `<div class="bg-white p-4 rounded-2xl flex items-center gap-4 border shadow-sm">
-                    <div class="text-center min-w-[45px] bg-slate-100 p-2 rounded-xl">
-                        <p class="text-[8px] font-black text-blue-600">${partes[1]}</p>
-                        <p class="text-xl font-black">${partes[2]}</p>
-                    </div>
-                    <div>
-                        <p class="font-bold text-slate-700 text-sm">${ev.titulo}</p>
-                        ${ev.descripcion ? `<p class="text-xs text-slate-400 mt-0.5">${ev.descripcion}</p>` : ''}
-                    </div>
-                </div>`;
-            });
-        }
+        snap.forEach(doc => {
+            const m = doc.data();
+            const yo = m.remitenteEmail === familiaEmail;
+            const t = m.fecha ? (m.fecha.toDate ? m.fecha.toDate().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '') : '';
+            
+            chat.innerHTML += `
+                <div class="msg-burbuja-wrapper ${yo?'yo':'otro'}">
+                    <span class="text-[9px] text-slate-400 font-bold mb-0.5">${yo ? 'Yo' : m.remitenteNombre}</span>
+                    <div class="msg-burbuja ${yo?'yo':'otro'}">${m.texto}</div>
+                    <span class="msg-meta">${t}</span>
+                </div>
+            `;
+        });
+        chat.scrollTop = chat.scrollHeight;
+    });
+}
 
-        // ════ MENSAJERÍA FAMILIA ════
-        async function inicializarMensajeria() {
-            const nivelFamilia = userData.nivel || 'primario';
-            // Buscar secretaría del nivel correspondiente
-            const secRol = `secretaria_${nivelFamilia}`;
-            const secSnap = await db.collection('usuarios').where('rol', '==', secRol).limit(1).get();
-            if (!secSnap.empty) {
-                msgFamNivelSec = secSnap.docs[0].id;
+async function msgFamEnviar() {
+    const input = document.getElementById('msg-fam-input');
+    const texto = input.value.trim();
+    if(!texto) return;
+    input.value = "";
+
+    const refConv = db.collection('conversaciones').doc(msgFamConvId);
+    const batch = db.batch();
+    
+    const msgRef = refConv.collection('mensajes').doc();
+    batch.set(msgRef, {
+        texto,
+        remitenteEmail: familiaEmail,
+        remitenteNombre: "Familia: " + (listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.nombre || 'Usuario'),
+        fecha: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.set(refConv, {
+        nivel: msgFamNivelSec,
+        ultimoMensaje: texto,
+        remitenteNombre: "Familia",
+        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    await batch.commit();
+}
+
+// CHAT ASISTENTE IOSI AI (AUTOMÁTICO LOCAL)
+function toggleIosi() {
+    const m = document.getElementById('iosi-modal');
+    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function enviarPreguntaIosi() {
+    const input = document.getElementById('iosi-input');
+    const txt = input.value.trim();
+    if(!txt) return;
+    input.value = "";
+
+    const chat = document.getElementById('iosi-chat');
+    chat.innerHTML += `<div class="bubble-user">${txt}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+
+    setTimeout(() => {
+        let r = "Entiendo perfectamente tu inquietud. Te recomiendo consultar directamente el apartado correspondiente en la barra de navegación del portal o escribir un mensaje por el chat directo a la Secretaría de tu nivel.";
+        const q = txt.toLowerCase();
+        if(q.includes('nota') || q.includes('boletin') || q.includes('calificacion')) {
+            r = "Para ver las notas del período activo o descargar tu Boletín, ve a la pestaña 'Académico'. Desde ahí podrás cambiar entre vista de números o RITE.";
+        } else if(q.includes('asistencia') || q.includes('falta') || q.includes('tardanza')) {
+            r = "La información de inasistencias y tardanzas está consolidada al pie de la pestaña 'Académico'.";
+        } else if(q.includes('eoe') || q.includes('informe') || q.includes('orientacion')) {
+            r = "Los informes pedagógicos y del gabinete escolar están disponibles en la pestaña 'EOE' de manera 100% privada para las familias.";
+        }
+        chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
+        chat.scrollTop = chat.scrollHeight;
+    }, 700);
+}
+
+// EXPORTACIÓN A PDF BOLETÍN
+async function generarBoletinPDF() {
+    const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
+    if(!hijo) return;
+
+    document.getElementById('pdf-nombre').innerText = hijo.nombre;
+    document.getElementById('pdf-nivel-curso').innerText = `${hijo.nivel || '---'} / ${hijo.curso || '---'}`;
+    document.getElementById('pdf-fecha').innerText = new Date().toLocaleDateString();
+
+    const body = document.getElementById('pdf-body');
+    body.innerHTML = "";
+    
+    if(brain.notes && brain.notas.length > 0) {
+        brain.notas.forEach(n => {
+            let res = "-";
+            if(modalidadFiltro === 'num') {
+                res = `N1: ${n.n1 || '-'} | N2: ${n.n2 || '-'}`;
             } else {
-                // Fallback: buscar admin
-                const adminSnap = await db.collection('usuarios').where('rol', '==', 'admin').limit(1).get();
-                if (!adminSnap.empty) msgFamNivelSec = adminSnap.docs[0].id;
+                res = n.rite || "-";
             }
+            body.innerHTML += `
+                <tr>
+                    <td class="border p-2">${n.materia}</td>
+                    <td class="border p-2 text-center font-bold">${res}</td>
+                </tr>
+            `;
+        });
+    } else {
+        body.innerHTML = `<tr><td colspan="2" class="border p-4 text-center">No hay calificaciones disponibles en el período.</td></tr>`;
+    }
 
-            // Buscar conversación existente
-            const convSnap = await db.collection('conversaciones')
-                .where('participantes', 'array-contains', userEmail)
-                .get();
+    const el = document.getElementById('pdf-template');
+    el.style.display = 'block';
+    
+    const opt = {
+        margin: 10,
+        filename: `Boletin_${hijo.nombre.replace(/ /g,'_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-            let convExistente = null;
-            convSnap.forEach(doc => {
-                const d = doc.data();
-                if (msgFamNivelSec && d.participantes?.includes(msgFamNivelSec)) {
-                    convExistente = { id: doc.id, ...d };
-                }
-            });
+    html2pdf().from(el).set(opt).save().then(() => {
+        el.style.display = 'none';
+    });
+}
 
-            if (convExistente) {
-                msgFamConvId = convExistente.id;
-                document.getElementById('msg-fam-empty').classList.add('hidden');
-                document.getElementById('msg-fam-chat').classList.remove('hidden');
-                document.getElementById('msg-fam-chat').classList.add('flex');
-                if (convExistente.nombreOtro) document.getElementById('msg-fam-nombre').textContent = convExistente.nombreOtro;
-                escucharMensajesFamilia(msgFamConvId);
-
-                const noLeidos = convExistente.noLeidos?.[userEmail] || 0;
-                if (noLeidos > 0) {
-                    document.getElementById('badge-msg-fam').classList.remove('hidden');
-                }
-            }
-        }
-
-        function escucharMensajesFamilia(convId) {
-            if (msgFamUnsub) msgFamUnsub();
-            msgFamUnsub = db.collection('conversaciones').doc(convId).collection('mensajes')
-                .orderBy('timestamp', 'asc')
-                .onSnapshot(snap => {
-                    const cont = document.getElementById('msg-fam-mensajes');
-                    let html = '';
-                    snap.forEach(doc => {
-                        const m = doc.data();
-                        const esMio = m.autorEmail === userEmail;
-                        const hora  = m.timestamp ? fmtTs(m.timestamp) : '';
-                        const nombre = esMio ? 'Vos' : (m.autorNombre || 'Secretaría');
-                        html += `<div class="msg-burbuja-wrapper ${esMio ? 'yo' : 'otro'}">
-                            <div class="msg-burbuja ${esMio ? 'yo' : 'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
-                            <span class="msg-meta">${hora} · ${nombre}</span>
-                        </div>`;
-                    });
-                    cont.innerHTML = html || '<p class="text-center text-slate-300 text-sm py-6">El equipo de secretaría te responderá a la brevedad.</p>';
-                    cont.scrollTop = cont.scrollHeight;
-                });
-        }
-
-        async function iniciarConvFamilia() {
-            if (!msgFamNivelSec) return alert("No hay secretaría disponible para tu nivel. Por favor contactá al colegio.");
-            let nomSec = 'Secretaría';
-            try { const sd = await db.collection('usuarios').doc(msgFamNivelSec).get(); if (sd.exists) nomSec = sd.data().nombre || 'Secretaría'; } catch(e) {}
-            const primerMsg = `Hola, soy ${userData.nombre}. Me comunico desde el portal de familias.`;
-            const convRef = db.collection('conversaciones').doc();
-            const msgRef  = convRef.collection('mensajes').doc();
-            const batch   = db.batch();
-            batch.set(convRef, { participantes: [userEmail, msgFamNivelSec], emailOtro: msgFamNivelSec, nombreOtro: nomSec, emailSecretaria: msgFamNivelSec, nombreSecretaria: nomSec, ultimoMensaje: primerMsg, ultimoTimestamp: firebase.firestore.FieldValue.serverTimestamp(), noLeidos: { [msgFamNivelSec]: 1, [userEmail]: 0 }, etiqueta: null, creadoEn: firebase.firestore.FieldValue.serverTimestamp() });
-            batch.set(msgRef, { texto: primerMsg, autorEmail: userEmail, autorNombre: userData.nombre, autorRol: 'familia', timestamp: firebase.firestore.FieldValue.serverTimestamp(), leido: false });
-            await batch.commit();
-            msgFamConvId = convRef.id;
-            document.getElementById('msg-fam-nombre').textContent = nomSec;
-            document.getElementById('msg-fam-empty').classList.add('hidden');
-            document.getElementById('msg-fam-chat').classList.remove('hidden');
-            document.getElementById('msg-fam-chat').classList.add('flex');
-            escucharMensajesFamilia(msgFamConvId);
-        }
-
-        async function msgFamEnviar() {
-            if (!msgFamConvId || !msgFamNivelSec) return;
-            const input = document.getElementById('msg-fam-input');
-            const texto = input.value.trim();
-            if (!texto) return;
-            input.value = '';
-            const batch   = db.batch();
-            const convRef = db.collection('conversaciones').doc(msgFamConvId);
-            const msgRef  = convRef.collection('mensajes').doc();
-            batch.set(msgRef, { texto, autorEmail: userEmail, autorNombre: userData.nombre, autorRol: 'familia', timestamp: firebase.firestore.FieldValue.serverTimestamp(), leido: false });
-            batch.update(convRef, { ultimoMensaje: texto, ultimoTimestamp: firebase.firestore.FieldValue.serverTimestamp(), [`noLeidos.${msgFamNivelSec}`]: firebase.firestore.FieldValue.increment(1) });
-            await batch.commit();
-        }
-
-        function fmtTs(ts) {
-            if (!ts) return '';
-            const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
-            const hoy = new Date();
-            return d.toDateString() === hoy.toDateString() ? d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
-        }
-
-        // ════ PERFIL ════
-        async function guardarPerfil() {
-            const n = document.getElementById('perfil-nombre').value;
-            const t = document.getElementById('perfil-tel').value;
-            await db.collection('usuarios').doc(userEmail).update({ nombre: n, telefono: t });
-            document.getElementById('user-display-name').innerText = "Familia " + n.split(' ')[0];
-            alert("Perfil actualizado");
-        }
-
-        async function activarNotificaciones() {
-            const btn = document.getElementById('btn-push');
-            if (!('serviceWorker' in navigator)) { alert("Tu navegador no soporta notificaciones."); return; }
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-                    await navigator.serviceWorker.ready;
-                    const token = await messaging.getToken({ vapidKey: 'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc', serviceWorkerRegistration: registration });
-                    if (token) {
-                        await db.collection('usuarios').doc(userEmail).update({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token) });
-                        btn.innerText = "ACTIVADO"; btn.classList.replace('bg-slate-900','bg-emerald-500');
-                        alert("¡Notificaciones activadas!");
-                    }
-                } else { alert("Permiso denegado."); }
-            } catch (err) { alert("Error: " + err.message); }
-        }
-
-        // ════ IOSI ════
-        function enviarIosi() {
-            const inp = document.getElementById('iosi-input'), chat = document.getElementById('iosi-chat'), val = inp.value.toLowerCase();
-            if (!val) return;
-            chat.innerHTML += `<div class="bubble-user">${inp.value}</div>`;
-            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-            setTimeout(() => {
-                let r = "No tengo esa información, pero puedo decirte sobre notas, faltas o comunicados.";
-                if (val.includes("falta") || val.includes("inasistencia")) r = brain.faltas.length > 0 ? `${hijo?.nombre} tiene ${brain.faltas.length} falta/s registrada/s.` : `${hijo?.nombre} tiene asistencia perfecta.`;
-                else if (val.includes("nota") || val.includes("calificacion")) r = brain.notas.length > 0 ? `Hay ${brain.notas.length} materia/s con calificaciones cargadas.` : "No hay notas cargadas aún.";
-                else if (val.includes("comunicado") || val.includes("novedad")) r = brain.noticias.length > 0 ? `Hay ${brain.noticias.length} comunicado/s en el muro.` : "Sin comunicados recientes.";
-                else if (val.includes("evento") || val.includes("agenda")) r = brain.agenda.length > 0 ? `El próximo evento es: ${brain.agenda[0]?.titulo} (${brain.agenda[0]?.fecha}).` : "Sin eventos próximos.";
-                chat.innerHTML += `<div class="bubble-iosi">${r}</div>`;
-                chat.scrollTop = chat.scrollHeight;
-            }, 600);
-            inp.value = "";
-        }
-
-        // ════ UTILS ════
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            if (document.getElementById('nav-' + tab)) document.getElementById('nav-' + tab).classList.add('active');
-            if (tab === 'mensajes' && msgFamConvId) {
-                db.collection('conversaciones').doc(msgFamConvId).update({ [`noLeidos.${userEmail}`]: 0 });
-                document.getElementById('badge-msg-fam').classList.add('hidden');
-            }
-        }
-
-        function setModalidad(m) {
-            modalidadFiltro = m;
-            document.getElementById('switch-selector').style.left = m === 'num' ? '4px' : 'calc(50% + 0px)';
-            cargarAcademico();
-        }
-
-        function cambiarHijo(id) { alumnoSeleccionadoId = id; inicializarApp(); }
-        function toggleIosi() { const m = document.getElementById('iosi-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
-
-        async function generarBoletinPDF() {
-            const hijo = listaHijos.find(h => h.id === alumnoSeleccionadoId);
-            document.getElementById('pdf-nombre').innerText = hijo.nombre;
-            document.getElementById('pdf-fecha').innerText  = new Date().toLocaleDateString();
-            const body = document.getElementById('pdf-body'); body.innerHTML = "";
-            brain.notas.forEach(n => { body.innerHTML += `<tr><td style="border:1px solid #000;padding:8px">${n.materia}</td><td style="border:1px solid #000;padding:8px;text-align:center">${n.rite || (n.n1 + '/' + n.n2)}</td></tr>`; });
-            const el = document.getElementById('pdf-template');
-            el.style.display = 'block';
-            html2pdf().from(el).save().then(() => el.style.display = 'none');
-        }
-
-        document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-    </script>
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    
+    // Buscar el botón correspondiente por tag
+    const targetButton = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+    if(targetButton) targetButton.classList.add('active');
+    
+    const content = document.getElementById('tab-' + tabId);
+    if(content) content.classList.add('active');
+}
+</script>
 </body>
 </html>
-
