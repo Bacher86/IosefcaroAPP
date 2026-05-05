@@ -64,573 +64,725 @@
         <div class="flex items-center gap-3 mt-1">
             <div>
                 <label class="text-[8px] font-black text-slate-400 uppercase">Materia</label>
-                <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[10px] font-bold text-blue-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
+                <select id="select-materia" onchange="actualizarMateriaActiva()" class="block w-full bg-slate-50 border border-slate-200 text-xs font-bold rounded-lg p-1 outline-none"></select>
+            </div>
+            <div>
+                <label class="text-[8px] font-black text-slate-400 uppercase">Curso</label>
+                <select id="select-curso" onchange="cargarAlumnos()" class="block w-full bg-slate-50 border border-slate-200 text-xs font-bold rounded-lg p-1 outline-none"></select>
             </div>
             <div>
                 <label class="text-[8px] font-black text-slate-400 uppercase">Período</label>
-                <select id="select-periodo" onchange="cargarAlumnos()" class="text-[10px] font-bold text-emerald-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
+                <span id="periodo-lbl" class="block bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2 py-1 rounded-lg">Cargando...</span>
             </div>
         </div>
     </div>
-    <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
+    <div class="flex items-center gap-2">
+        <button onclick="cerrarSesion()" class="w-9 h-9 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-sm font-bold"><i class="fas fa-power-off"></i></button>
+    </div>
 </header>
 
-<main class="p-4 max-w-lg mx-auto">
+<main class="p-4 max-w-4xl mx-auto space-y-6">
 
-    <!-- NOTAS - Grilla Excel -->
-    <section id="tab-notas" class="tab-content active">
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <div>
-                <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Curso</label>
-                <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs"></select>
+    <section id="tab-notas" class="tab-content active space-y-4">
+        <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <span class="text-xs font-black text-slate-400 uppercase">Evaluaciones:</span>
+                <div id="tags-examenes" class="flex gap-2 flex-wrap"></div>
+                <button onclick="agregarColumna()" class="text-[10px] font-black bg-blue-600 text-white px-3 py-1.5 rounded-xl">+ Agregar</button>
             </div>
-            <div>
-                <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
-                <select id="select-modalidad" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs text-blue-600">
-                    <option value="NUMERICO">Numérico (1-10)</option>
-                    <option value="RITE">RITE (TEA/TEP/TED)</option>
-                </select>
+
+            <div id="grilla-container" class="hidden">
+                <div class="grilla-wrapper mb-4">
+                    <table class="grilla-tabla" id="tabla-notas">
+                        <thead>
+                            <tr id="tabla-headers"></tr>
+                        </thead>
+                        <tbody id="tabla-body"></tbody>
+                    </table>
+                </div>
             </div>
+            <div id="sin-alumnos" class="text-center py-8 text-slate-400 text-sm font-bold">Seleccioná materia y curso para cargar la planilla.</div>
         </div>
+    </section>
 
-        <!-- Info período activo -->
-        <div id="periodo-info" class="bg-blue-50 border border-blue-100 rounded-2xl p-3 mb-4 hidden">
-            <p id="periodo-info-txt" class="text-xs font-bold text-blue-700"></p>
-        </div>
-
-        <!-- Controles de columnas de examen -->
-        <div id="ctrl-examenes" class="mb-4 flex items-center gap-2 flex-wrap hidden">
-            <span class="text-[10px] font-black text-slate-400 uppercase">Evaluaciones:</span>
-            <div id="tags-examenes" class="flex gap-2 flex-wrap"></div>
-            <button onclick="agregarColumna()" class="text-[10px] font-black bg-blue-600 text-white px-3 py-1.5 rounded-xl">+ Agregar</button>
-        </div>
-
-        <!-- Grilla tipo Excel -->
-        <div id="grilla-container" class="hidden">
-            <div class="grilla-wrapper mb-4">
-                <table class="grilla-tabla" id="grilla-notas">
-                    <thead><tr id="grilla-head"></tr></thead>
-                    <tbody id="grilla-body"></tbody>
+    <section id="tab-asis" class="tab-content space-y-4">
+        <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-calendar-day text-slate-400"></i>
+                <input type="date" id="fecha-hoy" onchange="cargarAsistenciaFecha()" class="font-bold text-sm bg-slate-50 border p-2 rounded-xl outline-none">
+            </div>
+            <div class="grilla-wrapper">
+                <table class="grilla-tabla">
+                    <thead>
+                        <tr>
+                            <th class="col-alumno">Alumno</th>
+                            <th class="text-center">Asistencia</th>
+                            <th class="text-center">Tardanza</th>
+                            <th class="col-alumno">Observación corta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-asis-body"></tbody>
                 </table>
             </div>
         </div>
+    </section>
 
-        <!-- RITE layout (alternativo) -->
-        <div id="rite-container" class="hidden space-y-3"></div>
+    <section id="tab-eoe" class="tab-content space-y-4">
+        <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-black text-slate-800">Gabinete de Orientación Escolar (EOE)</h2>
+                <button onclick="abrirModalEOE()" class="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-xl"><i class="fas fa-plus mr-1"></i>Nuevo Informe</button>
+            </div>
+            
+            <div class="flex gap-2">
+                <input type="text" id="busqueda-eoe" placeholder="Buscar alumno..." oninput="filtrarEOE()" class="input-pro">
+            </div>
 
-        <div id="btn-guardar-notas" class="btn-flotante">
-            <button onclick="confirmarNotas()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
-                <i class="fas fa-save"></i> GUARDAR NOTAS DEL CURSO
-            </button>
+            <div class="overflow-x-auto border rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-900 text-white font-bold">
+                            <th class="p-3">Alumno</th>
+                            <th class="p-3">Área de Intervención</th>
+                            <th class="p-3">Detalle / Acción</th>
+                            <th class="p-3">Fecha</th>
+                            <th class="p-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-eoe-body" class="divide-y"></tbody>
+                </table>
+            </div>
         </div>
     </section>
 
-    <!-- ASISTENCIA -->
-    <section id="tab-asis" class="tab-content">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="font-black text-xl">Pasar Lista</h3>
-            <span id="asis-fecha-label" class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full"></span>
-        </div>
-        <div id="lista-asis" class="space-y-2"></div>
-        <div id="btn-guardar-asis" class="btn-flotante">
-            <button onclick="confirmarAsistencia()" class="w-full bg-emerald-500 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
-                <i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA
-            </button>
-        </div>
-    </section>
-
-    <!-- INFORMES -->
-    <section id="tab-informes" class="tab-content space-y-4">
-        <h3 class="font-black text-xl">Informes Pedagógicos</h3>
-        <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-            <div class="grid grid-cols-2 gap-3">
+    <section id="tab-mensajes" class="tab-content space-y-4">
+        <div class="bg-white border rounded-3xl shadow-sm flex flex-col h-[500px] overflow-hidden">
+            <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
                 <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Alumno</label>
-                    <select id="informe-alumno" onchange="cargarInformes()" class="input-pro mt-1 text-xs"></select>
+                    <h3 class="font-black text-sm">Conversación con Secretaría</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase" id="msg-sec-nivel">NIVEL</p>
                 </div>
-                <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Período</label>
-                    <select id="informe-periodo" class="input-pro mt-1 text-xs"></select>
-                </div>
+                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
             </div>
-            <div>
-                <label class="text-[9px] font-black text-slate-400 uppercase">Informe Pedagógico</label>
-                <textarea id="informe-texto" class="input-pro mt-1 h-32" placeholder="Descripción del desempeño, logros, áreas a mejorar..."></textarea>
+            <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 flex flex-col">
+                <div class="text-center py-12 text-slate-400 font-bold text-xs">Conectando chat...</div>
             </div>
-            <div>
-                <label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Indicadores de desempeño</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-participacion" class="accent-blue-600"> Participación activa</label>
-                    <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-entregas"       class="accent-blue-600"> Entregas a tiempo</label>
-                    <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-conducta"       class="accent-blue-600"> Buena conducta</label>
-                    <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-progreso"       class="accent-blue-600"> Progreso notable</label>
-                </div>
-            </div>
-            <button onclick="guardarInforme()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-save mr-2"></i> GUARDAR INFORME</button>
-        </div>
-        <div id="lista-informes" class="space-y-3"></div>
-    </section>
-
-    <!-- CALENDARIO (solo pruebas) -->
-    <section id="tab-calendario" class="tab-content space-y-4">
-        <h3 class="font-black text-xl">Avisos de Pruebas</h3>
-        <p class="text-slate-400 text-xs">Publicá fechas de evaluaciones en el calendario institucional. Solo se pueden cargar eventos de tipo "Examen / Entrega".</p>
-        <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-                <div class="col-span-2">
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Título del evento</label>
-                    <input type="text" id="cal-titulo" placeholder="Ej: Parcial de Matemática" class="input-pro mt-1">
-                </div>
-                <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Fecha</label>
-                    <input type="date" id="cal-fecha" class="input-pro mt-1">
-                </div>
-                <div>
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
-                    <select id="cal-curso" class="input-pro mt-1 text-xs"></select>
-                </div>
-                <div class="col-span-2">
-                    <label class="text-[9px] font-black text-slate-400 uppercase">Descripción / Temas</label>
-                    <textarea id="cal-desc" placeholder="Temas incluidos, materiales necesarios..." class="input-pro mt-1 h-20 resize-none"></textarea>
-                </div>
-                <button onclick="guardarEvento()" class="col-span-2 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-calendar-plus mr-2"></i> PUBLICAR EN CALENDARIO</button>
-            </div>
-        </div>
-        <div>
-            <h4 class="font-black text-sm text-slate-700 mb-3">Mis eventos publicados</h4>
-            <div id="lista-cal-doc" class="space-y-2"></div>
-        </div>
-    </section>
-
-    <!-- MENSAJES -->
-    <section id="tab-mensajes" class="tab-content" style="padding-bottom:0;">
-        <div id="msg-doc-lista">
-            <h3 class="font-black text-xl mb-4">Mis Conversaciones</h3>
-            <div id="msg-doc-convs" class="space-y-2"></div>
-            <button onclick="abrirNuevaConvDocente()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-4"><i class="fas fa-plus mr-2"></i> Nuevo mensaje a secretaría</button>
-        </div>
-        <div id="msg-doc-chat" class="hidden flex-col" style="height:calc(100vh - 160px);">
-            <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border mb-4">
-                <button onclick="volverListaDocente()" class="text-slate-400 text-xl mr-1"><i class="fas fa-chevron-left"></i></button>
-                <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0">SC</div>
-                <div><p class="font-black text-sm" id="msg-doc-chat-nombre">Secretaría</p><p class="text-[10px] text-slate-400 font-bold">Iosef Caro</p></div>
-            </div>
-            <div id="msg-doc-mensajes" class="flex-1 overflow-y-auto flex flex-col gap-2 bg-white rounded-2xl p-4 border" style="scroll-behavior:smooth;"></div>
-            <div class="bg-white border rounded-2xl p-3 mt-3 flex gap-2 items-end">
-                <textarea id="msg-doc-input" rows="1" placeholder="Escribí tu mensaje..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs resize-none outline-none" style="max-height:80px;font-family:inherit;" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();msgDocEnviar();}"></textarea>
-                <button onclick="msgDocEnviar()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0"><i class="fas fa-paper-plane text-xs"></i></button>
+            <div class="p-3 bg-white border-t flex gap-2 items-center">
+                <textarea id="chat-input" placeholder="Escribí un mensaje..." rows="1" class="flex-1 border rounded-2xl p-3 text-xs resize-none outline-none bg-slate-50 focus:bg-white focus:border-slate-800 transition" style="max-height:100px;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMsgSec();}"></textarea>
+                <button onclick="enviarMsgSec()" class="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center shadow hover:bg-slate-800 transition-all active:scale-95"><i class="fas fa-paper-plane text-xs"></i></button>
             </div>
         </div>
     </section>
 
 </main>
 
-<nav class="fixed bottom-0 left-4 right-4 bg-white border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
-    <button onclick="switchTab('notas')"      id="btn-notas"      class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-table text-lg"></i>NOTAS</button>
-    <button onclick="switchTab('asis')"       id="btn-asis"       class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-list-check text-lg"></i>ASIST.</button>
-    <button onclick="switchTab('informes')"   id="btn-informes"   class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-file-alt text-lg"></i>INFORMES</button>
-    <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]"><i class="fas fa-calendar text-lg"></i>CALENDAR</button>
-    <button onclick="switchTab('mensajes')"   id="btn-mensajes"   class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-        <div class="relative"><i class="fas fa-comments text-lg"></i><span id="badge-msg-doc" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div>MSG
+<button id="btn-guardar-notas" onclick="guardarNotasFirebase()" class="btn-flotante bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2"><i class="fas fa-save"></i> GUARDAR CAMBIOS CALIFICACIONES</button>
+<button id="btn-guardar-asis" onclick="guardarAsistenciaFirebase()" class="btn-flotante bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2"><i class="fas fa-check-double"></i> GUARDAR ASISTENCIA DEL DÍA</button>
+
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex justify-around items-center z-[1000] shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+    <button id="btn-notas" onclick="switchTab('notas')" class="nav-btn active flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1 transition-all">
+        <i class="fas fa-graduation-cap text-lg"></i>
+        <span>PLANILLA</span>
+    </button>
+    <button id="btn-asis" onclick="switchTab('asis')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1 transition-all">
+        <i class="fas fa-calendar-check text-lg"></i>
+        <span>ASISTENCIA</span>
+    </button>
+    <button id="btn-eoe" onclick="switchTab('eoe')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1 transition-all">
+        <i class="fas fa-user-shield text-lg"></i>
+        <span>EOE</span>
+    </button>
+    <button id="btn-mensajes" onclick="switchTab('mensajes')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 font-black text-[9px] p-2 flex-1 transition-all relative">
+        <div class="relative">
+            <i class="fas fa-paper-plane text-lg"></i>
+            <span id="badge-msg-doc" class="hidden absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-rose-500 text-white font-black rounded-full flex items-center justify-center text-[8px]">!</span>
+        </div>
+        <span>MENSAJES</span>
     </button>
 </nav>
 
-<div id="pdf-template" style="display:none;padding:40px;color:#1e293b;font-family:sans-serif;">
-    <div style="text-align:center;border-bottom:2px solid #3b82f6;padding-bottom:15px;margin-bottom:20px;">
-        <h1 style="margin:0;font-size:22px;font-weight:800;">INSTITUTO IOSEF CARO</h1>
-        <p style="font-size:10px;text-transform:uppercase;letter-spacing:2px;">Informe de Trayectoria Educativa</p>
+<div id="modal-eoe" class="fixed inset-0 bg-black/50 z-[3000] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="font-black text-slate-900" id="eoe-modal-titulo">Nuevo Informe EOE</h3>
+            <button onclick="cerrarModalEOE()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="eoe-form" class="space-y-3" onsubmit="guardarInformeEOE(event)">
+            <input type="hidden" id="eoe-id">
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400">Alumno</label>
+                <select id="eoe-alumno" required class="input-pro bg-slate-50"></select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400">Área de Intervención</label>
+                <input type="text" id="eoe-area" required placeholder="Pedagógica, Convivencia, Familiar..." class="input-pro">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-slate-400">Detalles e Informe de Acciones</label>
+                <textarea id="eoe-detalle" required rows="4" placeholder="Ingresa los detalles relevantes de la intervención..." class="input-pro"></textarea>
+            </div>
+            <div class="flex gap-2 pt-3">
+                <button type="button" onclick="cerrarModalEOE()" class="w-1/2 bg-slate-100 font-bold p-3 rounded-2xl text-slate-700">Cancelar</button>
+                <button type="submit" class="w-1/2 bg-slate-900 text-white font-bold p-3 rounded-2xl">Guardar</button>
+            </div>
+        </form>
     </div>
-    <div style="margin-bottom:20px;font-size:12px;">
-        <p><strong>Alumno/a:</strong> <span id="pdf-nombre"></span></p>
-        <p><strong>Curso:</strong> <span id="pdf-curso"></span> | <strong>Fecha:</strong> <span id="pdf-fecha"></span></p>
-    </div>
-    <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:#f1f5f9;"><th style="border:1px solid #e2e8f0;padding:10px;text-align:left;">Área</th><th style="border:1px solid #e2e8f0;padding:10px;text-align:center;">Calificación</th><th style="border:1px solid #e2e8f0;padding:10px;text-align:left;">Observaciones</th></tr></thead>
-        <tbody id="pdf-body"></tbody>
-    </table>
 </div>
 
 <script>
-const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
-firebase.initializeApp(FB);const db=firebase.firestore();
+// CONFIGURACIÓN DE FIREBASE
+const firebaseConfig = {
+  apiKey: "BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc",
+  projectId: "app-iosefcaro",
+  messagingSenderId: "651320124248",
+  appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-let docenteData=null,docenteEmail="",materiaActiva="",periodoActivo={slug:"",nombre:"",id:"",bloqueado:false};
-let cambiosNotas={},cambiosAsis={};
-let columnaExamenes=[];  // [{key:"TP1",label:"TP1"},...]
-let alumnosActuales=[];  // [{id,nombre}]
-let msgDocConvId=null,msgDocUnsub=null,msgDocConvs=[];
+let docenteData=null, docenteEmail="", materiaActiva="", periodoActivo={slug:"",nombre:"",id:"",bloqueado:false};
+let cambiosNotas={}, cambiosAsis={};
+let columnaExamenes=[];
+let alumnosActuales=[];
+let msgDocConvId=null, msgDocUnsub=null, msgDocConvs=[];
+let listaInformesEOE=[];
 
 document.getElementById('fecha-hoy').valueAsDate=new Date();
 
-// ── LOGIN ──
-async function login(){
-    const email=document.getElementById('login-email').value.toLowerCase().trim();
-    if(!email)return alert("Ingresa tu email");
-    const doc=await db.collection('usuarios').doc(email).get();
-    if(doc.exists&&doc.data().rol==='docente'){
-        docenteData=doc.data();docenteEmail=email;
-        document.getElementById('login-screen').style.display='none';
-        document.getElementById('doc-nom').innerText=docenteData.nombre;
-
-        // Materias
-        const sMat=document.getElementById('select-materia');sMat.innerHTML="";
-        const materias=Array.isArray(docenteData.materias)?docenteData.materias:(docenteData.materia?[docenteData.materia]:[]);
-        materias.forEach(m=>sMat.innerHTML+=`<option value="${m}">${m}</option>`);
-        materiaActiva=sMat.value;
-
-        // Cursos
-        const sCur=document.getElementById('select-curso');sCur.innerHTML="";
-        const calCur=document.getElementById('cal-curso');calCur.innerHTML="";
-        const cursos=Array.isArray(docenteData.cursos)?docenteData.cursos:(docenteData.curso?[docenteData.curso]:[]);
-        cursos.forEach(c=>{sCur.innerHTML+=`<option value="${c}">${c}</option>`;calCur.innerHTML+=`<option value="${c}">${c}</option>`;});
-
-        // Períodos desde Firestore
-        await cargarPeriodos();
-        cargarAlumnos();
-        inicializarMensajeriaDocente();
-        cargarEventosDocente();
-    }else alert("Email no encontrado o no sos docente.");
-}
-
-async function cargarPeriodos(){
-    const snap=await db.collection('periodos').orderBy('orden','asc').get();
-    const sel=document.getElementById('select-periodo');
-    const selInf=document.getElementById('informe-periodo');
-    sel.innerHTML="";selInf.innerHTML="";
-    let activo=null;
-    snap.forEach(doc=>{
-        const p=doc.data();
-        sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug}" data-bloqueado="${!p.activo}">${p.nombre}${p.activo?' ✓':''}</option>`;
-        selInf.innerHTML+=`<option value="${p.slug}">${p.nombre}</option>`;
-        if(p.activo)activo={id:doc.id,slug:p.slug,nombre:p.nombre,bloqueado:false};
-    });
-    // Seleccionar activo
-    if(activo){
-        sel.value=activo.id;periodoActivo=activo;
-        document.getElementById('periodo-info').classList.remove('hidden');
-        document.getElementById('periodo-info-txt').innerText=`Período activo: ${activo.nombre}. Podés cargar y editar notas.`;
+// INICIO SESIÓN
+async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    if(!email) return alert("Ingresá tu email");
+    try {
+        const snap = await db.collection('docentes').where('email','==',email).get();
+        if(snap.empty) {
+            alert("No estás registrado como docente.");
+            return;
+        }
+        docenteData = snap.docs[0].data();
+        docenteData.id = snap.docs[0].id;
+        docenteEmail = email;
+        sessionStorage.setItem('docente_logged', JSON.stringify(docenteData));
+        document.getElementById('login-screen').classList.add('hidden');
+        inicializarTablero();
+    } catch(e) {
+        console.error(e);
+        alert("Error de ingreso.");
     }
 }
 
-function actualizarMateriaActiva(){materiaActiva=document.getElementById('select-materia').value;cargarAlumnos();}
+window.onload = () => {
+    const guardado = sessionStorage.getItem('docente_logged');
+    if(guardado) {
+        docenteData = JSON.parse(guardado);
+        docenteEmail = docenteData.email;
+        document.getElementById('login-screen').classList.add('hidden');
+        inicializarTablero();
+    }
+};
 
-// ── CARGAR ALUMNOS + GRILLA ──
-async function cargarAlumnos(){
-    const curso=document.getElementById('select-curso').value;
-    const modalidad=document.getElementById('select-modalidad').value;
-    const selPer=document.getElementById('select-periodo');
-    const perOpt=selPer.options[selPer.selectedIndex];
-    if(perOpt){periodoActivo={id:selPer.value,slug:perOpt.dataset.slug||'',nombre:perOpt.text,bloqueado:perOpt.dataset.bloqueado==='true'};}
-    if(!curso||!materiaActiva)return;
-
-    cambiosNotas={};cambiosAsis={};
-    document.getElementById('btn-guardar-notas').style.display='none';
-    document.getElementById('btn-guardar-asis').style.display='none';
-
-    const snap=await db.collection('alumnos').where('curso','==',curso).get();
-    alumnosActuales=[];
-    snap.forEach(doc=>alumnosActuales.push({id:doc.id,nombre:doc.data().nombre}));
-    alumnosActuales.sort((a,b)=>a.nombre.localeCompare(b.nombre));
-
-    const fecha=document.getElementById('fecha-hoy').value;
-    document.getElementById('asis-fecha-label').textContent=fecha;
-
-    if(modalidad==='RITE') await renderRITE(fecha);
-    else await renderGrilla(fecha);
-
-    // Actualizar select informes
-    const selInfAlu=document.getElementById('informe-alumno');
-    selInfAlu.innerHTML="";
-    alumnosActuales.forEach(al=>selInfAlu.innerHTML+=`<option value="${al.id}">${al.nombre}</option>`);
-    cargarInformes();
-
-    // Asistencia
-    await renderAsistencia(fecha);
+function cerrarSesion() {
+    sessionStorage.removeItem('docente_logged');
+    location.reload();
 }
 
-// ── GRILLA NUMÉRICA ──
-async function renderGrilla(fecha){
-    document.getElementById('rite-container').classList.add('hidden');
-    document.getElementById('grilla-container').classList.remove('hidden');
-    document.getElementById('ctrl-examenes').classList.remove('hidden');
+async function inicializarTablero() {
+    document.getElementById('doc-nom').innerText = "Hola, " + docenteData.nombre;
+    document.getElementById('msg-sec-nivel').innerText = docenteData.nivel || "SIN NIVEL";
+    
+    // Período Activo
+    const perSnap = await db.collection('periodos').where('activo','==',true).limit(1).get();
+    if(!perSnap.empty) {
+        const pd = perSnap.docs[0].data();
+        periodoActivo = { id: perSnap.docs[0].id, slug: pd.slug, nombre: pd.nombre, bloqueado: !!pd.bloqueado };
+        document.getElementById('periodo-lbl').innerText = pd.nombre + (pd.bloqueado ? " (Bloqueado)" : "");
+    } else {
+        document.getElementById('periodo-lbl').innerText = "Sin Período Activo";
+    }
 
-    // Cargar columnas guardadas para esta materia+periodo
-    const colRef=await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${document.getElementById('select-curso').value}`).get();
-    if(colRef.exists) columnaExamenes=colRef.data().columnas||[];
-    if(columnaExamenes.length===0) columnaExamenes=[{key:'nota_1',label:'Nota 1'}];
-
-    // Renderizar tags de columnas
-    renderTagsExamenes();
-
-    // Encabezado
-    const head=document.getElementById('grilla-head');
-    head.innerHTML='<th class="col-alumno grilla-tabla">Alumno</th>';
-    columnaExamenes.forEach(col=>{head.innerHTML+=`<th style="min-width:70px;text-align:center;">${col.label}<br><button onclick="eliminarColumna('${col.key}')" style="font-size:9px;color:#94a3b8;background:none;border:none;cursor:pointer;">✕</button></th>`;});
-    head.innerHTML+='<th style="min-width:60px;text-align:center;">Prom.</th><th style="min-width:50px;text-align:center;">PDF</th>';
-
-    // Cuerpo
-    const body=document.getElementById('grilla-body');body.innerHTML='';
-    for(const al of alumnosActuales){
-        // Leer notas actuales del período
-        const notaDoc=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-        const nData=notaDoc.exists?notaDoc.data():{};
-
-        // Verificar falta hoy
-        const faltasHoy=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('estado','==','A').get();
-        let alertaFalta='';
-        faltasHoy.forEach(fd=>{if(fd.data().materia&&fd.data().materia!==materiaActiva)alertaFalta+=`<span class="alerta-falta">⚠ Falta en ${fd.data().materia}</span> `;});
-
-        let cols='';let suma=0,cnt=0;
-        columnaExamenes.forEach(col=>{
-            const val=nData[col.key]||'';            const bloq=periodoActivo.bloqueado;
-            cols+=`<td style="text-align:center;"><input type="number" min="1" max="10" value="${val}" ${bloq?'disabled':''} style="${bloq?'color:#94a3b8;':''}" oninput="cambiarNota('${al.id}','${col.key}',this.value)" class="grilla-inp" placeholder="—"></td>`;
-            if(val!==''){suma+=parseFloat(val)||0;cnt++;}
+    // Cargar selector de materias asignadas
+    const selectMat = document.getElementById('select-materia');
+    selectMat.innerHTML = "";
+    if(docenteData.materias && docenteData.materias.length) {
+        docenteData.materias.forEach(m => {
+            selectMat.innerHTML += `<option value="${m}">${m}</option>`;
         });
-        const prom=cnt>0?(suma/cnt).toFixed(1):'—';
-
-        body.innerHTML+=`<tr>
-            <td class="col-alumno"><span class="block truncate" style="max-width:130px">${al.nombre}</span>${alertaFalta?`<div class="mt-1">${alertaFalta}</div>`:''}</td>
-            ${cols}
-            <td style="text-align:center;font-weight:800;font-size:13px;color:${cnt>0&&parseFloat(prom)>=6?'#16a34a':cnt>0?'#ef4444':'#94a3b8'}">${prom}</td>
-            <td style="text-align:center;"><button onclick="descargarPDF('${al.id}','${al.nombre}')" style="background:none;border:none;cursor:pointer;color:#3b82f6;font-size:13px;"><i class="fas fa-file-pdf"></i></button></td>
-        </tr>`;
+        materiaActiva = docenteData.materias[0];
     }
+    actualizarMateriaActiva();
+    inicializarChatSecretaria();
+    cargarInformesEOE();
 }
 
-function cambiarNota(alumnoId,colKey,val){
-    if(!cambiosNotas[alumnoId])cambiosNotas[alumnoId]={};
-    let v=parseFloat(val);if(v>10)v=10;if(v<1)v=1;
-    cambiosNotas[alumnoId][colKey]=v||val;
-    document.getElementById('btn-guardar-notas').style.display='block';
-}
-
-async function confirmarNotas(){
-    if(periodoActivo.bloqueado)return alert("Este período está cerrado. No podés editar notas.");
-    const btn=event.currentTarget;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> GUARDANDO...';
-    const batch=db.batch();
-    for(let id in cambiosNotas){
-        const ref=db.collection('alumnos').doc(id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`);
-        batch.set(ref,{...cambiosNotas[id],materia:materiaActiva,periodo:periodoActivo.slug,fechaUpdate:new Date().toLocaleDateString()},{merge:true});
-    }
-    await batch.commit();alert("✅ Notas guardadas.");cambiosNotas={};document.getElementById('btn-guardar-notas').style.display='none';
-    btn.innerHTML='<i class="fas fa-save"></i> GUARDAR NOTAS DEL CURSO';
-}
-
-// Columnas de exámenes
-function renderTagsExamenes(){
-    document.getElementById('tags-examenes').innerHTML=columnaExamenes.map(c=>`<span style="background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #e2e8f0;">${c.label}</span>`).join('');
-}
-function agregarColumna(){
-    const nombre=prompt("Nombre de la evaluación (ej: TP2, Parcial 1, Recup):");
-    if(!nombre||!nombre.trim())return;
-    const key='nota_'+Date.now();
-    columnaExamenes.push({key,label:nombre.trim()});
-    guardarConfigColumnas();cargarAlumnos();
-}
-function eliminarColumna(key){
-    if(!confirm("¿Eliminar esta columna de evaluación?"))return;
-    columnaExamenes=columnaExamenes.filter(c=>c.key!==key);
-    guardarConfigColumnas();cargarAlumnos();
-}
-async function guardarConfigColumnas(){
-    const curso=document.getElementById('select-curso').value;
-    await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});
-}
-
-// ── RITE ──
-async function renderRITE(fecha){
-    document.getElementById('grilla-container').classList.add('hidden');
-    document.getElementById('ctrl-examenes').classList.add('hidden');
-    const cont=document.getElementById('rite-container');cont.classList.remove('hidden');cont.innerHTML='';
-
-    for(const al of alumnosActuales){
-        const notaDoc=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-        const nData=notaDoc.exists?notaDoc.data():{};const riteVal=nData.rite||null;
-
-        const faltasHoy=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('estado','==','A').get();
-        let alertaFalta='';faltasHoy.forEach(fd=>{if(fd.data().materia&&fd.data().materia!==materiaActiva)alertaFalta+=`<span class="alerta-falta">⚠ Falta en ${fd.data().materia}</span>`;});
-
-        const bloq=periodoActivo.bloqueado;
-        cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm">
-            <div class="flex justify-between items-start mb-3">
-                <div><p class="font-bold text-sm">${al.nombre}</p>${alertaFalta?`<div class="mt-1">${alertaFalta}</div>`:''}</div>
-                <button onclick="descargarPDF('${al.id}','${al.nombre}')" class="text-blue-500 text-[10px] font-black uppercase"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
-            </div>
-            <div class="flex gap-2">
-                ${['TEA','TEP','TED'].map(v=>`<button onclick="${bloq?'alert(\"Período cerrado.\")':'selRITE(\"'+ al.id +'\",\"'+ v +'\",this)'}" class="rite-btn rite-${v} ${riteVal===v?' sel':''}">${v}</button>`).join('')}
-            </div>
-            <p class="text-[9px] text-slate-400 mt-2">${riteVal==='TEA'?'Trayectoria Avanzada':riteVal==='TEP'?'En Proceso':riteVal==='TED'?'En Desarrollo':'Sin calificación'}</p>
-            ${bloq?'<p class="text-[9px] text-amber-600 font-bold mt-1">Período cerrado — solo lectura</p>':''} 
-        </div>`;
-    }
-    if(!alumnosActuales.length) cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>';
-}
-
-function selRITE(alumnoId,val,btn){
-    if(periodoActivo.bloqueado)return;
-    // Actualizar visual
-    const fila=btn.closest('.bg-white');
-    fila.querySelectorAll('.rite-btn').forEach(b=>{b.classList.remove('sel');});
-    btn.classList.add('sel');
-    const desc=val==='TEA'?'Trayectoria Avanzada':val==='TEP'?'En Proceso':'En Desarrollo';
-    fila.querySelector('p[class*="text-[9px]"]').innerText=desc;
-    // Guardar cambio
-    if(!cambiosNotas[alumnoId])cambiosNotas[alumnoId]={};
-    cambiosNotas[alumnoId].rite=val;
-    cambiosNotas[alumnoId].materia=materiaActiva;
-    cambiosNotas[alumnoId].periodo=periodoActivo.slug;
-    document.getElementById('btn-guardar-notas').style.display='block';
-}
-
-// ── ASISTENCIA ──
-async function renderAsistencia(fecha){
-    const cont=document.getElementById('lista-asis');cont.innerHTML='';
-    for(const al of alumnosActuales){
-        const asisHoy=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-        const estActual=asisHoy.empty?null:asisHoy.docs[0].data().estado;
-        const gC=e=>e==='P'?'bg-emerald-500 text-white':e==='A'?'bg-rose-500 text-white':'bg-amber-500 text-white';
-        const faltasOtras=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('estado','==','A').get();
-        let alertaFalta='';faltasOtras.forEach(fd=>{if(fd.data().materia&&fd.data().materia!==materiaActiva)alertaFalta+=`<span class="alerta-falta mr-1">⚠ Falta en ${fd.data().materia}</span>`;});
-        cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
-            <div class="w-1/2"><span class="text-xs font-bold">${al.nombre}</span>${alertaFalta?`<div class="mt-1">${alertaFalta}</div>`:''}</div>
-            <div class="flex gap-1">
-                <button onclick="setAsis('${al.id}','P',this)" class="w-10 h-10 rounded-xl font-bold text-xs ${estActual==='P'?gC('P'):'bg-slate-50 text-slate-400'}">P</button>
-                <button onclick="setAsis('${al.id}','A',this)" class="w-10 h-10 rounded-xl font-bold text-xs ${estActual==='A'?gC('A'):'bg-slate-50 text-slate-400'}">A</button>
-                <button onclick="setAsis('${al.id}','T',this)" class="w-10 h-10 rounded-xl font-bold text-xs ${estActual==='T'?gC('T'):'bg-slate-50 text-slate-400'}">T</button>
-            </div>
-        </div>`;
-    }
-    if(!alumnosActuales.length) cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>';
-}
-
-function setAsis(id,tipo,btn){
-    cambiosAsis[id]=tipo;
-    btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs');
-    const c=tipo==='P'?'bg-emerald-500 text-white':tipo==='A'?'bg-rose-500 text-white':'bg-amber-500 text-white';
-    btn.className=`w-10 h-10 rounded-xl ${c} font-bold text-xs shadow-lg`;
-    document.getElementById('btn-guardar-asis').style.display='block';
-}
-
-async function confirmarAsistencia(){
-    const btn=event.currentTarget;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
-    const fecha=document.getElementById('fecha-hoy').value;const batch=db.batch();
-    for(let id in cambiosAsis){
-        const existe=await db.collection('asistencia').where('alumnoId','==',id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-        if(!existe.empty) batch.update(db.collection('asistencia').doc(existe.docs[0].id),{estado:cambiosAsis[id]});
-        else batch.set(db.collection('asistencia').doc(),{alumnoId:id,estado:cambiosAsis[id],fecha,materia:materiaActiva,docenteEmail});
-    }
-    await batch.commit();alert("✅ Asistencia registrada.");cambiosAsis={};document.getElementById('btn-guardar-asis').style.display='none';
-    btn.innerHTML='<i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA';
-}
-
-// ── INFORMES ──
-async function guardarInforme(){
-    const alumnoId=document.getElementById('informe-alumno').value;
-    const periodo=document.getElementById('informe-periodo').value;
-    const texto=document.getElementById('informe-texto').value.trim();
-    const alumnoNombre=document.getElementById('informe-alumno').options[document.getElementById('informe-alumno').selectedIndex]?.text||'';;
-    if(!alumnoId||!texto)return alert("Completá el alumno y el informe.");
-    const indicadores={participacion:document.getElementById('ind-participacion').checked,entregas:document.getElementById('ind-entregas').checked,conducta:document.getElementById('ind-conducta').checked,progreso:document.getElementById('ind-progreso').checked};
-    await db.collection('alumnos').doc(alumnoId).collection('informes').add({texto,periodo,indicadores,materia:materiaActiva,docenteEmail,docenteNombre:docenteData.nombre,alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true});
-    alert("✅ Informe guardado.");document.getElementById('informe-texto').value='';
-    ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
-    cargarInformes();
-}
-async function cargarInformes(){
-    const alumnoId=document.getElementById('informe-alumno').value;if(!alumnoId)return;
-    const snap=await db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').limit(10).get();
-    const cont=document.getElementById('lista-informes');cont.innerHTML='';
-    snap.forEach(doc=>{const inf=doc.data();const d=new Date(inf.fecha).toLocaleDateString('es-AR');
-        cont.innerHTML+=`<div class="bg-white p-5 rounded-2xl border shadow-sm"><div class="flex justify-between items-start mb-2"><div><span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span><span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span></div><span class="text-[9px] text-slate-400 font-bold">${d}</span></div><p class="text-sm text-slate-700 mt-2">${inf.texto}</p></div>`;
+async function actualizarMateriaActiva() {
+    materiaActiva = document.getElementById('select-materia').value;
+    const selectCur = document.getElementById('select-curso');
+    selectCur.innerHTML = "";
+    
+    // Carga los cursos en donde dicta esta materia
+    const snap = await db.collection('cursos').get();
+    let cont = 0;
+    snap.forEach(doc => {
+        const c = doc.data();
+        if(c.materias && c.materias.includes(materiaActiva) && c.nivel === docenteData.nivel) {
+            selectCur.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`;
+            cont++;
+        }
     });
-    if(snap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes para este alumno.</p>';
+    if(cont > 0) {
+        cargarAlumnos();
+    } else {
+        document.getElementById('grilla-container').classList.add('hidden');
+        document.getElementById('sin-alumnos').classList.remove('hidden');
+    }
 }
 
-// ── CALENDARIO (solo pruebas) ──
-async function guardarEvento(){
-    const titulo=document.getElementById('cal-titulo').value.trim();const fecha=document.getElementById('cal-fecha').value;const curso=document.getElementById('cal-curso').value;const desc=document.getElementById('cal-desc').value.trim();
-    if(!titulo||!fecha)return alert("Título y fecha son obligatorios.");
-    await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData.nombre});
-    alert("Evento publicado en el calendario.");document.getElementById('cal-titulo').value='';document.getElementById('cal-fecha').value='';document.getElementById('cal-desc').value='';cargarEventosDocente();
-}
-async function cargarEventosDocente(){
-    const snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();
-    const cont=document.getElementById('lista-cal-doc');cont.innerHTML='';
-    snap.forEach(doc=>{const e=doc.data();cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex items-center gap-3 shadow-sm"><div class="text-center min-w-[42px] bg-slate-100 p-2 rounded-xl"><p class="text-[8px] font-black text-blue-600">${e.fecha.split('-')[1]}</p><p class="text-lg font-black">${e.fecha.split('-')[2]}</p></div><div class="flex-1"><p class="font-bold text-sm">${e.titulo}</p><p class="text-[10px] text-slate-400">Curso: ${e.tag?.join(', ')||''}</p></div></div>`;});
-    if(snap.empty)cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Sin eventos publicados.</p>';
+// CARGAR ALUMNOS Y PLANILLA
+async function cargarAlumnos() {
+    const curso = document.getElementById('select-curso').value;
+    if(!curso || !materiaActiva) return;
+
+    cambiosNotas = {};
+    document.getElementById('btn-guardar-notes-v2')?.classList.add('hidden');
+    document.getElementById('btn-guardar-notas').style.display = 'none';
+
+    try {
+        const snap = await db.collection('alumnos').where('curso','==',curso).get();
+        alumnosActuales = [];
+        snap.forEach(d => {
+            alumnosActuales.push({ id: d.id, ...d.data() });
+        });
+        alumnosActuales.sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+        // Cargar alumnos en select EOE del modal
+        const eoeSel = document.getElementById('eoe-alumno');
+        eoeSel.innerHTML = `<option value="">Selecciona un alumno...</option>`;
+        alumnosActuales.forEach(al => {
+            eoeSel.innerHTML += `<option value="${al.id}">${al.nombre}</option>`;
+        });
+
+        if(alumnosActuales.length === 0) {
+            document.getElementById('grilla-container').classList.add('hidden');
+            document.getElementById('sin-alumnos').classList.remove('hidden');
+            return;
+        }
+
+        document.getElementById('sin-alumnos').classList.add('hidden');
+        document.getElementById('grilla-container').classList.remove('hidden');
+
+        // Config de Columnas de Examenes
+        const confDoc = await db.collection('config_columnas').doc(`${periodoActivo.slug}_${curso}_${materiaActiva}`).get();
+        if(confDoc.exists) {
+            columnaExamenes = confDoc.data().columnas || [];
+        } else {
+            columnaExamenes = [];
+        }
+
+        renderExamenesTags();
+        dibujarTablaNotas();
+        cargarAsistenciaFecha();
+    } catch(e) {
+        console.error(e);
+    }
 }
 
-// ── MENSAJERÍA ──
-async function inicializarMensajeriaDocente(){
-    const nivel=docenteData.nivel||'primario';
-    const secSnap=await db.collection('usuarios').where('rol','==',`secretaria_${nivel}`).limit(1).get();
-    window._secEmailDocente=secSnap.empty?null:secSnap.docs[0].id;
-    db.collection('conversaciones').where('participantes','array-contains',docenteEmail).onSnapshot(snap=>{
-        msgDocConvs=[];let nl=0;snap.forEach(doc=>{const d=doc.data();msgDocConvs.push({id:doc.id,...d});if(d.noLeidos?.[docenteEmail]>0)nl++;});
-        renderConvsDocente();document.getElementById('badge-msg-doc').classList.toggle('hidden',nl===0);
+function renderExamenesTags() {
+    const container = document.getElementById('tags-examenes');
+    container.innerHTML = "";
+    columnaExamenes.forEach(col => {
+        container.innerHTML += `
+            <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-1 rounded-lg">
+                ${col.label}
+                <button onclick="eliminarColumna('${col.key}')" class="text-rose-500 hover:text-rose-700 font-black"><i class="fas fa-times-circle"></i></button>
+            </span>
+        `;
     });
 }
-function renderConvsDocente(){
-    const cont=document.getElementById('msg-doc-convs');
-    if(!msgDocConvs.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin conversaciones aún.</p>';return;}
-    cont.innerHTML=msgDocConvs.map(c=>{const nl=c.noLeidos?.[docenteEmail]||0;return`<div onclick="abrirConvDocente('${c.id}')" class="bg-white p-4 rounded-2xl border cursor-pointer hover:bg-slate-50 transition flex items-center gap-3"><div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0">SC</div><div class="flex-1 min-w-0"><p class="font-bold text-sm truncate">${c.nombreOtro||c.emailOtro}</p><p class="text-slate-400 text-xs truncate">${c.ultimoMensaje||''}</p></div>${nl>0?`<span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">${nl}</span>`:''}</div>`;}).join('');
+
+async function agregarColumna() {
+    if(periodoActivo.bloqueado) return alert("El período está bloqueado. No podés modificar calificaciones.");
+    const nombre = prompt("Nombre de la nueva columna (ej: TP2, Parcial 1, Recup):");
+    if(!nombre || !nombre.trim()) return;
+    const key = 'nota_' + Date.now();
+    columnaExamenes.push({ key, label: nombre.trim() });
+    await guardarConfigColumnas();
+    cargarAlumnos();
 }
-async function abrirConvDocente(convId){
-    const conv=msgDocConvs.find(c=>c.id===convId);if(!conv)return;msgDocConvId=convId;
-    document.getElementById('msg-doc-chat-nombre').textContent=conv.nombreOtro||'Secretaría';
-    document.getElementById('msg-doc-lista').classList.add('hidden');document.getElementById('msg-doc-chat').classList.remove('hidden');document.getElementById('msg-doc-chat').classList.add('flex');
-    await db.collection('conversaciones').doc(convId).update({[`noLeidos.${docenteEmail}`]:0});
-    if(msgDocUnsub)msgDocUnsub();
-    msgDocUnsub=db.collection('conversaciones').doc(convId).collection('mensajes').orderBy('timestamp','asc').onSnapshot(snap=>{
-        const cont=document.getElementById('msg-doc-mensajes');let html='';
-        snap.forEach(doc=>{const m=doc.data();const eM=m.autorEmail===docenteEmail;const hora=m.timestamp?new Date(m.timestamp.seconds*1000).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
-            html+=`<div class="mb-w ${eM?'yo':'otro'}"><div class="mb ${eM?'yo':'otro'}">${(m.texto||''). replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${hora} · ${eM?'Vos':(m.autorNombre||m.autorEmail)}</span></div>`;
-        });cont.innerHTML=html||'<p class="text-center text-slate-300 text-sm py-4">Comenzá la conversación</p>';cont.scrollTop=cont.scrollHeight;
+
+async function eliminarColumna(key) {
+    if(periodoActivo.bloqueado) return alert("El período está bloqueado.");
+    if(!confirm("¿Eliminar esta columna de evaluación?")) return;
+    columnaExamenes = columnaExamenes.filter(c => c.key !== key);
+    await guardarConfigColumnas();
+    cargarAlumnos();
+}
+
+async function guardarConfigColumnas() {
+    const curso = document.getElementById('select-curso').value;
+    await db.collection('config_columnas').doc(`${periodoActivo.slug}_${curso}_${materiaActiva}`).set({
+        columnas: columnaExamenes
     });
 }
-async function abrirNuevaConvDocente(){
-    if(!window._secEmailDocente)return alert("No hay secretaría asignada para tu nivel.");
-    const existe=msgDocConvs.find(c=>c.participantes?.includes(window._secEmailDocente));
-    if(existe){abrirConvDocente(existe.id);return;}
-    const secDoc=await db.collection('usuarios').doc(window._secEmailDocente).get();const nomSec=secDoc.exists?secDoc.data().nombre:'Secretaría';
-    const primerMsg=`Hola, soy ${docenteData.nombre} (${materiaActiva}).`;
-    const convRef=db.collection('conversaciones').doc(),msgRef=convRef.collection('mensajes').doc(),batch=db.batch();
-    batch.set(convRef,{participantes:[docenteEmail,window._secEmailDocente],emailOtro:window._secEmailDocente,nombreOtro:nomSec,emailSecretaria:window._secEmailDocente,nombreSecretaria:nomSec,ultimoMensaje:primerMsg,ultimoTimestamp:firebase.firestore.FieldValue.serverTimestamp(),noLeidos:{[window._secEmailDocente]:1,[docenteEmail]:0},etiqueta:null,creadoEn:firebase.firestore.FieldValue.serverTimestamp()});
-    batch.set(msgRef,{texto:primerMsg,autorEmail:docenteEmail,autorNombre:docenteData.nombre,autorRol:'docente',timestamp:firebase.firestore.FieldValue.serverTimestamp(),leido:false});
+
+// PLANILLA DE NOTAS
+async function dibujarTablaNotas() {
+    const headers = document.getElementById('tabla-headers');
+    const body = document.getElementById('tabla-body');
+
+    // Generar Headers
+    headers.innerHTML = `<th class="col-alumno">Alumno</th>`;
+    if(docenteData.modalidadCalificacion === 'num') {
+        columnaExamenes.forEach(col => {
+            headers.innerHTML += `<th class="text-center">${col.label}</th>`;
+        });
+        headers.innerHTML += `<th class="text-center bg-blue-900/10 text-slate-900 font-extrabold">N1</th>`;
+        headers.innerHTML += `<th class="text-center bg-blue-900/10 text-slate-900 font-extrabold">N2</th>`;
+    } else {
+        headers.innerHTML += `<th class="text-center">Valoración RITE</th>`;
+    }
+    headers.innerHTML += `<th class="p-2">Obs. Docente</th>`;
+
+    // Obtener las notas guardadas de Firebase
+    const promesas = alumnosActuales.map(al => db.collection('alumnos').doc(al.id).collection('notas').doc(`${periodoActivo.slug}_${materiaActiva}`).get());
+    const snapshots = await Promise.all(promesas);
+
+    body.innerHTML = "";
+    alumnosActuales.forEach((al, i) => {
+        const snap = snapshots[i];
+        const data = snap.exists ? snap.data() : {};
+
+        let tr = `<tr><td class="col-alumno">${al.nombre}</td>`;
+
+        if(docenteData.modalidadCalificacion === 'num') {
+            columnaExamenes.forEach(col => {
+                const val = data[col.key] || "";
+                tr += `<td class="text-center"><input type="number" step="0.1" value="${val}" oninput="marcarCambioNota('${al.id}','${col.key}',this.value)" ${periodoActivo.bloqueado ? 'disabled' : ''}></td>`;
+            });
+            const n1 = data.n1 || "";
+            const n2 = data.n2 || "";
+            tr += `<td class="text-center bg-blue-50"><input type="number" step="0.1" value="${n1}" class="font-extrabold text-blue-700" oninput="marcarCambioNota('${al.id}','n1',this.value)" ${periodoActivo.bloqueado ? 'disabled' : ''}></td>`;
+            tr += `<td class="text-center bg-blue-50"><input type="number" step="0.1" value="${n2}" class="font-extrabold text-blue-700" oninput="marcarCambioNota('${al.id}','n2',this.value)" ${periodoActivo.bloqueado ? 'disabled' : ''}></td>`;
+        } else {
+            const rite = data.rite || "";
+            tr += `<td class="p-2"><div class="flex gap-1">
+                <div onclick="marcarRITE('${al.id}','TEA')" class="rite-btn rite-TEA ${rite==='TEA'?'sel':''}" id="btn-${al.id}-TEA">TEA</div>
+                <div onclick="marcarRITE('${al.id}','TEP')" class="rite-btn rite-TEP ${rite==='TEP'?'sel':''}" id="btn-${al.id}-TEP">TEP</div>
+                <div onclick="marcarRITE('${al.id}','TED')" class="rite-btn rite-TED ${rite==='TED'?'sel':''}" id="btn-${al.id}-TED">TED</div>
+            </div></td>`;
+        }
+
+        const obs = data.observaciones || "";
+        tr += `<td class="p-1"><input type="text" value="${obs}" placeholder="Sin observaciones" class="w-full h-8 px-2 border-0 bg-transparent text-xs" oninput="marcarCambioNota('${al.id}','observaciones',this.value)" ${periodoActivo.bloqueado ? 'disabled' : ''}></td></tr>`;
+        body.innerHTML += tr;
+    });
+}
+
+function marcarCambioNota(alId, campo, valor) {
+    if(!cambiosNotas[alId]) cambiosNotas[alId] = {};
+    cambiosNotas[alId][campo] = valor;
+    document.getElementById('btn-guardar-notas').style.display = 'block';
+}
+
+function marcarRITE(alId, valor) {
+    if(periodoActivo.bloqueado) return alert("El período está bloqueado.");
+    ['TEA','TEP','TED'].forEach(v => {
+        document.getElementById(`btn-${alId}-${v}`).classList.remove('sel');
+    });
+    document.getElementById(`btn-${alId}-${valor}`).classList.add('sel');
+    marcarCambioNota(alId, 'rite', valor);
+}
+
+async function guardarNotasFirebase() {
+    if(periodoActivo.bloqueado) return alert("No se pueden guardar notas en períodos bloqueados.");
+    const batch = db.batch();
+    for(const alId in cambiosNotas) {
+        const ref = db.collection('alumnos').doc(alId).collection('notas').doc(`${periodoActivo.slug}_${materiaActiva}`);
+        batch.set(ref, {
+            ...cambiosNotas[alId],
+            materia: materiaActiva,
+            periodo: periodoActivo.slug,
+            profesor: docenteData.nombre,
+            ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }
+    await batch.commit();
+    alert("Planilla de calificaciones guardada con éxito.");
+    cambiosNotas = {};
+    document.getElementById('btn-guardar-notas').style.display = 'none';
+}
+
+// PLANILLA DE ASISTENCIA
+async function cargarAsistenciaFecha() {
+    const curso = document.getElementById('select-curso').value;
+    const fecha = document.getElementById('fecha-hoy').value;
+    if(!curso || !fecha) return;
+
+    cambiosAsis = {};
+    document.getElementById('btn-guardar-asis').style.display = 'none';
+
+    const colSnap = await db.collection('asistencias').where('curso','==',curso).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
+    const asisMap = {};
+    colSnap.forEach(doc => {
+        const d = doc.data();
+        asisMap[d.alumnoId] = d;
+    });
+
+    const tbody = document.getElementById('tabla-asis-body');
+    tbody.innerHTML = "";
+
+    alumnosActuales.forEach(al => {
+        const asis = asisMap[al.id] || { estado: 'presente', tardanza: 'no', obs: '' };
+        let tr = `
+            <tr>
+                <td class="col-alumno">${al.nombre}</td>
+                <td class="p-2 text-center">
+                    <select onchange="marcarCambioAsis('${al.id}','estado',this.value)" class="bg-slate-100 p-1.5 rounded-lg text-xs font-bold outline-none">
+                        <option value="presente" ${asis.estado==='presente'?'selected':''}>Presente</option>
+                        <option value="ausente" ${asis.estado==='ausente'?'selected':''}>Ausente</option>
+                        <option value="media-falta" ${asis.estado==='media-falta'?'selected':''}>Media Falta</option>
+                    </select>
+                </td>
+                <td class="p-2 text-center">
+                    <select onchange="marcarCambioAsis('${al.id}','tardanza',this.value)" class="bg-slate-100 p-1.5 rounded-lg text-xs font-bold outline-none">
+                        <option value="no" ${asis.tardanza==='no'?'selected':''}>No</option>
+                        <option value="si" ${asis.tardanza==='si'?'selected':''}>Sí</option>
+                    </select>
+                </td>
+                <td class="p-1">
+                    <input type="text" value="${asis.obs || ''}" placeholder="Añadir nota corta" oninput="marcarCambioAsis('${al.id}','obs',this.value)" class="w-full h-8 px-2 bg-transparent border-0 text-xs outline-none">
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += tr;
+    });
+}
+
+function marcarCambioAsis(alId, campo, valor) {
+    if(!cambiosAsis[alId]) cambiosAsis[alId] = {};
+    cambiosAsis[alId][campo] = valor;
+    document.getElementById('btn-guardar-asis').style.display = 'block';
+}
+
+async function guardarAsistenciaFirebase() {
+    const curso = document.getElementById('select-curso').value;
+    const fecha = document.getElementById('fecha-hoy').value;
+    const batch = db.batch();
+
+    for(const alId in cambiosAsis) {
+        const idDoc = `${fecha}_${curso}_${materiaActiva}_${alId}`;
+        const ref = db.collection('asistencias').doc(idDoc);
+        
+        // Unir datos anteriores o por defecto
+        const defaultAsis = { estado: 'presente', tardanza: 'no', obs: '' };
+        batch.set(ref, {
+            ...defaultAsis,
+            ...cambiosAsis[alId],
+            alumnoId: alId,
+            curso: curso,
+            fecha: fecha,
+            materia: materiaActiva,
+            docente: docenteData.nombre,
+            ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }
+    await batch.commit();
+    alert("Asistencias registradas con éxito.");
+    cambiosAsis = {};
+    document.getElementById('btn-guardar-asis').style.display = 'none';
+}
+
+// GESTIÓN DEL EOE (EQUIPO DE ORIENTACIÓN ESCOLAR)
+async function cargarInformesEOE() {
+    try {
+        const snap = await db.collection('eoe').orderBy('fecha', 'desc').get();
+        listaInformesEOE = [];
+        snap.forEach(doc => {
+            listaInformesEOE.push({ id: doc.id, ...doc.data() });
+        });
+        dibujarTablaEOE(listaInformesEOE);
+    } catch (e) {
+        console.error("Error al cargar informes EOE:", e);
+    }
+}
+
+function dibujarTablaEOE(lista) {
+    const tbody = document.getElementById('tabla-eoe-body');
+    tbody.innerHTML = "";
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 font-bold">No hay informes EOE registrados.</td></tr>`;
+        return;
+    }
+    lista.forEach(inf => {
+        const f = inf.fecha ? (inf.fecha.toDate ? inf.fecha.toDate().toLocaleDateString() : new Date(inf.fecha).toLocaleDateString()) : "S/F";
+        tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="p-3 font-bold text-slate-800">${inf.alumnoNombre || "Desconocido"}</td>
+                <td class="p-3"><span class="bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded text-[10px]">${inf.area}</span></td>
+                <td class="p-3 max-w-xs truncate" title="${inf.detalle}">${inf.detalle}</td>
+                <td class="p-3 text-slate-500">${f}</td>
+                <td class="p-3 text-right space-x-1 whitespace-nowrap">
+                    <button onclick="editarInformeEOE('${inf.id}')" class="text-blue-600 hover:text-blue-800 p-1"><i class="fas fa-edit"></i></button>
+                    <button onclick="eliminarInformeEOE('${inf.id}')" class="text-rose-600 hover:text-rose-800 p-1"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function filtrarEOE() {
+    const q = document.getElementById('busqueda-eoe').value.toLowerCase();
+    const filtrado = listaInformesEOE.filter(i => (i.alumnoNombre || "").toLowerCase().includes(q));
+    dibujarTablaEOE(filtrado);
+}
+
+function abrirModalEOE() {
+    document.getElementById('eoe-id').value = "";
+    document.getElementById('eoe-form').reset();
+    document.getElementById('eoe-modal-titulo').innerText = "Nuevo Informe EOE";
+    document.getElementById('modal-eoe').classList.remove('hidden');
+}
+
+function cerrarModalEOE() {
+    document.getElementById('modal-eoe').classList.add('hidden');
+}
+
+async function editarInformeEOE(id) {
+    const inf = listaInformesEOE.find(i => i.id === id);
+    if (!inf) return;
+    document.getElementById('eoe-id').value = inf.id;
+    document.getElementById('eoe-alumno').value = inf.alumnoId;
+    document.getElementById('eoe-area').value = inf.area;
+    document.getElementById('eoe-detalle').value = inf.detalle;
+    document.getElementById('eoe-modal-titulo').innerText = "Editar Informe EOE";
+    document.getElementById('modal-eoe').classList.remove('hidden');
+}
+
+async function guardarInformeEOE(e) {
+    e.preventDefault();
+    const id = document.getElementById('eoe-id').value;
+    const alId = document.getElementById('eoe-alumno').value;
+    const alNombre = document.getElementById('eoe-alumno').options[document.getElementById('eoe-alumno').selectedIndex].text;
+    const area = document.getElementById('eoe-area').value.trim();
+    const detalle = document.getElementById('eoe-detalle').value.trim();
+
+    if (!alId || !area || !detalle) return alert("Completa todos los campos.");
+
+    const payload = {
+        alumnoId: alId,
+        alumnoNombre: alNombre,
+        area: area,
+        detalle: detalle,
+        docenteNombre: docenteData.nombre,
+        docenteEmail: docenteEmail,
+        fecha: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if (id) {
+            await db.collection('eoe').doc(id).update(payload);
+        } else {
+            await db.collection('eoe').add(payload);
+        }
+        cerrarModalEOE();
+        cargarInformesEOE();
+        alert("Informe guardado con éxito.");
+    } catch (err) {
+        console.error("Error al guardar informe:", err);
+    }
+}
+
+async function eliminarInformeEOE(id) {
+    if (!confirm("¿De verdad querés eliminar permanentemente este informe del EOE?")) return;
+    try {
+        await db.collection('eoe').doc(id).delete();
+        cargarInformesEOE();
+        alert("Informe eliminado.");
+    } catch (err) {
+        console.error("Error al eliminar informe:", err);
+    }
+}
+
+// CHAT CON LA SECRETARÍA DE NIVEL
+function inicializarChatSecretaria() {
+    const nivel = docenteData.nivel || "NIVEL";
+    msgDocConvId = `conv_${nivel}`;
+
+    if(msgDocUnsub) msgDocUnsub();
+
+    msgDocUnsub = db.collection('conversaciones').doc(msgDocConvId).collection('mensajes').orderBy('fecha','asc').onSnapshot(snap => {
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = "";
+        
+        if(snap.empty) {
+            chatBox.innerHTML = `
+                <div class="text-center py-12 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-2">
+                    <i class="fas fa-comments text-2xl text-slate-300"></i>
+                    Comienza el chat de comunicación oficial con la Secretaría de Nivel.
+                </div>`;
+            return;
+        }
+
+        snap.forEach(doc => {
+            const m = doc.data();
+            const yo = m.remitenteEmail === docenteEmail;
+            const t = m.fecha ? (m.fecha.toDate ? m.fecha.toDate().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '') : '';
+            
+            chatBox.innerHTML += `
+                <div class="mb-w ${yo?'yo':'otro'}">
+                    <span class="text-[9px] font-black text-slate-400 mb-0.5">${yo ? docenteData.nombre : m.remitenteNombre}</span>
+                    <div class="mb ${yo?'yo':'otro'}">${m.texto}</div>
+                    <span class="mb-meta">${t}</span>
+                </div>
+            `;
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+}
+
+async function enviarMsgSec() {
+    const input = document.getElementById('chat-input');
+    const texto = input.value.trim();
+    if(!texto) return;
+    input.value = "";
+
+    const nivel = docenteData.nivel || "NIVEL";
+    const refConv = db.collection('conversaciones').doc(msgDocConvId);
+
+    const batch = db.batch();
+    const msgRef = refConv.collection('mensajes').doc();
+    batch.set(msgRef, {
+        texto,
+        remitenteEmail: docenteEmail,
+        remitenteNombre: docenteData.nombre,
+        fecha: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.set(refConv, {
+        nivel: nivel,
+        ultimoMensaje: texto,
+        remitenteNombre: docenteData.nombre,
+        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
     await batch.commit();
 }
-async function msgDocEnviar(){
-    if(!msgDocConvId)return;const input=document.getElementById('msg-doc-input');const texto=input.value.trim();if(!texto)return;input.value='';
-    const conv=msgDocConvs.find(c=>c.id===msgDocConvId),emailOtro=conv?.emailOtro||window._secEmailDocente;
-    const batch=db.batch(),convRef=db.collection('conversaciones').doc(msgDocConvId),msgRef=convRef.collection('mensajes').doc();
-    batch.set(msgRef,{texto,autorEmail:docenteEmail,autorNombre:docenteData.nombre,autorRol:'docente',timestamp:firebase.firestore.FieldValue.serverTimestamp(),leido:false});
-    batch.update(convRef,{ultimoMensaje:texto,ultimoTimestamp:firebase.firestore.FieldValue.serverTimestamp(),[`noLeidos.${emailOtro}`]:firebase.firestore.FieldValue.increment(1)});
-    await batch.commit();
-}
-function volverListaDocente(){document.getElementById('msg-doc-lista').classList.remove('hidden');document.getElementById('msg-doc-chat').classList.add('hidden');document.getElementById('msg-doc-chat').classList.remove('flex');if(msgDocUnsub){msgDocUnsub();msgDocUnsub=null;}msgDocConvId=null;}
 
-// ── PDF ──
-async function descargarPDF(id,nombre){
-    const curso=document.getElementById('select-curso').value;
-    const snap=await db.collection('alumnos').doc(id).collection('notas_v2').get();
-    document.getElementById('pdf-nombre').innerText=nombre;document.getElementById('pdf-curso').innerText=curso;document.getElementById('pdf-fecha').innerText=new Date().toLocaleDateString();
-    const body=document.getElementById('pdf-body');body.innerHTML='';
-    snap.forEach(doc=>{const n=doc.data();let calif=n.rite||Object.entries(n).filter(([k,v])=>k.startsWith('nota_')).map(([k,v])=>v).join(' / ')||'—';
-        body.innerHTML+=`<tr><td style="border:1px solid #e2e8f0;padding:10px;font-weight:700;">${n.materia||doc.id}</td><td style="border:1px solid #e2e8f0;padding:10px;text-align:center;font-weight:800;color:#2563eb;">${calif}</td><td style="border:1px solid #e2e8f0;padding:10px;font-size:9px;">${n.obs||''}</td></tr>`;
-    });
-    const el=document.getElementById('pdf-template');el.style.display='block';html2pdf().from(el).save().then(()=>el.style.display='none');
-}
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('tab-' + tabId).classList.add('active');
+    document.getElementById('btn-' + tabId).classList.add('active');
 
-// ── UTILS ──
-function switchTab(tab){
-    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('tab-'+tab).classList.add('active');document.getElementById('btn-'+tab).classList.add('active');
-    if(tab==='notas'){document.getElementById('btn-guardar-asis').style.display='none';if(Object.keys(cambiosNotas).length>0)document.getElementById('btn-guardar-notas').style.display='block';}
-    else if(tab==='asis'){document.getElementById('btn-guardar-notas').style.display='none';if(Object.keys(cambiosAsis).length>0)document.getElementById('btn-guardar-asis').style.display='block';}
-    else{document.getElementById('btn-guardar-notas').style.display='none';document.getElementById('btn-guardar-asis').style.display='none';}
-    if(tab==='mensajes')document.getElementById('badge-msg-doc').classList.add('hidden');
+    // Botones de guardado persistente flotantes
+    document.getElementById('btn-guardar-notas').style.display = 'none';
+    document.getElementById('btn-guardar-asis').style.display = 'none';
+
+    if(tabId === 'notas' && Object.keys(cambiosNotas).length > 0) {
+        document.getElementById('btn-guardar-notas').style.display = 'block';
+    } else if(tabId === 'asis' && Object.keys(cambiosAsis).length > 0) {
+        document.getElementById('btn-guardar-asis').style.display = 'block';
+    }
 }
-document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 </script>
 </body>
 </html>
