@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <!-- Librería EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -15,36 +14,80 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; padding-bottom: 40px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
+        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; font-family: inherit; }
         .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* ── Mensajería ── */
+        #msg-sidebar { width: 300px; min-width: 300px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 57px); position: sticky; top: 57px; }
+        #msg-chat-area { flex: 1; display: flex; flex-direction: column; height: calc(100vh - 57px); }
+        .conv-item { padding: 12px 14px; border-bottom: 1px solid #f8fafc; cursor: pointer; transition: background 0.15s; }
+        .conv-item:hover { background: #f8fafc; }
+        .conv-item.active { background: #eff6ff; border-left: 3px solid #2563eb; }
+        .msg-burbuja-wrapper { display: flex; flex-direction: column; max-width: 72%; margin-bottom: 4px; }
+        .msg-burbuja-wrapper.yo   { align-self: flex-end;   align-items: flex-end; }
+        .msg-burbuja-wrapper.otro { align-self: flex-start; align-items: flex-start; }
+        .msg-burbuja { padding: 10px 15px; border-radius: 18px; font-size: 13px; line-height: 1.5; word-break: break-word; }
+        .msg-burbuja.yo   { background: #0f172a; color: white; border-bottom-right-radius: 4px; }
+        .msg-burbuja.otro { background: white; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+        .msg-meta { font-size: 10px; color: #94a3b8; font-weight: 700; margin-top: 3px; }
+        .etiqueta-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
+        .et-consulta { background: #dbeafe; color: #1e40af; }
+        .et-tramite   { background: #d1fae5; color: #065f46; }
+        .et-urgente   { background: #fee2e2; color: #991b1b; }
+        .et-resuelto  { background: #f1f5f9; color: #64748b; }
+        .nivel-pill { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
+        .nivel-inicial    { background: #fce7f3; color: #9d174d; }
+        .nivel-primario   { background: #dbeafe; color: #1e40af; }
+        .nivel-secundario { background: #d1fae5; color: #065f46; }
     </style>
 </head>
 <body>
 
-    <div id="comunicaciones-content">
-        <nav class="bg-white border-b p-4 flex gap-4 sticky top-0 z-50 shadow-sm overflow-x-auto">
-            <button onclick="switchTab('noticias')" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap">
-                <i class="fas fa-bullhorn mr-2"></i>Noticias y Avisos
+    <!-- ══ LOGIN ══ -->
+    <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[2000] flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
+            <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-bullhorn"></i></div>
+            <h1 class="text-3xl font-black tracking-tighter">Panel de Comunicación</h1>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 mb-8">Iosef Caro</p>
+            <div class="space-y-4">
+                <input type="email" id="log-email" placeholder="Tu email" class="input-pro">
+                <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
+                <button onclick="loginComunicacion()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">ACCEDER</button>
+            </div>
+            <p id="login-err" class="text-red-500 text-xs font-bold mt-4 hidden"></p>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden">
+        <!-- ══ NAVBAR ══ -->
+        <nav class="bg-white border-b p-3 flex gap-2 sticky top-0 z-50 shadow-sm overflow-x-auto" id="main-nav">
+            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm">
+                <i class="fas fa-bullhorn mr-2"></i>Noticias
             </button>
-            <button onclick="switchTab('calendario')" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap">
-                <i class="fas fa-calendar-star mr-2"></i>Calendario Escolar
+            <button onclick="switchTab('calendario')" id="navbtn-calendario" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm">
+                <i class="fas fa-calendar-star mr-2"></i>Calendario
             </button>
-            <button onclick="location.reload()" class="ml-auto text-rose-500 font-bold px-4 py-2 hover:bg-rose-50 rounded-xl transition">
-                <i class="fas fa-sync"></i>
+            <!-- Solo visible para secretarías y admin -->
+            <button onclick="switchTab('mensajes')" id="navbtn-mensajes" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
+                <i class="fas fa-comments mr-2"></i>Mensajes
+                <span id="badge-msg-sec" class="hidden ml-1 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">!</span>
             </button>
+            <div class="ml-auto flex items-center gap-2">
+                <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
+                <button onclick="location.reload()" class="text-rose-500 font-bold p-2 hover:bg-rose-50 rounded-xl transition"><i class="fas fa-power-off"></i></button>
+            </div>
         </nav>
 
         <main class="p-4 max-w-5xl mx-auto">
+
+            <!-- ════ TAB NOTICIAS ════ -->
             <section id="tab-noticias" class="tab-content active space-y-6">
-                <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                <div id="form-noticias" class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="noticia-form-title" class="font-black text-xl mb-4 text-slate-800">Nueva Publicación</h2>
                     <input type="hidden" id="noticia-id">
-                    
                     <div class="grid grid-cols-1 gap-4">
-                        <input type="text" id="not-titulo" placeholder="Asunto o Título de la noticia" class="input-pro">
+                        <input type="text" id="not-titulo" placeholder="Asunto o Título" class="input-pro">
                         <textarea id="not-texto" placeholder="Escribe el cuerpo del mensaje..." class="input-pro h-32"></textarea>
-                        
                         <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Programar Publicación</label>
@@ -52,41 +95,34 @@
                             </div>
                             <div>
                                 <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Cursos Destinatarios</label>
-                                <div id="cursos-noticia" class="flex flex-wrap gap-2 mt-1">
-                                    <span class="text-xs text-slate-400 italic">Cargando cursos...</span>
-                                </div>
+                                <div id="cursos-noticia" class="flex flex-wrap gap-2 mt-1"><span class="text-xs text-slate-400 italic">Cargando cursos...</span></div>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="not-img" placeholder="URL Imagen (ImgBB)" class="input-pro">
-                            <input type="text" id="not-video" placeholder="URL YouTube/Video" class="input-pro">
-                            <input type="text" id="not-pdf" placeholder="URL PDF" class="input-pro">
-                            <input type="text" id="not-link" placeholder="Enlace Externo" class="input-pro">
+                            <input type="text" id="not-img"   placeholder="URL Imagen"         class="input-pro">
+                            <input type="text" id="not-video" placeholder="URL YouTube/Video"  class="input-pro">
+                            <input type="text" id="not-pdf"   placeholder="URL PDF"            class="input-pro">
+                            <input type="text" id="not-link"  placeholder="Enlace Externo"     class="input-pro">
                         </div>
-
-                        <div class="flex gap-2 mt-4">
+                        <div class="flex gap-2 mt-2">
                             <button onclick="guardarNoticia()" id="btn-noticia" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">Publicar y Enviar Mail</button>
                             <button onclick="resetFormNoticia()" id="btn-cancel-noticia" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">Cancelar</button>
                         </div>
                     </div>
                 </div>
-
-                <div class="space-y-4">
-                    <h3 class="font-black text-lg text-slate-800 ml-2">Historial de Publicaciones</h3>
+                <div>
+                    <h3 class="font-black text-lg text-slate-800 ml-2 mb-4">Historial de Publicaciones</h3>
                     <div id="lista-noticias" class="space-y-4"></div>
                 </div>
             </section>
 
+            <!-- ════ TAB CALENDARIO ════ -->
             <section id="tab-calendario" class="tab-content space-y-6">
-                <!-- Sección Calendario se mantiene igual -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="cal-form-title" class="font-black text-xl mb-4 text-slate-800">Agendar al Calendario</h2>
                     <input type="hidden" id="cal-id">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <input type="text" id="cal-titulo" placeholder="Título del evento" class="input-pro">
-                        </div>
+                        <div class="md:col-span-2"><input type="text" id="cal-titulo" placeholder="Título del evento" class="input-pro"></div>
                         <textarea id="cal-desc" placeholder="Breve descripción..." class="input-pro md:col-span-2 h-20"></textarea>
                         <input type="date" id="cal-fecha" class="input-pro">
                         <select id="cal-tipo" class="input-pro">
@@ -99,287 +135,498 @@
                             <div id="cursos-calendario" class="flex flex-wrap gap-2 mt-1"></div>
                         </div>
                         <div class="md:col-span-2 flex gap-2">
-                            <button onclick="guardarCalendario()" id="btn-cal" class="flex-1 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700">Guardar Evento</button>
+                            <button onclick="guardarCalendario()" class="flex-1 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700">Guardar Evento</button>
                             <button onclick="resetFormCalendario()" id="btn-cancel-cal" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">X</button>
                         </div>
                     </div>
                 </div>
                 <div id="lista-calendario" class="space-y-3"></div>
             </section>
+
+            <!-- ════ TAB MENSAJES (SECRETARÍA) ════ -->
+            <section id="tab-mensajes" class="tab-content">
+                <div class="flex gap-0 -mx-4 -mt-4" style="height: calc(100vh - 140px);">
+
+                    <!-- Sidebar de conversaciones -->
+                    <div id="msg-sidebar">
+                        <div class="p-4 border-b">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-black text-base">Bandeja</h3>
+                                <button onclick="abrirModalNuevaSec()" class="w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center text-sm hover:bg-blue-700 transition">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <input type="text" id="msg-buscador" placeholder="Buscar..." oninput="renderConvsSec()" class="input-pro py-2 text-sm">
+                        </div>
+                        <div class="flex gap-1 p-2 border-b overflow-x-auto">
+                            <button onclick="setFiltroSec('todas',this)"    class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-slate-900 text-white whitespace-nowrap">Todas</button>
+                            <button onclick="setFiltroSec('no-leidas',this)" class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-white border text-slate-500 whitespace-nowrap">No leídas</button>
+                            <button onclick="setFiltroSec('urgente',this)"   class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-white border text-slate-500 whitespace-nowrap">Urgentes</button>
+                            <button onclick="setFiltroSec('resuelto',this)"  class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-white border text-slate-500 whitespace-nowrap">Resueltas</button>
+                        </div>
+                        <div id="msg-lista-convs" class="flex-1 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- Área de chat -->
+                    <div id="msg-chat-area">
+                        <div id="msg-estado-vacio" class="flex flex-col items-center justify-center h-full text-slate-300 gap-4">
+                            <i class="fas fa-comments text-5xl"></i>
+                            <p class="font-bold">Seleccioná una conversación</p>
+                        </div>
+                        <div id="msg-chat-activo" class="hidden flex-col h-full">
+                            <div class="bg-white border-b px-5 py-3 flex items-center gap-3 flex-wrap">
+                                <div id="msg-chat-avatar" class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p id="msg-chat-nombre" class="font-black text-sm truncate"></p>
+                                    <p id="msg-chat-sub"    class="text-[10px] text-slate-400 font-bold truncate"></p>
+                                </div>
+                                <div class="flex gap-1 flex-wrap">
+                                    <button onclick="setEtiquetaSec('consulta')" class="text-[9px] font-black px-2 py-1 rounded-lg et-consulta etiqueta-tag">Consulta</button>
+                                    <button onclick="setEtiquetaSec('tramite')"  class="text-[9px] font-black px-2 py-1 rounded-lg et-tramite etiqueta-tag">Trámite</button>
+                                    <button onclick="setEtiquetaSec('urgente')"  class="text-[9px] font-black px-2 py-1 rounded-lg et-urgente etiqueta-tag">Urgente</button>
+                                    <button onclick="setEtiquetaSec('resuelto')" class="text-[9px] font-black px-2 py-1 rounded-lg et-resuelto etiqueta-tag">Resuelto</button>
+                                </div>
+                            </div>
+                            <div id="msg-mensajes-cont" class="flex-1 overflow-y-auto p-5 flex flex-col gap-2 bg-slate-50" style="scroll-behavior:smooth;"></div>
+                            <div class="bg-white border-t p-4 flex gap-2 items-end">
+                                <textarea id="msg-sec-input" rows="1" placeholder="Escribí tu respuesta..." class="flex-1 border border-slate-200 rounded-xl p-3 font-sans text-xs resize-none outline-none bg-slate-50 focus:bg-white focus:border-slate-800 transition" style="max-height:100px;"
+                                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMsgSec();}"></textarea>
+                                <button onclick="enviarMsgSec()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0 hover:bg-black transition">
+                                    <i class="fas fa-paper-plane text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
+    <!-- Modal nueva conversación -->
+    <div id="modal-nueva-sec" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[500] hidden items-center justify-center p-6">
+        <div class="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl">
+            <h3 class="font-black text-xl mb-6">Nueva conversación</h3>
+            <div class="space-y-4">
+                <input type="email" id="nueva-sec-email" placeholder="Email de la familia o docente" class="input-pro">
+                <textarea id="nueva-sec-msg" placeholder="Primer mensaje..." class="input-pro h-24 resize-none"></textarea>
+                <div class="flex gap-3">
+                    <button onclick="cerrarModalNuevaSec()" class="flex-1 py-3 rounded-2xl border font-bold text-slate-500">Cancelar</button>
+                    <button onclick="crearConvSec()" class="flex-1 py-3 rounded-2xl bg-slate-900 text-white font-bold">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-    (function(){ emailjs.init("hDKMmExBMzhAWF_KH"); })();
+        (function(){ emailjs.init("hDKMmExBMzhAWF_KH"); })();
 
-    const firebaseConfig = { 
-        apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
-        authDomain: "app-iosefcaro.firebaseapp.com", 
-        projectId: "app-iosefcaro", 
-        storageBucket: "app-iosefcaro.firebasestorage.app", 
-        messagingSenderId: "651320124248", 
-        appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
-    };
+        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.firestore();
 
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const db = firebase.firestore();
+        let staffEmail  = "";
+        let staffNombre = "";
+        let staffRol    = "";
+        let staffNiveles = [];
 
-    window.onload = () => { inicializarApp(); };
+        // ═══ MENSAJERÍA ═══
+        let secConvActiva  = null;
+        let secConvs       = [];
+        let secFiltro      = 'todas';
+        let secUnsubChat   = null;
+        let secUnsubConvs  = null;
 
-    function inicializarApp() {
-        cargarCursos();
-        cargarNoticias();
-        cargarEventosCalendario();
-    }
+        // ═══ LOGIN ═══
+        async function loginComunicacion() {
+            const email = document.getElementById('log-email').value.toLowerCase().trim();
+            const pass  = document.getElementById('log-pass').value;
+            const errEl = document.getElementById('login-err');
+            errEl.classList.add('hidden');
 
-    // --- LOGICA DE CURSOS ---
-    async function cargarCursos() {
-        try {
-            const snap = await db.collection('cursos').get();
-            const cursos = snap.docs.map(doc => doc.data().nombre).sort();
-            const contNot = document.getElementById('cursos-noticia');
-            const contCal = document.getElementById('cursos-calendario');
-            [contNot, contCal].forEach(cont => {
-                if(!cont) return;
-                cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="all-${cont.id}" onchange="toggleTodos(this, '${cont.id}')"> TODOS</label>`;
-                cursos.forEach(c => {
-                    cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c}"> ${c}</label>`;
+            if (!email || !pass) { errEl.textContent = 'Ingresá tus datos.'; errEl.classList.remove('hidden'); return; }
+
+            // Superadmin
+            if (email === 'uriel.bacher@gmail.com' && pass === 'Gallardo10') {
+                staffEmail = email; staffNombre = 'Administrador'; staffRol = 'admin'; staffNiveles = ['inicial','primario','secundario'];
+                iniciarApp(); return;
+            }
+
+            try {
+                const doc = await db.collection('usuarios').doc(email).get();
+                if (!doc.exists) { errEl.textContent = 'Usuario no encontrado.'; errEl.classList.remove('hidden'); return; }
+                const data = doc.data();
+                if (data.pass !== pass) { errEl.textContent = 'Contraseña incorrecta.'; errEl.classList.remove('hidden'); return; }
+                const rolesPermitidos = ['admin','comunicacion','secretaria_inicial','secretaria_primario','secretaria_secundario'];
+                if (!rolesPermitidos.includes(data.rol)) { errEl.textContent = 'Sin permisos para este panel.'; errEl.classList.remove('hidden'); return; }
+                staffEmail  = email;
+                staffNombre = data.nombre;
+                staffRol    = data.rol;
+                staffNiveles = data.niveles || [];
+                iniciarApp();
+            } catch(e) { errEl.textContent = 'Error de conexión.'; errEl.classList.remove('hidden'); }
+        }
+
+        function iniciarApp() {
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('app-content').classList.remove('hidden');
+            document.getElementById('user-label').textContent = staffNombre;
+            document.getElementById('user-label').classList.remove('hidden');
+
+            // Solo secretarías y admin ven tab mensajes
+            const esSecOAdmin = staffRol === 'admin' || staffRol.startsWith('secretaria_');
+            if (esSecOAdmin) document.getElementById('navbtn-mensajes').classList.remove('hidden');
+
+            // Solo admin y comunicacion ven publicar noticias
+            const puedePublicar = ['admin','comunicacion'].includes(staffRol);
+            if (!puedePublicar) document.getElementById('form-noticias').classList.add('hidden');
+
+            inicializarApp();
+            if (esSecOAdmin) escucharConvsSec();
+        }
+
+        function inicializarApp() {
+            cargarCursos();
+            cargarNoticias();
+            cargarEventosCalendario();
+        }
+
+        // ═══ CURSOS ═══
+        async function cargarCursos() {
+            try {
+                const snap = await db.collection('cursos').get();
+                const cursos = snap.docs.map(doc => ({ nombre: doc.data().nombre, nivel: doc.data().nivel })).sort((a,b) => a.nombre.localeCompare(b.nombre));
+                const contNot = document.getElementById('cursos-noticia');
+                const contCal = document.getElementById('cursos-calendario');
+                [contNot, contCal].forEach(cont => {
+                    if (!cont) return;
+                    const suffix = cont.id.replace('cursos-', '');
+                    cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="all-${cont.id}" onchange="toggleTodos(this,'${cont.id}')"> TODOS</label>`;
+                    cursos.forEach(c => {
+                        cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c.nombre}"> ${c.nombre}</label>`;
+                    });
                 });
-            });
-        } catch(e) { console.log("Error cursos:", e); }
-    }
+            } catch(e) { console.log("Error cursos:", e); }
+        }
 
-    function toggleTodos(source, contId) {
-        document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked);
-    }
+        function toggleTodos(source, contId) { document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked); }
 
-    // --- SECCIÓN NOTICIAS ---
-    async function cargarNoticias() {
-        const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
-        const cont = document.getElementById('lista-noticias');
-        cont.innerHTML = "";
-        snap.forEach(doc => {
-            const n = doc.data();
-            cont.innerHTML += `
-                <div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col gap-3">
+        // ═══ NOTICIAS ═══
+        async function cargarNoticias() {
+            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+            const cont = document.getElementById('lista-noticias');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                const n = doc.data();
+                const puedeEditar = ['admin','comunicacion'].includes(staffRol);
+                cont.innerHTML += `<div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col gap-3">
                     <div class="flex justify-between items-start">
                         <div>
                             <h4 class="font-bold text-slate-800">${n.titulo}</h4>
-                            <p class="text-xs text-slate-400">${new Date(n.fechaCreacion).toLocaleString()}</p>
+                            <p class="text-xs text-slate-400">${new Date(n.fechaCreacion).toLocaleString('es-AR')}</p>
                         </div>
-                        <div class="flex gap-2">
+                        ${puedeEditar ? `<div class="flex gap-2">
                             <button onclick="editarNoticia('${doc.id}')" class="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><i class="fas fa-edit"></i></button>
-                            <button onclick="eliminarDoc('comunicados', '${doc.id}')" class="text-rose-400 p-2 hover:bg-rose-50 rounded-lg"><i class="fas fa-trash"></i></button>
-                        </div>
+                            <button onclick="eliminarDoc('comunicados','${doc.id}')" class="text-rose-400 p-2 hover:bg-rose-50 rounded-lg"><i class="fas fa-trash"></i></button>
+                        </div>` : ''}
                     </div>
                     <p class="text-sm text-slate-600 line-clamp-2">${n.texto}</p>
                     <div class="flex flex-wrap gap-1">
                         ${n.curso ? n.curso.map(c => `<span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded text-slate-500">${c}</span>`).join('') : ''}
                     </div>
                 </div>`;
-        });
-    }
+            });
+        }
 
-    async function guardarNoticia() {
-        const id = document.getElementById('noticia-id').value;
-        const titulo = document.getElementById('not-titulo').value;
-        const texto = document.getElementById('not-texto').value;
-        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-        const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-        
-        if(!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
+        async function guardarNoticia() {
+            const id    = document.getElementById('noticia-id').value;
+            const titulo = document.getElementById('not-titulo').value;
+            const texto  = document.getElementById('not-texto').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+            const esTodos = document.getElementById('all-cursos-noticia')?.checked;
+            if (!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
+            const btn = document.getElementById('btn-noticia');
+            btn.disabled = true; btn.innerText = "Procesando...";
+            const data = {
+                titulo, texto, curso: seleccionados,
+                programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
+                adjuntos: { img: document.getElementById('not-img').value, video: document.getElementById('not-video').value, pdf: document.getElementById('not-pdf').value, link: document.getElementById('not-link').value },
+                fechaCreacion: new Date().toISOString()
+            };
+            try {
+                if (id) { await db.collection('comunicados').doc(id).update(data); alert("Publicación actualizada."); }
+                else { await db.collection('comunicados').add(data); await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos); alert("Publicado y mails enviados."); }
+                location.reload();
+            } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
+        }
 
-        const btn = document.getElementById('btn-noticia');
-        btn.disabled = true;
-        btn.innerText = "Procesando...";
+        async function editarNoticia(id) {
+            const doc = await db.collection('comunicados').doc(id).get();
+            const n = doc.data();
+            document.getElementById('noticia-id').value = id;
+            document.getElementById('not-titulo').value  = n.titulo;
+            document.getElementById('not-texto').value   = n.texto;
+            document.getElementById('not-img').value     = n.adjuntos?.img   || "";
+            document.getElementById('not-video').value   = n.adjuntos?.video || "";
+            document.getElementById('not-pdf').value     = n.adjuntos?.pdf   || "";
+            document.getElementById('not-link').value    = n.adjuntos?.link  || "";
+            document.querySelectorAll('.check-cursos-noticia').forEach(cb => { cb.checked = n.curso && n.curso.includes(cb.value); });
+            document.getElementById('noticia-form-title').innerText = "Editando Publicación";
+            document.getElementById('btn-cancel-noticia').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-        const data = {
-            titulo, texto, curso: seleccionados,
-            programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-            adjuntos: {
-                img: document.getElementById('not-img').value,
-                video: document.getElementById('not-video').value,
-                pdf: document.getElementById('not-pdf').value,
-                link: document.getElementById('not-link').value
-            },
-            fechaCreacion: new Date().toISOString()
-        };
+        function resetFormNoticia() {
+            document.getElementById('noticia-id').value = "";
+            document.getElementById('not-titulo').value = "";
+            document.getElementById('not-texto').value  = "";
+            document.querySelectorAll('.check-cursos-noticia').forEach(cb => cb.checked = false);
+            document.getElementById('noticia-form-title').innerText = "Nueva Publicación";
+            document.getElementById('btn-cancel-noticia').classList.add('hidden');
+        }
 
-        try {
-            if(id) {
-                await db.collection('comunicados').doc(id).update(data);
-                alert("Publicación actualizada.");
-            } else {
-                await db.collection('comunicados').add(data);
-                await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos);
-                alert("Publicado y mails enviados.");
-            }
+        // ═══ CALENDARIO ═══
+        async function cargarEventosCalendario() {
+            const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
+            const cont = document.getElementById('lista-calendario');
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                const e = doc.data();
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
+                    <div class="flex-1">
+                        <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
+                        <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editarCalendario('${doc.id}')" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarDoc('eventos','${doc.id}')"   class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        async function guardarCalendario() {
+            const id = document.getElementById('cal-id').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
+            const data = {
+                titulo: document.getElementById('cal-titulo').value,
+                descripcion: document.getElementById('cal-desc').value,
+                fecha: document.getElementById('cal-fecha').value,
+                tipo: document.getElementById('cal-tipo').value,
+                tag: seleccionados
+            };
+            if (!data.titulo || !data.fecha) return alert("Título y Fecha son obligatorios.");
+            if (id) await db.collection('eventos').doc(id).update(data);
+            else    await db.collection('eventos').add(data);
             location.reload();
-        } catch(e) {
-            alert("Error: " + e.message);
-            btn.disabled = false;
         }
-    }
 
-    async function editarNoticia(id) {
-        const doc = await db.collection('comunicados').doc(id).get();
-        const n = doc.data();
-        document.getElementById('noticia-id').value = id;
-        document.getElementById('not-titulo').value = n.titulo;
-        document.getElementById('not-texto').value = n.texto;
-        document.getElementById('not-img').value = n.adjuntos?.img || "";
-        document.getElementById('not-video').value = n.adjuntos?.video || "";
-        document.getElementById('not-pdf').value = n.adjuntos?.pdf || "";
-        document.getElementById('not-link').value = n.adjuntos?.link || "";
-        
-        // Marcar checkboxes guardados
-        document.querySelectorAll('.check-cursos-noticia').forEach(cb => {
-            cb.checked = n.curso && n.curso.includes(cb.value);
-        });
-
-        document.getElementById('noticia-form-title').innerText = "Editando Publicación";
-        document.getElementById('btn-cancel-noticia').classList.remove('hidden');
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function resetFormNoticia() {
-        document.getElementById('noticia-id').value = "";
-        document.getElementById('not-titulo').value = "";
-        document.getElementById('not-texto').value = "";
-        document.querySelectorAll('.check-cursos-noticia').forEach(cb => cb.checked = false);
-        document.getElementById('noticia-form-title').innerText = "Nueva Publicación";
-        document.getElementById('btn-cancel-noticia').classList.add('hidden');
-    }
-
-    // --- SECCIÓN CALENDARIO ---
-    async function cargarEventosCalendario() {
-        const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
-        const cont = document.getElementById('lista-calendario');
-        cont.innerHTML = "";
-        snap.forEach(doc => {
+        async function editarCalendario(id) {
+            const doc = await db.collection('eventos').doc(id).get();
             const e = doc.data();
-            cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
-                <div class="flex-1">
-                    <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
-                    <h4 class="font-bold text-slate-800">${e.titulo}</h4>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="editarCalendario('${doc.id}')" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
-                    <button onclick="eliminarDoc('eventos', '${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>`;
-        });
-    }
-
-    async function guardarCalendario() {
-        const id = document.getElementById('cal-id').value;
-        const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
-        const data = {
-            titulo: document.getElementById('cal-titulo').value,
-            descripcion: document.getElementById('cal-desc').value,
-            fecha: document.getElementById('cal-fecha').value,
-            tipo: document.getElementById('cal-tipo').value,
-            tag: seleccionados
-        };
-        if(!data.titulo || !data.fecha) return alert("Título y Fecha son obligatorios.");
-
-        if(id) await db.collection('eventos').doc(id).update(data);
-        else await db.collection('eventos').add(data);
-        location.reload();
-    }
-
-    async function editarCalendario(id) {
-        const doc = await db.collection('eventos').doc(id).get();
-        const e = doc.data();
-        document.getElementById('cal-id').value = id;
-        document.getElementById('cal-titulo').value = e.titulo;
-        document.getElementById('cal-desc').value = e.descripcion;
-        document.getElementById('cal-fecha').value = e.fecha;
-        document.getElementById('cal-tipo').value = e.tipo;
-        
-        document.querySelectorAll('.check-cursos-calendario').forEach(cb => {
-            cb.checked = e.tag && e.tag.includes(cb.value);
-        });
-
-        document.getElementById('cal-form-title').innerText = "Editando Evento";
-        document.getElementById('btn-cancel-cal').classList.remove('hidden');
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function resetFormCalendario() {
-        document.getElementById('cal-id').value = "";
-        document.getElementById('cal-titulo').value = "";
-        document.getElementById('cal-desc').value = "";
-        document.getElementById('cal-fecha').value = "";
-        document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
-        document.getElementById('btn-cancel-cal').classList.add('hidden');
-    }
-
-  async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
-    console.log("Iniciando proceso de envío filtrado...");
-
-    try {
-        // Filtramos de entrada para que solo busque usuarios con rol 'familia'
-        let query = db.collection('usuarios').where('rol', '==', 'familia');
-
-        // Si no es para todos, aplicamos el filtro por curso
-        if (!esTodos && cursosFiltro.length > 0) {
-            query = query.where('curso', 'in', cursosFiltro);
+            document.getElementById('cal-id').value    = id;
+            document.getElementById('cal-titulo').value = e.titulo;
+            document.getElementById('cal-desc').value   = e.descripcion;
+            document.getElementById('cal-fecha').value  = e.fecha;
+            document.getElementById('cal-tipo').value   = e.tipo;
+            document.querySelectorAll('.check-cursos-calendario').forEach(cb => { cb.checked = e.tag && e.tag.includes(cb.value); });
+            document.getElementById('cal-form-title').innerText = "Editando Evento";
+            document.getElementById('btn-cancel-cal').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        const snap = await query.get();
-        
-        if (snap.empty) {
-            console.warn("No se encontraron familiares que coincidan con el curso.");
-            return;
+        function resetFormCalendario() {
+            document.getElementById('cal-id').value = "";
+            document.getElementById('cal-titulo').value = "";
+            document.getElementById('cal-desc').value = "";
+            document.getElementById('cal-fecha').value = "";
+            document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
+            document.getElementById('btn-cancel-cal').classList.add('hidden');
         }
 
-        const promesas = [];
-        snap.forEach(doc => {
-            const userData = doc.data();
-            
-            // Usamos el ID del documento como email (que es tu estándar)
-            let emailDestino = doc.id; 
-
-            // Verificación final de seguridad: debe ser familia y tener un email válido
-            if (userData.rol === 'familia' && emailDestino && emailDestino.includes('@')) {
-                console.log(`Enviando a familia: ${emailDestino.trim()}`);
-                
-                const p = emailjs.send("service_5lf6k9v", "template_noticias", {
-                    to_email: emailDestino.trim(),
-                    subject: titulo,
-                    message: cuerpo,
-                    school_name: "Iosef Caro"
-                })
-                .then(res => console.log(`✅ Éxito para ${emailDestino}:`, res.status))
-                .catch(err => console.error(`❌ Error para ${emailDestino}:`, err));
-                
-                promesas.push(p);
-            }
-        });
-
-        return await Promise.all(promesas);
-
-    } catch(e) {
-        console.error("Error crítico en el filtrado de envíos:", e);
-    }
-}
-
-    async function eliminarDoc(col, id) {
-        if(confirm("¿Eliminar permanentemente?")) { 
-            await db.collection(col).doc(id).delete(); 
-            location.reload(); 
+        // ═══ MENSAJERÍA DE SECRETARÍA ═══
+        function escucharConvsSec() {
+            if (secUnsubConvs) secUnsubConvs();
+            secUnsubConvs = db.collection('conversaciones')
+                .where('participantes', 'array-contains', staffEmail)
+                .onSnapshot(snap => {
+                    secConvs = [];
+                    let noLeidos = 0;
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        secConvs.push({ id: doc.id, ...d });
+                        if (d.noLeidos?.[staffEmail] > 0) noLeidos++;
+                    });
+                    secConvs.sort((a,b) => (b.ultimoTimestamp?.seconds||0) - (a.ultimoTimestamp?.seconds||0));
+                    renderConvsSec();
+                    const badge = document.getElementById('badge-msg-sec');
+                    if (noLeidos > 0) { badge.textContent = noLeidos; badge.classList.remove('hidden'); }
+                    else badge.classList.add('hidden');
+                }, () => {
+                    db.collection('conversaciones').where('participantes', 'array-contains', staffEmail).onSnapshot(snap => {
+                        secConvs = [];
+                        snap.forEach(doc => secConvs.push({ id: doc.id, ...doc.data() }));
+                        secConvs.sort((a,b) => (b.ultimoTimestamp?.seconds||0) - (a.ultimoTimestamp?.seconds||0));
+                        renderConvsSec();
+                    });
+                });
         }
-    }
 
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-        document.getElementById('tab-'+tabId).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(b => {
-            b.classList.remove('bg-blue-50', 'text-blue-600'); b.classList.add('text-slate-500');
-        });
-        event.currentTarget.classList.add('bg-blue-50', 'text-blue-600');
-    }
+        const colores = [{ bg:'#dbeafe',t:'#1e40af' },{ bg:'#d1fae5',t:'#065f46' },{ bg:'#fce7f3',t:'#9d174d' },{ bg:'#ede9fe',t:'#5b21b6' },{ bg:'#ffedd5',t:'#9a3412' }];
+        function colorPor(n) { const i=(n||'A').charCodeAt(0)%colores.length; return colores[i]; }
+        function iniciales(n) { return (n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
+        function fmtTs(ts) {
+            if (!ts) return '';
+            const d = ts.toDate ? ts.toDate() : new Date(ts.seconds*1000);
+            const hoy = new Date();
+            return d.toDateString() === hoy.toDateString() ? d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+        }
+
+        function renderConvsSec() {
+            const busq = (document.getElementById('msg-buscador')?.value || '').toLowerCase();
+            const cont = document.getElementById('msg-lista-convs');
+            let lista = secConvs.filter(c => {
+                if (secFiltro === 'no-leidas' && !(c.noLeidos?.[staffEmail] > 0)) return false;
+                if (secFiltro === 'urgente'   && c.etiqueta !== 'urgente')  return false;
+                if (secFiltro === 'resuelto'  && c.etiqueta !== 'resuelto') return false;
+                if (busq && !((c.nombreOtro||'').toLowerCase().includes(busq)||(c.emailOtro||'').toLowerCase().includes(busq))) return false;
+                return true;
+            });
+            if (lista.length === 0) { cont.innerHTML = `<p class="text-slate-400 text-xs text-center p-6">Sin conversaciones${secFiltro!=='todas'?' con este filtro':''}</p>`; return; }
+            const col = (n) => colorPor(n);
+            cont.innerHTML = lista.map(c => {
+                const noL = c.noLeidos?.[staffEmail] || 0;
+                const cl  = col(c.nombreOtro);
+                const etq = c.etiqueta ? `<span class="etiqueta-tag et-${c.etiqueta} mr-1">${c.etiqueta}</span>` : '';
+                return `<div class="conv-item ${secConvActiva?.id === c.id ? 'active' : ''}" onclick="abrirConvSec('${c.id}')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0" style="background:${cl.bg};color:${cl.t}">${iniciales(c.nombreOtro)}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between"><p class="font-bold text-xs truncate">${c.nombreOtro||c.emailOtro}</p><span class="text-[9px] text-slate-400 whitespace-nowrap">${fmtTs(c.ultimoTimestamp)}</span></div>
+                            <div class="flex items-center gap-1 mt-0.5">${etq}<p class="text-[10px] text-slate-400 truncate">${c.ultimoMensaje||''}</p></div>
+                        </div>
+                        ${noL > 0 ? `<span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0">${noL}</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function abrirConvSec(convId) {
+            const conv = secConvs.find(c => c.id === convId);
+            if (!conv) return;
+            secConvActiva = conv;
+            renderConvsSec();
+            await db.collection('conversaciones').doc(convId).update({ [`noLeidos.${staffEmail}`]: 0 });
+            const cl = colorPor(conv.nombreOtro);
+            document.getElementById('msg-chat-avatar').style.cssText = `background:${cl.bg};color:${cl.t}`;
+            document.getElementById('msg-chat-avatar').textContent = iniciales(conv.nombreOtro);
+            document.getElementById('msg-chat-nombre').textContent = conv.nombreOtro || conv.emailOtro;
+            document.getElementById('msg-chat-sub').textContent    = conv.emailOtro;
+            document.getElementById('msg-estado-vacio').classList.add('hidden');
+            document.getElementById('msg-chat-activo').classList.remove('hidden');
+            document.getElementById('msg-chat-activo').classList.add('flex');
+            if (secUnsubChat) secUnsubChat();
+            secUnsubChat = db.collection('conversaciones').doc(convId).collection('mensajes')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snap => {
+                    const cont = document.getElementById('msg-mensajes-cont');
+                    let html = '';
+                    snap.forEach(doc => {
+                        const m = doc.data();
+                        const esMio = m.autorEmail === staffEmail;
+                        const hora  = m.timestamp ? fmtTs(m.timestamp) : '';
+                        html += `<div class="msg-burbuja-wrapper ${esMio ? 'yo' : 'otro'}">
+                            <div class="msg-burbuja ${esMio ? 'yo' : 'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+                            <span class="msg-meta">${hora} · ${esMio ? 'Vos' : (m.autorNombre||m.autorEmail)}</span>
+                        </div>`;
+                    });
+                    cont.innerHTML = html || '<p class="text-center text-slate-300 text-sm py-6">Comenzá la conversación 👋</p>';
+                    cont.scrollTop = cont.scrollHeight;
+                });
+        }
+
+        async function enviarMsgSec() {
+            if (!secConvActiva) return;
+            const input = document.getElementById('msg-sec-input');
+            const texto = input.value.trim();
+            if (!texto) return;
+            input.value = '';
+            const emailOtro = secConvActiva.emailOtro;
+            const batch = db.batch();
+            const convRef = db.collection('conversaciones').doc(secConvActiva.id);
+            const msgRef  = convRef.collection('mensajes').doc();
+            batch.set(msgRef, { texto, autorEmail: staffEmail, autorNombre: staffNombre, autorRol: staffRol, timestamp: firebase.firestore.FieldValue.serverTimestamp(), leido: false });
+            batch.update(convRef, { ultimoMensaje: texto, ultimoTimestamp: firebase.firestore.FieldValue.serverTimestamp(), [`noLeidos.${emailOtro}`]: firebase.firestore.FieldValue.increment(1) });
+            await batch.commit();
+        }
+
+        async function setEtiquetaSec(etiqueta) {
+            if (!secConvActiva) return;
+            await db.collection('conversaciones').doc(secConvActiva.id).update({ etiqueta });
+            secConvActiva.etiqueta = etiqueta;
+        }
+
+        function setFiltroSec(filtro, btn) {
+            secFiltro = filtro;
+            document.querySelectorAll('.filtro-btn-sec').forEach(b => { b.classList.remove('bg-slate-900','text-white'); b.classList.add('bg-white','border','text-slate-500'); });
+            btn.classList.add('bg-slate-900','text-white'); btn.classList.remove('bg-white','border','text-slate-500');
+            renderConvsSec();
+        }
+
+        // Modal nueva conv
+        function abrirModalNuevaSec()  { document.getElementById('modal-nueva-sec').classList.remove('hidden'); document.getElementById('modal-nueva-sec').classList.add('flex'); }
+        function cerrarModalNuevaSec() { document.getElementById('modal-nueva-sec').classList.add('hidden');    document.getElementById('modal-nueva-sec').classList.remove('flex'); }
+
+        async function crearConvSec() {
+            const email = document.getElementById('nueva-sec-email').value.toLowerCase().trim();
+            const msg   = document.getElementById('nueva-sec-msg').value.trim();
+            if (!email || !msg) { alert('Completá email y mensaje.'); return; }
+            const existe = secConvs.find(c => c.emailOtro === email);
+            if (existe) { cerrarModalNuevaSec(); abrirConvSec(existe.id); return; }
+            let nombreOtro = email;
+            try { const ud = await db.collection('usuarios').doc(email).get(); if (ud.exists) nombreOtro = ud.data().nombre || email; } catch(e) {}
+            const convRef = db.collection('conversaciones').doc();
+            const msgRef  = convRef.collection('mensajes').doc();
+            const batch   = db.batch();
+            batch.set(convRef, { participantes: [staffEmail, email], emailOtro: email, nombreOtro, emailSecretaria: staffEmail, nombreSecretaria: staffNombre, ultimoMensaje: msg, ultimoTimestamp: firebase.firestore.FieldValue.serverTimestamp(), noLeidos: { [email]: 1, [staffEmail]: 0 }, etiqueta: null, creadoEn: firebase.firestore.FieldValue.serverTimestamp() });
+            batch.set(msgRef, { texto: msg, autorEmail: staffEmail, autorNombre: staffNombre, autorRol: staffRol, timestamp: firebase.firestore.FieldValue.serverTimestamp(), leido: false });
+            await batch.commit();
+            cerrarModalNuevaSec();
+        }
+
+        // ═══ EMAIL ═══
+        async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
+            try {
+                let query = db.collection('usuarios').where('rol', '==', 'familia');
+                if (!esTodos && cursosFiltro.length > 0) query = query.where('curso', 'in', cursosFiltro);
+                const snap = await query.get();
+                const promesas = [];
+                snap.forEach(doc => {
+                    const emailDest = doc.id;
+                    if (emailDest && emailDest.includes('@')) {
+                        const p = emailjs.send("service_5lf6k9v", "template_noticias", { to_email: emailDest.trim(), subject: titulo, message: cuerpo, school_name: "Iosef Caro" })
+                            .catch(err => console.error(`Error email ${emailDest}:`, err));
+                        promesas.push(p);
+                    }
+                });
+                return await Promise.all(promesas);
+            } catch(e) { console.error("Error envío emails:", e); }
+        }
+
+        // ═══ UTILS ═══
+        async function eliminarDoc(col, id) { if (confirm("¿Eliminar permanentemente?")) { await db.collection(col).doc(id).delete(); location.reload(); } }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-50','text-blue-600'); b.classList.add('text-slate-500'); });
+            document.getElementById('navbtn-' + tabId).classList.add('bg-blue-50','text-blue-600');
+            if (tabId === 'mensajes') document.getElementById('badge-msg-sec').classList.add('hidden');
+        }
+
+        document.getElementById('log-pass').addEventListener('keydown', e => { if (e.key === 'Enter') loginComunicacion(); });
+        document.getElementById('modal-nueva-sec').addEventListener('click', function(e) { if (e.target === this) cerrarModalNuevaSec(); });
     </script>
 </body>
 </html>
+
