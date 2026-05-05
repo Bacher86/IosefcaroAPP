@@ -8,540 +8,495 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
-        .input-pro:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1); }
-        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .tag-docente { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; border: 1px solid #e2e8f0; }
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
+        .tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .3s ease}
+        .input-pro{border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;transition:all .3s;font-size:14px;font-family:inherit}
+        .input-pro:focus{border-color:#0f172a;box-shadow:0 0 0 3px rgba(15,23,42,.1)}
+        #login-overlay{position:fixed;inset:0;background:#0f172a;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .tag-doc{background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;border:1px solid #e2e8f0}
+        .nb{font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+        .nb-i{background:#fce7f3;color:#9d174d}.nb-p{background:#dbeafe;color:#1e40af}.nb-s{background:#d1fae5;color:#065f46}
+        .stat-card{background:white;border:1px solid #f1f5f9;border-radius:1.5rem;padding:1.5rem}
+        .stat-n{font-size:2.5rem;font-weight:800;line-height:1;color:#0f172a}
+        .stat-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-top:4px}
+        .toggle-vis{position:relative;width:44px;height:24px;display:inline-block}
+        .toggle-vis input{opacity:0;width:0;height:0}
+        .toggle-vis .slider{position:absolute;inset:0;background:#e2e8f0;border-radius:24px;cursor:pointer;transition:.3s}
+        .toggle-vis .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+        .toggle-vis input:checked+.slider{background:#16a34a}
+        .toggle-vis input:checked+.slider:before{transform:translateX(20px)}
     </style>
 </head>
 <body>
-
-    <div id="login-overlay">
-        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
-            <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
-                <i class="fas fa-hammer"></i>
-            </div>
-            <h1 class="text-3xl font-black text-slate-800 tracking-tighter">Panel Maestro</h1>
-            <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Administración General</p>
-            <div class="space-y-4">
-                <input type="email" id="log-email" placeholder="Tu Email" class="input-pro">
-                <input type="password" id="log-pass" placeholder="Tu Contraseña" class="input-pro">
-                <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition shadow-lg">ACCEDER AL PANEL</button>
-            </div>
+<div id="login-overlay">
+    <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
+        <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-hammer"></i></div>
+        <h1 class="text-3xl font-black tracking-tighter">Panel Maestro</h1>
+        <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Administración General</p>
+        <div class="space-y-4">
+            <input type="email" id="log-email" placeholder="Email" class="input-pro">
+            <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
+            <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">ACCEDER</button>
         </div>
     </div>
+</div>
 
-    <div id="admin-content" class="hidden">
-        <nav class="bg-white border-b p-4 flex gap-2 sticky top-0 z-50 overflow-x-auto shadow-sm">
-            <button onclick="switchTab('importar')" class="nav-btn bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
-            <button onclick="switchTab('staff')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff Admin/Com</button>
-            <button onclick="switchTab('materias')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias/Cursos</button>
-            <button onclick="switchTab('docentes')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
-            <button onclick="switchTab('alumnos')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
-            <button onclick="switchTab('familias')" class="nav-btn text-slate-500 px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
-            <button onclick="cerrarSesion()" class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
-        </nav>
+<div id="admin-content" class="hidden">
+    <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
+        <button onclick="switchTab('stats')" class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
+        <button onclick="switchTab('importar')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
+        <button onclick="switchTab('staff')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
+        <button onclick="switchTab('materias')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias/Cursos</button>
+        <button onclick="switchTab('periodos')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
+        <button onclick="switchTab('docentes')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
+        <button onclick="switchTab('alumnos')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
+        <button onclick="switchTab('familias')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
+        <button onclick="switchTab('notas-vis')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
+        <button onclick="cerrarSesion()" class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
+    </nav>
+    <main class="p-4 max-w-6xl mx-auto space-y-6">
 
-        <main class="p-4 max-w-6xl mx-auto space-y-6">
-
-            <section id="tab-importar" class="tab-content active space-y-6">
-                <!-- CARGA POR CSV -->
-                <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
-                    <i class="fas fa-file-upload text-5xl text-blue-500 mb-4"></i>
-                    <h2 class="text-2xl font-black text-slate-800">Importador de Alumnos</h2>
-                    <p class="text-slate-400 mb-8">Formato CSV: <b>alumno, curso, familia, mail1, mail2, mail3</b></p>
-                    <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-info').innerText = this.files[0].name">
-                    <label for="csv-file" class="bg-slate-100 text-slate-800 px-8 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-4 transition">Seleccionar Archivo</label>
-                    <p id="csv-info" class="text-xs font-black text-blue-600 mb-6 uppercase"></p>
-                    <button onclick="procesarCSV()" class="block mx-auto bg-blue-600 text-white px-12 py-4 rounded-2xl font-black shadow-xl">INICIAR IMPORTACIÓN</button>
-                    <div id="csv-status" class="mt-6 text-sm font-bold text-slate-400"></div>
-                </div>
-
-                <!-- NUEVA CARGA MANUAL -->
-                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl">
-                            <i class="fas fa-user-plus"></i>
-                        </div>
-                        <h2 class="text-xl font-black text-slate-800">Carga Manual Individual</h2>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="text" id="manual-alu" placeholder="Nombre del Alumno" class="input-pro">
-                        <input type="text" id="manual-cur" placeholder="Curso (Ej: 1A)" class="input-pro">
-                        <input type="text" id="manual-fam" placeholder="Nombre de la Familia" class="input-pro">
-                        <input type="email" id="manual-mail1" placeholder="Email Principal" class="input-pro">
-                        <input type="email" id="manual-mail2" placeholder="Email Secundario (Opcional)" class="input-pro">
-                        <input type="email" id="manual-mail3" placeholder="Email 3 (Opcional)" class="input-pro">
-                        <button onclick="cargaManualAlumno()" class="md:col-span-3 bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg">GUARDAR ALUMNO NUEVO</button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-staff" class="tab-content space-y-6">
+        <!-- STATS -->
+        <section id="tab-stats" class="tab-content active space-y-6">
+            <h2 class="text-2xl font-black tracking-tight">Dashboard</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="stat-card text-center"><div class="stat-n text-blue-600" id="st-alumnos">—</div><div class="stat-l">Alumnos</div></div>
+                <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="st-docentes">—</div><div class="stat-l">Docentes</div></div>
+                <div class="stat-card text-center"><div class="stat-n text-pink-600" id="st-familias">—</div><div class="stat-l">Familias</div></div>
+                <div class="stat-card text-center"><div class="stat-n text-amber-600" id="st-comunicados">—</div><div class="stat-l">Comunicados</div></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Nuevo Usuario con Acceso</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="staff-nombre" placeholder="Nombre completo" class="input-pro">
-                        <input type="email" id="staff-email" placeholder="Email de login" class="input-pro">
-                        <input type="text" id="staff-pass" placeholder="Contraseña de login" class="input-pro">
-                        <select id="staff-rol" class="input-pro">
-                            <option value="admin">Administrador Total</option>
-                            <option value="comunicacion">Solo Comunicación</option>
-                        </select>
-                        <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Guardar Usuario</button>
-                    </div>
+                    <h3 class="font-black text-sm mb-1">Alumnos por nivel</h3>
+                    <div id="leyenda-niveles" class="flex gap-4 mb-3 text-xs font-bold"></div>
+                    <div style="position:relative;height:200px"><canvas id="chart-niveles" role="img" aria-label="Distribución de alumnos por nivel educativo"></canvas></div>
                 </div>
-                <div id="lista-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </section>
-
-            <section id="tab-materias" class="tab-content space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-3xl border">
-                        <h3 class="font-black mb-4">Materias</h3>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="new-materia" placeholder="Nueva materia" class="input-pro">
-                            <button onclick="crearMaestro('materias', 'new-materia')" class="bg-blue-600 text-white px-4 rounded-xl font-bold">+</button>
-                        </div>
-                        <div id="lista-materias" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl border">
-                        <h3 class="font-black mb-4">Cursos</h3>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="new-curso" placeholder="Ej: 1A" class="input-pro">
-                            <button onclick="crearMaestro('cursos', 'new-curso')" class="bg-emerald-600 text-white px-4 rounded-xl font-bold">+</button>
-                        </div>
-                        <div id="lista-cursos" class="flex flex-wrap gap-2"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-docentes" class="tab-content space-y-4">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                    <h2 class="font-black text-xl mb-4">Registrar Docente (Multi-asignación)</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="doc-nombre" placeholder="Nombre y Apellido" class="input-pro">
-                        <input type="email" id="doc-email" placeholder="Email institucional" class="input-pro">
-                        
-                        <div class="space-y-2">
-                            <div class="flex gap-2">
-                                <select id="doc-materia" class="input-pro">
-                                    <option value="">Seleccionar Materia</option>
-                                </select>
-                                <button onclick="agregarTag('materia')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button>
-                            </div>
-                            <div id="tags-materias" class="flex flex-wrap gap-1"></div>
-                        </div>
+                    <h3 class="font-black text-sm mb-3">Asistencia del mes actual</h3>
+                    <div style="position:relative;height:200px"><canvas id="chart-asistencia" role="img" aria-label="Presentes, ausentes y tardanzas del mes"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                    <h3 class="font-black text-sm mb-3">Comunicados — lecturas acumuladas</h3>
+                    <div style="position:relative;height:200px"><canvas id="chart-comunicados" role="img" aria-label="Lecturas por comunicado"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                    <h3 class="font-black text-sm mb-3">Mensajes (últimos 7 días)</h3>
+                    <div style="position:relative;height:200px"><canvas id="chart-mensajes" role="img" aria-label="Actividad de mensajes por día"></canvas></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <h3 class="font-black text-sm mb-4">Actividad por docente — registros de asistencia cargados</h3>
+                <div id="tabla-doc-actividad" class="space-y-2"></div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <h3 class="font-black text-sm mb-4">Últimos informes pedagógicos</h3>
+                <div id="lista-informes-rec" class="space-y-2"></div>
+            </div>
+        </section>
 
-                        <div class="space-y-2">
-                            <div class="flex gap-2">
-                                <select id="doc-curso" class="input-pro">
-                                    <option value="">Seleccionar Curso</option>
-                                </select>
-                                <button onclick="agregarTag('curso')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button>
-                            </div>
-                            <div id="tags-cursos" class="flex flex-wrap gap-1"></div>
-                        </div>
+        <!-- IMPORTAR -->
+        <section id="tab-importar" class="tab-content space-y-6">
+            <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
+                <i class="fas fa-file-upload text-5xl text-blue-500 mb-4"></i>
+                <h2 class="text-2xl font-black">Importador de Alumnos</h2>
+                <p class="text-slate-400 mb-2">CSV: <b>alumno, nivel, curso, familia, mail1, mail2, mail3</b></p>
+                <p class="text-slate-300 text-xs mb-6">Niveles: <b>inicial</b> / <b>primario</b> / <b>secundario</b></p>
+                <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-info').innerText=this.files[0].name">
+                <label for="csv-file" class="bg-slate-100 px-8 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-4 transition">Seleccionar CSV</label>
+                <p id="csv-info" class="text-xs font-black text-blue-600 mb-6 uppercase"></p>
+                <button onclick="procesarCSV()" class="block mx-auto bg-blue-600 text-white px-12 py-4 rounded-2xl font-black shadow-xl">INICIAR IMPORTACIÓN</button>
+                <div id="csv-status" class="mt-6 text-sm font-bold text-slate-400"></div>
+            </div>
+            <div class="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <div><h2 class="text-xl font-black">Importador de Docentes</h2><p class="text-slate-400 text-xs mt-1">CSV: <b>nombre, email, nivel, mat1|mat2, cur1|cur2</b></p></div>
+                </div>
+                <input type="file" id="csv-doc-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-doc-info').innerText=this.files[0].name">
+                <label for="csv-doc-file" class="bg-slate-100 px-6 py-3 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-3 transition">Seleccionar CSV</label>
+                <p id="csv-doc-info" class="text-xs font-black text-emerald-600 mb-4 uppercase"></p>
+                <button onclick="procesarCSVDocentes()" class="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl">IMPORTAR DOCENTES</button>
+                <div id="csv-doc-status" class="mt-4 text-sm font-bold text-slate-400"></div>
+            </div>
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-user-plus"></i></div>
+                    <h2 class="text-xl font-black">Carga Manual — Alumno</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text"  id="manual-alu"   placeholder="Nombre del Alumno"    class="input-pro">
+                    <select id="manual-nivel" class="input-pro"><option value="">Nivel...</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+                    <input type="text"  id="manual-cur"   placeholder="Curso (Ej: 1A)"       class="input-pro">
+                    <input type="text"  id="manual-fam"   placeholder="Nombre de la Familia" class="input-pro">
+                    <input type="email" id="manual-mail1" placeholder="Email Principal"       class="input-pro">
+                    <input type="email" id="manual-mail2" placeholder="Email 2 (Opcional)"   class="input-pro">
+                    <input type="email" id="manual-mail3" placeholder="Email 3 (Opcional)"   class="input-pro">
+                    <button onclick="cargaManualAlumno()" class="md:col-span-3 bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg">GUARDAR ALUMNO</button>
+                </div>
+            </div>
+        </section>
 
-                        <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Docente con todas las asignaciones</button>
+        <!-- STAFF -->
+        <section id="tab-staff" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <h2 class="font-black text-xl mb-2">Nuevo Usuario con Acceso</h2>
+                <p class="text-slate-400 text-xs mb-5">El rol define qué secciones puede ver y usar.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text"     id="staff-nombre" placeholder="Nombre completo" class="input-pro">
+                    <input type="email"    id="staff-email"  placeholder="Email de login"  class="input-pro">
+                    <input type="password" id="staff-pass"   placeholder="Contraseña"      class="input-pro">
+                    <select id="staff-rol" class="input-pro">
+                        <option value="admin">Admin Total</option>
+                        <option value="comunicacion">Comunicación (muro + calendario)</option>
+                        <option value="secretaria_inicial">Secretaría — Inicial</option>
+                        <option value="secretaria_primario">Secretaría — Primario</option>
+                        <option value="secretaria_secundario">Secretaría — Secundario</option>
+                    </select>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 block mb-2">Nivel asignado (para secretarías)</label>
+                        <div class="flex gap-3 flex-wrap">
+                            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="inicial"> Inicial</label>
+                            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="primario"> Primario</label>
+                            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="secundario"> Secundario</label>
+                        </div>
+                    </div>
+                    <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Guardar Usuario</button>
+                </div>
+            </div>
+            <div id="lista-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- MATERIAS/CURSOS -->
+        <section id="tab-materias" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-3xl border">
+                    <h3 class="font-black mb-4">Materias</h3>
+                    <div class="flex gap-2 mb-4"><input type="text" id="new-materia" placeholder="Nueva materia" class="input-pro"><button onclick="crearMaestro('materias','new-materia')" class="bg-blue-600 text-white px-4 rounded-xl font-bold">+</button></div>
+                    <div id="lista-materias" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border">
+                    <h3 class="font-black mb-4">Cursos</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="new-curso" placeholder="Ej: 1A" class="input-pro">
+                        <select id="new-curso-nivel" class="input-pro" style="max-width:110px"><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+                        <button onclick="crearCurso()" class="bg-emerald-600 text-white px-4 rounded-xl font-bold">+</button>
+                    </div>
+                    <div id="lista-cursos" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border">
+                    <h3 class="font-black mb-4">Niveles del sistema</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2 p-3 bg-pink-50 rounded-xl"><span class="nb nb-i">Inicial</span><span class="text-sm font-bold">Nivel Inicial</span></div>
+                        <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-xl"><span class="nb nb-p">Primario</span><span class="text-sm font-bold">Nivel Primario</span></div>
+                        <div class="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl"><span class="nb nb-s">Secundario</span><span class="text-sm font-bold">Nivel Secundario</span></div>
                     </div>
                 </div>
-                <div id="lista-docentes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            </section>
+            </div>
+        </section>
 
-            <section id="tab-alumnos" class="tab-content space-y-4">
-                <div class="bg-white p-4 rounded-2xl border flex items-center justify-between shadow-sm">
-                    <input type="text" onkeyup="buscar('search-alu', 'lista-alumnos')" id="search-alu" placeholder="Filtrar por nombre..." class="input-pro max-w-xs">
-                    <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase">Cargando...</span>
+        <!-- PERÍODOS -->
+        <section id="tab-periodos" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <h2 class="font-black text-xl mb-2">Períodos Académicos</h2>
+                <p class="text-slate-400 text-xs mb-6">El período activo es donde los docentes cargan notas. Los cerrados quedan en solo lectura.</p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6" id="lista-periodos-admin"></div>
+                <div class="border-t pt-6">
+                    <h3 class="font-black text-base mb-4">Crear nuevo período</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="per-nombre" placeholder="Ej: 1er Bimestre" class="input-pro">
+                        <input type="text" id="per-slug"   placeholder="Clave: 1B"        class="input-pro">
+                        <input type="date" id="per-inicio" class="input-pro">
+                        <input type="date" id="per-fin"    class="input-pro">
+                        <button onclick="crearPeriodo()" class="md:col-span-4 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Período</button>
+                    </div>
                 </div>
-                <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-            </section>
+            </div>
+        </section>
 
-            <section id="tab-familias" class="tab-content space-y-4">
-    <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-        <input type="text" onkeyup="buscar('search-fam', 'lista-familias')" id="search-fam" placeholder="Buscar familia o email..." class="input-pro">
-        
-        <button id="btn-eliminar-masivo" onclick="eliminarFamiliasSeleccionadas()" class="hidden bg-rose-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2">
-            <i class="fas fa-trash-alt"></i> ELIMINAR SELECCIONADOS (<span id="count-seleccion">0</span>)
-        </button>
-    </div>
-    
-    <div class="flex items-center gap-2 px-2">
-        <input type="checkbox" id="select-all-fam" onclick="toggleSeleccionarTodo(this)" class="w-4 h-4">
-        <label for="select-all-fam" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos los visibles</label>
-    </div>
-
-    <div id="lista-familias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-</section>
-
-        </main>
-    </div>
-
-    <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
-            authDomain: "app-iosefcaro.firebaseapp.com", 
-            projectId: "app-iosefcaro", 
-            storageBucket: "app-iosefcaro.firebasestorage.app", 
-            messagingSenderId: "651320124248", 
-            appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        let materiasSeleccionadas = [];
-        let cursosSeleccionados = [];
-
-        async function validarIngreso() {
-            const emailInput = document.getElementById('log-email').value.trim().toLowerCase();
-            const passInput = document.getElementById('log-pass').value.trim();
-            if(!emailInput || !passInput) return alert("Ingresa tus datos.");
-            if(emailInput === "uriel.bacher@gmail.com" && passInput === "Gallardo10") {
-                autorizar("admin");
-                return;
-            }
-            try {
-                const userDoc = await db.collection('usuarios').doc(emailInput).get();
-                if(userDoc.exists) {
-                    const data = userDoc.data();
-                    if(data.pass === passInput && data.rol === 'admin') {
-                        autorizar("admin");
-                    } else if (data.rol !== 'admin') {
-                        alert("Este usuario no tiene permisos de administrador.");
-                    } else {
-                        alert("Contraseña incorrecta.");
-                    }
-                } else {
-                    alert("Usuario no registrado.");
-                }
-            } catch(e) { alert("Error de conexión."); }
-        }
-
-        function autorizar(rol) {
-            sessionStorage.setItem('iosef_admin_session', rol);
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('admin-content').classList.remove('hidden');
-            refrescarTodo();
-        }
-
-        window.onload = () => {
-            if(sessionStorage.getItem('iosef_admin_session')) {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('admin-content').classList.remove('hidden');
-                refrescarTodo();
-            }
-        };
-
-        function cerrarSesion() { sessionStorage.clear(); location.reload(); }
-
-        async function procesarCSV() {
-            const file = document.getElementById('csv-file').files[0];
-            if(!file) return alert("Carga un archivo .csv primero");
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const lines = e.target.result.split(/\r?\n/);
-                let logs = 0;
-                for(let i=1; i<lines.length; i++) {
-                    const columns = lines[i].split(',').map(s => s?.trim());
-                    const [alu, cur, fam] = columns;
-                    const emails = columns.slice(3).filter(email => email && email.includes('@'));
-
-                    if(alu && emails.length > 0) {
-                        await guardarAlumnoData(alu, cur, fam, emails);
-                        logs++;
-                        document.getElementById('csv-status').innerText = `Procesando: ${logs} alumnos...`;
-                    }
-                }
-                alert("Importación de " + logs + " alumnos completada.");
-                location.reload();
-            };
-            reader.readAsText(file);
-        }
-
-        // FUNCIÓN AUXILIAR DE CARGA (Usada por CSV y Manual)
-        async function guardarAlumnoData(alu, cur, fam, emails) {
-            const cursoNorm = cur.toUpperCase();
-            // Carga de usuarios (familias)
-            for(let mail of emails) {
-                const m = mail.toLowerCase().trim();
-                await db.collection('usuarios').doc(m).set({
-                    nombre: fam, 
-                    rol: 'familia', 
-                    hijos: firebase.firestore.FieldValue.arrayUnion({ nombre: alu, curso: cursoNorm })
-                }, {merge:true});
-            }
-            // Carga de colección Alumnos
-            const alumnoId = `${alu}_${cursoNorm}`.replace(/\s+/g, '_');
-            await db.collection('alumnos').doc(alumnoId).set({ 
-                nombre: alu, 
-                curso: cursoNorm, 
-                familiaNombre: fam 
-            }, {merge: true});
-        }
-
-        // NUEVA FUNCIÓN: CARGA MANUAL INDIVIDUAL
-        async function cargaManualAlumno() {
-            const alu = document.getElementById('manual-alu').value.trim();
-            const cur = document.getElementById('manual-cur').value.trim();
-            const fam = document.getElementById('manual-fam').value.trim();
-            const m1 = document.getElementById('manual-mail1').value.trim();
-            const m2 = document.getElementById('manual-mail2').value.trim();
-            const m3 = document.getElementById('manual-mail3').value.trim();
-
-            if(!alu || !cur || !fam || !m1) return alert("Faltan datos obligatorios (Alumno, Curso, Familia y al menos 1 Mail)");
-
-            const emails = [m1, m2, m3].filter(e => e !== "" && e.includes('@'));
-            
-            try {
-                await guardarAlumnoData(alu, cur, fam, emails);
-                alert("Alumno cargado correctamente.");
-                // Limpiar campos
-                ['manual-alu', 'manual-cur', 'manual-fam', 'manual-mail1', 'manual-mail2', 'manual-mail3'].forEach(id => document.getElementById(id).value = "");
-                refrescarTodo();
-            } catch(e) {
-                alert("Error al cargar: " + e.message);
-            }
-        }
-
-        async function crearMaestro(col, inpId) {
-            const val = document.getElementById(inpId).value.trim();
-            if(!val) return;
-            await db.collection(col).add({ nombre: val });
-            document.getElementById(inpId).value = "";
-            refrescarTodo();
-        }
-
-        async function crearStaff() {
-            const n = document.getElementById('staff-nombre').value;
-            const m = document.getElementById('staff-email').value.toLowerCase().trim();
-            const p = document.getElementById('staff-pass').value;
-            const r = document.getElementById('staff-rol').value;
-            if(!n || !m || !p) return alert("Completa todos los campos");
-            await db.collection('usuarios').doc(m).set({ nombre: n, pass: p, rol: r });
-            alert("Usuario Staff guardado");
-            cargarStaff();
-        }
-
-        function agregarTag(tipo) {
-            const select = document.getElementById('doc-' + tipo);
-            const val = select.value;
-            if(!val) return;
-            if(tipo === 'materia') {
-                if(!materiasSeleccionadas.includes(val)) materiasSeleccionadas.push(val);
-            } else {
-                if(!cursosSeleccionados.includes(val)) cursosSeleccionados.push(val);
-            }
-            renderTags();
-        }
-
-        function quitarTag(tipo, val) {
-            if(tipo === 'materia') {
-                materiasSeleccionadas = materiasSeleccionadas.filter(m => m !== val);
-            } else {
-                cursosSeleccionados = cursosSeleccionados.filter(c => c !== val);
-            }
-            renderTags();
-        }
-
-        function renderTags() {
-            document.getElementById('tags-materias').innerHTML = materiasSeleccionadas.map(m => 
-                `<span class="tag-docente">${m} <i onclick="quitarTag('materia', '${m}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`
-            ).join('');
-            document.getElementById('tags-cursos').innerHTML = cursosSeleccionados.map(c => 
-                `<span class="tag-docente">${c} <i onclick="quitarTag('curso', '${c}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`
-            ).join('');
-        }
-
-        async function crearDocente() {
-            const n = document.getElementById('doc-nombre').value;
-            const e = document.getElementById('doc-email').value.toLowerCase().trim();
-            if(!n || !e || materiasSeleccionadas.length === 0 || cursosSeleccionados.length === 0) {
-                return alert("Completa nombre, email y agrega al menos una materia y un curso con el botón (+)");
-            }
-            await db.collection('usuarios').doc(e).set({ 
-                nombre: n, 
-                rol: 'docente',
-                materias: materiasSeleccionadas,
-                cursos: cursosSeleccionados 
-            });
-            alert("Docente registrado con éxito");
-            document.getElementById('doc-nombre').value = "";
-            document.getElementById('doc-email').value = "";
-            materiasSeleccionadas = [];
-            cursosSeleccionados = [];
-            renderTags();
-            cargarDocentes();
-        }
-
-        async function cargarMaestros(col, contId) {
-            const snap = await db.collection(col).orderBy('nombre', 'asc').get();
-            const cont = document.getElementById(contId);
-            const selectDoc = col === 'materias' ? document.getElementById('doc-materia') : document.getElementById('doc-curso');
-            cont.innerHTML = "";
-            if(selectDoc) selectDoc.innerHTML = `<option value="">Seleccionar ${col === 'materias' ? 'Materia' : 'Curso'}</option>`;
-            snap.forEach(doc => {
-                const name = doc.data().nombre;
-                cont.innerHTML += `<span class="bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border">
-                    ${name} <i onclick="eliminarDoc('${col}', '${doc.id}')" class="fas fa-times text-slate-300 hover:text-red-500 cursor-pointer"></i>
-                </span>`;
-                if(selectDoc) selectDoc.innerHTML += `<option value="${name}">${name}</option>`;
-            });
-        }
-
-        async function cargarStaff() {
-            const snap = await db.collection('usuarios').where('rol', 'in', ['admin', 'comunicacion']).get();
-            const cont = document.getElementById('lista-staff');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const u = doc.data();
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
-                    <span><b>${u.nombre}</b> <br><small class="text-blue-500 font-black uppercase text-[9px]">${u.rol} • ${doc.id}</small></span>
-                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-200 hover:text-rose-600"><i class="fas fa-trash"></i></button>
-                </div>`;
-            });
-        }
-
-        async function cargarDocentes() {
-            const snap = await db.collection('usuarios').where('rol', '==', 'docente').get();
-            const cont = document.getElementById('lista-docentes');
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                const mats = d.materias ? d.materias.join(', ') : (d.materia || '---');
-                const curs = d.cursos ? d.cursos.join(', ') : (d.curso || '---');
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm">
-                    <span><b>${d.nombre}</b><br>
-                    <small class="text-blue-600 font-bold uppercase text-[9px]">MATERIAS: ${mats}</small><br>
-                    <small class="text-emerald-600 font-bold uppercase text-[9px]">CURSOS: ${curs}</small><br>
-                    <small class="text-slate-400">${doc.id}</small></span>
-                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-rose-200"><i class="fas fa-user-minus"></i></button>
-                </div>`;
-            });
-        }
-
-        async function cargarAlumnos() {
-            const snap = await db.collection('alumnos').get();
-            const cont = document.getElementById('lista-alumnos');
-            cont.innerHTML = "";
-            document.getElementById('count-alumnos').innerText = snap.size + " Alumnos";
-            snap.forEach(doc => {
-                const a = doc.data();
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border text-center shadow-sm" data-search="${a.nombre} ${a.curso}">
-                    <p class="font-bold text-sm">${a.nombre}</p>
-                    <p class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full inline-block mt-1 font-black">${a.curso}</p>
-                    <button onclick="eliminarDoc('alumnos', '${doc.id}')" class="block mx-auto mt-2 text-slate-200 hover:text-rose-400"><i class="fas fa-times-circle"></i></button>
-                </div>`;
-            });
-        }
-
-        async function cargarFamilias() {
-    const snap = await db.collection('usuarios').where('rol', '==', 'familia').get();
-    const cont = document.getElementById('lista-familias');
-    cont.innerHTML = "";
-    
-    snap.forEach(doc => {
-        const data = doc.data();
-        cont.innerHTML += `
-            <div class="bg-white p-4 rounded-2xl border shadow-sm relative group" data-search="${data.nombre} ${doc.id}">
-                <div class="absolute top-4 right-4">
-                    <input type="checkbox" value="${doc.id}" class="fam-checkbox w-5 h-5 cursor-pointer accent-rose-600" onchange="actualizarContadorSeleccion()">
+        <!-- DOCENTES -->
+        <section id="tab-docentes" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <h2 class="font-black text-xl mb-4">Registrar Docente</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text"  id="doc-nombre" placeholder="Nombre y Apellido"   class="input-pro">
+                    <input type="email" id="doc-email"  placeholder="Email institucional" class="input-pro">
+                    <select id="doc-nivel" class="input-pro" onchange="cargarSelectsDocente()">
+                        <option value="">Nivel del docente...</option>
+                        <option value="inicial">Inicial</option>
+                        <option value="primario">Primario</option>
+                        <option value="secundario">Secundario</option>
+                    </select>
+                    <div></div>
+                    <div class="space-y-2"><div class="flex gap-2"><select id="doc-materia" class="input-pro"><option value="">Seleccionar Materia</option></select><button onclick="agregarTag('materia')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button></div><div id="tags-materias" class="flex flex-wrap gap-1"></div></div>
+                    <div class="space-y-2"><div class="flex gap-2"><select id="doc-curso" class="input-pro"><option value="">Seleccionar Curso</option></select><button onclick="agregarTag('curso')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button></div><div id="tags-cursos" class="flex flex-wrap gap-1"></div></div>
+                    <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Docente</button>
                 </div>
-                <p class="font-bold text-sm pr-8">${data.nombre}</p>
-                <p class="text-[10px] text-slate-400 truncate mb-2">${doc.id}</p>
-                <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-50">
-                    <button onclick="eliminarDoc('usuarios', '${doc.id}')" class="text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar individual</button>
+            </div>
+            <div id="lista-docentes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- ALUMNOS -->
+        <section id="tab-alumnos" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-2xl border flex flex-wrap items-center gap-3 shadow-sm">
+                <input type="text" onkeyup="buscar('search-alu','lista-alumnos')" id="search-alu" placeholder="Filtrar por nombre..." class="input-pro max-w-xs">
+                <select id="filter-alu-nivel" onchange="cargarAlumnosFiltrados()" class="input-pro" style="max-width:160px"><option value="">Todos los niveles</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+                <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase ml-auto">Cargando...</span>
+            </div>
+            <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+        </section>
+
+        <!-- FAMILIAS -->
+        <section id="tab-familias" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                <input type="text" onkeyup="buscar('search-fam','lista-familias')" id="search-fam" placeholder="Buscar familia o email..." class="input-pro">
+                <button id="btn-eliminar-masivo" onclick="eliminarFamiliasSeleccionadas()" class="hidden bg-rose-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg flex items-center gap-2"><i class="fas fa-trash-alt"></i> ELIMINAR (<span id="count-seleccion">0</span>)</button>
+            </div>
+            <div class="flex items-center gap-2 px-2"><input type="checkbox" id="select-all-fam" onclick="toggleSeleccionarTodo(this)" class="w-4 h-4"><label for="select-all-fam" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos los visibles</label></div>
+            <div id="lista-familias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- VISIBILIDAD NOTAS -->
+        <section id="tab-notas-vis" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <h2 class="font-black text-xl mb-2">Control de visibilidad del boletín</h2>
+                <p class="text-slate-400 text-xs mb-6">Las familias solo ven notas de los períodos que vos habilitás. Los docentes siempre pueden cargar y editar.</p>
+                <div class="flex flex-wrap gap-3 items-center mb-6">
+                    <select id="vis-periodo-sel" class="input-pro" style="max-width:220px" onchange="cargarVisibilidadNotas()"><option value="">Seleccionar período...</option></select>
+                    <button onclick="publicarTodoElPeriodo()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs">✓ Publicar TODO</button>
+                    <button onclick="ocultarTodoElPeriodo()"  class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs">✕ Ocultar TODO</button>
                 </div>
-            </div>`;
+                <div id="tabla-visibilidad" class="space-y-3"></div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script>
+const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+firebase.initializeApp(FB);const db=firebase.firestore();
+let matSel=[],curSel=[],allCursos=[],allMats=[];
+let cNiv=null,cAsis=null,cCom=null,cMsg=null;
+
+async function validarIngreso(){
+    const em=document.getElementById('log-email').value.trim().toLowerCase(),ps=document.getElementById('log-pass').value.trim();
+    if(!em||!ps)return alert("Ingresa tus datos.");
+    if(em==="uriel.bacher@gmail.com"&&ps==="Gallardo10"){autorizar();return;}
+    try{const d=await db.collection('usuarios').doc(em).get();if(d.exists){const u=d.data();if(u.pass===ps&&u.rol==='admin')autorizar();else alert("Sin permisos o contraseña incorrecta.");}else alert("Usuario no registrado.");}catch(e){alert("Error de conexión.");}
+}
+function autorizar(){sessionStorage.setItem('iosef_admin_session','admin');document.getElementById('login-overlay').style.display='none';document.getElementById('admin-content').classList.remove('hidden');refrescarTodo();}
+window.onload=()=>{if(sessionStorage.getItem('iosef_admin_session')){document.getElementById('login-overlay').style.display='none';document.getElementById('admin-content').classList.remove('hidden');refrescarTodo();}};
+function cerrarSesion(){sessionStorage.clear();location.reload();}
+
+// ── ESTADÍSTICAS ──
+async function cargarEstadisticas(){
+    const[alS,dS,fS,cS]=await Promise.all([db.collection('alumnos').get(),db.collection('usuarios').where('rol','==','docente').get(),db.collection('usuarios').where('rol','==','familia').get(),db.collection('comunicados').get()]);
+    document.getElementById('st-alumnos').innerText=alS.size;document.getElementById('st-docentes').innerText=dS.size;document.getElementById('st-familias').innerText=fS.size;document.getElementById('st-comunicados').innerText=cS.size;
+
+    // Alumnos por nivel
+    const nc={inicial:0,primario:0,secundario:0};alS.forEach(d=>{const n=d.data().nivel||'primario';nc[n]=(nc[n]||0)+1;});
+    if(cNiv)cNiv.destroy();
+    cNiv=new Chart(document.getElementById('chart-niveles'),{type:'doughnut',data:{labels:['Inicial','Primario','Secundario'],datasets:[{data:[nc.inicial,nc.primario,nc.secundario],backgroundColor:['#db2777','#2563eb','#16a34a'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    document.getElementById('leyenda-niveles').innerHTML=`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#db2777;display:inline-block"></span>Inicial ${nc.inicial}</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#2563eb;display:inline-block"></span>Primario ${nc.primario}</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a;display:inline-block"></span>Secundario ${nc.secundario}</span>`;
+
+    // Asistencia del mes
+    const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+    const aS=await db.collection('asistencia').get();let p=0,a=0,t=0;
+    aS.forEach(d=>{const ad=d.data();if(!ad.fecha?.startsWith(mes))return;if(ad.estado==='P')p++;else if(ad.estado==='A')a++;else if(ad.estado==='T')t++;});
+    if(cAsis)cAsis.destroy();
+    cAsis=new Chart(document.getElementById('chart-asistencia'),{type:'doughnut',data:{labels:[`Presentes ${p}`,`Ausentes ${a}`,`Tardanzas ${t}`],datasets:[{data:[p,a,t],backgroundColor:['#16a34a','#ef4444','#f59e0b'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+
+    // Comunicados
+    const comL=[],comV=[];cS.forEach(d=>{comL.push((d.data().titulo||'Sin título').slice(0,18));comV.push(d.data().vistas||0);});
+    if(cCom)cCom.destroy();
+    cCom=new Chart(document.getElementById('chart-comunicados'),{type:'bar',data:{labels:comL.slice(0,6),datasets:[{label:'Lecturas',data:comV.slice(0,6),backgroundColor:'#f59e0b',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+
+    // Mensajes por día
+    const mS=await db.collection('conversaciones').get();const dias=[],cnt=[];
+    for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);dias.push(d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric'}));cnt.push(0);}
+    mS.forEach(d=>{const ts=d.data().creadoEn;if(!ts)return;const fd=ts.toDate?ts.toDate():new Date(ts.seconds*1000);const diff=Math.floor((Date.now()-fd.getTime())/86400000);if(diff>=0&&diff<7)cnt[6-diff]++;});
+    if(cMsg)cMsg.destroy();
+    cMsg=new Chart(document.getElementById('chart-mensajes'),{type:'bar',data:{labels:dias,datasets:[{label:'Convs.',data:cnt,backgroundColor:'#6366f1',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+
+    // Actividad docentes
+    const cont=document.getElementById('tabla-doc-actividad');cont.innerHTML='';const rows=[];
+    for(const dDoc of dS.docs){const dd=dDoc.data();const asSn=await db.collection('asistencia').where('docenteEmail','==',dDoc.id).get();rows.push({nombre:dd.nombre,email:dDoc.id,nivel:dd.nivel,reg:asSn.size});}
+    rows.sort((a,b)=>b.reg-a.reg);const maxR=rows[0]?.reg||1;
+    rows.forEach(r=>{const pct=Math.round(r.reg/maxR*100);const nbc=r.nivel==='inicial'?'nb-i':r.nivel==='secundario'?'nb-s':'nb-p';cont.innerHTML+=`<div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl"><div class="w-32 flex-shrink-0"><p class="font-bold text-xs truncate">${r.nombre}</p><p class="text-[9px] text-slate-400">${r.email}</p></div><div class="flex-1 bg-slate-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full" style="width:${pct}%"></div></div><span class="text-xs font-black text-slate-600 w-16 text-right">${r.reg} reg.</span>${r.nivel?`<span class="nb ${nbc}">${r.nivel}</span>`:''}</div>`;});
+    if(!rows.length)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin docentes.</p>';
+
+    // Informes recientes
+    const infCont=document.getElementById('lista-informes-rec');infCont.innerHTML='';const informes=[];
+    const alSnap=await db.collection('alumnos').limit(15).get();
+    for(const al of alSnap.docs){const iS=await db.collection('alumnos').doc(al.id).collection('informes').orderBy('fecha','desc').limit(2).get();iS.forEach(inf=>informes.push({alumno:al.data().nombre,...inf.data()}));}
+    informes.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+    informes.slice(0,8).forEach(inf=>{const d=new Date(inf.fecha).toLocaleDateString('es-AR');infCont.innerHTML+=`<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl text-xs"><span class="font-black text-slate-700 w-28 truncate">${inf.alumno}</span><span class="bg-blue-100 text-blue-800 font-black px-2 py-0.5 rounded-full">${inf.periodo}</span><span class="text-slate-500 flex-1 truncate">${inf.materia} — ${inf.docenteNombre||''}</span><span class="text-slate-400">${d}</span></div>`;});
+    if(!informes.length)infCont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes cargados.</p>';
+}
+
+// ── PERÍODOS ──
+async function cargarPeriodosAdmin(){
+    const snap=await db.collection('periodos').orderBy('orden','asc').get();
+    const cont=document.getElementById('lista-periodos-admin'),sel=document.getElementById('vis-periodo-sel');
+    cont.innerHTML='';sel.innerHTML='<option value="">Seleccionar período...</option>';
+    snap.forEach(doc=>{const p=doc.data(),act=p.activo===true;
+        cont.innerHTML+=`<div class="bg-white border-2 ${act?'border-emerald-400':'border-slate-100'} rounded-2xl p-4 text-center"><p class="font-black text-sm">${p.nombre}</p><p class="text-[9px] font-black text-slate-400 uppercase mb-2">${p.slug}</p><p class="text-[9px] text-slate-400">${p.inicio||''} → ${p.fin||''}</p><div class="mt-3 flex gap-2 justify-center"><button onclick="togglePeriodoActivo('${doc.id}',${!act})" class="text-[9px] font-black px-3 py-1.5 rounded-xl ${act?'bg-emerald-100 text-emerald-700':'bg-slate-100 text-slate-500'}">${act?'✓ ACTIVO':'Activar'}</button><button onclick="eliminarDoc('periodos','${doc.id}')" class="text-[9px] font-black px-2 py-1.5 rounded-xl bg-rose-50 text-rose-400">✕</button></div></div>`;
+        sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug}">${p.nombre}</option>`;
     });
-    actualizarContadorSeleccion();
+}
+async function crearPeriodo(){
+    const nombre=document.getElementById('per-nombre').value.trim(),slug=document.getElementById('per-slug').value.trim().toUpperCase(),inicio=document.getElementById('per-inicio').value,fin=document.getElementById('per-fin').value;
+    if(!nombre||!slug)return alert("Nombre y clave obligatorios.");
+    const snap=await db.collection('periodos').get();await db.collection('periodos').add({nombre,slug,inicio,fin,activo:false,orden:snap.size+1});alert("Período creado.");cargarPeriodosAdmin();
+}
+async function togglePeriodoActivo(id,nuevoEstado){
+    if(nuevoEstado){const snap=await db.collection('periodos').get();const batch=db.batch();snap.forEach(d=>batch.update(d.ref,{activo:false}));await batch.commit();}
+    await db.collection('periodos').doc(id).update({activo:nuevoEstado});cargarPeriodosAdmin();
 }
 
-// 2. Nueva función para contar seleccionados y mostrar/ocultar el botón
-function actualizarContadorSeleccion() {
-    const seleccionados = document.querySelectorAll('.fam-checkbox:checked').length;
-    const btn = document.getElementById('btn-eliminar-masivo');
-    const countSpan = document.getElementById('count-seleccion');
-    
-    if (seleccionados > 0) {
-        btn.classList.remove('hidden');
-        countSpan.innerText = seleccionados;
-    } else {
-        btn.classList.add('hidden');
-    }
+// ── VISIBILIDAD NOTAS ──
+async function cargarVisibilidadNotas(){
+    const selEl=document.getElementById('vis-periodo-sel'),periodoId=selEl.value,periodoSlug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';
+    if(!periodoId)return;const cont=document.getElementById('tabla-visibilidad');cont.innerHTML='<p class="text-slate-400 text-sm">Cargando...</p>';
+    const visDoc=await db.collection('config_visibilidad').doc(periodoId).get();const visData=visDoc.exists?visDoc.data():{};
+    const cursosSnap=await db.collection('cursos').get();cont.innerHTML='';
+    cursosSnap.forEach(cDoc=>{const curso=cDoc.data().nombre,clave=`${periodoSlug}_${curso}`,esV=visData[clave]===true;
+        cont.innerHTML+=`<div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl"><div><p class="font-bold text-sm">${curso}</p><p class="text-[9px] text-slate-400 uppercase font-bold">Período: ${periodoSlug}</p></div><label class="toggle-vis"><input type="checkbox" ${esV?'checked':''} onchange="toggleVisCurso('${periodoId}','${clave}',this.checked)"><span class="slider"></span></label></div>`;
+    });
+    if(cursosSnap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin cursos creados.</p>';
+}
+async function toggleVisCurso(pid,clave,val){await db.collection('config_visibilidad').doc(pid).set({[clave]:val},{merge:true});}
+async function publicarTodoElPeriodo(){
+    const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';
+    if(!pid)return alert("Seleccioná un período.");
+    const snap=await db.collection('cursos').get();const data={};snap.forEach(d=>{data[`${slug}_${d.data().nombre}`]=true;});
+    await db.collection('config_visibilidad').doc(pid).set(data,{merge:true});alert("Período publicado.");cargarVisibilidadNotas();
+}
+async function ocultarTodoElPeriodo(){
+    const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';
+    if(!pid)return alert("Seleccioná un período.");
+    const snap=await db.collection('cursos').get();const data={};snap.forEach(d=>{data[`${slug}_${d.data().nombre}`]=false;});
+    await db.collection('config_visibilidad').doc(pid).set(data,{merge:true});alert("Período ocultado.");cargarVisibilidadNotas();
 }
 
-// 3. Función para seleccionar/deseleccionar todos los visibles
-function toggleSeleccionarTodo(master) {
-    const checkboxes = document.querySelectorAll('#lista-familias div[style*="display: block"] .fam-checkbox, #lista-familias div:not([style*="display: none"]) .fam-checkbox');
-    checkboxes.forEach(cb => cb.checked = master.checked);
-    actualizarContadorSeleccion();
+// ── CSV ──
+async function procesarCSV(){
+    const file=document.getElementById('csv-file').files[0];if(!file)return alert("Carga un csv.");
+    const r=new FileReader();r.onload=async(e)=>{const lines=e.target.result.split(/\r?\n/);let logs=0;
+        for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[alu,nivel,cur,fam]=cols;const emails=cols.slice(4).filter(em=>em&&em.includes('@'));if(alu&&emails.length>0){await guardarAlumnoData(alu,nivel||'primario',cur,fam,emails);logs++;document.getElementById('csv-status').innerText=`Procesando: ${logs}...`;}}
+        alert(`${logs} alumnos importados.`);refrescarTodo();};r.readAsText(file);
+}
+async function procesarCSVDocentes(){
+    const file=document.getElementById('csv-doc-file').files[0];if(!file)return alert("Carga un csv.");
+    const r=new FileReader();r.onload=async(e)=>{const lines=e.target.result.split(/\r?\n/);let logs=0;
+        for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[nombre,email,nivel,matsR,cursR]=cols;if(!nombre||!email||!email.includes('@'))continue;
+            const materias=(matsR||'').split('|').map(m=>m.trim()).filter(Boolean);const cursos=(cursR||'').split('|').map(c=>c.trim()).filter(Boolean);
+            await db.collection('usuarios').doc(email.toLowerCase()).set({nombre,rol:'docente',nivel:nivel||'primario',materias,cursos},{merge:true});logs++;document.getElementById('csv-doc-status').innerText=`Procesando: ${logs}...`;}
+        alert(`${logs} docentes importados.`);cargarDocentes();};r.readAsText(file);
+}
+async function guardarAlumnoData(alu,nivel,cur,fam,emails){
+    const cn=(cur||'').toUpperCase(),nn=(nivel||'primario').toLowerCase();
+    for(const mail of emails){const m=mail.toLowerCase().trim();await db.collection('usuarios').doc(m).set({nombre:fam,rol:'familia',nivel:nn,hijos:firebase.firestore.FieldValue.arrayUnion({nombre:alu,curso:cn,nivel:nn})},{merge:true});}
+    const aId=`${alu}_${cn}`.replace(/\s+/g,'_');await db.collection('alumnos').doc(aId).set({nombre:alu,curso:cn,nivel:nn,familiaNombre:fam},{merge:true});
+}
+async function cargaManualAlumno(){
+    const alu=document.getElementById('manual-alu').value.trim(),nivel=document.getElementById('manual-nivel').value,cur=document.getElementById('manual-cur').value.trim(),fam=document.getElementById('manual-fam').value.trim();
+    const m1=document.getElementById('manual-mail1').value.trim(),m2=document.getElementById('manual-mail2').value.trim(),m3=document.getElementById('manual-mail3').value.trim();
+    if(!alu||!nivel||!cur||!fam||!m1)return alert("Faltan datos obligatorios.");
+    try{await guardarAlumnoData(alu,nivel,cur,fam,[m1,m2,m3].filter(e=>e&&e.includes('@')));alert("Alumno cargado.");['manual-alu','manual-cur','manual-fam','manual-mail1','manual-mail2','manual-mail3'].forEach(id=>document.getElementById(id).value='');document.getElementById('manual-nivel').value='';refrescarTodo();}
+    catch(e){alert("Error: "+e.message);}
 }
 
-// 4. Función principal de eliminación masiva
-async function eliminarFamiliasSeleccionadas() {
-    const seleccionados = Array.from(document.querySelectorAll('.fam-checkbox:checked')).map(cb => cb.value);
-    
-    if (seleccionados.length === 0) return;
-    
-    if (confirm(`¿Estás seguro de que quieres eliminar a estas ${seleccionados.length} familias de forma permanente?`)) {
-        const btn = document.getElementById('btn-eliminar-masivo');
-        btn.disabled = true;
-        btn.innerText = "ELIMINANDO...";
-
-        const batch = db.batch();
-        seleccionados.forEach(id => {
-            const docRef = db.collection('usuarios').doc(id);
-            batch.delete(docRef);
-        });
-
-        try {
-            await batch.commit();
-            alert(`${seleccionados.length} familias eliminadas correctamente.`);
-            refrescarTodo();
-        } catch (error) {
-            console.error("Error en eliminación masiva: ", error);
-            alert("Hubo un error al intentar eliminar los registros.");
-        } finally {
-            btn.disabled = false;
-        }
-    }
+// ── STAFF ──
+async function crearStaff(){
+    const n=document.getElementById('staff-nombre').value,m=document.getElementById('staff-email').value.toLowerCase().trim(),p=document.getElementById('staff-pass').value,r=document.getElementById('staff-rol').value;
+    const niveles=Array.from(document.querySelectorAll('.staff-nivel-check:checked')).map(c=>c.value);
+    if(!n||!m||!p)return alert("Completa todos los campos.");
+    await db.collection('usuarios').doc(m).set({nombre:n,pass:p,rol:r,niveles});alert("Usuario guardado.");cargarStaff();
 }
 
-        function switchTab(t) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-            document.getElementById('tab-'+t).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-slate-900', 'text-white'); b.classList.add('text-slate-500');
-            });
-            event.currentTarget.classList.add('bg-slate-900', 'text-white');
-        }
+// ── MATERIAS/CURSOS ──
+async function crearMaestro(col,inpId){const val=document.getElementById(inpId).value.trim();if(!val)return;await db.collection(col).add({nombre:val});document.getElementById(inpId).value='';refrescarTodo();}
+async function crearCurso(){const nombre=document.getElementById('new-curso').value.trim(),nivel=document.getElementById('new-curso-nivel').value;if(!nombre)return;await db.collection('cursos').add({nombre:nombre.toUpperCase(),nivel});document.getElementById('new-curso').value='';refrescarTodo();}
 
-        async function eliminarDoc(col, id) {
-            if(confirm("¿Seguro?")) { await db.collection(col).doc(id).delete(); refrescarTodo(); }
-        }
+// ── DOCENTES ──
+async function cargarSelectsDocente(){
+    const nivel=document.getElementById('doc-nivel').value,sM=document.getElementById('doc-materia'),sC=document.getElementById('doc-curso');
+    sM.innerHTML='<option value="">Seleccionar Materia</option>';sC.innerHTML='<option value="">Seleccionar Curso</option>';
+    allMats.forEach(m=>sM.innerHTML+=`<option value="${m.nombre}">${m.nombre}</option>`);
+    allCursos.filter(c=>!nivel||c.nivel===nivel).forEach(c=>sC.innerHTML+=`<option value="${c.nombre}">${c.nombre}</option>`);
+}
+function agregarTag(tipo){const sel=document.getElementById('doc-'+tipo),val=sel.value;if(!val)return;if(tipo==='materia'){if(!matSel.includes(val))matSel.push(val);}else{if(!curSel.includes(val))curSel.push(val);}renderTags();}
+function quitarTag(tipo,val){if(tipo==='materia')matSel=matSel.filter(m=>m!==val);else curSel=curSel.filter(c=>c!==val);renderTags();}
+function renderTags(){
+    document.getElementById('tags-materias').innerHTML=matSel.map(m=>`<span class="tag-doc">${m} <i onclick="quitarTag('materia','${m}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`).join('');
+    document.getElementById('tags-cursos').innerHTML=curSel.map(c=>`<span class="tag-doc">${c} <i onclick="quitarTag('curso','${c}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`).join('');
+}
+async function crearDocente(){
+    const n=document.getElementById('doc-nombre').value,e=document.getElementById('doc-email').value.toLowerCase().trim(),nivel=document.getElementById('doc-nivel').value;
+    if(!n||!e||!nivel||!matSel.length||!curSel.length)return alert("Completá todos los campos.");
+    await db.collection('usuarios').doc(e).set({nombre:n,rol:'docente',nivel,materias:matSel,cursos:curSel});
+    alert("Docente registrado.");document.getElementById('doc-nombre').value='';document.getElementById('doc-email').value='';document.getElementById('doc-nivel').value='';matSel=[];curSel=[];renderTags();cargarDocentes();
+}
 
-        function buscar(inpId, contId) {
-            const q = document.getElementById(inpId).value.toLowerCase();
-            const items = document.getElementById(contId).children;
-            for (let item of items) {
-                const txt = item.getAttribute('data-search') || item.innerText;
-                item.style.display = txt.toLowerCase().includes(q) ? 'block' : 'none';
-            }
-        }
+// ── CARGAR LISTAS ──
+async function cargarMaestros(col,contId){
+    const snap=await db.collection(col).orderBy('nombre','asc').get(),cont=document.getElementById(contId);cont.innerHTML='';
+    if(col==='materias')allMats=[];if(col==='cursos')allCursos=[];
+    snap.forEach(doc=>{const d=doc.data(),name=d.nombre;if(col==='materias')allMats.push({id:doc.id,nombre:name});if(col==='cursos')allCursos.push({id:doc.id,nombre:name,nivel:d.nivel});
+        const nbc=d.nivel===('inicial')?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';const nb=d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:'';
+        cont.innerHTML+=`<span class="bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border">${name}${nb} <i onclick="eliminarDoc('${col}','${doc.id}')" class="fas fa-times text-slate-300 hover:text-red-500 cursor-pointer"></i></span>`;
+    });cargarSelectsDocente();
+}
+async function cargarStaff(){
+    const snap=await db.collection('usuarios').where('rol','in',['admin','comunicacion','secretaria_inicial','secretaria_primario','secretaria_secundario']).get(),cont=document.getElementById('lista-staff');cont.innerHTML='';
+    snap.forEach(doc=>{const u=doc.data(),ns=u.niveles?u.niveles.join(', '):'';const nbc=u.nivel==='inicial'?'nb-i':u.nivel==='secundario'?'nb-s':'nb-p';
+        cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm"><span><b>${u.nombre}</b><br><small class="text-blue-500 font-black uppercase text-[9px]">${u.rol}</small>${ns?`<br><small class="text-slate-400 text-[9px]">Niveles: ${ns}</small>`:''}<br><small class="text-slate-300 text-[9px]">${doc.id}</small></span><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-200 hover:text-rose-600"><i class="fas fa-trash"></i></button></div>`;
+    });
+}
+async function cargarDocentes(){
+    const snap=await db.collection('usuarios').where('rol','==','docente').get(),cont=document.getElementById('lista-docentes');cont.innerHTML='';
+    snap.forEach(doc=>{const d=doc.data(),mats=d.materias?d.materias.join(', '):(d.materia||'---'),curs=d.cursos?d.cursos.join(', '):(d.curso||'---');
+        const nbc=d.nivel==='inicial'?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';
+        cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm"><span><b>${d.nombre}</b>${d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:''}<br><small class="text-blue-600 font-bold uppercase text-[9px]">MATS: ${mats}</small><br><small class="text-emerald-600 font-bold uppercase text-[9px]">CURSOS: ${curs}</small><br><small class="text-slate-400 text-[9px]">${doc.id}</small></span><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-user-minus"></i></button></div>`;
+    });
+}
+async function cargarAlumnosFiltrados(){
+    const nivel=document.getElementById('filter-alu-nivel').value;let q=db.collection('alumnos');if(nivel)q=q.where('nivel','==',nivel);
+    const snap=await q.get(),cont=document.getElementById('lista-alumnos');cont.innerHTML='';
+    document.getElementById('count-alumnos').innerText=snap.size+' Alumnos';
+    snap.forEach(doc=>{const a=doc.data();const nbc=a.nivel==='inicial'?'nb-i':a.nivel==='secundario'?'nb-s':'nb-p';
+        cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border text-center shadow-sm" data-search="${a.nombre} ${a.curso}"><p class="font-bold text-sm">${a.nombre}</p><p class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full inline-block mt-1 font-black">${a.curso}</p>${a.nivel?`<p class="nb ${nbc} inline-block mt-1">${a.nivel}</p>`:''}<button onclick="eliminarDoc('alumnos','${doc.id}')" class="block mx-auto mt-2 text-slate-200 hover:text-rose-400"><i class="fas fa-times-circle"></i></button></div>`;
+    });
+}
+async function cargarFamilias(){
+    const snap=await db.collection('usuarios').where('rol','==','familia').get(),cont=document.getElementById('lista-familias');cont.innerHTML='';
+    snap.forEach(doc=>{const data=doc.data();const nbc=data.nivel==='inicial'?'nb-i':data.nivel==='secundario'?'nb-s':'nb-p';
+        cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm relative" data-search="${data.nombre} ${doc.id}"><div class="absolute top-4 right-4"><input type="checkbox" value="${doc.id}" class="fam-checkbox w-5 h-5 cursor-pointer accent-rose-600" onchange="actualizarContadorSeleccion()"></div><p class="font-bold text-sm pr-8">${data.nombre}</p><p class="text-[10px] text-slate-400 truncate mb-1">${doc.id}</p>${data.nivel?`<span class="nb ${nbc}">${data.nivel}</span>`:''}<div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-50"><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar</button></div></div>`;
+    });
+}
+function actualizarContadorSeleccion(){const sel=document.querySelectorAll('.fam-checkbox:checked').length;document.getElementById('count-seleccion').innerText=sel;document.getElementById('btn-eliminar-masivo').classList.toggle('hidden',sel===0);}
+function toggleSeleccionarTodo(master){document.querySelectorAll('#lista-familias div:not([style*="display: none"]) .fam-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContadorSeleccion();}
+async function eliminarFamiliasSeleccionadas(){
+    const sel=Array.from(document.querySelectorAll('.fam-checkbox:checked')).map(cb=>cb.value);if(!sel.length)return;
+    if(confirm(`¿Eliminar ${sel.length} familias?`)){const batch=db.batch();sel.forEach(id=>batch.delete(db.collection('usuarios').doc(id)));await batch.commit();alert(`${sel.length} eliminadas.`);refrescarTodo();}
+}
 
-        function refrescarTodo() {
-            cargarStaff();
-            cargarDocentes();
-            cargarAlumnos();
-            cargarFamilias();
-            cargarMaestros('materias', 'lista-materias');
-            cargarMaestros('cursos', 'lista-cursos');
-        }
-    </script>
+// ── UTILS ──
+function switchTab(t){
+    document.querySelectorAll('.tab-content').forEach(s=>s.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-slate-900','text-white');b.classList.add('text-slate-500');});event.currentTarget.classList.add('bg-slate-900','text-white');
+    if(t==='stats')cargarEstadisticas();if(t==='periodos')cargarPeriodosAdmin();
+}
+async function eliminarDoc(col,id){if(confirm("¿Seguro?")){await db.collection(col).doc(id).delete();refrescarTodo();}}
+function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
+function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();}
+document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
+</script>
 </body>
 </html>
+
