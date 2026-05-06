@@ -71,17 +71,9 @@
                 <i class="fas fa-calendar-star mr-2"></i>Calendario
             </button>
             <!-- Solo visible para secretarías y admin -->
-            <button onclick="switchTab('mensajes')" id="navbtn-mensajes" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
-                <i class="fas fa-comments mr-2"></i>Mensajes
-                <span id="badge-msg-sec" class="hidden ml-1 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">!</span>
-            </button>
-            <button onclick="switchTab('llamadas')" id="navbtn-llamadas" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
-                <i class="fas fa-phone-alt mr-2"></i>Llamadas
-            </button>
-            <button onclick="switchTab('justificaciones-sec')" id="navbtn-justificaciones-sec" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
-                <i class="fas fa-file-medical mr-2"></i>Justificaciones
-                <span id="badge-just-sec" class="hidden ml-1 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">!</span>
-            </button>
+
+
+
             <div class="ml-auto flex items-center gap-2">
                 <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
                 <button onclick="location.reload()" class="text-rose-500 font-bold p-2 hover:bg-rose-50 rounded-xl transition"><i class="fas fa-power-off"></i></button>
@@ -240,100 +232,6 @@
                 </div>
             </section>
 
-        <!-- ════ REGISTRO DE LLAMADAS ════ -->
-        <section id="tab-llamadas" class="tab-content space-y-6">
-            <h2 class="text-2xl font-black tracking-tight">Registro de Llamadas</h2>
-            <p class="text-slate-400 text-xs -mt-3">Registrá cada contacto con una familia para tener historial completo.</p>
-
-            <!-- Formulario nueva llamada -->
-            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                <h3 class="font-black text-base flex items-center gap-2"><i class="fas fa-plus-circle text-blue-500"></i> Nueva llamada / contacto</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Familia / Apellido</label>
-                        <input type="text" id="call-familia" placeholder="Buscar familia..." class="input-pro mt-1" oninput="buscarFamiliaCall(this.value)">
-                        <div id="call-sugerencias" class="mt-1 space-y-1"></div>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Fecha y hora</label>
-                        <input type="datetime-local" id="call-fecha" class="input-pro mt-1">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de contacto</label>
-                        <select id="call-tipo" class="input-pro mt-1">
-                            <option value="llamada_entrante">Llamada entrante</option>
-                            <option value="llamada_saliente">Llamada saliente</option>
-                            <option value="whatsapp">WhatsApp</option>
-                            <option value="presencial">Presencial</option>
-                            <option value="email">Email</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Resultado</label>
-                        <select id="call-resultado" class="input-pro mt-1">
-                            <option value="comunicado">Comunicado exitosamente</option>
-                            <option value="no_contesta">No contesta</option>
-                            <option value="pendiente">Pendiente de respuesta</option>
-                            <option value="buzon">Dejé mensaje en buzón</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Motivo / Detalle</label>
-                        <textarea id="call-motivo" placeholder="Describí el motivo y lo que se habló..." class="input-pro mt-1 h-20 resize-none"></textarea>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Alumno relacionado (opcional)</label>
-                        <input type="text" id="call-alumno" placeholder="Nombre del alumno" class="input-pro mt-1">
-                    </div>
-                </div>
-                <button onclick="guardarLlamada()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">
-                    <i class="fas fa-save mr-2"></i> REGISTRAR CONTACTO
-                </button>
-            </div>
-
-            <!-- Filtros y búsqueda -->
-            <div class="flex flex-wrap gap-3 items-center">
-                <input type="text" id="call-search" placeholder="Buscar por familia o alumno..." class="input-pro" style="max-width:250px" oninput="filtrarLlamadas()">
-                <select id="call-filter-tipo" onchange="filtrarLlamadas()" class="input-pro" style="max-width:180px">
-                    <option value="">Todos los tipos</option>
-                    <option value="llamada_entrante">Entrantes</option>
-                    <option value="llamada_saliente">Salientes</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="presencial">Presencial</option>
-                </select>
-                <select id="call-filter-resultado" onchange="filtrarLlamadas()" class="input-pro" style="max-width:200px">
-                    <option value="">Todos los resultados</option>
-                    <option value="comunicado">Comunicado</option>
-                    <option value="no_contesta">No contesta</option>
-                    <option value="pendiente">Pendiente</option>
-                </select>
-            </div>
-
-            <!-- Lista de llamadas -->
-            <div id="lista-llamadas" class="space-y-3">
-                <p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
-            </div>
-        </section>
-
-        <!-- ════ JUSTIFICACIONES (SECRETARIA) ════ -->
-        <section id="tab-justificaciones-sec" class="tab-content space-y-5">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h2 class="text-2xl font-black tracking-tight">Justificaciones</h2>
-                    <p class="text-slate-400 text-xs mt-1">Aprobá o rechazá las justificaciones enviadas por las familias.</p>
-                </div>
-                <select id="just-sec-filtro" onchange="cargarJustificacionesSec()" class="input-pro" style="max-width:160px">
-                    <option value="pendiente">Pendientes</option>
-                    <option value="aprobada">Aprobadas</option>
-                    <option value="rechazada">Rechazadas</option>
-                    <option value="todas">Todas</option>
-                </select>
-            </div>
-            <div id="lista-just-sec" class="space-y-3">
-                <p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
-            </div>
-        </section>
-
         </main>
     </div>
 
@@ -372,12 +270,6 @@
         let secUnsubConvs  = null;
 
         // ═══ LOGIN ═══
-        // Auto-login from index.html session
-        window.addEventListener('DOMContentLoaded',()=>{
-            const em=sessionStorage.getItem('iosef_email');const nm=sessionStorage.getItem('iosef_nombre');
-            if(em){document.getElementById('log-email').value=em;if(nm)document.getElementById('log-nombre-display')?.textContent && (document.getElementById('log-nombre-display').textContent=nm);loginComunicacion();}
-        });
-
         async function loginComunicacion() {
             const email = document.getElementById('log-email').value.toLowerCase().trim();
             const pass  = document.getElementById('log-pass').value;
@@ -397,7 +289,7 @@
                 if (!doc.exists) { errEl.textContent = 'Usuario no encontrado.'; errEl.classList.remove('hidden'); return; }
                 const data = doc.data();
                 if (data.pass !== pass) { errEl.textContent = 'Contraseña incorrecta.'; errEl.classList.remove('hidden'); return; }
-                const rolesPermitidos = ['admin','comunicacion','secretaria_inicial','secretaria_primario','secretaria_secundario'];
+                const rolesPermitidos = ['admin','comunicacion'];
                 if (!rolesPermitidos.includes(data.rol)) { errEl.textContent = 'Sin permisos para este panel.'; errEl.classList.remove('hidden'); return; }
                 staffEmail  = email;
                 staffNombre = data.nombre;
@@ -415,21 +307,7 @@
 
             // Solo secretarías y admin ven tab mensajes
             const esSecOAdmin = staffRol === 'admin' || staffRol.startsWith('secretaria_');
-            if (esSecOAdmin) {
-                document.getElementById('navbtn-justificaciones-sec').classList.remove('hidden');
-                cargarLlamadas();
-                cargarJustificacionesSec();
-            }
-            // Mostrar/ocultar tabs según permisos
-            const perms = data.permisos || [];
-            const puedeNoticias = perms.includes('acceso_comunicados')||staffRol==='admin'||staffRol==='comunicacion'||perms.includes('publicar_comunicados');
-            const puedeCalendario = perms.includes('acceso_calendario')||staffRol==='admin'||staffRol==='comunicacion';
-            const puedeMensajes = perms.includes('acceso_mensajes')||esSecOAdmin;
-            const puedeLlamadas = perms.includes('acceso_llamadas')||esSecOAdmin;
-            if(!puedeNoticias) document.getElementById('navbtn-noticias').style.display='none';
-            if(!puedeCalendario) document.getElementById('navbtn-calendario').style.display='none';
-            if(puedeMensajes){document.getElementById('navbtn-mensajes').classList.remove('hidden');}
-            if(puedeLlamadas){document.getElementById('navbtn-llamadas').classList.remove('hidden');}
+            // Comunicaciones: acceso completo
 
             // Solo admin y comunicacion ven publicar noticias
             const puedePublicar = ['admin','comunicacion'].includes(staffRol);
@@ -463,7 +341,7 @@
                         cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c.nombre}"> ${c.nombre}</label>`;
                     });
                 });
-            } catch(e) { console.log("Error cursos:", e); }
+            } catch(e) { console.error('Error cursos:', e); document.getElementById('cursos-noticia').innerHTML = '<span class="text-xs text-rose-500">Error cargando cursos: ' + e.message + '</span>'; }
         }
 
         function toggleTodos(source, contId) { document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked); }
@@ -782,111 +660,18 @@
         }
 
         document.getElementById('log-pass').addEventListener('keydown', e => { if (e.key === 'Enter') loginComunicacion(); });
-
-        // ════ FIREBASE STORAGE — UPLOAD DE ARCHIVOS ════
-        const storage = firebase.storage();
-
-        function previewMedia(tipo, input) {
-            const file = input.files[0]; if (!file) return;
-            const progCont = document.getElementById('upload-prog-' + tipo);
-            const progBar  = document.getElementById('prog-bar-' + tipo);
-            const progTxt  = document.getElementById('prog-txt-' + tipo);
-            progCont.classList.remove('hidden');
-            const path = `comunicados/${tipo}s/${Date.now()}_${file.name}`;
-            const ref  = storage.ref(path);
-            const task = ref.put(file);
-            task.on('state_changed',
-                snap => {
-                    const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-                    progBar.style.width = pct + '%';
-                    progTxt.textContent = `Subiendo... ${pct}%`;
-                },
-                err => { progTxt.textContent = 'Error: ' + err.message; },
-                async () => {
-                    const url = await task.snapshot.ref.getDownloadURL();
-                    document.getElementById('not-' + tipo).value = url;
-                    progTxt.textContent = '✅ Subido correctamente';
-                    // Preview
-                    if (tipo === 'img') {
-                        document.getElementById('prev-img-el').src = url;
-                        document.getElementById('prev-img').classList.remove('hidden');
-                    } else if (tipo === 'video') {
-                        document.getElementById('prev-video-el').src = url;
-                        document.getElementById('prev-video').classList.remove('hidden');
-                    } else if (tipo === 'pdf') {
-                        document.getElementById('prev-pdf-nombre').textContent = '📄 ' + file.name;
-                        document.getElementById('prev-pdf-nombre').classList.remove('hidden');
-                    }
-                }
-            );
-        }
-
-        // ════ JUSTIFICACIONES SECRETARÍA ════
-        let todasLasJustSec = [];
-        async function cargarJustificacionesSec() {
-            const filtro = document.getElementById('just-sec-filtro')?.value || 'pendiente';
-            const cont = document.getElementById('lista-just-sec');
-            cont.innerHTML = '<p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
-            let query = db.collection('justificaciones').orderBy('fechaEnvio','desc').limit(100);
-            const snap = await query.get();
-            todasLasJustSec = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                // Filtrar por nivel de la secretaria
-                if (staffRol !== 'admin' && d.nivel && d.nivel !== staffNiveles[0] && !staffNiveles.includes(d.nivel)) return;
-                todasLasJustSec.push({ id: doc.id, ...d });
-            });
-            const lista = filtro === 'todas' ? todasLasJustSec : todasLasJustSec.filter(j => j.estado === filtro);
-            const pendientes = todasLasJustSec.filter(j => j.estado === 'pendiente').length;
-            const badge = document.getElementById('badge-just-sec');
-            if (badge) badge.classList.toggle('hidden', pendientes === 0);
-            if (!lista.length) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Sin justificaciones ${filtro !== 'todas' ? filtro + 's' : ''}.</p>`; return; }
-            const motivos = { medico:'Certificado médico', familiar:'Causa familiar', viaje:'Viaje', otro:'Otro' };
-            const colEst = { pendiente:'border-amber-200 bg-amber-50', aprobada:'border-emerald-200 bg-emerald-50', rechazada:'border-rose-200 bg-rose-50' };
-            cont.innerHTML = lista.map(j => {
-                const d = new Date(j.fechaEnvio).toLocaleDateString('es-AR');
-                return `<div class="bg-white p-5 rounded-2xl border-2 ${colEst[j.estado] || 'border-slate-100'} shadow-sm">
-                    <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
-                        <div>
-                            <p class="font-black text-slate-900">${j.alumnoNombre}</p>
-                            <p class="text-[10px] text-slate-400 font-bold">Falta: ${j.fecha} · ${motivos[j.motivo] || j.motivo}</p>
-                            <p class="text-[10px] text-slate-400">Familia: ${j.familiaNombre}</p>
-                        </div>
-                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${j.estado==='pendiente'?'bg-amber-100 text-amber-700':j.estado==='aprobada'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${j.estado}</span>
-                    </div>
-                    ${j.detalle ? `<p class="text-sm text-slate-600 mb-3">${j.detalle}</p>` : ''}
-                    ${j.urlCertificado ? `<a href="${j.urlCertificado}" target="_blank" class="text-[10px] font-black text-blue-600 flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
-                    <p class="text-[9px] text-slate-400">Enviada el ${d}</p>
-                    ${j.estado === 'pendiente' ? `<div class="flex gap-2 mt-3">
-                        <button onclick="resolverJustSec('${j.id}','aprobada')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
-                        <button onclick="resolverJustSec('${j.id}','rechazada')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
-                    </div>` : ''}
-                </div>`;
-            }).join('');
-        }
-
-        async function resolverJustSec(justId, estado) {
-            const j = todasLasJustSec.find(x => x.id === justId); if (!j) return;
-            // 1. Actualizar estado
-            await db.collection('justificaciones').doc(justId).update({ estado, resueltaPor: staffEmail, fechaResolucion: new Date().toISOString() });
-            // 2. Notificar al docente del alumno via conversación
-            if (estado === 'aprobada') {
-                const docSnap = await db.collection('usuarios').where('rol','==','docente').where('cursos','array-contains', j.alumnoNombre || '').get();
-                // Fallback: notificar a todos los docentes del nivel
-                const notifMsg = `✅ Justificación APROBADA: ${j.alumnoNombre}, falta del ${j.fecha} (${j.motivo}). Aprobada por ${staffNombre}.`;
-                // Guardar como notificación global
-                await db.collection('notificaciones_docentes').add({ mensaje: notifMsg, nivel: j.nivel || 'primario', tipo: 'justificacion', fecha: new Date().toISOString(), leida: false });
+        // Auto-login desde index.html
+        window.addEventListener('load', () => {
+            const em = sessionStorage.getItem('iosef_email');
+            if (em) {
+                document.getElementById('log-email').value = em;
+                const ps = sessionStorage.getItem('iosef_pass_tmp') || '';
+                if (ps) document.getElementById('log-pass').value = ps;
+                loginComunicacion();
             }
-            // 3. Refrescar lista
-            j.estado = estado;
-            cargarJustificacionesSec();
-        }
+        });
 
-        // ════ REGISTRO DE LLAMADAS ════
-        let todasLasLlamadas = [];
-
-        async function cargarLlamadas() {
-            const cont = document.getElementById('lista-llamadas');
+                document.getElementById('lista-llamadas');
             let query = db.collection('registro_llamadas').orderBy('fecha', 'desc').limit(100);
             // Secretaria solo ve su nivel
             const snap = await query.get();
@@ -964,15 +749,5 @@
             ).join('');
         }
 
-        // Actualizar switchTab para llamadas
-        const _origSwitchTab = switchTab;
-        function switchTab(tabId) {
-            _origSwitchTab(tabId);
-            if (tabId === 'llamadas') cargarLlamadas();
-            if (tabId === 'justificaciones-sec') cargarJustificacionesSec();
-        }
-        document.getElementById('modal-nueva-sec').addEventListener('click', function(e) { if (e.target === this) cerrarModalNuevaSec(); });
-    </script>
-</body>
-</html>
+        
 
