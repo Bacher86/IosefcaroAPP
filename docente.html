@@ -83,11 +83,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         <select id="select-periodo" onchange="cargarAlumnos()" class="text-[10px] font-bold text-emerald-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
       </div>
     </div>
-    <div id="header-eoe" class="hidden mt-1">
-      <span class="eoe-badge eoe-info"><i class="fas fa-shield-alt mr-1"></i>Equipo de Orientación Escolar</span>
-    </div>
+
   </div>
-  <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
+  <div class="flex items-center gap-2">
+    <a href="eoe.html" class="text-slate-400 hover:text-violet-600 p-1.5 bg-slate-50 rounded-lg" title="Ir al panel EOE"><i class="fas fa-shield-alt"></i></a>
+    <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
+  </div>
 </header>
 
 <main class="p-4 max-w-lg mx-auto">
@@ -201,124 +202,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
 
   <!-- Mensajería eliminada del panel docente -->
 
-  <!-- ════ EOE — EQUIPO DE ORIENTACIÓN ESCOLAR ════ -->
-  <section id="tab-eoe" class="tab-content space-y-5">
-    <div class="flex items-center gap-3">
-      <div class="w-12 h-12 bg-violet-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg"><i class="fas fa-shield-alt"></i></div>
-      <div>
-        <h3 class="font-black text-xl">EOE — Orientación Escolar</h3>
-        <p class="text-[10px] text-slate-400 font-bold uppercase">Acceso restringido · Confidencial</p>
-      </div>
-    </div>
 
-    <!-- Formulario de informe EOE -->
-    <div class="bg-white p-6 rounded-3xl border border-violet-100 shadow-sm space-y-4">
-      <h4 class="font-black text-sm text-violet-700 flex items-center gap-2"><i class="fas fa-plus-circle"></i> Nuevo Informe EOE</h4>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
-          <select id="eoe-curso" onchange="cargarAlumnosEOE()" class="input-pro mt-1 text-xs"></select>
-        </div>
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Alumno/a</label>
-          <select id="eoe-alumno" class="input-pro mt-1 text-xs"><option value="">Seleccionar curso primero</option></select>
-        </div>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Adulto/s que intervinieron</label>
-        <input type="text" id="eoe-adulto" placeholder="Nombre y rol (ej: Juan García — Padre, Lic. López — Psicóloga)" class="input-pro mt-1">
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de intervención</label>
-        <div class="flex gap-2 flex-wrap mt-1">
-          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="seguimiento" class="accent-violet-600"> Seguimiento</label>
-          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="entrevista" class="accent-violet-600"> Entrevista familiar</label>
-          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="derivacion" class="accent-violet-600"> Derivación</label>
-          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="crisis" class="accent-violet-600"> Situación de crisis</label>
-        </div>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Informe / Descripción de la intervención</label>
-        <textarea id="eoe-texto" class="input-pro mt-1 h-32" placeholder="Descripción detallada de la situación, acciones tomadas, acuerdos, próximos pasos..."></textarea>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Nivel de seguimiento</label>
-        <div class="flex gap-2 mt-1">
-          <button type="button" onclick="setSeguimiento('bajo',this)" class="seguim-btn flex-1 py-2 rounded-xl text-xs font-black bg-emerald-50 text-emerald-700 border-2 border-transparent">Bajo</button>
-          <button type="button" onclick="setSeguimiento('medio',this)" class="seguim-btn flex-1 py-2 rounded-xl text-xs font-black bg-amber-50 text-amber-700 border-2 border-transparent">Medio</button>
-          <button type="button" onclick="setSeguimiento('alto',this)" class="seguim-btn flex-1 py-2 rounded-xl text-xs font-black bg-rose-50 text-rose-700 border-2 border-transparent">Alto</button>
-        </div>
-      </div>
-      <button onclick="guardarInformeEOE()" class="w-full bg-violet-600 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-save mr-2"></i>GUARDAR INFORME EOE</button>
-    </div>
-
-    <!-- Historial EOE recientes -->
-    <div>
-      <h4 class="font-black text-sm text-slate-700 mb-3">Últimos informes cargados</h4>
-      <div id="eoe-recientes" class="space-y-3">
-        <p class="text-slate-400 text-sm text-center py-4">Cargando...</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════ LEGAJO COMPLETO DEL ALUMNO ════ -->
-  <section id="tab-legajo" class="tab-content space-y-4">
-    <h3 class="font-black text-xl">Legajo del Alumno</h3>
-    <p class="text-slate-400 text-xs -mt-2">Buscá un alumno para ver su historial completo: informes, faltas, notas e informes EOE.</p>
-
-    <!-- Buscador -->
-    <div class="bg-white p-4 rounded-2xl border shadow-sm flex gap-2">
-      <input type="text" id="legajo-search" placeholder="Nombre del alumno..." class="input-pro" oninput="buscarAlumnoLegajo()">
-      <button onclick="buscarAlumnoLegajo()" class="bg-slate-900 text-white px-4 rounded-xl font-bold text-sm flex-shrink-0"><i class="fas fa-search"></i></button>
-    </div>
-
-    <!-- Resultados de búsqueda -->
-    <div id="legajo-resultados" class="space-y-2"></div>
-
-    <!-- Perfil del alumno -->
-    <div id="legajo-perfil" class="hidden space-y-4">
-      <!-- Encabezado alumno -->
-      <div class="bg-white p-5 rounded-3xl border shadow-sm">
-        <div class="flex items-center gap-4">
-          <div id="legajo-avatar" class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white bg-slate-900 flex-shrink-0"></div>
-          <div>
-            <h4 id="legajo-nombre" class="font-black text-xl text-slate-900"></h4>
-            <p id="legajo-meta" class="text-xs text-slate-400 font-bold mt-0.5"></p>
-          </div>
-          <button onclick="cerrarLegajo()" class="ml-auto text-slate-300 hover:text-slate-600 text-xl"><i class="fas fa-times"></i></button>
-        </div>
-        <!-- Resumen rápido -->
-        <div class="grid grid-cols-3 gap-3 mt-4">
-          <div class="bg-rose-50 p-3 rounded-2xl text-center">
-            <p id="leg-faltas" class="font-black text-2xl text-rose-600">—</p>
-            <p class="text-[9px] font-black text-rose-400 uppercase">Faltas</p>
-          </div>
-          <div class="bg-amber-50 p-3 rounded-2xl text-center">
-            <p id="leg-tardes" class="font-black text-2xl text-amber-600">—</p>
-            <p class="text-[9px] font-black text-amber-400 uppercase">Tardanzas</p>
-          </div>
-          <div class="bg-violet-50 p-3 rounded-2xl text-center">
-            <p id="leg-eoe-count" class="font-black text-2xl text-violet-600">—</p>
-            <p class="text-[9px] font-black text-violet-400 uppercase">Interv. EOE</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filtro de secciones -->
-      <div class="flex gap-2 overflow-x-auto pb-1">
-        <button onclick="filtrarLegajo('todo')" class="legajo-filter active whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white">Todo</button>
-        <button onclick="filtrarLegajo('eoe')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-violet-600">EOE</button>
-        <button onclick="filtrarLegajo('informes')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-blue-600">Informes</button>
-        <button onclick="filtrarLegajo('asistencia')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-red-500">Asistencia</button>
-        <button onclick="filtrarLegajo('notas')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-emerald-600">Notas</button>
-      </div>
-
-      <!-- Contenido del legajo -->
-      <div id="legajo-contenido" class="space-y-3"></div>
-    </div>
-  </section>
-
-  <!-- ════ JUSTIFICACIONES (DOCENTE VE LAS DE SUS ALUMNOS) ════ -->
   <section id="tab-justificaciones-doc" class="tab-content space-y-4">
     <h3 class="font-black text-xl">Justificaciones de Inasistencias</h3>
     <p class="text-slate-400 text-xs -mt-2">Las familias enviaron estas justificaciones. Podés aprobarlas o rechazarlas.</p>
@@ -346,15 +230,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-calendar text-lg"></i>CAL.</button>
   <!-- Mensajería eliminada del panel docente por pedido — usar comunicaciones.html -->
   <!-- EOE y Legajo: siempre visibles para docentes y EOE -->
-  <button onclick="switchTab('eoe')" id="btn-eoe" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px] text-violet-600">
-    <i class="fas fa-shield-alt text-lg"></i>EOE
-  </button>
-  <button onclick="switchTab('legajo')" id="btn-legajo" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px] text-slate-500">
-    <i class="fas fa-folder-open text-lg"></i>LEGAJO
-  </button>
-  <button onclick="switchTab('justificaciones-doc')" id="btn-justificaciones-doc" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px] text-amber-600">
-    <div class="relative"><i class="fas fa-file-medical text-lg"></i><span id="badge-just-doc" class="hidden absolute -top-1 -right-2 bg-amber-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div>JUSTIF.
-  </button>
+
+
+
 </nav>
 
 <!-- PDF template -->
@@ -492,7 +370,11 @@ async function cargarAlumnos(){
   const modalidad=document.getElementById('select-modalidad').value;
   const selPer=document.getElementById('select-periodo');
   const perOpt=selPer.options[selPer.selectedIndex];
-  if(perOpt) periodoActivo={id:selPer.value,slug:perOpt.dataset.slug||'',nombre:perOpt.text,bloqueado:perOpt.dataset.bloqueado==='true'};
+  if(perOpt){
+    // data-bloqueado is "true" when period is NOT active, "false" when active
+    const esBloqueado = perOpt.dataset.bloqueado === 'true';
+    periodoActivo={id:selPer.value,slug:perOpt.dataset.slug||'',nombre:perOpt.text,bloqueado:esBloqueado};
+  }
   if(!curso||!materiaActiva) return;
 
   cambiosNotas={}; cambiosAsis={};
@@ -1171,75 +1053,5 @@ function escucharNotificacionesDocente(){
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 
-// ── JUSTIFICACIONES (vista docente) ──
-let justFiltroActivo = 'pendiente';
-let todasLasJustDoc = [];
 
-async function cargarJustificacionesDocente() {
-  // Obtener todos los alumnos de los cursos del docente
-  const cursosDoc = Array.isArray(docenteData.cursos) ? docenteData.cursos : (docenteData.curso ? [docenteData.curso] : []);
-  const snap = await db.collection('justificaciones').orderBy('fechaEnvio','desc').get();
-  todasLasJustDoc = [];
-  // Cargar nombres de alumnos para cruzar
-  const alumnosMap = {};
-  for (const cur of cursosDoc) {
-    const alSnap = await db.collection('alumnos').where('curso','==',cur).get();
-    alSnap.forEach(d => alumnosMap[d.id] = d.data().nombre);
-  }
-  snap.forEach(doc => {
-    const j = doc.data();
-    if (alumnosMap[j.alumnoId]) todasLasJustDoc.push({ id: doc.id, ...j, alumnoNombreReal: alumnosMap[j.alumnoId] });
-  });
-  renderJustDoc();
-  // Badge
-  const pendientes = todasLasJustDoc.filter(j => j.estado === 'pendiente').length;
-  document.getElementById('badge-just-doc').classList.toggle('hidden', pendientes === 0);
-}
-
-function renderJustDoc() {
-  const cont = document.getElementById('lista-just-doc');
-  const lista = justFiltroActivo === 'todas' ? todasLasJustDoc : todasLasJustDoc.filter(j => j.estado === justFiltroActivo);
-  if (!lista.length) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Sin justificaciones ${justFiltroActivo !== 'todas' ? justFiltroActivo+'s' : ''}.</p>`; return; }
-  const colores = { pendiente: 'border-amber-200 bg-amber-50', aprobada: 'border-emerald-200 bg-emerald-50', rechazada: 'border-rose-200 bg-rose-50' };
-  cont.innerHTML = lista.map(j => {
-    const d = new Date(j.fechaEnvio).toLocaleDateString('es-AR');
-    const motivos = { medico:'Certificado médico', familiar:'Causa familiar', viaje:'Viaje', otro:'Otro' };
-    return `<div class="bg-white p-5 rounded-2xl border-2 ${colores[j.estado]||'border-slate-100'} shadow-sm">
-      <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
-        <div>
-          <p class="font-black text-slate-900">${j.alumnoNombreReal || j.alumnoNombre}</p>
-          <p class="text-[10px] text-slate-400 font-bold mt-0.5">Falta: ${j.fecha} · ${motivos[j.motivo]||j.motivo}</p>
-        </div>
-        <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${j.estado==='pendiente'?'bg-amber-100 text-amber-700':j.estado==='aprobada'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${j.estado}</span>
-      </div>
-      ${j.detalle ? `<p class="text-sm text-slate-600 mb-3">${j.detalle}</p>` : ''}
-      ${j.urlCertificado ? `<a href="${j.urlCertificado}" target="_blank" class="text-[10px] font-black text-blue-600 flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
-      <p class="text-[9px] text-slate-400">Enviada por ${j.familiaNombre} el ${d}</p>
-      ${j.estado === 'pendiente' ? `<div class="flex gap-2 mt-3">
-        <button onclick="resolverJustificacion('${j.id}','aprobada')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
-        <button onclick="resolverJustificacion('${j.id}','rechazada')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-async function resolverJustificacion(justId, estado) {
-  await db.collection('justificaciones').doc(justId).update({ estado, resueltaPor: docenteEmail, fechaResolucion: new Date().toISOString() });
-  const j = todasLasJustDoc.find(j => j.id === justId);
-  if (j) j.estado = estado;
-  renderJustDoc();
-  // Actualizar badge
-  const pendientes = todasLasJustDoc.filter(j => j.estado === 'pendiente').length;
-  document.getElementById('badge-just-doc').classList.toggle('hidden', pendientes === 0);
-}
-
-function filtrarJustDoc(filtro, btn) {
-  justFiltroActivo = filtro;
-  document.querySelectorAll('.just-filter-btn').forEach(b => { b.style.background='white'; b.style.color=''; b.style.borderColor=''; });
-  btn.style.background = '#0f172a'; btn.style.color = 'white';
-  renderJustDoc();
-}
-</script>
-</body>
-</html>
 
