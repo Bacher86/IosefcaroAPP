@@ -196,7 +196,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
   <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
     <button onclick="switchTab('stats')"      class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
     <button onclick="switchTab('alertas')"    class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">⚠️ Alertas</button>
-    <button onclick="switchTab('circulares')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">✍️ Circulares</button>
+
     <button onclick="switchTab('importar')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
     <button onclick="switchTab('staff')"      class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
     <button onclick="switchTab('materias')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
@@ -285,20 +285,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       <div id="alertas-container" class="space-y-3"><p class="text-slate-400 text-sm text-center py-8">Tocá "Escanear" para analizar todos los alumnos.</p></div>
     </section>
 
-    <!-- ════ CIRCULARES ════ -->
-    <section id="tab-circulares" class="tab-content space-y-6">
-      <h2 class="text-2xl font-black tracking-tight">Circulares con Firma Obligatoria</h2>
-      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-        <h3 class="font-black text-base">Nueva circular</h3>
-        <input type="text" id="circ-titulo" placeholder="Título de la circular" class="input-pro">
-        <textarea id="circ-texto" class="input-pro h-28" placeholder="Texto completo..."></textarea>
-        <div><label class="text-[9px] font-black text-slate-400 uppercase">Destinatarios</label><div id="circ-cursos-cont" class="flex flex-wrap gap-2 mt-2"><label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="circ-todos" onchange="toggleTodosCirc(this)"> TODOS</label></div></div>
-        <button onclick="crearCircular()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-paper-plane mr-2"></i>Publicar circular</button>
-      </div>
-      <h3 class="font-black text-sm text-slate-700">Circulares publicadas</h3>
-      <div id="lista-circulares" class="space-y-4"></div>
-    </section>
-
     <!-- ════ IMPORTAR ════ -->
     <section id="tab-importar" class="tab-content space-y-6">
       <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
@@ -348,8 +334,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
           <input type="password" id="staff-pass"   placeholder="Contraseña"      class="input-pro">
           <select id="staff-rol" class="input-pro">
             <optgroup label="Administración">
-              <option value="admin">Admin Total — acceso completo</option>
-              <option value="director">Director — solo lectura + stats</option>
+              <option value="admin">Admin Total</option>
+              <option value="director">Director — solo lectura</option>
             </optgroup>
             <optgroup label="Comunicación">
               <option value="comunicacion">Comunicación — muro + calendario</option>
@@ -361,6 +347,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
             </optgroup>
             <optgroup label="Pedagógico">
               <option value="eoe">EOE — Orientación Escolar</option>
+              <option value="docente">Docente</option>
             </optgroup>
           </select>
           <div class="md:col-span-2">
@@ -371,22 +358,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
               <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="secundario"> Secundario</label>
             </div>
           </div>
-          <!-- Permisos granulares para director/comunicacion -->
-          <div class="md:col-span-2 bg-slate-50 p-4 rounded-2xl">
-            <p class="text-[10px] font-black text-slate-400 uppercase mb-3">Permisos adicionales (opcional)</p>
-            <div class="flex flex-wrap gap-3">
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="ver_stats"> Ver estadísticas</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="ver_notas"> Ver notas</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="ver_legajos"> Ver legajos EOE</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="publicar_comunicados"> Publicar comunicados</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="editar_alumnos"> Editar perfiles alumnos</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="exportar_datos"> Exportar datos</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_comunicados"> Acceso a Comunicados</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_calendario"> Acceso a Calendario</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_mensajes"> Acceso a Mensajes</label>
-              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_llamadas"> Acceso a Registro de Llamadas</label>
-            </div>
-          </div>
+
           <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Guardar Usuario</button>
         </div>
       </div>
@@ -919,52 +891,6 @@ async function marcarAlertaVista(alumnoId){
 }
 
 // ══════════════════════
-// CIRCULARES
-// ══════════════════════
-async function inicializarCirculares(){
-  const snap=await db.collection('cursos').orderBy('nombre','asc').get();
-  const cont=document.getElementById('circ-cursos-cont');
-  while(cont.children.length>1)cont.removeChild(cont.lastChild);
-  snap.forEach(doc=>{const lbl=document.createElement('label');lbl.className='border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50';lbl.innerHTML=`<input type="checkbox" class="circ-curso-check" value="${doc.data().nombre}"> ${doc.data().nombre}`;cont.appendChild(lbl);});
-  cargarCirculares();
-}
-function toggleTodosCirc(cb){document.querySelectorAll('.circ-curso-check').forEach(c=>c.checked=cb.checked);}
-async function crearCircular(){
-  const titulo=document.getElementById('circ-titulo').value.trim();const texto=document.getElementById('circ-texto').value.trim();
-  const todos=document.getElementById('circ-todos').checked;const cursos=todos?['TODOS']:Array.from(document.querySelectorAll('.circ-curso-check:checked')).map(c=>c.value);
-  if(!titulo||!texto)return alert("Completá título y texto.");if(!todos&&!cursos.length)return alert("Seleccioná destinatarios.");
-  await db.collection('circulares').add({titulo,texto,cursos,fechaCreacion:new Date().toISOString(),firmas:{}});
-  registrarLog('crear',`Circular creada: "${titulo}"`,'circular');
-  alert("✅ Circular publicada.");
-  document.getElementById('circ-titulo').value='';document.getElementById('circ-texto').value='';document.getElementById('circ-todos').checked=false;document.querySelectorAll('.circ-curso-check').forEach(c=>c.checked=false);
-  cargarCirculares();
-}
-async function cargarCirculares(){
-  const snap=await db.collection('circulares').orderBy('fechaCreacion','desc').get();
-  const cont=document.getElementById('lista-circulares');cont.innerHTML='';
-  if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-8">Sin circulares publicadas.</p>';return;}
-  for(const doc of snap.docs){
-    const c=doc.data();const d=new Date(c.fechaCreacion).toLocaleDateString('es-AR');const firmas=Object.keys(c.firmas||{}).length;
-    const famSnap=await db.collection('usuarios').where('rol','==','familia').get();let totalFam=0;
-    if(c.cursos?.includes('TODOS'))totalFam=famSnap.size;else famSnap.forEach(f=>{if((f.data().hijos||[]).some(h=>c.cursos?.includes(h.curso)))totalFam++;});
-    const pct=totalFam>0?Math.round(firmas/totalFam*100):0;
-    cont.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm">
-      <div class="flex justify-between items-start flex-wrap gap-2 mb-3">
-        <div><h4 class="font-black text-slate-900">${c.titulo}</h4><p class="text-[10px] text-slate-400 font-bold mt-0.5">${d} · ${(c.cursos||[]).join(', ')}</p></div>
-        <button onclick="enviarRecordatorioCircular('${doc.id}')" class="text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-xl"><i class="fas fa-bell mr-1"></i>Recordar</button>
-      </div>
-      <p class="text-sm text-slate-600 mb-4 line-clamp-2">${c.texto}</p>
-      <div class="mb-2"><div class="flex justify-between text-[10px] font-black text-slate-500 mb-1"><span>Firmas</span><span>${firmas}/${totalFam} (${pct}%)</span></div><div class="bg-slate-100 rounded-full h-3"><div class="bg-emerald-500 h-3 rounded-full" style="width:${pct}%"></div></div></div>
-    </div>`;
-  }
-}
-async function enviarRecordatorioCircular(id){
-  await db.collection('circulares').doc(id).update({ultimoRecordatorio:new Date().toISOString()});
-  registrarLog('editar','Recordatorio de circular enviado','circular');
-  alert("✅ Recordatorio registrado.");
-}
-
-// ══════════════════════
 // EXCEL
 // ══════════════════════
 async function exportarExcel(){
@@ -1094,9 +1020,8 @@ async function cargaManualAlumno(){
 async function crearStaff(){
   const n=document.getElementById('staff-nombre').value,m=document.getElementById('staff-email').value.toLowerCase().trim(),p=document.getElementById('staff-pass').value,r=document.getElementById('staff-rol').value;
   const niveles=Array.from(document.querySelectorAll('.staff-nivel-check:checked')).map(c=>c.value);
-  const permisos=Array.from(document.querySelectorAll('.perm-check:checked')).map(c=>c.value);
   if(!n||!m||!p)return alert("Completa todos los campos.");
-  await db.collection('usuarios').doc(m).set({nombre:n,pass:p,rol:r,niveles,permisos});
+  await db.collection('usuarios').doc(m).set({nombre:n,pass:p,rol:r,niveles,permisos:[]});
   registrarLog('crear',`Usuario ${r} creado: ${n} (${m})`,'staff');
   alert("Usuario guardado.");cargarStaff();
 }
@@ -1213,7 +1138,7 @@ function switchTab(t){
   event.currentTarget?.classList.add('bg-slate-900','text-white');
   if(t==='stats')cargarEstadisticas();
   if(t==='periodos')cargarPeriodosAdmin();
-  if(t==='circulares')inicializarCirculares();
+  
   if(t==='alertas')ejecutarScanAlertas();
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
@@ -1253,7 +1178,7 @@ async function guardarEdicionStaff(){
   const pass=document.getElementById('staff-edit-pass').value.trim();
   const rol=document.getElementById('staff-edit-rol').value;
   const niveles=Array.from(document.querySelectorAll('.staff-edit-nivel-check:checked')).map(c=>c.value);
-  const permisos=Array.from(document.querySelectorAll('.perm-edit-check:checked')).map(c=>c.value);
+  const permisos=[];  // permisos simplificados — acceso por rol
   const data={nombre,rol,niveles,permisos};if(pass)data.pass=pass;
   await db.collection('usuarios').doc(staffEditandoId).update(data);
   registrarLog('editar',`Staff editado: ${nombre} (${staffEditandoId})`,'staff');
@@ -1288,3 +1213,4 @@ document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='E
 </script>
 </body>
 </html>
+
