@@ -45,8 +45,7 @@
         <h2 class="text-3xl font-black mb-2 tracking-tighter text-slate-900">Portal de Familias</h2>
         <p class="text-slate-400 text-sm mb-8 font-medium">Accedé con tu email registrado</p>
         <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Tu email">
-        <button onclick="loginFamilia()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar al Portal</button>    </div>
-
+<button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar al Portal</button>
     <header class="p-5 bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b flex justify-between items-center">
         <div>
             <h1 id="user-display-name" class="font-black text-xl italic text-slate-900">Hola...</h1>
@@ -462,15 +461,21 @@
         }
 
         // ════ LOGIN ════
-        async function login() {
+        // Declaramos las variables globales que usa la aplicación al inicio
+let userEmail = "";
+let userName = "";
+let userData = {}; // Por si la app busca los datos de usuario después
+
+async function login() {
     const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
+    
     if (!emailInput) {
         alert("Por favor, ingresá tu dirección de email.");
         return;
     }
 
     try {
-        // Consultar de forma flexible por email del tutor o familia
+        // Consultamos en la colección usuarios
         const snap = await db.collection('usuarios')
                              .where('email', '==', emailInput)
                              .get();
@@ -494,19 +499,27 @@
             return;
         }
 
-        // Login Exitoso
+        // Login Exitoso: Guardamos en Storage
         localStorage.setItem('familia_email', usuarioEncontrado.email);
         localStorage.setItem('familia_nombre', usuarioEncontrado.nombre);
         
-        // Ocultar pantalla de login e inicializar el panel
-        document.getElementById('login-screen').classList.add('hidden');
         userEmail = usuarioEncontrado.email;
         userName = usuarioEncontrado.nombre;
+        userData = usuarioEncontrado; // Guardamos el objeto completo de datos
+
+        // Actualizamos la interfaz
         document.getElementById('user-display-name').textContent = `Hola, ${userName}`;
         
-        await cargarHijosAsociados();
+        // Ocultar pantalla de login
+        document.getElementById('login-screen').classList.add('hidden');
+
+        // Cargamos los alumnos asociados
+        if (typeof cargarHijosAsociados === "function") {
+            await cargarHijosAsociados();
+        }
+
     } catch (e) {
-        console.error(e);
+        console.error("Error en login:", e);
         alert("Ocurrió un error al intentar ingresar: " + e.message);
     }
 }
