@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>EOE - Orientación Escolar - Iosef Caro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-bottom:110px}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.nav-btn.active{color:#0f172a}.nav-btn.active i{transform:translateY(-4px);color:#7c3aed}
+.input-pro{border:1.5px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;font-size:14px;font-family:inherit;background:white;transition:border-color .2s}
+.input-pro:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.eoe-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800;text-transform:uppercase}
+.eoe-info{background:#ede9fe;color:#5b21b6}
+.eoe-warn{background:#fef3c7;color:#92400e}
+.eoe-crit{background:#fee2e2;color:#991b1b}
+.tipo-tag{font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+.tipo-eoe{background:#ede9fe;color:#5b21b6}
+.tipo-inf{background:#dbeafe;color:#1e40af}
+.tipo-falta{background:#fee2e2;color:#991b1b}
+.tipo-nota{background:#d1fae5;color:#065f46}
+/* Legajo */
+.legajo-bloque{background:white;border:1px solid #f1f5f9;border-radius:1.25rem;padding:1rem;margin-bottom:.75rem}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8 text-center">
+  <div class="w-16 h-16 bg-violet-600 rounded-2xl mb-5 flex items-center justify-center text-white text-2xl shadow-xl"><i class="fas fa-shield-alt"></i></div>
+  <h2 class="text-2xl font-black mb-1">Panel EOE</h2>
+  <p class="text-slate-400 text-sm mb-6">Equipo de Orientación Escolar</p>
+  <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu email registrado">
+  <p id="login-error" class="text-rose-500 text-xs font-bold mb-3 hidden"></p>
+  <button onclick="login()" class="w-full max-w-xs bg-violet-600 text-white p-4 rounded-2xl font-bold shadow-lg">Entrar</button>
+</div>
+
+<!-- HEADER -->
+<header class="px-5 py-4 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm">
+  <div>
+    <h1 id="eoe-nom" class="font-black text-xl tracking-tight text-slate-900">EOE</h1>
+    <p class="text-[9px] font-black text-violet-500 uppercase">Equipo de Orientación Escolar · Confidencial</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <a href="docente.html" class="text-slate-400 hover:text-blue-500 p-1.5 text-sm" title="Ir al panel docente"><i class="fas fa-chalkboard-teacher"></i></a>
+    <button onclick="sessionStorage.clear();window.location.href='index.html'" class="text-slate-400 hover:text-rose-500 p-1.5"><i class="fas fa-sign-out-alt"></i></button>
+  </div>
+</header>
+
+<main class="p-4 max-w-lg mx-auto">
+
+  <!-- EOE FORMULARIO -->
+  <section id="tab-eoe" class="tab-content active space-y-5">
+    <div class="bg-white p-6 rounded-3xl border border-violet-100 shadow-sm space-y-4">
+      <h3 class="font-black text-base text-violet-700 flex items-center gap-2"><i class="fas fa-plus-circle"></i> Nuevo Informe EOE</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
+          <select id="eoe-curso" onchange="cargarAlumnosEOE()" class="input-pro mt-1 text-xs"></select>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Alumno/a</label>
+          <select id="eoe-alumno" class="input-pro mt-1 text-xs"><option value="">Seleccionar curso primero</option></select>
+        </div>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Adulto/s que intervinieron</label>
+        <input type="text" id="eoe-adulto" placeholder="Nombre y rol (ej: Juan García — Padre)" class="input-pro mt-1">
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de intervención</label>
+        <div class="flex gap-2 flex-wrap mt-1">
+          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="seguimiento" class="accent-violet-600"> Seguimiento</label>
+          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="entrevista" class="accent-violet-600"> Entrevista familiar</label>
+          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="derivacion" class="accent-violet-600"> Derivación</label>
+          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border"><input type="radio" name="eoe-tipo" value="crisis" class="accent-violet-600"> Situación de crisis</label>
+        </div>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Informe / Descripción de la intervención</label>
+        <textarea id="eoe-texto" class="input-pro mt-1 h-32" placeholder="Situación, acciones tomadas, acuerdos, próximos pasos..."></textarea>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Nivel de seguimiento</label>
+        <div class="flex gap-2 mt-1">
+          <button type="button" onclick="setSeguimiento('bajo',this)" class="seguim-btn flex-1 py-2 rounded-xl text-xs font-black bg-emerald-50 text-emerald-700 border-2 border-transparent">Bajo</button>
+          <button type="button" onclick="setSeguimiento('medio',this)" class="seguim-btn flex-1 py-2 rounded-xl text-xs font-black bg-amber-50 text-amber-700 border-2 border-transparent">Medio</button>
+          <button type="button" onclick="setSeguimiento('alto',this)" class="seguim-btn flex-1 py-2 rounded-xl text-xs font-black bg-rose-50 text-rose-700 border-2 border-transparent">Alto</button>
+        </div>
+      </div>
+      <button onclick="guardarInformeEOE()" class="w-full bg-violet-600 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-save mr-2"></i>GUARDAR INFORME EOE</button>
+    </div>
+    <h4 class="font-black text-sm text-slate-700">Últimos informes cargados</h4>
+    <div id="eoe-recientes" class="space-y-3"><p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p></div>
+  </section>
+
+  <!-- LEGAJO -->
+  <section id="tab-legajo" class="tab-content space-y-4">
+    <h3 class="font-black text-xl">Legajo del Alumno</h3>
+    <p class="text-slate-400 text-xs -mt-2">Buscá un alumno para ver su historial completo.</p>
+    <div class="bg-white p-4 rounded-2xl border shadow-sm flex gap-2">
+      <input type="text" id="legajo-search" placeholder="Nombre del alumno..." class="input-pro" oninput="buscarAlumnoLegajo()">
+      <button onclick="buscarAlumnoLegajo()" class="bg-slate-900 text-white px-4 rounded-xl font-bold flex-shrink-0"><i class="fas fa-search"></i></button>
+    </div>
+    <div id="legajo-resultados" class="space-y-2"></div>
+    <div id="legajo-perfil" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-3xl border shadow-sm">
+        <div class="flex items-center gap-4">
+          <div id="legajo-avatar" class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white bg-slate-900 flex-shrink-0"></div>
+          <div class="flex-1">
+            <h4 id="legajo-nombre" class="font-black text-xl"></h4>
+            <p id="legajo-meta" class="text-xs text-slate-400 font-bold mt-0.5"></p>
+          </div>
+          <button onclick="cerrarLegajo()" class="text-slate-300 hover:text-slate-600 text-xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mt-4">
+          <div class="bg-rose-50 p-3 rounded-2xl text-center"><p id="leg-faltas" class="font-black text-2xl text-rose-600">—</p><p class="text-[9px] font-black text-rose-400 uppercase">Faltas</p></div>
+          <div class="bg-amber-50 p-3 rounded-2xl text-center"><p id="leg-tardes" class="font-black text-2xl text-amber-600">—</p><p class="text-[9px] font-black text-amber-400 uppercase">Tardanzas</p></div>
+          <div class="bg-violet-50 p-3 rounded-2xl text-center"><p id="leg-eoe-count" class="font-black text-2xl text-violet-600">—</p><p class="text-[9px] font-black text-violet-400 uppercase">EOE</p></div>
+        </div>
+      </div>
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button onclick="filtrarLegajo('todo')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white">Todo</button>
+        <button onclick="filtrarLegajo('eoe')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-violet-600">EOE</button>
+        <button onclick="filtrarLegajo('informes')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-blue-600">Informes</button>
+        <button onclick="filtrarLegajo('asistencia')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-red-500">Asistencia</button>
+        <button onclick="filtrarLegajo('notas')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-emerald-600">Notas</button>
+      </div>
+      <div id="legajo-contenido" class="space-y-3"></div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-[1000] shadow-lg">
+  <button onclick="switchTab('eoe')" id="btn-eoe" class="nav-btn active flex-1 flex flex-col items-center gap-1 font-bold text-[9px] text-violet-600">
+    <i class="fas fa-shield-alt text-xl"></i>EOE
+  </button>
+  <button onclick="switchTab('legajo')" id="btn-legajo" class="nav-btn flex-1 flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400">
+    <i class="fas fa-folder-open text-xl"></i>LEGAJO
+  </button>
+</nav>
+
+<script>
+const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+firebase.initializeApp(FB);const db=firebase.firestore();
+let eoeData=null,eoeEmail='',nivelSeguimientoEOE='bajo',todosLosItems=[],legajoAlumnoActual=null;
+
+// ── LOGIN ──
+async function login(emailOverride){
+  const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
+  const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
+  if(!email){errEl.textContent='Ingresá tu email.';errEl.classList.remove('hidden');return;}
+  try{
+    const doc=await db.collection('usuarios').doc(email).get();
+    if(!doc.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
+    const d=doc.data();
+    if(!['eoe','admin','docente'].includes(d.rol)){errEl.textContent='Sin permisos para el panel EOE.';errEl.classList.remove('hidden');return;}
+    eoeData=d;eoeEmail=email;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('eoe-nom').textContent=d.nombre;
+    await cargarCursosEOE();await cargarRecientesEOE();
+  }catch(e){errEl.textContent='Error: '+e.message;errEl.classList.remove('hidden');}
+}
+
+// ── CURSOS ──
+async function cargarCursosEOE(){
+  const snap=await db.collection('cursos').orderBy('nombre','asc').get();
+  const sel=document.getElementById('eoe-curso');sel.innerHTML='<option value="">Seleccionar curso...</option>';
+  snap.forEach(doc=>sel.innerHTML+=`<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
+}
+async function cargarAlumnosEOE(){
+  const curso=document.getElementById('eoe-curso').value;
+  const sel=document.getElementById('eoe-alumno');sel.innerHTML='<option value="">Seleccionar alumno...</option>';
+  if(!curso)return;
+  const snap=await db.collection('alumnos').where('curso','==',curso).get();
+  const alus=[];snap.forEach(doc=>alus.push({id:doc.id,nombre:doc.data().nombre}));
+  alus.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  alus.forEach(al=>sel.innerHTML+=`<option value="${al.id}">${al.nombre}</option>`);
+}
+
+// ── EOE FORM ──
+function setSeguimiento(nivel,btn){
+  nivelSeguimientoEOE=nivel;
+  document.querySelectorAll('.seguim-btn').forEach(b=>{b.style.borderColor='transparent';});
+  const c={bajo:'#16a34a',medio:'#d97706',alto:'#dc2626'};
+  btn.style.borderColor=c[nivel]||'#7c3aed';
+}
+async function guardarInformeEOE(){
+  const alumnoId=document.getElementById('eoe-alumno').value;
+  const curso=document.getElementById('eoe-curso').value;
+  const adulto=document.getElementById('eoe-adulto').value.trim();
+  const texto=document.getElementById('eoe-texto').value.trim();
+  const tipo=document.querySelector('input[name="eoe-tipo"]:checked')?.value;
+  const alumnoNombre=document.getElementById('eoe-alumno').selectedOptions[0]?.text||'';
+  if(!alumnoId||!adulto||!texto||!tipo)return alert("Completá todos los campos: alumno, adulto, tipo e informe.");
+  const datos={alumnoId,alumnoNombre,curso,adulto,texto,tipo,seguimiento:nivelSeguimientoEOE,profesional:eoeData.nombre,profesionalEmail:eoeEmail,fecha:new Date().toISOString(),tipo_registro:'eoe'};
+  const batch=db.batch();
+  const eoeRef=db.collection('informes_eoe').doc();
+  const alumnoEoeRef=db.collection('alumnos').doc(alumnoId).collection('informes_eoe').doc(eoeRef.id);
+  batch.set(eoeRef,datos);batch.set(alumnoEoeRef,datos);
+  await batch.commit();
+  alert("✅ Informe EOE guardado.");
+  document.getElementById('eoe-adulto').value='';document.getElementById('eoe-texto').value='';
+  document.querySelector('input[name="eoe-tipo"]:checked')&&(document.querySelector('input[name="eoe-tipo"]:checked').checked=false);
+  document.getElementById('eoe-alumno').value='';
+  await cargarRecientesEOE();
+}
+async function cargarRecientesEOE(){
+  const cont=document.getElementById('eoe-recientes');cont.innerHTML='';
+  const snap=await db.collection('informes_eoe').orderBy('fecha','desc').limit(15).get();
+  if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes EOE cargados aún.</p>';return;}
+  const colSeg={bajo:'eoe-info',medio:'eoe-warn',alto:'eoe-crit'};
+  const colTipo={seguimiento:'bg-violet-50 text-violet-700',entrevista:'bg-blue-50 text-blue-700',derivacion:'bg-amber-50 text-amber-700',crisis:'bg-rose-50 text-rose-700'};
+  snap.forEach(doc=>{const inf=doc.data();const d=new Date(inf.fecha).toLocaleDateString('es-AR');
+    cont.innerHTML+=`<div class="bg-white p-5 rounded-2xl border border-violet-100 shadow-sm">
+      <div class="flex items-start justify-between flex-wrap gap-2 mb-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-black text-sm text-slate-800">${inf.alumnoNombre}</span>
+          <span class="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">${inf.curso}</span>
+        </div>
+        <span class="text-[9px] text-slate-400 font-bold">${d}</span>
+      </div>
+      <div class="flex gap-2 mb-3 flex-wrap">
+        <span class="tipo-tag ${colTipo[inf.tipo]||'bg-slate-50 text-slate-500'} px-2 py-0.5 rounded-full">${inf.tipo}</span>
+        <span class="eoe-badge ${colSeg[inf.seguimiento]||'eoe-info'}">Seguimiento ${inf.seguimiento}</span>
+      </div>
+      <p class="text-sm text-slate-700">${inf.texto}</p>
+      <p class="text-[10px] text-slate-400 mt-2 font-bold"><i class="fas fa-user mr-1"></i>${inf.adulto}</p>
+      <p class="text-[9px] text-violet-500 font-bold mt-1">${inf.profesional}</p>
+    </div>`;
+  });
+}
+
+// ── LEGAJO ──
+async function buscarAlumnoLegajo(){
+  const q=document.getElementById('legajo-search').value.trim().toLowerCase();
+  const cont=document.getElementById('legajo-resultados');
+  document.getElementById('legajo-perfil').classList.add('hidden');cont.innerHTML='';
+  if(q.length<2)return;
+  const snap=await db.collection('alumnos').get();const res=[];
+  snap.forEach(doc=>{if(doc.data().nombre.toLowerCase().includes(q))res.push({id:doc.id,...doc.data()});});
+  res.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  if(!res.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin resultados.</p>';return;}
+  res.slice(0,8).forEach(al=>{
+    cont.innerHTML+=`<div onclick="abrirLegajo('${al.id}','${al.nombre.replace(/'/g,"\\'")}','${al.curso||''}','${al.nivel||''}')" class="bg-white p-4 rounded-2xl border flex items-center gap-3 cursor-pointer hover:border-violet-300 active:scale-95 transition-all shadow-sm">
+      <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black flex-shrink-0">${al.nombre.charAt(0).toUpperCase()}</div>
+      <div><p class="font-bold text-sm">${al.nombre}</p><p class="text-[10px] text-slate-400 font-bold uppercase">${al.curso||''} · ${al.nivel||''}</p></div>
+      <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+    </div>`;
+  });
+}
+async function abrirLegajo(alumnoId,nombre,curso,nivel){
+  legajoAlumnoActual=alumnoId;
+  document.getElementById('legajo-resultados').innerHTML='';document.getElementById('legajo-search').value='';
+  document.getElementById('legajo-perfil').classList.remove('hidden');
+  document.getElementById('legajo-avatar').textContent=nombre.charAt(0).toUpperCase();
+  document.getElementById('legajo-nombre').textContent=nombre;
+  document.getElementById('legajo-meta').textContent=`${curso} · ${nivel}`.replace(/^ · | · $/g,'').trim();
+  const[asisSnap,informesSnap,eoeSnap,notasSnap]=await Promise.all([
+    db.collection('asistencia').where('alumnoId','==',alumnoId).orderBy('fecha','desc').get(),
+    db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').get(),
+    db.collection('alumnos').doc(alumnoId).collection('informes_eoe').orderBy('fecha','desc').get(),
+    db.collection('alumnos').doc(alumnoId).collection('notas_v2').get()
+  ]);
+  let faltas=0,tardes=0;asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
+  document.getElementById('leg-faltas').textContent=faltas;document.getElementById('leg-tardes').textContent=tardes;document.getElementById('leg-eoe-count').textContent=eoeSnap.size;
+  todosLosItems=[];
+  eoeSnap.forEach(doc=>{const d=doc.data();todosLosItems.push({tipo:'eoe',fecha:d.fecha,html:`
+    <div class="legajo-bloque" data-tipo="eoe">
+      <div class="flex items-center gap-2 mb-2"><span class="tipo-tag tipo-eoe">EOE · ${d.tipo}</span><span class="text-[9px] text-slate-400 font-bold ml-auto">${new Date(d.fecha).toLocaleDateString('es-AR')}</span></div>
+      <p class="text-sm text-slate-700">${d.texto}</p>
+      <p class="text-[10px] text-slate-400 mt-2 font-bold"><i class="fas fa-user mr-1"></i>${d.adulto}</p>
+      <p class="text-[9px] text-violet-500 font-bold">${d.profesional}</p>
+    </div>`});
+  });
+  informesSnap.forEach(doc=>{const d=doc.data();todosLosItems.push({tipo:'informes',fecha:d.fecha,html:`
+    <div class="legajo-bloque" data-tipo="informes">
+      <div class="flex items-center gap-2 mb-2"><span class="tipo-tag tipo-inf">Informe · ${d.periodo}</span><span class="text-[9px] font-black bg-slate-100 px-2 rounded-full">${d.materia}</span><span class="text-[9px] text-slate-400 font-bold ml-auto">${new Date(d.fecha).toLocaleDateString('es-AR')}</span></div>
+      <p class="text-sm text-slate-700">${d.texto}</p>
+      <p class="text-[9px] text-slate-400 mt-2 font-bold">Prof. ${d.docenteNombre||''}</p>
+    </div>`});
+  });
+  asisSnap.forEach(doc=>{const d=doc.data();if(d.estado==='P')return;todosLosItems.push({tipo:'asistencia',fecha:d.fecha+'T00:00:00',html:`
+    <div class="legajo-bloque" data-tipo="asistencia">
+      <div class="flex items-center gap-2">
+        <span class="tipo-tag tipo-falta">${d.estado==='A'?'Ausente':'Tardanza'}</span>
+        <span class="text-[9px] text-slate-500 font-bold">${d.materia||''}</span>
+        <span class="text-[9px] text-slate-400 font-bold ml-auto">${d.fecha}</span>
+      </div>
+    </div>`});
+  });
+  notasSnap.forEach(doc=>{const d=doc.data();const cols=Object.entries(d).filter(([k])=>k.startsWith('nota_'));const cs=d.rite||(cols.length?cols.map(([,v])=>v).join(' / '):'Sin notas');todosLosItems.push({tipo:'notas',fecha:d.fechaUpdate?new Date(d.fechaUpdate).toISOString():new Date(0).toISOString(),html:`
+    <div class="legajo-bloque" data-tipo="notas">
+      <div class="flex items-center gap-2 mb-1"><span class="tipo-tag tipo-nota">Notas · ${d.periodo}</span><span class="text-[9px] font-black bg-slate-100 px-2 rounded-full">${d.materia}</span></div>
+      <p class="font-black text-slate-800 text-sm mt-1">${cs}</p>
+    </div>`});
+  });
+  todosLosItems.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  filtrarLegajo('todo');
+}
+function filtrarLegajo(tipo){
+  document.querySelectorAll('.legajo-filter').forEach(b=>{b.style.background='white';b.style.color='';});
+  document.querySelectorAll('.legajo-filter').forEach(b=>{if(b.getAttribute('onclick').includes(`'${tipo}'`)){b.style.background='#0f172a';b.style.color='white';}});
+  const cont=document.getElementById('legajo-contenido');
+  const items=tipo==='todo'?todosLosItems:todosLosItems.filter(i=>i.tipo===tipo);
+  if(!items.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-6">Sin registros de este tipo.</p>';return;}
+  cont.innerHTML=items.map(i=>i.html).join('');
+}
+function cerrarLegajo(){legajoAlumnoActual=null;todosLosItems=[];document.getElementById('legajo-perfil').classList.add('hidden');document.getElementById('legajo-search').value='';}
+
+// ── UTILS ──
+function switchTab(tab){
+  document.querySelectorAll('.tab-content,.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab)?.classList.add('active');
+  if(document.getElementById('btn-'+tab))document.getElementById('btn-'+tab).classList.add('active');
+}
+document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+// Auto-login
+window.addEventListener('load',()=>{
+  const em=sessionStorage.getItem('iosef_email');
+  const rol=sessionStorage.getItem('iosef_rol');
+  if(em&&['eoe','admin','docente'].includes(rol)){document.getElementById('login-email').value=em;login(em);}
+});
+</script>
+</body>
+</html>
