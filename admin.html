@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Gestión - Iosef Caro</title>
+<title>Gestión Maestro - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
@@ -333,6 +333,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
               <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="publicar_comunicados"> Publicar comunicados</label>
               <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="editar_alumnos"> Editar perfiles alumnos</label>
               <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="exportar_datos"> Exportar datos</label>
+              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_comunicados"> Acceso a Comunicados</label>
+              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_calendario"> Acceso a Calendario</label>
+              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_mensajes"> Acceso a Mensajes</label>
+              <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="checkbox" class="perm-check" value="acceso_llamadas"> Acceso a Registro de Llamadas</label>
             </div>
           </div>
           <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Guardar Usuario</button>
@@ -1148,6 +1152,14 @@ function switchTab(t){
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
 }
+async function eliminarAlumnoConf(id,nombre){
+  if(!confirm(`¿Eliminar al alumno "${nombre}"?
+
+Esto eliminará su ficha. Las notas y asistencias históricas se conservan.`))return;
+  await db.collection('alumnos').doc(id).delete();
+  registrarLog('eliminar',`Alumno eliminado: ${nombre}`,'alumno');
+  cargarAlumnosFiltrados();
+}
 async function eliminarDoc(col,id){
   if(confirm("¿Seguro?")){
     const docRef=db.collection(col).doc(id);
@@ -1169,5 +1181,3 @@ document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='E
 </script>
 </body>
 </html>
-
-
