@@ -3,832 +3,788 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Docente / EOE - Iosef Caro</title>
+<title>Docente - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
 *{box-sizing:border-box}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-bottom:160px}
-.tab-content{display:none}.tab-content.active{display:block}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-bottom:120px}
+.tab-content{display:none}
+.tab-content.active{display:block}
 .nav-btn.active{color:#2563eb;background:#eff6ff;border-radius:1rem}
-.btn-flotante{position:fixed;bottom:110px;left:1rem;right:1rem;z-index:900;display:none;animation:slideUp .3s ease}
-@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.input-pro{border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;transition:border-color .2s;font-size:14px;font-family:inherit;background:white}
+.input-pro{border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;transition:all .2s;font-size:14px;background:white}
 .input-pro:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-/* Grilla Excel */
-.grilla-wrapper{overflow-x:auto;border:1px solid #e2e8f0;border-radius:1rem}
-.grilla-tabla{width:100%;border-collapse:collapse;font-size:12px}
-.grilla-tabla th{background:#0f172a;color:white;padding:8px 10px;font-weight:800;font-size:10px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0;z-index:10}
-.grilla-tabla th.sticky-col{left:0;z-index:11;min-width:140px}
-.grilla-tabla td{border:1px solid #f1f5f9;padding:0}
-.grilla-tabla td.sticky-col{background:#f8fafc;font-weight:700;font-size:12px;padding:8px 10px;position:sticky;left:0;z-index:5;min-width:140px;white-space:nowrap}
-.grilla-tabla td input[type=number]{width:64px;height:40px;border:none;text-align:center;font-weight:800;font-size:13px;outline:none;background:transparent;font-family:inherit}
-.grilla-tabla td input[type=number]:focus{background:#eff6ff}
-/* RITE */
-.rite-btn{padding:8px 10px;border-radius:.8rem;font-size:11px;font-weight:800;flex:1;text-align:center;border:2px solid transparent;transition:all .2s;cursor:pointer}
-.rite-TEA{background:#dcfce7;color:#166534;border-color:#86efac}.rite-TEA.sel{background:#16a34a;color:white;border-color:#16a34a}
-.rite-TEP{background:#dbeafe;color:#1e40af;border-color:#93c5fd}.rite-TEP.sel{background:#2563eb;color:white;border-color:#2563eb}
-.rite-TED{background:#fef3c7;color:#92400e;border-color:#fcd34d}.rite-TED.sel{background:#d97706;color:white;border-color:#d97706}
-/* Mensajería */
-.mb-w{display:flex;flex-direction:column;max-width:78%;margin-bottom:4px}
-.mb-w.yo{align-self:flex-end;align-items:flex-end}.mb-w.otro{align-self:flex-start;align-items:flex-start}
-.mb{padding:10px 15px;border-radius:18px;font-size:13px;line-height:1.5;word-break:break-word}
-.mb.yo{background:#0f172a;color:white;border-bottom-right-radius:4px}
-.mb.otro{background:white;color:#1e293b;border:1px solid #e2e8f0;border-bottom-left-radius:4px}
-.mb-meta{font-size:10px;color:#94a3b8;font-weight:700;margin-top:3px}
-/* Alertas */
-.alerta-falta{background:#fef3c7;border:1px solid #f59e0b;border-radius:.6rem;padding:3px 8px;font-size:10px;font-weight:800;color:#92400e;display:inline-block}
-/* EOE */
-.eoe-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800;text-transform:uppercase}
-.eoe-info{background:#ede9fe;color:#5b21b6}
-.eoe-warn{background:#fef3c7;color:#92400e}
-.eoe-crit{background:#fee2e2;color:#991b1b}
-/* Legajo */
-.legajo-bloque{background:white;border:1px solid #f1f5f9;border-radius:1.25rem;padding:1rem;margin-bottom:.75rem}
-.legajo-titulo{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:.5rem}
-.tipo-tag{font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:5px}
-.tipo-eoe{background:#ede9fe;color:#5b21b6}
-.tipo-inf{background:#dbeafe;color:#1e40af}
-.tipo-falta{background:#fee2e2;color:#991b1b}
-.tipo-nota{background:#d1fae5;color:#065f46}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8 text-center">
-  <div class="w-16 h-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-2xl shadow-xl"><i class="fas fa-school"></i></div>
-  <h2 class="text-2xl font-black mb-1">Panel Institucional</h2>
-  <p class="text-slate-400 text-sm mb-6">Docentes y Equipo de Orientación</p>
-  <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu email registrado">
-  <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">Entrar</button>
-  <p id="login-error" class="text-red-500 text-xs font-bold mt-4 hidden"></p>
+<div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[2000] flex items-center justify-center p-6">
+  <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
+    <div class="w-20 h-20 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-chalkboard-teacher"></i></div>
+    <h1 class="text-3xl font-black tracking-tighter">Panel Docente</h1>
+    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 mb-8">Iosef Caro</p>
+    <div class="space-y-4">
+      <input type="email" id="log-email" placeholder="Email institucional" class="input-pro">
+      <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
+      <button onclick="loginDocente()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition">ACCEDER</button>
+    </div>
+    <p id="login-err" class="text-rose-500 text-xs font-bold mt-4 hidden"></p>
+  </div>
 </div>
 
-<!-- HEADER -->
-<header class="p-4 bg-white border-b sticky top-0 z-50 flex justify-between items-center gap-3 shadow-sm">
-  <div class="flex-1 min-w-0">
-    <h1 id="doc-nom" class="font-black text-lg leading-none truncate">Hola</h1>
-    <div id="header-selects" class="flex items-center gap-3 mt-1">
+<div id="app-content" class="hidden">
+  <header class="bg-white border-b px-4 py-3 sticky top-0 z-50 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg"><i class="fas fa-graduation-cap"></i></div>
       <div>
-        <label class="text-[8px] font-black text-slate-400 uppercase">Materia</label>
-        <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[10px] font-bold text-blue-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
-      </div>
-      <div>
-        <label class="text-[8px] font-black text-slate-400 uppercase">Período</label>
-        <select id="select-periodo" onchange="cargarAlumnos()" class="text-[10px] font-bold text-emerald-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
+        <h2 id="docente-nombre-ui" class="font-black text-sm text-slate-800 leading-none">Cargando...</h2>
+        <span class="text-[10px] text-slate-400 font-bold uppercase">Docente</span>
       </div>
     </div>
-    
-  </div>
-  <div class="flex items-center gap-2">
-    <a href="eoe.html" class="w-9 h-9 bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white rounded-lg flex items-center justify-center transition-all" title="Panel EOE">
-      <i class="fas fa-shield-alt text-sm"></i>
-    </a>
-    <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
-  </div>
-</header>
+    <button onclick="location.reload()" class="bg-rose-50 text-rose-500 p-2.5 rounded-xl hover:bg-rose-100 transition"><i class="fas fa-power-off"></i></button>
+  </header>
 
-<main class="p-4 max-w-lg mx-auto">
+  <main class="max-w-4xl mx-auto p-4 space-y-6">
 
-  <!-- NOTAS -->
-  <section id="tab-notas" class="tab-content active">
-    <div class="grid grid-cols-2 gap-2 mb-4">
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Curso</label>
-        <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs"></select>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Modalidad</label>
-        <select id="select-modalidad" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border shadow-sm font-bold mt-1 outline-none text-xs text-blue-600">
-          <option value="NUMERICO">Numérico (1-10)</option>
-          <option value="RITE">RITE (TEA/TEP/TED)</option>
-        </select>
-      </div>
-    </div>
-    <div id="periodo-info" class="bg-blue-50 border border-blue-100 rounded-2xl p-3 mb-4 hidden">
-      <p id="periodo-info-txt" class="text-xs font-bold text-blue-700"></p>
-    </div>
-    <div id="ctrl-examenes" class="mb-4 flex items-center gap-2 flex-wrap hidden">
-      <span class="text-[10px] font-black text-slate-400 uppercase">Evaluaciones:</span>
-      <div id="tags-examenes" class="flex gap-2 flex-wrap"></div>
-      <button onclick="agregarColumna()" class="text-[10px] font-black bg-blue-600 text-white px-3 py-1.5 rounded-xl">+ Agregar</button>
-    </div>
-    <div id="grilla-container" class="hidden">
-      <div class="grilla-wrapper mb-4">
-        <table class="grilla-tabla"><thead><tr id="grilla-head"></tr></thead><tbody id="grilla-body"></tbody></table>
-      </div>
-    </div>
-    <div id="rite-container" class="hidden space-y-3"></div>
-    <div id="btn-guardar-notas" class="btn-flotante">
-      <button onclick="confirmarNotas()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2"><i class="fas fa-save"></i> GUARDAR NOTAS</button>
-    </div>
-  </section>
-
-  <!-- ASISTENCIA -->
-  <section id="tab-asis" class="tab-content">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-black text-xl">Pasar Lista</h3>
-      <span id="asis-fecha-label" class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full"></span>
-    </div>
-    <div id="lista-asis" class="space-y-2"></div>
-    <div id="btn-guardar-asis" class="btn-flotante">
-      <button onclick="confirmarAsistencia()" class="w-full bg-emerald-500 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA</button>
-    </div>
-  </section>
-
-  <!-- INFORMES PEDAGÓGICOS -->
-  <section id="tab-informes" class="tab-content space-y-4">
-    <h3 class="font-black text-xl">Informes Pedagógicos</h3>
-    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Alumno</label>
-          <select id="informe-alumno" onchange="cargarInformes()" class="input-pro mt-1 text-xs"></select>
-        </div>
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Período</label>
-          <select id="informe-periodo" class="input-pro mt-1 text-xs"></select>
+    <section id="tab-academico" class="tab-content active space-y-4">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <h3 class="font-black text-xl text-slate-800">Carga de Calificaciones</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Curso / División</label>
+            <select id="aca-curso" onchange="actualizarMateriasDocente(); resetPlanillaNotas();" class="input-pro mt-1">
+              <option value="">Selecciona Curso</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Materia</label>
+            <select id="aca-materia" onchange="cargarAlumnosNotas()" class="input-pro mt-1">
+              <option value="">Selecciona Materia</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Informe</label>
-        <textarea id="informe-texto" class="input-pro mt-1 h-28" placeholder="Desempeño, logros, áreas a mejorar..."></textarea>
+
+      <div id="planilla-notas-card" class="bg-white p-6 rounded-3xl border shadow-sm hidden space-y-4">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <h4 class="font-black text-lg text-slate-800">Planilla de Notas</h4>
+          <span id="modalidad-nota-badge" class="bg-blue-50 text-blue-700 text-[10px] font-black uppercase px-3 py-1 rounded-full"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b text-slate-400 text-[10px] uppercase font-black">
+                <th class="py-3">Alumno</th>
+                <th class="py-3 px-2">Nota Actual / RITE</th>
+                <th class="py-3 px-2">Modificar Nota</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-carga-notas" class="divide-y text-sm"></tbody>
+          </table>
+        </div>
+        <button onclick="guardarNotasPlanilla()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">Guardar Calificaciones</button>
       </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Indicadores</label>
-        <div class="grid grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-participacion" class="accent-blue-600"> Participación</label>
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-entregas" class="accent-blue-600"> Entregas a tiempo</label>
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-conducta" class="accent-blue-600"> Buena conducta</label>
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-progreso" class="accent-blue-600"> Progreso notable</label>
+    </section>
+
+    <section id="tab-asistencia" class="tab-content space-y-4">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <h3 class="font-black text-xl text-slate-800">Control de Inasistencias</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Fecha</label>
+            <input type="date" id="asis-fecha" class="input-pro mt-1">
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Curso</label>
+            <select id="asis-curso" onchange="actualizarMateriasAsistencia(); resetPlanillaAsistencia();" class="input-pro mt-1">
+              <option value="">Selecciona Curso</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Materia</label>
+            <select id="asis-materia" onchange="cargarPlanillaAsistencia()" class="input-pro mt-1">
+              <option value="">Selecciona Materia</option>
+            </select>
+          </div>
         </div>
       </div>
-      <button onclick="guardarInforme()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-save mr-2"></i>GUARDAR INFORME</button>
-    </div>
-    <div id="lista-informes" class="space-y-3"></div>
-  </section>
 
-  <!-- CALENDARIO -->
-  <section id="tab-calendario" class="tab-content space-y-4">
-    <h3 class="font-black text-xl">Avisos de Pruebas</h3>
-    <p class="text-slate-400 text-xs">Solo podés cargar eventos de tipo examen/evaluación.</p>
-    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
-        <input type="text" id="cal-titulo" placeholder="Ej: Parcial de Matemática" class="input-pro mt-1">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Fecha</label>
-          <input type="date" id="cal-fecha" class="input-pro mt-1">
+      <div id="planilla-asistencia-card" class="bg-white p-6 rounded-3xl border shadow-sm hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h4 class="font-black text-lg text-slate-800">Registro de Alumnos</h4>
+          <span class="text-xs text-slate-400 font-bold">Inasistencias Acumuladas</span>
         </div>
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
-          <select id="cal-curso" class="input-pro mt-1 text-xs"></select>
+        <div class="divide-y" id="lista-planilla-asistencia"></div>
+        <button onclick="guardarAsistencia()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700 transition">Guardar Registro de Asistencia</button>
+      </div>
+    </section>
+
+    <section id="tab-evaluaciones" class="tab-content space-y-4">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <h3 id="form-eva-title" class="font-black text-xl text-slate-800">Agendar Evaluación / Prueba</h3>
+        <input type="hidden" id="eva-id">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Título de la Evaluación</label>
+            <input type="text" id="eva-titulo" placeholder="Ej: Evaluación Semestral de Álgebra" class="input-pro mt-1">
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Fecha de Prueba</label>
+            <input type="date" id="eva-fecha" class="input-pro mt-1">
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Curso</label>
+            <select id="eva-curso" onchange="actualizarMateriasEvaluacion()" class="input-pro mt-1">
+              <option value="">Selecciona Curso</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Materia</label>
+            <select id="eva-materia" class="input-pro mt-1">
+              <option value="">Selecciona Materia</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Tipo de Instancia</label>
+            <select id="eva-tipo" class="input-pro mt-1">
+              <option value="examen">Examen Presencial</option>
+              <option value="entrega">Entrega de Trabajo</option>
+            </select>
+          </div>
+          <div class="md:col-span-3">
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Descripción o Temario</label>
+            <textarea id="eva-desc" placeholder="Temas a evaluar, materiales permitidos..." class="input-pro mt-1 h-20"></textarea>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="guardarEvaluacion()" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-md hover:bg-blue-700 transition">Guardar Evaluación</button>
+          <button id="btn-cancelar-eva" onclick="resetFormEvaluacion()" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">X</button>
         </div>
       </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Temas / Descripción</label>
-        <textarea id="cal-desc" placeholder="Unidades temáticas, materiales..." class="input-pro mt-1 h-16 resize-none"></textarea>
+
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <h4 class="font-black text-lg text-slate-800">Evaluaciones Agendadas</h4>
+        <div id="lista-evaluaciones-agendadas" class="space-y-3"></div>
       </div>
-      <button onclick="guardarEvento()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg"><i class="fas fa-calendar-plus mr-2"></i>PUBLICAR EN CALENDARIO</button>
-    </div>
-    <h4 class="font-black text-sm text-slate-700 mt-2">Mis eventos publicados</h4>
-    <div id="lista-cal-doc" class="space-y-2"></div>
-  </section>
+    </section>
 
-  <!-- Mensajería eliminada del panel docente -->
+  </main>
 
-</main>
-
-<!-- NAV -->
-<nav id="nav-bar" class="fixed bottom-0 left-4 right-4 bg-white border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000] overflow-x-auto gap-1">
-  <button onclick="switchTab('notas')" id="btn-notas" class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-table text-lg"></i>NOTAS</button>
-  <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-list-check text-lg"></i>ASIST.</button>
-  <button onclick="switchTab('informes')" id="btn-informes" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-file-alt text-lg"></i>INF.</button>
-  <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-calendar text-lg"></i>CAL.</button>
-  <!-- Mensajería eliminada del panel docente por pedido — usar comunicaciones.html -->
-  <!-- EOE y Legajo: siempre visibles para docentes y EOE -->
-  
-  
-  
-</nav>
-
-<!-- PDF template -->
-<div id="pdf-template" style="display:none;padding:40px;color:#1e293b;font-family:sans-serif">
-  <div style="text-align:center;border-bottom:2px solid #3b82f6;padding-bottom:15px;margin-bottom:20px">
-    <h1 style="margin:0;font-size:22px;font-weight:800">INSTITUTO IOSEF CARO</h1>
-    <p style="font-size:10px;text-transform:uppercase;letter-spacing:2px">Informe de Trayectoria Educativa</p>
-  </div>
-  <div style="margin-bottom:20px;font-size:12px">
-    <p><strong>Alumno/a:</strong> <span id="pdf-nombre"></span></p>
-    <p><strong>Curso:</strong> <span id="pdf-curso"></span> | <strong>Fecha:</strong> <span id="pdf-fecha"></span></p>
-  </div>
-  <table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:#f1f5f9">
-      <th style="border:1px solid #e2e8f0;padding:10px;text-align:left">Área</th>
-      <th style="border:1px solid #e2e8f0;padding:10px;text-align:center">Calificación</th>
-      <th style="border:1px solid #e2e8f0;padding:10px;text-align:left">Obs.</th>
-    </tr></thead>
-    <tbody id="pdf-body"></tbody>
-  </table>
+  <nav class="fixed bottom-0 inset-x-0 bg-white border-t p-3 flex justify-around items-center z-50">
+    <button onclick="switchTab('academico')" id="nav-academico" class="nav-btn active flex-1 py-2 flex flex-col items-center text-slate-400 font-bold text-[10px]">
+      <i class="fas fa-star text-lg mb-1"></i>Calificaciones
+    </button>
+    <button onclick="switchTab('asistencia')" id="nav-asistencia" class="nav-btn flex-1 py-2 flex flex-col items-center text-slate-400 font-bold text-[10px]">
+      <i class="fas fa-user-check text-lg mb-1"></i>Asistencia
+    </button>
+    <button onclick="switchTab('evaluaciones')" id="nav-evaluaciones" class="nav-btn flex-1 py-2 flex flex-col items-center text-slate-400 font-bold text-[10px]">
+      <i class="fas fa-calendar-alt text-lg mb-1"></i>Pruebas
+    </button>
+  </nav>
 </div>
 
 <script>
-const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
-firebase.initializeApp(FB);
-const db=firebase.firestore();
+// ═══ CONFIGURACIÓN FIREBASE ═══
+const firebaseConfig = {
+    apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
+    authDomain: "app-iosefcaro.firebaseapp.com",
+    projectId: "app-iosefcaro",
+    storageBucket: "app-iosefcaro.appspot.com",
+    messagingSenderId: "651320124248",
+    appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
+};
 
-let docenteData=null, docenteEmail="", materiaActiva="";
-let periodoActivo={slug:"",nombre:"",id:"",bloqueado:false};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-let cambiosNotas={}, cambiosAsis={};
-let columnaExamenes=[], alumnosActuales=[];
-let msgDocConvId=null, msgDocUnsub=null, msgDocConvs=[];
-let nivelSeguimientoEOE="bajo";
-let legajoAlumnoActual=null, todosLosItems=[];
+// ═══ VARIABLES GLOBALES ═══
+let docenteEmail = "";
+let docenteNombre = "";
+let docenteMaterias = []; // Estructura: [{curso, materia}]
 
-document.getElementById('fecha-hoy').valueAsDate=new Date();
-// Auto-login si viene desde index.html
-const _sessionEmail=sessionStorage.getItem('iosef_email');
-if(_sessionEmail){document.getElementById('login-email').value=_sessionEmail;login();}
+// Configuración inicial de fecha hoy
+document.getElementById('asis-fecha').value = new Date().toISOString().substring(0, 10);
 
-// ══════════════════════════════
-// LOGIN
-// ══════════════════════════════
-async function login(){
-  // Check if coming from index.html with session
-  const sessionEmail=sessionStorage.getItem('iosef_email');
-  if(sessionEmail&&!document.getElementById('login-email').value){
-    document.getElementById('login-email').value=sessionEmail;
-  }
-  const email=document.getElementById('login-email').value.toLowerCase().trim();
-  const errEl=document.getElementById('login-error');
-  errEl.classList.add('hidden');
-  if(!email){errEl.textContent="Ingresá tu email.";errEl.classList.remove('hidden');return;}
+// ═══ SISTEMA DE TABS ═══
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
-  try{
-    const doc=await db.collection('usuarios').doc(email).get();
-    if(!doc.exists){errEl.textContent="Email no registrado.";errEl.classList.remove('hidden');return;}
-    const data=doc.data();
-    const rolesValidos=['docente','eoe'];
-    if(!rolesValidos.includes(data.rol)){errEl.textContent="Sin permisos para este panel.";errEl.classList.remove('hidden');return;}
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    document.getElementById(`nav-${tabId}`).classList.add('active');
 
-    docenteData=data; docenteEmail=email; esEOE=(data.rol==='eoe');
-    document.getElementById('login-screen').style.display='none';
+    if (tabId === 'evaluaciones') cargarEvaluaciones();
+}
 
-    if(false){// EOE moved to eoe.html
-    } else {
-      // Panel docente normal — EOE y Legajo siempre visibles
-      document.getElementById('doc-nom').innerText=data.nombre;
-      // Asegurar que EOE y Legajo estén visibles (a veces quedan ocultos por CSS)
-      const btnEoe=document.getElementById('btn-eoe');
-      const btnLeg=document.getElementById('btn-legajo');
-      if(btnEoe){btnEoe.style.display='flex';btnEoe.style.opacity='1';}
-      if(btnLeg){btnLeg.style.display='flex';btnLeg.style.opacity='1';}
-      const sMat=document.getElementById('select-materia'); sMat.innerHTML='';
-      const materias=Array.isArray(data.materias)?data.materias:(data.materia?[data.materia]:[]);
-      materias.forEach(m=>sMat.innerHTML+=`<option value="${m}">${m}</option>`);
-      materiaActiva=sMat.value;
+// ═══ LOGIN Y CONTROL DE ACCESO ═══
+async function loginDocente() {
+    const email = document.getElementById('log-email').value.trim();
+    const pass = document.getElementById('log-pass').value;
+    const err = document.getElementById('login-err');
 
-      const sCur=document.getElementById('select-curso'); sCur.innerHTML='';
-      const calCur=document.getElementById('cal-curso'); calCur.innerHTML='';
-      const cursos=Array.isArray(data.cursos)?data.cursos:(data.curso?[data.curso]:[]);
-      cursos.forEach(c=>{sCur.innerHTML+=`<option value="${c}">${c}</option>`;calCur.innerHTML+=`<option value="${c}">${c}</option>`;});
-
-      // EOE: cargar todos los cursos para el selector EOE
-      
-      await cargarPeriodos();
-      cargarAlumnos();
-      inicializarMensajeriaDocente();
-      cargarEventosDocente();
-      cargarRecientesEOE();
+    if (!email || !pass) {
+        err.innerText = "Ingresá tus credenciales.";
+        err.classList.remove('hidden');
+        return;
     }
-  }catch(e){errEl.textContent="Error de conexión: "+e.message;errEl.classList.remove('hidden');}
-}
 
-// ══════════════════════════════
-// PERÍODOS
-// ══════════════════════════════
-async function cargarPeriodos(){
-  const snap=await db.collection('periodos').orderBy('orden','asc').get();
-  const sel=document.getElementById('select-periodo');
-  const selInf=document.getElementById('informe-periodo');
-  sel.innerHTML=''; selInf.innerHTML='';
-  let activo=null;
-  snap.forEach(doc=>{
-    const p=doc.data();
-    // data-bloqueado='false' para activos, 'true' para inactivos
-      sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug}" data-bloqueado="${p.activo?'false':'true'}">${p.nombre}${p.activo?' ✓':''}</option>`;
-    selInf.innerHTML+=`<option value="${p.slug}">${p.nombre}</option>`;
-    if(p.activo) activo={id:doc.id,slug:p.slug,nombre:p.nombre,bloqueado:false};
-  });
-  if(activo){
-    sel.value=activo.id;
-    periodoActivo={id:activo.id,slug:activo.slug,nombre:activo.nombre,bloqueado:false};
-    document.getElementById('periodo-info').classList.remove('hidden');
-    document.getElementById('periodo-info-txt').innerText=`Período activo: ${activo.nombre}.`;
-  } else if(sel.options.length > 0) {
-    // No hay período activo pero hay períodos — usar el primero, sin bloqueo
-    sel.selectedIndex=0;
-    const fo=sel.options[0];
-    periodoActivo={id:fo.value,slug:fo.dataset.slug||'',nombre:fo.text.replace(' ✓',''),bloqueado:false};
-    document.getElementById('periodo-info').classList.remove('hidden');
-    document.getElementById('periodo-info-txt').innerText=`Usando: ${periodoActivo.nombre}. Activá un período desde Admin.`;
-  } else {
-    // Sin períodos — crear uno temporal para permitir carga
-    periodoActivo={id:'sin-periodo',slug:'GEN',nombre:'General',bloqueado:false};
-    document.getElementById('periodo-info').classList.remove('hidden');
-    document.getElementById('periodo-info-txt').innerText='Sin períodos configurados. Creá uno desde el Admin.';
-  }
-}
+    try {
+        const snap = await db.collection('usuarios')
+            .where('email', '==', email.toLowerCase())
+            .where('password', '==', pass)
+            .get();
 
-function actualizarMateriaActiva(){materiaActiva=document.getElementById('select-materia').value;cargarAlumnos();}
+        if (snap.empty) {
+            err.innerText = "Credenciales incorrectas.";
+            err.classList.remove('hidden');
+            return;
+        }
 
-// ══════════════════════════════
-// ALUMNOS + GRILLA + RITE
-// ══════════════════════════════
-async function cargarAlumnos(){
-  const curso=document.getElementById('select-curso').value;
-  const modalidad=document.getElementById('select-modalidad').value;
-  const selPer=document.getElementById('select-periodo');
-  const perOpt=selPer.options[selPer.selectedIndex];
-  if(perOpt){
-    // data-bloqueado='false' = período activo (editable). 'true' = período cerrado.
-    periodoActivo={id:selPer.value,slug:perOpt.dataset.slug||'',nombre:perOpt.text,bloqueado:perOpt.dataset.bloqueado==='true'};
-  }
-  if(!curso||!materiaActiva) return;
+        let userDoc = null;
+        snap.forEach(d => userDoc = d.data());
 
-  cambiosNotas={}; cambiosAsis={};
-  document.getElementById('btn-guardar-notas').style.display='none';
-  document.getElementById('btn-guardar-asis').style.display='none';
+        if (userDoc.rol !== 'docente') {
+            err.innerText = "Este acceso es solo para personal docente.";
+            err.classList.remove('hidden');
+            return;
+        }
 
-  const snap=await db.collection('alumnos').where('curso','==',curso).get();
-  alumnosActuales=[];
-  snap.forEach(doc=>alumnosActuales.push({id:doc.id,nombre:doc.data().nombre}));
-  alumnosActuales.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+        docenteEmail = userDoc.email;
+        docenteNombre = userDoc.nombre;
+        docenteMaterias = userDoc.materias || [];
 
-  const fecha=document.getElementById('fecha-hoy').value;
-  document.getElementById('asis-fecha-label').textContent=fecha;
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        document.getElementById('docente-nombre-ui').innerText = docenteNombre;
 
-  if(modalidad==='RITE') await renderRITE(fecha);
-  else await renderGrilla(fecha);
+        inicializarSelects();
 
-  // Select informes
-  const selInfAlu=document.getElementById('informe-alumno'); selInfAlu.innerHTML='';
-  alumnosActuales.forEach(al=>selInfAlu.innerHTML+=`<option value="${al.id}">${al.nombre}</option>`);
-  cargarInformes();
-  await renderAsistencia(fecha);
-}
-
-async function renderGrilla(fecha){
-  document.getElementById('rite-container').classList.add('hidden');
-  document.getElementById('grilla-container').classList.remove('hidden');
-  document.getElementById('ctrl-examenes').classList.remove('hidden');
-
-  const curso=document.getElementById('select-curso').value;
-  const colRef=await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).get();
-  if(colRef.exists) columnaExamenes=colRef.data().columnas||[];
-  if(!columnaExamenes.length) columnaExamenes=[{key:'nota_1',label:'Nota 1'}];
-  renderTagsExamenes();
-
-  const head=document.getElementById('grilla-head');
-  head.innerHTML='<th class="sticky-col">Alumno</th>';
-  columnaExamenes.forEach(col=>{
-    head.innerHTML+=`<th style="min-width:72px;text-align:center">${col.label}<br><button onclick="eliminarColumna('${col.key}')" style="font-size:9px;color:#94a3b8;background:none;border:none;cursor:pointer">✕</button></th>`;
-  });
-  head.innerHTML+='<th style="min-width:56px;text-align:center">Prom.</th><th style="min-width:44px;text-align:center">PDF</th>';
-
-  const body=document.getElementById('grilla-body'); body.innerHTML='';
-  // Event delegation — más robusto que inline oninput
-  body.oninput = function(e) {
-    if(!e.target.classList.contains('grilla-inp')) return;
-    let v = parseFloat(e.target.value);
-    if(!isNaN(v)){
-      if(v > 10){ v=10; e.target.value=10; }
-      if(v < 1 && e.target.value !== ''){ v=1; e.target.value=1; }
+    } catch (e) {
+        console.error(e);
+        err.innerText = "Error de conexión al servidor.";
+        err.classList.remove('hidden');
     }
-    cambiarNota(e.target.dataset.alumno, e.target.dataset.col, e.target.value);
-  };
-  for(const al of alumnosActuales){
-    const notaDoc=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-    const nData=notaDoc.exists?notaDoc.data():{};
-    const alertaFalta=await getFaltaOtraMateria(al.id,fecha);
-    let cols=''; let suma=0,cnt=0;
-    columnaExamenes.forEach(col=>{
-      const val=nData[col.key]||''; const bloq=periodoActivo.bloqueado;
-      const inpStyle=bloq?'color:#94a3b8;background:#f8fafc':'color:#0f172a';
-      cols+=`<td style="text-align:center;padding:0"><input type="number" min="1" max="10" step="0.5" value="${val}" ${bloq?'disabled':''} style="${inpStyle}" class="grilla-inp" data-alumno="${al.id}" data-col="${col.key}" placeholder="—"></td>`;
-      if(val!==''){suma+=parseFloat(val)||0;cnt++;}
+}
+
+// Inicializar selectores basados en las materias asignadas al docente
+function inicializarSelects() {
+    const cursosUnicos = [...new Set(docenteMaterias.map(m => m.curso))].sort();
+
+    const selectAca = document.getElementById('aca-curso');
+    const selectAsis = document.getElementById('asis-curso');
+    const selectEva = document.getElementById('eva-curso');
+
+    let options = `<option value="">Selecciona Curso</option>`;
+    cursosUnicos.forEach(c => {
+        options += `<option value="${c}">${c}</option>`;
     });
-    const prom=cnt>0?(suma/cnt).toFixed(1):'—';
-    const promColor=cnt>0&&parseFloat(prom)>=6?'#16a34a':cnt>0?'#ef4444':'#94a3b8';
-    body.innerHTML+=`<tr>
-      <td class="sticky-col">
-        <span class="block" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${al.nombre}</span>
-        ${alertaFalta?`<div class="mt-1"><span class="alerta-falta">${alertaFalta}</span></div>`:''}
-      </td>
-      ${cols}
-      <td style="text-align:center;font-weight:800;font-size:13px;color:${promColor}" id="prom-${al.id}">${prom}</td>
-      <td style="text-align:center"><button onclick="descargarPDF('${al.id}','${al.nombre}')" style="background:none;border:none;cursor:pointer;color:#3b82f6;font-size:13px"><i class="fas fa-file-pdf"></i></button></td>
-    </tr>`;
-  }
+
+    selectAca.innerHTML = options;
+    selectAsis.innerHTML = options;
+    selectEva.innerHTML = options;
 }
 
-async function getFaltaOtraMateria(alumnoId,fecha){
-  const snap=await db.collection('asistencia').where('alumnoId','==',alumnoId).where('fecha','==',fecha).where('estado','==','A').get();
-  let msg='';
-  snap.forEach(fd=>{if(fd.data().materia&&fd.data().materia!==materiaActiva) msg=`⚠ Falta en ${fd.data().materia}`;});
-  return msg;
-}
+// Actualizar materias por curso dinámicamente
+function actualizarMateriasDocente() {
+    const cursoSel = document.getElementById('aca-curso').value;
+    const selectMat = document.getElementById('aca-materia');
+    
+    if (!cursoSel) {
+        selectMat.innerHTML = `<option value="">Selecciona Materia</option>`;
+        return;
+    }
 
-function cambiarNota(id,colKey,val){
-  if(!cambiosNotas[id])cambiosNotas[id]={};
-  let v=parseFloat(val);
-  if(!isNaN(v)){if(v>10)v=10;if(v<1)v=1;}
-  cambiosNotas[id][colKey]=isNaN(v)?val:v;
-  // Actualizar promedio en la fila
-  const fila=document.getElementById('prom-'+id);
-  if(fila){
-    const rowData={...cambiosNotas[id]};
-    const vals=Object.entries(rowData).filter(([k,vv])=>k.startsWith('nota_')&&vv!=='').map(([,vv])=>parseFloat(vv)||0);
-    if(vals.length){const prom=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);fila.textContent=prom;fila.style.color=parseFloat(prom)>=6?'#16a34a':'#ef4444';}
-  }
-  document.getElementById('btn-guardar-notas').style.display='block';
-}
-
-async function confirmarNotas(){
-  if(periodoActivo.bloqueado)return alert("Período cerrado. No podés editar notas.");
-  const btn=event.currentTarget; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> GUARDANDO...';
-  const batch=db.batch();
-  for(let id in cambiosNotas){
-    const ref=db.collection('alumnos').doc(id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`);
-    batch.set(ref,{...cambiosNotas[id],materia:materiaActiva,periodo:periodoActivo.slug,fechaUpdate:new Date().toLocaleDateString()},{merge:true});
-  }
-  await batch.commit();
-  alert("✅ Notas guardadas.");cambiosNotas={};document.getElementById('btn-guardar-notas').style.display='none';
-  btn.innerHTML='<i class="fas fa-save"></i> GUARDAR NOTAS';
-}
-
-function renderTagsExamenes(){
-  document.getElementById('tags-examenes').innerHTML=columnaExamenes.map(c=>`<span style="background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #e2e8f0">${c.label}</span>`).join('');
-}
-function agregarColumna(){
-  const nombre=prompt("Nombre de la evaluación (ej: TP2, Parcial 1):"); if(!nombre?.trim())return;
-  columnaExamenes.push({key:'nota_'+Date.now(),label:nombre.trim()});
-  guardarConfigColumnas(); cargarAlumnos();
-}
-function eliminarColumna(key){
-  if(!confirm("¿Eliminar esta columna?"))return;
-  columnaExamenes=columnaExamenes.filter(c=>c.key!==key);
-  guardarConfigColumnas(); cargarAlumnos();
-}
-async function guardarConfigColumnas(){
-  const curso=document.getElementById('select-curso').value;
-  await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});
-}
-
-async function renderRITE(fecha){
-  document.getElementById('grilla-container').classList.add('hidden');
-  document.getElementById('ctrl-examenes').classList.add('hidden');
-  const cont=document.getElementById('rite-container'); cont.classList.remove('hidden'); cont.innerHTML='';
-  for(const al of alumnosActuales){
-    const notaDoc=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-    const nData=notaDoc.exists?notaDoc.data():{}; const rv=nData.rite||null;
-    const alertaFalta=await getFaltaOtraMateria(al.id,fecha);
-    const bloq=periodoActivo.bloqueado;
-    const desc=rv==='TEA'?'Trayectoria Avanzada':rv==='TEP'?'En Proceso':rv==='TED'?'En Desarrollo':'Sin calificación';
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <p class="font-bold text-sm">${al.nombre}</p>
-          ${alertaFalta?`<span class="alerta-falta mt-1">${alertaFalta}</span>`:''}
-        </div>
-        <button onclick="descargarPDF('${al.id}','${al.nombre}')" class="text-blue-500 text-[10px] font-black uppercase"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
-      </div>
-      <div class="flex gap-2">
-        ${['TEA','TEP','TED'].map(v=>`<button onclick="${bloq?`alert('Período cerrado.')`:`selRITE('${al.id}','${v}',this)`}" class="rite-btn rite-${v}${rv===v?' sel':''}">${v}</button>`).join('')}
-      </div>
-      <p class="text-[9px] text-slate-400 mt-2 rite-desc-${al.id}">${desc}</p>
-      ${bloq?'<p class="text-[9px] text-amber-600 font-bold mt-1">Período cerrado — solo lectura</p>':''}
-    </div>`;
-  }
-  if(!alumnosActuales.length) cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>';
-}
-
-function selRITE(alumnoId,val,btn){
-  if(periodoActivo.bloqueado)return;
-  btn.closest('.bg-white').querySelectorAll('.rite-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  const desc=val==='TEA'?'Trayectoria Avanzada':val==='TEP'?'En Proceso':'En Desarrollo';
-  const descEl=btn.closest('.bg-white').querySelector(`.rite-desc-${alumnoId}`);
-  if(descEl) descEl.innerText=desc;
-  if(!cambiosNotas[alumnoId])cambiosNotas[alumnoId]={};
-  cambiosNotas[alumnoId].rite=val; cambiosNotas[alumnoId].materia=materiaActiva; cambiosNotas[alumnoId].periodo=periodoActivo.slug;
-  document.getElementById('btn-guardar-notas').style.display='block';
-}
-
-// ══════════════════════════════
-// ASISTENCIA
-// ══════════════════════════════
-async function renderAsistencia(fecha){
-  const cont=document.getElementById('lista-asis'); cont.innerHTML='';
-  for(const al of alumnosActuales){
-    const asisHoy=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-    const est=asisHoy.empty?null:asisHoy.docs[0].data().estado;
-    const alerta=await getFaltaOtraMateria(al.id,fecha);
-    const gC=e=>e==='P'?'bg-emerald-500 text-white':e==='A'?'bg-rose-500 text-white':'bg-amber-500 text-white';
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
-      <div class="w-1/2">
-        <span class="text-xs font-bold">${al.nombre}</span>
-        ${alerta?`<div class="mt-1"><span class="alerta-falta">${alerta}</span></div>`:''}
-      </div>
-      <div class="flex gap-1">
-        <button onclick="setAsis('${al.id}','P',this)" class="w-10 h-10 rounded-xl font-bold text-xs ${est==='P'?gC('P'):'bg-slate-50 text-slate-400'}">P</button>
-        <button onclick="setAsis('${al.id}','A',this)" class="w-10 h-10 rounded-xl font-bold text-xs ${est==='A'?gC('A'):'bg-slate-50 text-slate-400'}">A</button>
-        <button onclick="setAsis('${al.id}','T',this)" class="w-10 h-10 rounded-xl font-bold text-xs ${est==='T'?gC('T'):'bg-slate-50 text-slate-400'}">T</button>
-      </div>
-    </div>`;
-  }
-  if(!alumnosActuales.length) cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>';
-}
-
-function setAsis(id,tipo,btn){
-  cambiosAsis[id]=tipo;
-  btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs');
-  const c=tipo==='P'?'bg-emerald-500 text-white':tipo==='A'?'bg-rose-500 text-white':'bg-amber-500 text-white';
-  btn.className=`w-10 h-10 rounded-xl ${c} font-bold text-xs shadow-lg`;
-  document.getElementById('btn-guardar-asis').style.display='block';
-}
-
-async function confirmarAsistencia(){
-  const btn=event.currentTarget; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
-  const fecha=document.getElementById('fecha-hoy').value; const batch=db.batch();
-  for(let id in cambiosAsis){
-    const existe=await db.collection('asistencia').where('alumnoId','==',id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-    if(!existe.empty) batch.update(db.collection('asistencia').doc(existe.docs[0].id),{estado:cambiosAsis[id]});
-    else batch.set(db.collection('asistencia').doc(),{alumnoId:id,estado:cambiosAsis[id],fecha,materia:materiaActiva,docenteEmail});
-  }
-  await batch.commit(); alert("✅ Asistencia registrada."); cambiosAsis={};
-  document.getElementById('btn-guardar-asis').style.display='none';
-  btn.innerHTML='<i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA';
-}
-
-// ══════════════════════════════
-// INFORMES PEDAGÓGICOS
-// ══════════════════════════════
-async function guardarInforme(){
-  const alumnoId=document.getElementById('informe-alumno').value;
-  const periodo=document.getElementById('informe-periodo').value;
-  const texto=document.getElementById('informe-texto').value.trim();
-  const alumnoNombre=document.getElementById('informe-alumno').selectedOptions[0]?.text||'';
-  if(!alumnoId||!texto)return alert("Completá el alumno y el informe.");
-  const indicadores={
-    participacion:document.getElementById('ind-participacion').checked,
-    entregas:document.getElementById('ind-entregas').checked,
-    conducta:document.getElementById('ind-conducta').checked,
-    progreso:document.getElementById('ind-progreso').checked
-  };
-  await db.collection('alumnos').doc(alumnoId).collection('informes').add({
-    texto,periodo,indicadores,materia:materiaActiva,
-    docenteEmail,docenteNombre:docenteData.nombre,
-    alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true
-  });
-  alert("✅ Informe guardado.");
-  document.getElementById('informe-texto').value='';
-  ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
-  cargarInformes();
-}
-
-async function cargarInformes(){
-  const alumnoId=document.getElementById('informe-alumno').value; if(!alumnoId)return;
-  const snap=await db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').limit(10).get();
-  const cont=document.getElementById('lista-informes'); cont.innerHTML='';
-  snap.forEach(doc=>{
-    const inf=doc.data(); const d=new Date(inf.fecha).toLocaleDateString('es-AR');
-    cont.innerHTML+=`<div class="bg-white p-5 rounded-2xl border shadow-sm">
-      <div class="flex justify-between items-start mb-2">
-        <div>
-          <span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span>
-          <span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span>
-        </div>
-        <span class="text-[9px] text-slate-400 font-bold">${d}</span>
-      </div>
-      <p class="text-sm text-slate-700 mt-2">${inf.texto}</p>
-    </div>`;
-  });
-  if(snap.empty) cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes para este alumno.</p>';
-}
-
-// ══════════════════════════════
-// CALENDARIO — solo pruebas
-// ══════════════════════════════
-async function guardarEvento(){
-  const titulo=document.getElementById('cal-titulo').value.trim();
-  const fecha=document.getElementById('cal-fecha').value;
-  const curso=document.getElementById('cal-curso').value;
-  const desc=document.getElementById('cal-desc').value.trim();
-  if(!titulo||!fecha)return alert("Título y fecha obligatorios.");
-  await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData.nombre});
-  alert("Publicado en el calendario.");
-  document.getElementById('cal-titulo').value=''; document.getElementById('cal-fecha').value=''; document.getElementById('cal-desc').value='';
-  cargarEventosDocente();
-}
-
-async function cargarEventosDocente(){
-  const snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();
-  const cont=document.getElementById('lista-cal-doc'); cont.innerHTML='';
-  snap.forEach(doc=>{
-    const e=doc.data(); const pts=e.fecha.split('-');
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex items-center gap-3 shadow-sm">
-      <div class="text-center min-w-[42px] bg-slate-100 p-2 rounded-xl">
-        <p class="text-[8px] font-black text-blue-600">${pts[1]}</p>
-        <p class="text-lg font-black">${pts[2]}</p>
-      </div>
-      <div class="flex-1">
-        <p class="font-bold text-sm">${e.titulo}</p>
-        <p class="text-[10px] text-slate-400">Curso: ${e.tag?.join(', ')||''}</p>
-      </div>
-    </div>`;
-  });
-  if(snap.empty) cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Sin eventos publicados.</p>';
-}
-
-// ══════════════════════════════
-// MENSAJERÍA
-// ══════════════════════════════
-async function inicializarMensajeriaDocente(){
-  const nivel=docenteData.nivel||'primario';
-  // Buscar secretaría del nivel
-  let secSnap=await db.collection('usuarios').where('rol','==',`secretaria_${nivel}`).limit(1).get();
-  if(secSnap.empty){
-    const allSec=await db.collection('usuarios').where('rol','in',['secretaria_inicial','secretaria_primario','secretaria_secundario']).get();
-    allSec.forEach(doc=>{if(!window._secEmailDocente&&(doc.data().niveles||[]).includes(nivel)) window._secEmailDocente=doc.id;});
-  } else { window._secEmailDocente=secSnap.docs[0].id; }
-
-  db.collection('conversaciones').where('participantes','array-contains',docenteEmail).onSnapshot(snap=>{
-    msgDocConvs=[]; let nl=0;
-    snap.forEach(doc=>{const d=doc.data();msgDocConvs.push({id:doc.id,...d});if(d.noLeidos?.[docenteEmail]>0)nl++;});
-    renderConvsDocente();
-    document.getElementById('badge-msg-doc').classList.toggle('hidden',nl===0);
-  });
-}
-
-function renderConvsDocente(){
-  const cont=document.getElementById('msg-doc-convs');
-  if(!msgDocConvs.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin conversaciones aún.</p>';return;}
-  cont.innerHTML=msgDocConvs.map(c=>{
-    const nl=c.noLeidos?.[docenteEmail]||0;
-    return`<div onclick="abrirConvDocente('${c.id}')" class="bg-white p-4 rounded-2xl border cursor-pointer hover:bg-slate-50 transition flex items-center gap-3">
-      <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0">SC</div>
-      <div class="flex-1 min-w-0">
-        <p class="font-bold text-sm truncate">${c.nombreOtro||c.emailOtro||'Secretaría'}</p>
-        <p class="text-slate-400 text-xs truncate">${c.ultimoMensaje||''}</p>
-      </div>
-      ${nl>0?`<span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">${nl}</span>`:''}
-    </div>`;
-  }).join('');
-}
-
-async function abrirConvDocente(convId){
-  const conv=msgDocConvs.find(c=>c.id===convId); if(!conv)return;
-  msgDocConvId=convId;
-  document.getElementById('msg-doc-chat-nombre').textContent=conv.nombreOtro||'Secretaría';
-  document.getElementById('msg-doc-lista').classList.add('hidden');
-  document.getElementById('msg-doc-chat').classList.remove('hidden');
-  document.getElementById('msg-doc-chat').classList.add('flex');
-  await db.collection('conversaciones').doc(convId).update({[`noLeidos.${docenteEmail}`]:0});
-  if(msgDocUnsub) msgDocUnsub();
-  msgDocUnsub=db.collection('conversaciones').doc(convId).collection('mensajes').orderBy('timestamp','asc').onSnapshot(snap=>{
-    const cont=document.getElementById('msg-doc-mensajes'); let html='';
-    snap.forEach(doc=>{
-      const m=doc.data(); const eM=m.autorEmail===docenteEmail;
-      const hora=m.timestamp?new Date(m.timestamp.seconds*1000).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
-      html+=`<div class="mb-w ${eM?'yo':'otro'}"><div class="mb ${eM?'yo':'otro'}">${(m.texto||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${hora} · ${eM?'Vos':(m.autorNombre||m.autorEmail)}</span></div>`;
+    const filtradas = docenteMaterias.filter(m => m.curso === cursoSel).map(m => m.materia);
+    let options = `<option value="">Selecciona Materia</option>`;
+    filtradas.forEach(m => {
+        options += `<option value="${m}">${m}</option>`;
     });
-    cont.innerHTML=html||'<p class="text-center text-slate-300 text-sm py-4">Comenzá la conversación</p>';
-    cont.scrollTop=cont.scrollHeight;
-  });
+    selectMat.innerHTML = options;
 }
 
-async function abrirNuevaConvDocente(){
-  if(!window._secEmailDocente)return alert("No hay secretaría asignada para tu nivel. Avisale al administrador.");
-  const existe=msgDocConvs.find(c=>c.participantes?.includes(window._secEmailDocente));
-  if(existe){abrirConvDocente(existe.id);return;}
-  const secDoc=await db.collection('usuarios').doc(window._secEmailDocente).get();
-  const nomSec=secDoc.exists?secDoc.data().nombre:'Secretaría';
-  const primerMsg=`Hola, soy ${docenteData.nombre}${materiaActiva?` (${materiaActiva})`:''}.`;
-  const convRef=db.collection('conversaciones').doc();
-  const msgRef=convRef.collection('mensajes').doc();
-  const batch=db.batch();
-  batch.set(convRef,{participantes:[docenteEmail,window._secEmailDocente],emailOtro:window._secEmailDocente,nombreOtro:nomSec,emailSecretaria:window._secEmailDocente,nombreSecretaria:nomSec,ultimoMensaje:primerMsg,ultimoTimestamp:firebase.firestore.FieldValue.serverTimestamp(),noLeidos:{[window._secEmailDocente]:1,[docenteEmail]:0},etiqueta:null,creadoEn:firebase.firestore.FieldValue.serverTimestamp()});
-  batch.set(msgRef,{texto:primerMsg,autorEmail:docenteEmail,autorNombre:docenteData.nombre,autorRol:'docente',timestamp:firebase.firestore.FieldValue.serverTimestamp(),leido:false});
-  await batch.commit();
-}
+function actualizarMateriasAsistencia() {
+    const cursoSel = document.getElementById('asis-curso').value;
+    const selectMat = document.getElementById('asis-materia');
 
-async function msgDocEnviar(){
-  if(!msgDocConvId)return;
-  const input=document.getElementById('msg-doc-input'); const texto=input.value.trim(); if(!texto)return; input.value='';
-  const conv=msgDocConvs.find(c=>c.id===msgDocConvId); const emailOtro=conv?.emailOtro||window._secEmailDocente;
-  const batch=db.batch();
-  const convRef=db.collection('conversaciones').doc(msgDocConvId);
-  const msgRef=convRef.collection('mensajes').doc();
-  batch.set(msgRef,{texto,autorEmail:docenteEmail,autorNombre:docenteData.nombre,autorRol:'docente',timestamp:firebase.firestore.FieldValue.serverTimestamp(),leido:false});
-  batch.update(convRef,{ultimoMensaje:texto,ultimoTimestamp:firebase.firestore.FieldValue.serverTimestamp(),[`noLeidos.${emailOtro}`]:firebase.firestore.FieldValue.increment(1)});
-  await batch.commit();
-}
+    if (!cursoSel) {
+        selectMat.innerHTML = `<option value="">Selecciona Materia</option>`;
+        return;
+    }
 
-function volverListaDocente(){
-  document.getElementById('msg-doc-lista').classList.remove('hidden');
-  document.getElementById('msg-doc-chat').classList.add('hidden');
-  document.getElementById('msg-doc-chat').classList.remove('flex');
-  if(msgDocUnsub){msgDocUnsub();msgDocUnsub=null;} msgDocConvId=null;
-}
-
-// ══════════════════════════════
-// LEGAJO COMPLETO DEL ALUMNO
-// ══════════════════════════════
-
-
-
-
-// ══════════════════════════════
-// PDF
-// ══════════════════════════════
-async function descargarPDF(id,nombre){
-  const curso=document.getElementById('select-curso').value;
-  const snap=await db.collection('alumnos').doc(id).collection('notas_v2').get();
-  document.getElementById('pdf-nombre').innerText=nombre;
-  document.getElementById('pdf-curso').innerText=curso;
-  document.getElementById('pdf-fecha').innerText=new Date().toLocaleDateString();
-  const body=document.getElementById('pdf-body'); body.innerHTML='';
-  snap.forEach(doc=>{
-    const n=doc.data();
-    const colsNum=Object.entries(n).filter(([k])=>k.startsWith('nota_'));
-    const calif=n.rite||(colsNum.length?colsNum.map(([k,v])=>v).join(' / '):'—');
-    body.innerHTML+=`<tr><td style="border:1px solid #e2e8f0;padding:10px;font-weight:700">${n.materia||doc.id}</td><td style="border:1px solid #e2e8f0;padding:10px;text-align:center;font-weight:800;color:#2563eb">${calif}</td><td style="border:1px solid #e2e8f0;padding:10px;font-size:9px">${n.obs||''}</td></tr>`;
-  });
-  const el=document.getElementById('pdf-template'); el.style.display='block';
-  html2pdf().from(el).save().then(()=>el.style.display='none');
-}
-
-// ══════════════════════════════
-// UTILS
-// ══════════════════════════════
-function switchTab(tab){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  const btn=document.getElementById('btn-'+tab);
-  if(btn) btn.classList.add('active');
-
-  // Botones flotantes
-  document.getElementById('btn-guardar-notas').style.display='none';
-  document.getElementById('btn-guardar-asis').style.display='none';
-  if(tab==='notas'&&Object.keys(cambiosNotas).length) document.getElementById('btn-guardar-notas').style.display='block';
-  if(tab==='asis'&&Object.keys(cambiosAsis).length) document.getElementById('btn-guardar-asis').style.display='block';
-  if(tab==='mensajes') document.getElementById('badge-msg-doc').classList.add('hidden');
-  if(tab==='eoe') cargarRecientesEOE();
-}
-
-function switchTabSilent(tab){
-  // Para login EOE: activar tab sin event
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-}
-
-// ── NOTIFICACIONES DE JUSTIFICACIONES APROBADAS ──
-function escucharNotificacionesDocente(){
-  const nivel=docenteData?.nivel||'primario';
-  db.collection('notificaciones_docentes').where('nivel','==',nivel).where('leida','==',false).onSnapshot(snap=>{
-    if(snap.empty)return;
-    snap.forEach(doc=>{
-      const n=doc.data();
-      // Mostrar como toast
-      const div=document.createElement('div');
-      div.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:white;padding:12px 20px;border-radius:16px;font-size:13px;font-weight:700;z-index:9999;max-width:340px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.3)';
-      div.textContent=n.mensaje;document.body.appendChild(div);
-      setTimeout(()=>div.remove(),5000);
-      // Marcar como leída
-      db.collection('notificaciones_docentes').doc(doc.id).update({leida:true});
+    const filtradas = docenteMaterias.filter(m => m.curso === cursoSel).map(m => m.materia);
+    let options = `<option value="">Selecciona Materia</option>`;
+    filtradas.forEach(m => {
+        options += `<option value="${m}">${m}</option>`;
     });
-  });
+    selectMat.innerHTML = options;
 }
-document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 
-// ── JUSTIFICACIONES (vista docente) ──
-let justFiltroActivo = 'pendiente';
-let todasLasJustDoc = [];
+function actualizarMateriasEvaluacion() {
+    const cursoSel = document.getElementById('eva-curso').value;
+    const selectMat = document.getElementById('eva-materia');
 
+    if (!cursoSel) {
+        selectMat.innerHTML = `<option value="">Selecciona Materia</option>`;
+        return;
+    }
 
+    const filtradas = docenteMaterias.filter(m => m.curso === cursoSel).map(m => m.materia);
+    let options = `<option value="">Selecciona Materia</option>`;
+    filtradas.forEach(m => {
+        options += `<option value="${m}">${m}</option>`;
+    });
+    selectMat.innerHTML = options;
+}
 
+// ═══ LÓGICA DE CARGA DE NOTAS ═══
+let modalidadCursoActual = "num"; // "num" o "rite"
+let alumnosCargadosNotas = [];
 
+function resetPlanillaNotas() {
+    document.getElementById('planilla-notas-card').classList.add('hidden');
+    document.getElementById('tabla-carga-notas').innerHTML = "";
+}
+
+async function cargarAlumnosNotas() {
+    const curso = document.getElementById('aca-curso').value;
+    const materia = document.getElementById('aca-materia').value;
+
+    if (!curso || !materia) {
+        resetPlanillaNotas();
+        return;
+    }
+
+    try {
+        // Consultar modalidad del curso para definir la calificación
+        const cursoDoc = await db.collection('cursos').where('nombre', '==', curso).get();
+        modalidadCursoActual = "num";
+        cursoDoc.forEach(d => {
+            if (d.data().modalidad === 'rite') modalidadCursoActual = "rite";
+        });
+
+        document.getElementById('modalidad-nota-badge').innerText = modalidadCursoActual === 'rite' ? "Escala RITE" : "Escala Numérica";
+
+        // Traer alumnos del curso
+        const snapAlumnos = await db.collection('alumnos').where('curso', '==', curso).get();
+        alumnosCargadosNotas = [];
+        snapAlumnos.forEach(d => {
+            alumnosCargadosNotas.push({ id: d.id, ...d.data() });
+        });
+
+        // Ordenar por apellido/nombre
+        alumnosCargadosNotas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        const tbody = document.getElementById('tabla-carga-notas');
+        tbody.innerHTML = "";
+
+        alumnosCargadosNotas.forEach(al => {
+            // Buscar si ya tiene nota cargada para esta materia
+            const notasArray = al.notas || [];
+            const notaMateriaObj = notasArray.find(n => n.materia.toLowerCase() === materia.toLowerCase());
+            let currentDisplay = "Sin calificar";
+            let valAct = "";
+
+            if (notaMateriaObj) {
+                if (modalidadCursoActual === 'rite') {
+                    currentDisplay = notaMateriaObj.rite || "Sin calificar";
+                    valAct = notaMateriaObj.rite || "";
+                } else {
+                    const notasNum = Object.entries(notaMateriaObj)
+                        .filter(([k]) => k.startsWith('nota_') && notaMateriaObj[k] !== undefined)
+                        .map(([k, v]) => `${k.replace('nota_', 'P')}: ${v}`);
+                    currentDisplay = notasNum.length ? notasNum.join(' | ') : "Sin calificar";
+                }
+            }
+
+            let inputHtml = "";
+            if (modalidadCursoActual === 'rite') {
+                inputHtml = `
+                <select class="input-pro text-xs not-inp-ctrl" data-id="${al.id}">
+                    <option value="">-- Sin Calificar --</option>
+                    <option value="TEA" ${valAct === 'TEA' ? 'selected' : ''}>TEA</option>
+                    <option value="TEP" ${valAct === 'TEP' ? 'selected' : ''}>TEP</option>
+                    <option value="TED" ${valAct === 'TED' ? 'selected' : ''}>TED</option>
+                </select>`;
+            } else {
+                // Escala numérica típica con 3 notas cargables
+                const n1 = notaMateriaObj?.nota_1 || "";
+                const n2 = notaMateriaObj?.nota_2 || "";
+                const n3 = notaMateriaObj?.nota_3 || "";
+                inputHtml = `
+                <div class="flex gap-1" data-id="${al.id}">
+                    <input type="number" min="1" max="10" placeholder="P1" value="${n1}" class="input-pro p-1 text-center text-xs not-num-1">
+                    <input type="number" min="1" max="10" placeholder="P2" value="${n2}" class="input-pro p-1 text-center text-xs not-num-2">
+                    <input type="number" min="1" max="10" placeholder="P3" value="${n3}" class="input-pro p-1 text-center text-xs not-num-3">
+                </div>`;
+            }
+
+            tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="py-3 font-bold text-slate-800">${al.nombre}</td>
+                <td class="py-3 px-2 font-semibold text-slate-500">${currentDisplay}</td>
+                <td class="py-3 px-2">${inputHtml}</td>
+            </tr>`;
+        });
+
+        document.getElementById('planilla-notas-card').classList.remove('hidden');
+
+    } catch (e) {
+        console.error(e);
+        alert("Error al cargar la planilla.");
+    }
+}
+
+async function guardarNotasPlanilla() {
+    const materia = document.getElementById('aca-materia').value;
+    const batch = db.batch();
+
+    try {
+        if (modalidadCursoActual === 'rite') {
+            const inputs = document.querySelectorAll('.not-inp-ctrl');
+            for (let select of inputs) {
+                const alId = select.getAttribute('data-id');
+                const val = select.value;
+                if (!val) continue;
+
+                const alumnoObj = alumnosCargadosNotas.find(a => a.id === alId);
+                const notasOriginales = alumnoObj.notas || [];
+                const otrasNotas = notasOriginales.filter(n => n.materia.toLowerCase() !== materia.toLowerCase());
+                
+                otrasNotas.push({ materia, rite: val });
+
+                const ref = db.collection('alumnos').doc(alId);
+                batch.update(ref, { notas: otrasNotas });
+            }
+        } else {
+            const inputsContainer = document.querySelectorAll('[data-id]');
+            for (let container of inputsContainer) {
+                const alId = container.getAttribute('data-id');
+                const n1 = container.querySelector('.not-num-1').value.trim();
+                const n2 = container.querySelector('.not-num-2').value.trim();
+                const n3 = container.querySelector('.not-num-3').value.trim();
+
+                const alumnoObj = alumnosCargadosNotas.find(a => a.id === alId);
+                const notasOriginales = alumnoObj.notas || [];
+                const otrasNotas = notasOriginales.filter(n => n.materia.toLowerCase() !== materia.toLowerCase());
+
+                const notaMateriaObj = { materia };
+                if (n1 !== "") notaMateriaObj.nota_1 = Number(n1);
+                if (n2 !== "") notaMateriaObj.nota_2 = Number(n2);
+                if (n3 !== "") notaMateriaObj.nota_3 = Number(n3);
+
+                otrasNotas.push(notaMateriaObj);
+
+                const ref = db.collection('alumnos').doc(alId);
+                batch.update(ref, { notas: otrasNotas });
+            }
+        }
+
+        await batch.commit();
+        alert("¡Calificaciones guardadas exitosamente!");
+        cargarAlumnosNotas();
+
+    } catch (e) {
+        console.error(e);
+        alert("Error al guardar calificaciones.");
+    }
+}
+
+// ═══ LÓGICA DE CONTROL DE INASISTENCIAS ═══
+let alumnosCargadosAsistencia = [];
+
+function resetPlanillaAsistencia() {
+    document.getElementById('planilla-asistencia-card').classList.add('hidden');
+    document.getElementById('lista-planilla-asistencia').innerHTML = "";
+}
+
+async function cargarPlanillaAsistencia() {
+    const fecha = document.getElementById('asis-fecha').value;
+    const curso = document.getElementById('asis-curso').value;
+    const materia = document.getElementById('asis-materia').value;
+
+    if (!fecha || !curso || !materia) {
+        resetPlanillaAsistencia();
+        return;
+    }
+
+    try {
+        // Traer alumnos del curso
+        const snapAlumnos = await db.collection('alumnos').where('curso', '==', curso).get();
+        alumnosCargadosAsistencia = [];
+        snapAlumnos.forEach(d => {
+            alumnosCargadosAsistencia.push({ id: d.id, ...d.data() });
+        });
+
+        alumnosCargadosAsistencia.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        // Buscar si ya existe registro cargado en la fecha para esa materia
+        const snapAsisExistente = await db.collection('asistencias')
+            .where('fecha', '==', fecha)
+            .where('materia', '==', materia)
+            .where('curso', '==', curso)
+            .get();
+
+        let inasistenciasPrevias = {};
+        snapAsisExistente.forEach(d => {
+            inasistenciasPrevias = d.data().alumnosInasistentes || {}; 
+            // Formato guardado: { alumnoId: valorInasistencia (1, 0.5, etc) }
+        });
+
+        const listCont = document.getElementById('lista-planilla-asistencia');
+        listCont.innerHTML = "";
+
+        alumnosCargadosAsistencia.forEach(al => {
+            const inasistenciasAcumuladas = al.inasistencias || 0;
+            const preVal = inasistenciasPrevias[al.id] !== undefined ? inasistenciasPrevias[al.id] : 0;
+
+            listCont.innerHTML += `
+            <div class="py-4 flex justify-between items-center flex-wrap gap-2">
+                <div>
+                    <p class="font-bold text-slate-800">${al.nombre}</p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Acumuladas: ${inasistenciasAcumuladas} faltas</p>
+                </div>
+                <div>
+                    <select class="input-pro text-xs w-44 control-asistencia-select" data-id="${al.id}" data-previa="${preVal}">
+                        <option value="0" ${preVal === 0 ? 'selected' : ''}>Presente</option>
+                        <option value="1" ${preVal === 1 ? 'selected' : ''}>Ausente (1 Falta)</option>
+                        <option value="0.5" ${preVal === 0.5 ? 'selected' : ''}>Media Falta (0.5)</option>
+                        <option value="0.25" ${preVal === 0.25 ? 'selected' : ''}>Cuarta Falta (0.25)</option>
+                    </select>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('planilla-asistencia-card').classList.remove('hidden');
+
+    } catch (e) {
+        console.error(e);
+        alert("Error al cargar la planilla de asistencia.");
+    }
+}
+
+async function guardarAsistencia() {
+    const fecha = document.getElementById('asis-fecha').value;
+    const curso = document.getElementById('asis-curso').value;
+    const materia = document.getElementById('asis-materia').value;
+
+    const selectores = document.querySelectorAll('.control-asistencia-select');
+    const alumnosInasistentes = {};
+
+    const batch = db.batch();
+
+    try {
+        for (let sel of selectores) {
+            const alId = sel.getAttribute('data-id');
+            const valorActual = Number(sel.value);
+            const valorPrevio = Number(sel.getAttribute('data-previa'));
+
+            if (valorActual > 0) {
+                alumnosInasistentes[alId] = valorActual;
+            }
+
+            // Calcular diferencia para ajustar el acumulador del alumno
+            const diferencia = valorActual - valorPrevio;
+            if (diferencia !== 0) {
+                const alumnoObj = alumnosCargadosAsistencia.find(a => a.id === alId);
+                const refAl = db.collection('alumnos').doc(alId);
+                const nuevoAcumulado = Math.max(0, (alumnoObj.inasistencias || 0) + diferencia);
+                
+                batch.update(refAl, { inasistencias: nuevoAcumulado });
+            }
+        }
+
+        // Buscar ID del documento de asistencia si ya existía para actualizarlo, o crear uno nuevo
+        const snapExistente = await db.collection('asistencias')
+            .where('fecha', '==', fecha)
+            .where('materia', '==', materia)
+            .where('curso', '==', curso)
+            .get();
+
+        let docId = null;
+        snapExistente.forEach(d => docId = d.id);
+
+        const payloadAsis = {
+            fecha,
+            curso,
+            materia,
+            docente: docenteNombre,
+            alumnosInasistentes
+        };
+
+        if (docId) {
+            batch.update(db.collection('asistencias').doc(docId), payloadAsis);
+        } else {
+            const nuevaRef = db.collection('asistencias').doc();
+            batch.set(nuevaRef, payloadAsis);
+        }
+
+        await batch.commit();
+        alert("¡Registro de asistencia guardado exitosamente!");
+        cargarPlanillaAsistencia();
+
+    } catch (e) {
+        console.error(e);
+        alert("Error al guardar la asistencia.");
+    }
+}
+
+// ═══ LÓGICA DE CALENDARIO DE EVALUACIONES ═══
+async function cargarEvaluaciones() {
+    const cont = document.getElementById('lista-evaluaciones-agendadas');
+    cont.innerHTML = `<p class="text-xs text-slate-400 italic">Cargando evaluaciones agendadas...</p>`;
+
+    try {
+        // Obtenemos todos los cursos del docente
+        const cursosDocente = [...new Set(docenteMaterias.map(m => m.curso))];
+        if (cursosDocente.length === 0) {
+            cont.innerHTML = `<p class="text-xs text-slate-400 italic">No tienes cursos asignados.</p>`;
+            return;
+        }
+
+        // Cargamos todas las evaluaciones de los cursos correspondientes
+        const snap = await db.collection('eventos')
+            .where('tipo', 'in', ['examen', 'entrega'])
+            .orderBy('fecha', 'asc')
+            .get();
+
+        const listaFiltrada = [];
+        snap.forEach(doc => {
+            const ev = doc.data();
+            // Filtrar eventos de cursos que el docente tiene asignados
+            const esDeCursoAsignado = ev.cursos && ev.cursos.some(c => cursosDocente.includes(c));
+            if (esDeCursoAsignado) {
+                listaFiltrada.push({ id: doc.id, ...ev });
+            }
+        });
+
+        if (listaFiltrada.length === 0) {
+            cont.innerHTML = `<p class="text-xs text-slate-400 italic">No hay evaluaciones agendadas para tus cursos.</p>`;
+            return;
+        }
+
+        cont.innerHTML = "";
+        listaFiltrada.forEach(ev => {
+            const dateParsed = new Date(ev.fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            const badgeColor = ev.tipo === 'examen' ? 'bg-rose-50 text-rose-700' : 'bg-purple-50 text-purple-700';
+            const visStr = ev.cursos ? ev.cursos.join(', ') : 'Todos';
+
+            cont.innerHTML += `
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-start gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="${badgeColor} text-[9px] font-black uppercase px-2 py-0.5 rounded-md">${ev.tipo}</span>
+                        <span class="text-[10px] text-slate-400 font-bold capitalize">${dateParsed}</span>
+                    </div>
+                    <h5 class="font-bold text-sm text-slate-800">${ev.titulo}</h5>
+                    <p class="text-xs text-slate-500 font-bold">Curso: ${visStr} • Materia: ${ev.materia || 'General'}</p>
+                    ${ev.descripcion ? `<p class="text-xs text-slate-500 mt-1 leading-relaxed">${ev.descripcion}</p>` : ''}
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="editarEvaluacion('${ev.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-xl text-xs font-bold transition"><i class="fas fa-edit"></i></button>
+                    <button onclick="eliminarEvaluacion('${ev.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-xl text-xs font-bold transition"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>`;
+        });
+
+    } catch (e) {
+        console.error(e);
+        cont.innerHTML = `<p class="text-xs text-red-500 font-bold">Error al cargar las evaluaciones del servidor.</p>`;
+    }
+}
+
+async function guardarEvaluacion() {
+    const id = document.getElementById('eva-id').value;
+    const titulo = document.getElementById('eva-titulo').value.trim();
+    const fecha = document.getElementById('eva-fecha').value;
+    const curso = document.getElementById('eva-curso').value;
+    const materia = document.getElementById('eva-materia').value;
+    const tipo = document.getElementById('eva-tipo').value;
+    const descripcion = document.getElementById('eva-desc').value.trim();
+
+    if (!titulo || !fecha || !curso || !materia) {
+        alert("Completa todos los campos obligatorios para guardar la evaluación.");
+        return;
+    }
+
+    const payload = {
+        titulo,
+        fecha,
+        tipo,
+        descripcion: descripcion || null,
+        materia,
+        cursos: [curso],
+        creadoPor: docenteNombre
+    };
+
+    try {
+        if (id) {
+            await db.collection('eventos').doc(id).update(payload);
+        } else {
+            await db.collection('eventos').add(payload);
+        }
+
+        resetFormEvaluacion();
+        cargarEvaluaciones();
+        alert("¡Evaluación agendada exitosamente!");
+    } catch (e) {
+        console.error(e);
+        alert("Error al agendar la evaluación.");
+    }
+}
+
+async function editarEvaluacion(id) {
+    try {
+        const doc = await db.collection('eventos').doc(id).get();
+        if (!doc.exists) return;
+        const ev = doc.data();
+
+        document.getElementById('eva-id').value = id;
+        document.getElementById('eva-titulo').value = ev.titulo;
+        document.getElementById('eva-fecha').value = ev.fecha;
+        document.getElementById('eva-tipo').value = ev.tipo;
+        document.getElementById('eva-desc').value = ev.descripcion || "";
+
+        // Establecer curso y actualizar selector de materias
+        document.getElementById('eva-curso').value = ev.cursos && ev.cursos.length ? ev.cursos[0] : "";
+        actualizarMateriasEvaluacion();
+        document.getElementById('eva-materia').value = ev.materia || "";
+
+        document.getElementById('form-eva-title').innerText = "Editar Evaluación";
+        document.getElementById('btn-cancelar-eva').classList.remove('hidden');
+
+        // Scroll suave al formulario
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function resetFormEvaluacion() {
+    document.getElementById('eva-id').value = "";
+    document.getElementById('eva-titulo').value = "";
+    document.getElementById('eva-fecha').value = "";
+    document.getElementById('eva-curso').value = "";
+    document.getElementById('eva-materia').innerHTML = `<option value="">Selecciona Materia</option>`;
+    document.getElementById('eva-desc').value = "";
+    document.getElementById('form-eva-title').innerText = "Agendar Evaluación / Prueba";
+    document.getElementById('btn-cancelar-eva').classList.add('hidden');
+}
+
+async function eliminarEvaluacion(id) {
+    if (confirm("¿Estás seguro de que deseas eliminar este evento de evaluación?")) {
+        try {
+            await db.collection('eventos').doc(id).delete();
+            cargarEvaluaciones();
+        } catch (e) {
+            console.error(e);
+            alert("Error al intentar eliminar el evento.");
+        }
+    }
+}
 </script>
 </body>
 </html>
-
