@@ -93,20 +93,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
           <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="secundario"> Secundario</label>
         </div>
       </div>
-      <div><label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Permisos adicionales</label>
-        <div class="flex flex-wrap gap-2">
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="ver_stats"> Stats</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="ver_notas"> Notas</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="ver_legajos"> Legajos EOE</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="publicar_comunicados"> Publicar comunicados</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="editar_alumnos"> Editar alumnos</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="exportar_datos"> Exportar</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_comunicados"> Comunicados</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_calendario"> Calendario</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_mensajes"> Mensajes</label>
-          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_llamadas"> Llamadas</label>
-        </div>
-      </div>
+
       <button onclick="guardarEdicionStaff()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-2"><i class="fas fa-save mr-2"></i>GUARDAR CAMBIOS</button>
     </div>
   </div>
@@ -195,7 +182,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 <div id="admin-content" class="hidden">
   <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
     <button onclick="switchTab('stats')"      class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
-    <button onclick="switchTab('alertas')"    class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">⚠️ Alertas</button>
+
 
     <button onclick="switchTab('importar')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
     <button onclick="switchTab('staff')"      class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
@@ -228,21 +215,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         <div class="stat-card text-center"><div class="stat-n text-pink-600" id="st-familias">—</div><div class="stat-l">Familias</div></div>
         <div class="stat-card text-center"><div class="stat-n text-amber-600" id="st-comunicados">—</div><div class="stat-l">Comunicados</div></div>
       </div>
-      <div id="stats-alertas-resumen" class="bg-rose-50 border border-rose-100 rounded-3xl p-5 hidden">
-        <div class="flex items-center gap-3 mb-3">
-          <i class="fas fa-exclamation-triangle text-rose-500 text-xl"></i>
-          <h3 class="font-black text-rose-700">Alertas activas</h3>
-          <span id="stats-alertas-count" class="bg-rose-500 text-white text-xs font-black px-3 py-1 rounded-full ml-auto"></span>
-        </div>
-        <div id="stats-alertas-lista" class="space-y-2"></div>
-        <button onclick="switchTab('alertas')" class="mt-4 text-rose-600 text-xs font-black uppercase flex items-center gap-1">Ver todas <i class="fas fa-arrow-right"></i></button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-3xl border shadow-sm">
-          <h3 class="font-black text-sm mb-1">Alumnos por nivel</h3>
-          <div id="leyenda-niveles" class="flex gap-4 mb-3 text-xs font-bold"></div>
-          <div style="position:relative;height:200px"><canvas id="chart-niveles"></canvas></div>
-        </div>
         <div class="bg-white p-6 rounded-3xl border shadow-sm">
           <h3 class="font-black text-sm mb-3">Asistencia del mes</h3>
           <div style="position:relative;height:200px"><canvas id="chart-asistencia"></canvas></div>
@@ -264,25 +236,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         <h3 class="font-black text-sm mb-4">Últimos informes pedagógicos</h3>
         <div id="lista-informes-rec" class="space-y-2"></div>
       </div>
-    </section>
-
-    <!-- ════ ALERTAS ════ -->
-    <section id="tab-alertas" class="tab-content space-y-5">
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div><h2 class="text-2xl font-black tracking-tight">Alertas Tempranas</h2><p class="text-slate-400 text-xs mt-1">Cruza faltas + notas + EOE automáticamente.</p></div>
-        <button onclick="ejecutarScanAlertas()" class="bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold text-sm flex items-center gap-2"><i class="fas fa-sync-alt"></i>Escanear</button>
-      </div>
-      <div class="bg-white p-6 rounded-3xl border shadow-sm">
-        <h3 class="font-black text-sm mb-4">Umbrales</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label class="text-[9px] font-black text-slate-400 uppercase">Faltas mínimas</label><input type="number" id="umbral-faltas" value="5" min="1" max="30" class="input-pro mt-1"></div>
-          <div><label class="text-[9px] font-black text-slate-400 uppercase">Promedio menor a</label><input type="number" id="umbral-nota" value="6" min="1" max="10" class="input-pro mt-1"></div>
-          <div><label class="text-[9px] font-black text-slate-400 uppercase">Condiciones para alerta roja</label><select id="umbral-condiciones" class="input-pro mt-1"><option value="1">1 condición</option><option value="2" selected>2 condiciones</option><option value="3">3 condiciones</option></select></div>
-        </div>
-        <button onclick="ejecutarScanAlertas()" class="mt-4 bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold text-sm">Aplicar y Escanear</button>
-      </div>
-      <div id="alertas-loading" class="text-center text-slate-400 py-8 hidden"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Analizando...</div>
-      <div id="alertas-container" class="space-y-3"><p class="text-slate-400 text-sm text-center py-8">Tocá "Escanear" para analizar todos los alumnos.</p></div>
     </section>
 
     <!-- ════ IMPORTAR ════ -->
@@ -833,62 +786,15 @@ async function cargarEstadisticas(){
   informes.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   informes.slice(0,8).forEach(inf=>{const d=new Date(inf.fecha).toLocaleDateString('es-AR');infCont.innerHTML+=`<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl text-xs"><span class="font-black text-slate-700 w-28 truncate">${inf.alumno}</span><span class="bg-blue-100 text-blue-800 font-black px-2 py-0.5 rounded-full">${inf.periodo}</span><span class="text-slate-500 flex-1 truncate">${inf.materia}</span><span class="text-slate-400">${d}</span></div>`;});
   if(!informes.length)infCont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes.</p>';
-  await ejecutarScanAlertasSilencioso();
+
 }
 
 // ══════════════════════
 // ALERTAS TEMPRANAS
 // ══════════════════════
-async function ejecutarScanAlertasSilencioso(){
-  const alertas=await calcularAlertas();
-  const resEl=document.getElementById('stats-alertas-resumen');
-  if(!alertas.length){resEl.classList.add('hidden');return;}
-  resEl.classList.remove('hidden');
-  document.getElementById('stats-alertas-count').textContent=alertas.length+' alerta'+(alertas.length>1?'s':'');
-  document.getElementById('stats-alertas-lista').innerHTML=alertas.slice(0,3).map(a=>`<div class="flex items-center gap-3 p-2 bg-white rounded-xl"><span class="text-[9px] font-black px-2 py-0.5 rounded-full ${a.nivel==='alta'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'}">${a.nivel}</span><span class="font-bold text-sm text-slate-800">${a.alumnoNombre}</span><span class="text-xs text-slate-500 flex-1 truncate">${a.motivos.join(' · ')}</span></div>`).join('');
-}
 
-async function ejecutarScanAlertas(){
-  const cont=document.getElementById('alertas-container'),loading=document.getElementById('alertas-loading');
-  loading.classList.remove('hidden');cont.innerHTML='';
-  const alertas=await calcularAlertas();
-  loading.classList.add('hidden');
-  if(!alertas.length){cont.innerHTML='<div class="bg-emerald-50 border border-emerald-100 rounded-3xl p-8 text-center"><i class="fas fa-check-circle text-emerald-500 text-4xl mb-3 block"></i><p class="font-black text-emerald-700 text-lg">Sin alertas activas</p></div>';return;}
-  cont.innerHTML=alertas.map(a=>`<div class="${a.nivel==='alta'?'alerta-roja':'alerta-ambar'}">
-    <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
-      <div><div class="flex items-center gap-2 mb-1"><span class="text-[9px] font-black px-2 py-0.5 rounded-full ${a.nivel==='alta'?'bg-rose-200 text-rose-800':'bg-amber-200 text-amber-800'}">Riesgo ${a.nivel}</span><span class="font-black text-slate-900">${a.alumnoNombre}</span></div><p class="text-[10px] text-slate-500 font-bold uppercase">${a.curso}</p></div>
-    </div>
-    <div class="flex flex-wrap gap-2 mb-3">${a.motivos.map(m=>`<span class="text-[10px] font-bold bg-white/70 px-2 py-1 rounded-lg">${m}</span>`).join('')}</div>
-    <button onclick="marcarAlertaVista('${a.alumnoId}')" class="text-[10px] font-black bg-white/80 px-3 py-1.5 rounded-xl border border-current opacity-70 hover:opacity-100">Marcar vista</button>
-  </div>`).join('');
-}
 
-async function calcularAlertas(){
-  const umbralF=parseInt(document.getElementById('umbral-faltas')?.value||5);
-  const umbralN=parseFloat(document.getElementById('umbral-nota')?.value||6);
-  const umbralC=parseInt(document.getElementById('umbral-condiciones')?.value||2);
-  const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-  const alSnap=await db.collection('alumnos').get();const alertas=[];
-  for(const alDoc of alSnap.docs){
-    const al=alDoc.data();const id=alDoc.id;const motivos=[];let conds=0;
-    const asis=await db.collection('asistencia').where('alumnoId','==',id).get();
-    let faltas=0;asis.forEach(d=>{if(d.data().fecha?.startsWith(mes)&&d.data().estado==='A')faltas++;});
-    if(faltas>=umbralF){motivos.push(`${faltas} faltas este mes`);conds++;}
-    const notas=await db.collection('alumnos').doc(id).collection('notas_v2').get();
-    let matsBajas=0;
-    notas.forEach(doc=>{const n=doc.data();const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_'));if(cols.length){const prom=cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length;if(prom<umbralN)matsBajas++;}});
-    if(matsBajas>0){motivos.push(`Prom. bajo en ${matsBajas} materia/s`);conds++;}
-    const eoe=await db.collection('alumnos').doc(id).collection('informes_eoe').orderBy('fecha','desc').limit(1).get();
-    if(!eoe.empty){const ult=eoe.docs[0].data();const dias=Math.floor((Date.now()-new Date(ult.fecha).getTime())/86400000);if(dias<=60&&ult.seguimiento!=='bajo'){motivos.push(`EOE activo (${ult.tipo})`);conds++;}}
-    if(conds>=umbralC&&motivos.length) alertas.push({alumnoId:id,alumnoNombre:al.nombre,curso:al.curso||'',motivos,nivel:conds>=3?'alta':'media'});
-  }
-  return alertas.sort((a,b)=>(b.nivel==='alta'?1:0)-(a.nivel==='alta'?1:0));
-}
 
-async function marcarAlertaVista(alumnoId){
-  await db.collection('alertas_vistas').doc(alumnoId).set({fecha:new Date().toISOString(),admin:adminEmail},{merge:true});
-  alert("Alerta marcada como vista.");
-}
 
 // ══════════════════════
 // EXCEL
@@ -1104,13 +1010,29 @@ async function cargarAlumnosFiltrados(){
     const autImg=a.autorizacionImagen;
     const imgBadge=autImg==='autoriza'?'<span class="text-[8px] font-black text-emerald-600">📷 Autoriza</span>':autImg==='no_autoriza'?'<span class="text-[8px] font-black text-rose-500">📵 No autoriza</span>':'<span class="text-[8px] font-black text-amber-500">⏳ Pendiente</span>';
     const tieneCE=a.contactosEmergencia?.length>0;
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border text-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all" data-search="${a.nombre} ${a.curso}" onclick="abrirModalAlumno('${doc.id}','${a.nombre.replace(/'/g,"\\'")}')">
-      <p class="font-bold text-sm">${a.nombre}</p>
-      <p class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full inline-block mt-1 font-black">${a.curso}</p>
-      ${a.nivel?`<p class="nb ${nbc} inline-block mt-1">${a.nivel}</p>`:''}
-      <div class="mt-2 flex justify-center gap-2 flex-wrap">${imgBadge}${tieneCE?'<span class="text-[8px] font-black text-blue-500">📞 Contacto</span>':'<span class="text-[8px] font-black text-slate-300">Sin contacto</span>'}</div>
-      <p class="text-[8px] text-blue-500 font-black mt-2 uppercase">Tocar para editar perfil</p>
-    </div>`;
+    const aluId = doc.id;
+    const aluNom = a.nombre.replace(/'/g, "\'");
+    cont.innerHTML += `
+      <div class="bg-white p-3 rounded-2xl border shadow-sm hover:border-blue-300 hover:shadow-md transition-all" data-search="${a.nombre} ${a.curso}">
+        <div class="flex items-center justify-between mb-2">
+          <input type="checkbox" class="alu-checkbox w-4 h-4 accent-rose-600 cursor-pointer flex-shrink-0"
+            value="${aluId}" onclick="event.stopPropagation();actualizarContAlu()">
+          <button onclick="event.stopPropagation();eliminarAlumnoConf('${aluId}','${aluNom}')"
+            class="text-rose-200 hover:text-rose-500 transition-colors text-xs" title="Eliminar">
+            <i class="fas fa-times-circle"></i>
+          </button>
+        </div>
+        <div onclick="abrirModalAlumno('${aluId}','${aluNom}')" class="cursor-pointer text-center">
+          <p class="font-bold text-sm">${a.nombre}</p>
+          <p class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full inline-block mt-1 font-black">${a.curso}</p>
+          ${a.nivel ? `<p class="nb ${nbc} inline-block mt-1">${a.nivel}</p>` : ''}
+          <div class="mt-2 flex justify-center gap-1 flex-wrap">
+            ${imgBadge}
+            ${tieneCE ? '<span class="text-[8px] font-black text-blue-500">📞</span>' : ''}
+          </div>
+          <p class="text-[8px] text-blue-400 font-bold mt-1">Editar</p>
+        </div>
+      </div>`;
   });
 }
 
@@ -1139,7 +1061,7 @@ function switchTab(t){
   if(t==='stats')cargarEstadisticas();
   if(t==='periodos')cargarPeriodosAdmin();
   
-  if(t==='alertas')ejecutarScanAlertas();
+
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
 }
@@ -1213,4 +1135,3 @@ document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='E
 </script>
 </body>
 </html>
-
