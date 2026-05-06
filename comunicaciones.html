@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -77,6 +78,10 @@
             <button onclick="switchTab('llamadas')" id="navbtn-llamadas" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
                 <i class="fas fa-phone-alt mr-2"></i>Llamadas
             </button>
+            <button onclick="switchTab('justificaciones-sec')" id="navbtn-justificaciones-sec" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
+                <i class="fas fa-file-medical mr-2"></i>Justificaciones
+                <span id="badge-just-sec" class="hidden ml-1 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">!</span>
+            </button>
             <div class="ml-auto flex items-center gap-2">
                 <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
                 <button onclick="location.reload()" class="text-rose-500 font-bold p-2 hover:bg-rose-50 rounded-xl transition"><i class="fas fa-power-off"></i></button>
@@ -103,24 +108,42 @@
                                 <div id="cursos-noticia" class="flex flex-wrap gap-2 mt-1"><span class="text-xs text-slate-400 italic">Cargando cursos...</span></div>
                             </div>
                         </div>
-                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
-    <div>
-        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Subir Imagen o Foto</label>
-        <input type="file" id="not-file-img" accept="image/*" class="input-pro text-xs bg-white">
-    </div>
-    <div>
-        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Subir Archivo o PDF</label>
-        <input type="file" id="not-file-pdf" accept=".pdf,.doc,.docx,.xls,.xlsx" class="input-pro text-xs bg-white">
-    </div>
-    <div class="md:col-span-2">
-        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Subir Video Corto</label>
-        <input type="file" id="not-file-video" accept="video/*" class="input-pro text-xs bg-white">
-    </div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <input type="text" id="not-video-url" placeholder="O pegar enlace de YouTube directo" class="input-pro">
-    <input type="text" id="not-link"  placeholder="Enlace web externo complementario"     class="input-pro">
-</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Upload de imagen -->
+                            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                              <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📷 Imagen / Foto</label>
+                              <div class="flex gap-2 items-center">
+                                <input type="file" id="not-img-file" accept="image/*" class="hidden" onchange="previewMedia('img',this)">
+                                <button type="button" onclick="document.getElementById('not-img-file').click()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0"><i class="fas fa-upload mr-1"></i>Subir imagen</button>
+                                <input type="text" id="not-img" placeholder="o pegar URL de imagen" class="input-pro text-xs" style="font-size:11px">
+                              </div>
+                              <div id="prev-img" class="mt-2 hidden"><img id="prev-img-el" class="w-full h-28 object-cover rounded-xl" src=""></div>
+                              <div id="upload-prog-img" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-img" class="bg-blue-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-img" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
+                            </div>
+                            <!-- Upload de video -->
+                            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                              <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">🎬 Video</label>
+                              <div class="flex gap-2 items-center">
+                                <input type="file" id="not-video-file" accept="video/*" class="hidden" onchange="previewMedia('video',this)">
+                                <button type="button" onclick="document.getElementById('not-video-file').click()" class="bg-purple-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0"><i class="fas fa-video mr-1"></i>Subir video</button>
+                                <input type="text" id="not-video" placeholder="o URL YouTube/Vimeo" class="input-pro text-xs" style="font-size:11px">
+                              </div>
+                              <div id="prev-video" class="mt-2 hidden"><video id="prev-video-el" class="w-full h-28 object-cover rounded-xl" controls src=""></video></div>
+                              <div id="upload-prog-video" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-video" class="bg-purple-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-video" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
+                            </div>
+                            <!-- Upload de PDF/archivo -->
+                            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                              <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📄 Archivo / PDF</label>
+                              <div class="flex gap-2 items-center">
+                                <input type="file" id="not-pdf-file" accept=".pdf,.doc,.docx,.xls,.xlsx" class="hidden" onchange="previewMedia('pdf',this)">
+                                <button type="button" onclick="document.getElementById('not-pdf-file').click()" class="bg-red-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0"><i class="fas fa-file-pdf mr-1"></i>Subir archivo</button>
+                                <input type="text" id="not-pdf" placeholder="o pegar URL de PDF/archivo" class="input-pro text-xs" style="font-size:11px">
+                              </div>
+                              <p id="prev-pdf-nombre" class="text-xs font-bold text-red-600 mt-1 hidden"></p>
+                              <div id="upload-prog-pdf" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-pdf" class="bg-red-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-pdf" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
+                            </div>
+                            <input type="text" id="not-link" placeholder="🔗 Enlace externo (opcional)" class="input-pro text-sm">
+                        </div>
                         <div class="flex gap-2 mt-2">
                             <button onclick="guardarNoticia()" id="btn-noticia" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">Publicar y Enviar Mail</button>
                             <button onclick="resetFormNoticia()" id="btn-cancel-noticia" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">Cancelar</button>
@@ -292,6 +315,25 @@
             </div>
         </section>
 
+        <!-- ════ JUSTIFICACIONES (SECRETARIA) ════ -->
+        <section id="tab-justificaciones-sec" class="tab-content space-y-5">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="text-2xl font-black tracking-tight">Justificaciones</h2>
+                    <p class="text-slate-400 text-xs mt-1">Aprobá o rechazá las justificaciones enviadas por las familias.</p>
+                </div>
+                <select id="just-sec-filtro" onchange="cargarJustificacionesSec()" class="input-pro" style="max-width:160px">
+                    <option value="pendiente">Pendientes</option>
+                    <option value="aprobada">Aprobadas</option>
+                    <option value="rechazada">Rechazadas</option>
+                    <option value="todas">Todas</option>
+                </select>
+            </div>
+            <div id="lista-just-sec" class="space-y-3">
+                <p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+            </div>
+        </section>
+
         </main>
     </div>
 
@@ -370,7 +412,17 @@
             if (esSecOAdmin) {
                 document.getElementById('navbtn-mensajes').classList.remove('hidden');
                 document.getElementById('navbtn-llamadas').classList.remove('hidden');
+                document.getElementById('navbtn-justificaciones-sec').classList.remove('hidden');
                 cargarLlamadas();
+                cargarJustificacionesSec();
+            }
+            // Mostrar/ocultar tabs según permisos del usuario
+            const perms = data.permisos || [];
+            if (perms.includes('acceso_comunicados') || staffRol === 'admin' || staffRol === 'comunicacion') {
+                document.getElementById('navbtn-noticias').classList.remove('hidden');
+            }
+            if (perms.includes('acceso_calendario') || staffRol === 'admin' || staffRol === 'comunicacion') {
+                document.getElementById('navbtn-calendario').classList.remove('hidden');
             }
 
             // Solo admin y comunicacion ven publicar noticias
@@ -437,87 +489,27 @@
             });
         }
 
-        // Asegúrate de tener Firebase Storage inicializado en tu archivo o agregá la importación si no la tenés:
-// <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-const storage = firebase.storage();
-
-async function subirArchivoAStorage(file, ruta) {
-    if (!file) return "";
-    const ref = storage.ref().child(`${ruta}/${Date.now()}_${file.name}`);
-    const snapshot = await ref.put(file);
-    return await snapshot.ref.getDownloadURL();
-}
-
-async function guardarNoticia() {
-    const titulo = document.getElementById('not-titulo').value.trim();
-    const texto = document.getElementById('not-texto').value.trim();
-    const programacion = document.getElementById('not-programacion').value;
-    const linkExterno = document.getElementById('not-link').value.trim();
-    const youtubeUrl = document.getElementById('not-video-url').value.trim();
-    
-    if (!titulo || !texto) {
-        alert("Por favor, completa título y cuerpo.");
-        return;
-    }
-
-    // Mostrar un spinner o indicador de carga para archivos pesados
-    const btn = document.getElementById('btn-noticia');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Subiendo archivos multimedia...`;
-
-    try {
-        // Obtener archivos de los inputs
-        const fileImg = document.getElementById('not-file-img').files[0];
-        const filePdf = document.getElementById('not-file-pdf').files[0];
-        const fileVid = document.getElementById('not-file-video').files[0];
-
-        // Subir concurrentemente a Storage
-        let imgUrl = "";
-        let pdfUrl = "";
-        let videoUrl = youtubeUrl; // Si no hay archivo de video, usa el link de youtube
-
-        if (fileImg) imgUrl = await subirArchivoAStorage(fileImg, 'comunicaciones/imagenes');
-        if (filePdf) pdfUrl = await subirArchivoAStorage(filePdf, 'comunicaciones/documentos');
-        if (fileVid) videoUrl = await subirArchivoAStorage(fileVid, 'comunicaciones/videos');
-
-        // Capturar cursos seleccionados
-        const cursosSeleccionados = [];
-        document.querySelectorAll('.chk-curso:checked').forEach(cb => cursosSeleccionados.push(cb.value));
-
-        const noticiaData = {
-            titulo,
-            texto,
-            programada: programacion ? new Date(programacion).toISOString() : null,
-            cursos: cursosSeleccionados,
-            img: imgUrl,
-            pdf: pdfUrl,
-            video: videoUrl,
-            link: linkExterno,
-            fecha: new Date().toISOString(),
-            autor: userEmail
-        };
-
-        const notId = document.getElementById('noticia-id').value;
-        if (notId) {
-            await db.collection('noticias').doc(notId).update(noticiaData);
-            alert("✅ Noticia actualizada con éxito.");
-        } else {
-            await db.collection('noticias').add(noticiaData);
-            alert("✅ Noticia publicada con éxito.");
+        async function guardarNoticia() {
+            const id    = document.getElementById('noticia-id').value;
+            const titulo = document.getElementById('not-titulo').value;
+            const texto  = document.getElementById('not-texto').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
+            const esTodos = document.getElementById('all-cursos-noticia')?.checked;
+            if (!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
+            const btn = document.getElementById('btn-noticia');
+            btn.disabled = true; btn.innerText = "Procesando...";
+            const data = {
+                titulo, texto, curso: seleccionados,
+                programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
+                adjuntos: { img: document.getElementById('not-img').value, video: document.getElementById('not-video').value, pdf: document.getElementById('not-pdf').value, link: document.getElementById('not-link').value },
+                fechaCreacion: new Date().toISOString()
+            };
+            try {
+                if (id) { await db.collection('comunicados').doc(id).update(data); alert("Publicación actualizada."); }
+                else { await db.collection('comunicados').add(data); await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos); alert("Publicado y mails enviados."); }
+                location.reload();
+            } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
         }
-
-        // Limpiar formulario y recargar
-        limpiarFormNoticias();
-        cargarNoticias();
-    } catch (error) {
-        console.error(error);
-        alert("Error al guardar la noticia: " + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}
 
         async function editarNoticia(id) {
             const doc = await db.collection('comunicados').doc(id).get();
@@ -785,6 +777,105 @@ async function guardarNoticia() {
 
         document.getElementById('log-pass').addEventListener('keydown', e => { if (e.key === 'Enter') loginComunicacion(); });
 
+        // ════ FIREBASE STORAGE — UPLOAD DE ARCHIVOS ════
+        const storage = firebase.storage();
+
+        function previewMedia(tipo, input) {
+            const file = input.files[0]; if (!file) return;
+            const progCont = document.getElementById('upload-prog-' + tipo);
+            const progBar  = document.getElementById('prog-bar-' + tipo);
+            const progTxt  = document.getElementById('prog-txt-' + tipo);
+            progCont.classList.remove('hidden');
+            const path = `comunicados/${tipo}s/${Date.now()}_${file.name}`;
+            const ref  = storage.ref(path);
+            const task = ref.put(file);
+            task.on('state_changed',
+                snap => {
+                    const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+                    progBar.style.width = pct + '%';
+                    progTxt.textContent = `Subiendo... ${pct}%`;
+                },
+                err => { progTxt.textContent = 'Error: ' + err.message; },
+                async () => {
+                    const url = await task.snapshot.ref.getDownloadURL();
+                    document.getElementById('not-' + tipo).value = url;
+                    progTxt.textContent = '✅ Subido correctamente';
+                    // Preview
+                    if (tipo === 'img') {
+                        document.getElementById('prev-img-el').src = url;
+                        document.getElementById('prev-img').classList.remove('hidden');
+                    } else if (tipo === 'video') {
+                        document.getElementById('prev-video-el').src = url;
+                        document.getElementById('prev-video').classList.remove('hidden');
+                    } else if (tipo === 'pdf') {
+                        document.getElementById('prev-pdf-nombre').textContent = '📄 ' + file.name;
+                        document.getElementById('prev-pdf-nombre').classList.remove('hidden');
+                    }
+                }
+            );
+        }
+
+        // ════ JUSTIFICACIONES SECRETARÍA ════
+        let todasLasJustSec = [];
+        async function cargarJustificacionesSec() {
+            const filtro = document.getElementById('just-sec-filtro')?.value || 'pendiente';
+            const cont = document.getElementById('lista-just-sec');
+            cont.innerHTML = '<p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+            let query = db.collection('justificaciones').orderBy('fechaEnvio','desc').limit(100);
+            const snap = await query.get();
+            todasLasJustSec = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                // Filtrar por nivel de la secretaria
+                if (staffRol !== 'admin' && d.nivel && d.nivel !== staffNiveles[0] && !staffNiveles.includes(d.nivel)) return;
+                todasLasJustSec.push({ id: doc.id, ...d });
+            });
+            const lista = filtro === 'todas' ? todasLasJustSec : todasLasJustSec.filter(j => j.estado === filtro);
+            const pendientes = todasLasJustSec.filter(j => j.estado === 'pendiente').length;
+            const badge = document.getElementById('badge-just-sec');
+            if (badge) badge.classList.toggle('hidden', pendientes === 0);
+            if (!lista.length) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Sin justificaciones ${filtro !== 'todas' ? filtro + 's' : ''}.</p>`; return; }
+            const motivos = { medico:'Certificado médico', familiar:'Causa familiar', viaje:'Viaje', otro:'Otro' };
+            const colEst = { pendiente:'border-amber-200 bg-amber-50', aprobada:'border-emerald-200 bg-emerald-50', rechazada:'border-rose-200 bg-rose-50' };
+            cont.innerHTML = lista.map(j => {
+                const d = new Date(j.fechaEnvio).toLocaleDateString('es-AR');
+                return `<div class="bg-white p-5 rounded-2xl border-2 ${colEst[j.estado] || 'border-slate-100'} shadow-sm">
+                    <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
+                        <div>
+                            <p class="font-black text-slate-900">${j.alumnoNombre}</p>
+                            <p class="text-[10px] text-slate-400 font-bold">Falta: ${j.fecha} · ${motivos[j.motivo] || j.motivo}</p>
+                            <p class="text-[10px] text-slate-400">Familia: ${j.familiaNombre}</p>
+                        </div>
+                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${j.estado==='pendiente'?'bg-amber-100 text-amber-700':j.estado==='aprobada'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${j.estado}</span>
+                    </div>
+                    ${j.detalle ? `<p class="text-sm text-slate-600 mb-3">${j.detalle}</p>` : ''}
+                    ${j.urlCertificado ? `<a href="${j.urlCertificado}" target="_blank" class="text-[10px] font-black text-blue-600 flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
+                    <p class="text-[9px] text-slate-400">Enviada el ${d}</p>
+                    ${j.estado === 'pendiente' ? `<div class="flex gap-2 mt-3">
+                        <button onclick="resolverJustSec('${j.id}','aprobada')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
+                        <button onclick="resolverJustSec('${j.id}','rechazada')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        async function resolverJustSec(justId, estado) {
+            const j = todasLasJustSec.find(x => x.id === justId); if (!j) return;
+            // 1. Actualizar estado
+            await db.collection('justificaciones').doc(justId).update({ estado, resueltaPor: staffEmail, fechaResolucion: new Date().toISOString() });
+            // 2. Notificar al docente del alumno via conversación
+            if (estado === 'aprobada') {
+                const docSnap = await db.collection('usuarios').where('rol','==','docente').where('cursos','array-contains', j.alumnoNombre || '').get();
+                // Fallback: notificar a todos los docentes del nivel
+                const notifMsg = `✅ Justificación APROBADA: ${j.alumnoNombre}, falta del ${j.fecha} (${j.motivo}). Aprobada por ${staffNombre}.`;
+                // Guardar como notificación global
+                await db.collection('notificaciones_docentes').add({ mensaje: notifMsg, nivel: j.nivel || 'primario', tipo: 'justificacion', fecha: new Date().toISOString(), leida: false });
+            }
+            // 3. Refrescar lista
+            j.estado = estado;
+            cargarJustificacionesSec();
+        }
+
         // ════ REGISTRO DE LLAMADAS ════
         let todasLasLlamadas = [];
 
@@ -872,10 +963,12 @@ async function guardarNoticia() {
         function switchTab(tabId) {
             _origSwitchTab(tabId);
             if (tabId === 'llamadas') cargarLlamadas();
+            if (tabId === 'justificaciones-sec') cargarJustificacionesSec();
         }
         document.getElementById('modal-nueva-sec').addEventListener('click', function(e) { if (e.target === this) cerrarModalNuevaSec(); });
     </script>
 </body>
 </html>
+
 
 
