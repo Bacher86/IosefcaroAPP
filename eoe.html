@@ -137,6 +137,34 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     </div>
   </section>
 
+  <!-- ALERTAS -->
+  <section id="tab-alertas" class="tab-content space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h3 class="font-black text-xl">Alertas Tempranas</h3>
+        <p class="text-slate-400 text-xs mt-1">Cruza automáticamente faltas + notas bajas + intervenciones EOE.</p>
+      </div>
+      <button onclick="ejecutarScanAlertas()" class="bg-rose-600 text-white px-5 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg">
+        <i class="fas fa-sync-alt"></i> Escanear
+      </button>
+    </div>
+    <!-- Umbrales -->
+    <div class="bg-white p-5 rounded-3xl border shadow-sm">
+      <h4 class="font-black text-sm mb-4">Configuración de umbrales</h4>
+      <div class="grid grid-cols-1 gap-3">
+        <div><label class="text-[9px] font-black text-slate-400 uppercase">Faltas mínimas para alerta</label><input type="number" id="umbral-faltas" value="5" min="1" max="30" class="input-pro mt-1"></div>
+        <div><label class="text-[9px] font-black text-slate-400 uppercase">Promedio menor a</label><input type="number" id="umbral-nota" value="6" min="1" max="10" class="input-pro mt-1"></div>
+        <div><label class="text-[9px] font-black text-slate-400 uppercase">Condiciones para alerta roja</label>
+          <select id="umbral-condiciones" class="input-pro mt-1"><option value="1">1 condición</option><option value="2" selected>2 condiciones</option><option value="3">3 condiciones</option></select>
+        </div>
+      </div>
+    </div>
+    <div id="alertas-loading" class="text-center text-slate-400 py-8 hidden"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Analizando todos los alumnos...</div>
+    <div id="alertas-container" class="space-y-3">
+      <p class="text-slate-400 text-sm text-center py-8">Tocá "Escanear" para analizar todos los alumnos.</p>
+    </div>
+  </section>
+
 </main>
 
 <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-[1000] shadow-lg">
@@ -145,6 +173,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   </button>
   <button onclick="switchTab('legajo')" id="btn-legajo" class="nav-btn flex-1 flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400">
     <i class="fas fa-folder-open text-xl"></i>LEGAJO
+  </button>
+  <button onclick="switchTab('alertas')" id="btn-alertas" class="nav-btn flex-1 flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400 text-rose-500">
+    <div class="relative"><i class="fas fa-exclamation-triangle text-xl"></i><span id="badge-alertas" class="hidden absolute -top-1 -right-2 bg-rose-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div>ALERTAS
   </button>
 </nav>
 
@@ -316,11 +347,68 @@ function filtrarLegajo(tipo){
 }
 function cerrarLegajo(){legajoAlumnoActual=null;todosLosItems=[];document.getElementById('legajo-perfil').classList.add('hidden');document.getElementById('legajo-search').value='';}
 
+// ── ALERTAS TEMPRANAS ──
+async function ejecutarScanAlertas(){
+  const cont=document.getElementById('alertas-container');
+  const loading=document.getElementById('alertas-loading');
+  loading.classList.remove('hidden');cont.innerHTML='';
+  const alertas=await calcularAlertas();
+  loading.classList.add('hidden');
+  const badge=document.getElementById('badge-alertas');
+  badge.classList.toggle('hidden',alertas.length===0);
+  if(!alertas.length){
+    cont.innerHTML='<div class="bg-emerald-50 border border-emerald-100 rounded-3xl p-8 text-center"><i class="fas fa-check-circle text-emerald-500 text-4xl mb-3 block"></i><p class="font-black text-emerald-700 text-lg">Sin alertas activas</p><p class="text-emerald-500 text-sm mt-1">Todos los alumnos están dentro de los parámetros.</p></div>';
+    return;
+  }
+  cont.innerHTML=alertas.map(a=>`<div class="border-l-4 ${a.nivel==='alta'?'border-rose-400 bg-rose-50':'border-amber-400 bg-amber-50'} rounded-2xl p-4">
+    <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${a.nivel==='alta'?'bg-rose-100 text-rose-700':'bg-amber-100 text-amber-700'}">Riesgo ${a.nivel}</span>
+          <span class="font-black text-slate-900">${a.alumnoNombre}</span>
+        </div>
+        <p class="text-[10px] text-slate-500 font-bold uppercase">${a.curso}</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2">${a.motivos.map(m=>`<span class="text-[10px] font-bold bg-white/70 px-2 py-1 rounded-lg">${m}</span>`).join('')}</div>
+    <button onclick="abrirLegajoDirecto('${a.alumnoId}','${a.alumnoNombre}','${a.curso}','')" class="mt-3 text-[10px] font-black bg-white/80 px-3 py-1.5 rounded-xl border border-current opacity-70 hover:opacity-100">Ver legajo →</button>
+  </div>`).join('');
+}
+
+async function calcularAlertas(){
+  const umbralF=parseInt(document.getElementById('umbral-faltas')?.value||5);
+  const umbralN=parseFloat(document.getElementById('umbral-nota')?.value||6);
+  const umbralC=parseInt(document.getElementById('umbral-condiciones')?.value||2);
+  const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  const alSnap=await db.collection('alumnos').get();const alertas=[];
+  for(const alDoc of alSnap.docs){
+    const al=alDoc.data();const id=alDoc.id;const motivos=[];let conds=0;
+    const asis=await db.collection('asistencia').where('alumnoId','==',id).get();
+    let faltas=0;asis.forEach(d=>{if(d.data().fecha?.startsWith(mes)&&d.data().estado==='A')faltas++;});
+    if(faltas>=umbralF){motivos.push(`${faltas} faltas este mes`);conds++;}
+    const notas=await db.collection('alumnos').doc(id).collection('notas_v2').get();
+    let matsBajas=0;
+    notas.forEach(doc=>{const n=doc.data();const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_'));if(cols.length){const prom=cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length;if(prom<umbralN)matsBajas++;}});
+    if(matsBajas>0){motivos.push(`Prom. bajo en ${matsBajas} materia/s`);conds++;}
+    const eoe=await db.collection('alumnos').doc(id).collection('informes_eoe').orderBy('fecha','desc').limit(1).get();
+    if(!eoe.empty){const ult=eoe.docs[0].data();const dias=Math.floor((Date.now()-new Date(ult.fecha).getTime())/86400000);if(dias<=60&&ult.seguimiento!=='bajo'){motivos.push(`EOE activo (${ult.tipo})`);conds++;}}
+    if(conds>=umbralC&&motivos.length) alertas.push({alumnoId:id,alumnoNombre:al.nombre,curso:al.curso||'',motivos,nivel:conds>=3?'alta':'media'});
+  }
+  return alertas.sort((a,b)=>(b.nivel==='alta'?1:0)-(a.nivel==='alta'?1:0));
+}
+
+function abrirLegajoDirecto(id,nombre,curso,nivel){
+  switchTab('legajo');
+  document.getElementById('legajo-search').value=nombre;
+  abrirLegajo(id,nombre,curso,nivel);
+}
+
 // ── UTILS ──
 function switchTab(tab){
   document.querySelectorAll('.tab-content,.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+tab)?.classList.add('active');
   if(document.getElementById('btn-'+tab))document.getElementById('btn-'+tab).classList.add('active');
+  if(tab==='alertas') ejecutarScanAlertas();
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 // Auto-login
