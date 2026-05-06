@@ -1,4 +1,20 @@
-<!DOCTYPE html>
+html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Instituto Iosef Caro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -71,7 +87,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
     <div class="portal-card escuela" onclick="abrirLogin('escuela')">
       <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">🏫</div>
       <h2 class="text-xl font-black text-slate-900 mb-2">Portal Escuela</h2>
-      <p class="text-slate-400 text-sm leading-relaxed">Docentes, secretaría, comunicaciones y administración.</p>
+      <p class="text-slate-400 text-sm leading-relaxed">Docentes, secretaría, EOE, comunicaciones y administración. El sistema te lleva a donde corresponde.</p>
       <div class="mt-5 flex items-center justify-center gap-2 text-sky-600 font-black text-xs uppercase tracking-wide">
         <span>Ingresar</span><i class="fas fa-arrow-right text-[10px]"></i>
       </div>
@@ -214,21 +230,19 @@ async function realizarLogin(){
 
     // Redirigir según rol
     const rol=data.rol;
-    const rolesAdmin=['admin','director'];
-    const rolesComun=['comunicacion'];
-    const rolesSecretaria=['secretaria_inicial','secretaria_primario','secretaria_secundario'];
-    const rolesDocente=['docente','eoe'];
-
     let destino='admin.html';
-    if(rolesDocente.includes(rol)) destino='docente.html';
-    else if(rolesSecretaria.includes(rol)) destino='secretaria.html';
-    else if(rolesComun.includes(rol)) destino='comunicaciones.html';
-    else destino='admin.html';
+    if(rol==='eoe') destino='eoe.html';
+    else if(rol==='docente') destino='docente.html';
+    else if(['secretaria_inicial','secretaria_primario','secretaria_secundario'].includes(rol)) destino='secretaria.html';
+    else if(rol==='comunicacion') destino='comunicaciones.html';
+    else destino='admin.html';  // admin, director
 
     // Guardar sesión para que el panel no pida login de nuevo
     sessionStorage.setItem('iosef_email',email);
     sessionStorage.setItem('iosef_rol',rol);
     sessionStorage.setItem('iosef_nombre',data.nombre||email);
+    // Guardar pass temporalmente para auto-login en comunicaciones/admin (se limpia al cerrar sesión)
+    sessionStorage.setItem('iosef_pass_tmp',pass);
 
     setTimeout(()=>window.location.href=destino,300);
 
