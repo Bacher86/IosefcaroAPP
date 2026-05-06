@@ -199,7 +199,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <div id="lista-cal-doc" class="space-y-2"></div>
   </section>
 
-  <!-- MENSAJES -->
+  <!-- Mensajería eliminada del panel docente -->
 
   <!-- ════ EOE — EQUIPO DE ORIENTACIÓN ESCOLAR ════ -->
   <section id="tab-eoe" class="tab-content space-y-5">
@@ -344,9 +344,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   <button onclick="switchTab('asis')" id="btn-asis" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-list-check text-lg"></i>ASIST.</button>
   <button onclick="switchTab('informes')" id="btn-informes" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-file-alt text-lg"></i>INF.</button>
   <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]"><i class="fas fa-calendar text-lg"></i>CAL.</button>
-  <button onclick="switchTab('mensajes')" id="btn-mensajes" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px]">
-    <div class="relative"><i class="fas fa-comments text-lg"></i><span id="badge-msg-doc" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div>MSG
-  </button>
+  <!-- Mensajería eliminada del panel docente por pedido — usar comunicaciones.html -->
   <!-- EOE y Legajo: siempre visibles para docentes y EOE -->
   <button onclick="switchTab('eoe')" id="btn-eoe" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[8px] min-w-[50px] text-violet-600">
     <i class="fas fa-shield-alt text-lg"></i>EOE
@@ -532,14 +530,7 @@ async function renderGrilla(fecha){
     let cols=''; let suma=0,cnt=0;
     columnaExamenes.forEach(col=>{
       const val=nData[col.key]||''; const bloq=periodoActivo.bloqueado;
-      cols+=`<td style="text-align:center"><input type="number" 
-       min="1" 
-       max="10" 
-       step="0.1"
-       value="${notaActual}" 
-       oninput="validarYCalcularPromedio(this)" 
-       class="input-pro text-center text-sm font-black w-16 nota-input" 
-       data-alumno-id="${alumno.id}">
+      cols+=`<td style="text-align:center"><input type="number" min="1" max="10" step="0.5" value="${val}" ${bloq?'disabled':''} style="${bloq?'color:#94a3b8':''}" oninput="if(parseFloat(this.value)>10){this.value=10}if(parseFloat(this.value)<1&&this.value!=''){this.value=1}cambiarNota('${al.id}','${col.key}',this.value)" placeholder="—"></td>`;
       if(val!==''){suma+=parseFloat(val)||0;cnt++;}
     });
     const prom=cnt>0?(suma/cnt).toFixed(1):'—';
@@ -550,7 +541,7 @@ async function renderGrilla(fecha){
         ${alertaFalta?`<div class="mt-1"><span class="alerta-falta">${alertaFalta}</span></div>`:''}
       </td>
       ${cols}
-      <td style="text-align:center;font-weight:800;font-size:13px;color:${promColor}">${prom}</td>
+      <td style="text-align:center;font-weight:800;font-size:13px;color:${promColor}" id="prom-${al.id}">${prom}</td>
       <td style="text-align:center"><button onclick="descargarPDF('${al.id}','${al.nombre}')" style="background:none;border:none;cursor:pointer;color:#3b82f6;font-size:13px"><i class="fas fa-file-pdf"></i></button></td>
     </tr>`;
   }
@@ -565,8 +556,16 @@ async function getFaltaOtraMateria(alumnoId,fecha){
 
 function cambiarNota(id,colKey,val){
   if(!cambiosNotas[id])cambiosNotas[id]={};
-  let v=parseFloat(val); if(v>10)v=10; if(v<1)v=1;
-  cambiosNotas[id][colKey]=v||val;
+  let v=parseFloat(val);
+  if(!isNaN(v)){if(v>10)v=10;if(v<1)v=1;}
+  cambiosNotas[id][colKey]=isNaN(v)?val:v;
+  // Actualizar promedio en la fila
+  const fila=document.getElementById('prom-'+id);
+  if(fila){
+    const rowData={...cambiosNotas[id]};
+    const vals=Object.entries(rowData).filter(([k,vv])=>k.startsWith('nota_')&&vv!=='').map(([,vv])=>parseFloat(vv)||0);
+    if(vals.length){const prom=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);fila.textContent=prom;fila.style.color=parseFloat(prom)>=6?'#16a34a':'#ef4444';}
+  }
   document.getElementById('btn-guardar-notas').style.display='block';
 }
 
@@ -582,51 +581,7 @@ async function confirmarNotas(){
   alert("✅ Notas guardadas.");cambiosNotas={};document.getElementById('btn-guardar-notas').style.display='none';
   btn.innerHTML='<i class="fas fa-save"></i> GUARDAR NOTAS';
 }
-function validarYCalcularPromedio(input) {
-  let val = parseFloat(input.value);
-  
-  // Limitar el rango entre 1 y 10 estrictamente
-  if (val > 10) {
-    input.value = 10;
-    val = 10;
-  } else if (val < 1) {
-    input.value = 1;
-    val = 1;
-  }
 
-  // Buscar todos los inputs de notas de esta fila o contenedor de alumno
-  const fila = input.closest('.fila-alumno-notas'); 
-  if (fila) {
-    const inputs = fila.querySelectorAll('.nota-input');
-    let suma = 0;
-    let contador = 0;
-    
-    inputs.forEach(inp => {
-      const v = parseFloat(inp.value);
-      if (!isNaN(v)) {
-        suma += v;
-        contador++;
-      }
-    });
-    
-    const promedioSpan = fila.querySelector('.promedio-output');
-    if (promedioSpan && contador > 0) {
-      const promedio = (suma / contador).toFixed(2);
-      promedioSpan.textContent = promedio;
-      
-      // Si querés que se guarde en la BD automáticamente el promedio:
-      const alumnoId = input.getAttribute('data-alumno-id');
-      guardarPromedioAutomatico(alumnoId, promedio);
-    }
-  }
-}
-
-async function guardarPromedioAutomatico(alumnoId, promedio) {
-  // Lógica para actualizar el promedio final en la subcolección de notas de Firestore
-  await db.collection('alumnos').doc(alumnoId).update({
-    promedioGeneral: parseFloat(promedio)
-  });
-}
 function renderTagsExamenes(){
   document.getElementById('tags-examenes').innerHTML=columnaExamenes.map(c=>`<span style="background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #e2e8f0">${c.label}</span>`).join('');
 }
@@ -1184,6 +1139,23 @@ function switchTabSilent(tab){
   document.getElementById('tab-'+tab).classList.add('active');
 }
 
+// ── NOTIFICACIONES DE JUSTIFICACIONES APROBADAS ──
+function escucharNotificacionesDocente(){
+  const nivel=docenteData?.nivel||'primario';
+  db.collection('notificaciones_docentes').where('nivel','==',nivel).where('leida','==',false).onSnapshot(snap=>{
+    if(snap.empty)return;
+    snap.forEach(doc=>{
+      const n=doc.data();
+      // Mostrar como toast
+      const div=document.createElement('div');
+      div.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:white;padding:12px 20px;border-radius:16px;font-size:13px;font-weight:700;z-index:9999;max-width:340px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.3)';
+      div.textContent=n.mensaje;document.body.appendChild(div);
+      setTimeout(()=>div.remove(),5000);
+      // Marcar como leída
+      db.collection('notificaciones_docentes').doc(doc.id).update({leida:true});
+    });
+  });
+}
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 
 // ── JUSTIFICACIONES (vista docente) ──
@@ -1211,32 +1183,41 @@ async function cargarJustificacionesDocente() {
   document.getElementById('badge-just-doc').classList.toggle('hidden', pendientes === 0);
 }
 
-// Mostrar justificaciones aprobadas por la secretaría (Rol de visualización para el docente)
 function renderJustDoc() {
-  const cont = document.getElementById('doc-justificaciones-cont');
-  
-  // Filtrar solo las aprobadas para la visualización del docente
-  const aprobadas = todasLasJustDoc.filter(j => j.estado === 'aprobada');
-  
-  if (aprobadas.length === 0) {
-    cont.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs font-bold"><i class="fas fa-file-invoice text-2xl mb-2 block"></i>Sin novedades justificadas</div>`;
-    return;
-  }
-  
-  cont.innerHTML = aprobadas.map(j => {
-    const d = new Date(j.fechaEnvio).toLocaleDateString();
-    return `
-    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative">
-      <div class="absolute top-4 right-4 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase px-2 py-1 rounded-md">
-         <i class="fas fa-check-circle mr-1"></i> Aprobado por Secretaría
+  const cont = document.getElementById('lista-just-doc');
+  const lista = justFiltroActivo === 'todas' ? todasLasJustDoc : todasLasJustDoc.filter(j => j.estado === justFiltroActivo);
+  if (!lista.length) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Sin justificaciones ${justFiltroActivo !== 'todas' ? justFiltroActivo+'s' : ''}.</p>`; return; }
+  const colores = { pendiente: 'border-amber-200 bg-amber-50', aprobada: 'border-emerald-200 bg-emerald-50', rechazada: 'border-rose-200 bg-rose-50' };
+  cont.innerHTML = lista.map(j => {
+    const d = new Date(j.fechaEnvio).toLocaleDateString('es-AR');
+    const motivos = { medico:'Certificado médico', familiar:'Causa familiar', viaje:'Viaje', otro:'Otro' };
+    return `<div class="bg-white p-5 rounded-2xl border-2 ${colores[j.estado]||'border-slate-100'} shadow-sm">
+      <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
+        <div>
+          <p class="font-black text-slate-900">${j.alumnoNombreReal || j.alumnoNombre}</p>
+          <p class="text-[10px] text-slate-400 font-bold mt-0.5">Falta: ${j.fecha} · ${motivos[j.motivo]||j.motivo}</p>
+        </div>
+        <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${j.estado==='pendiente'?'bg-amber-100 text-amber-700':j.estado==='aprobada'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${j.estado}</span>
       </div>
-      <p class="font-black text-slate-800 text-sm mb-1">${j.alumnoNombre}</p>
-      <p class="text-[10px] text-slate-400 font-bold mb-3 uppercase tracking-wider">${j.curso || ''}</p>
-      <p class="text-xs text-slate-600 mb-3 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">"${j.motivo}"</p>
-      ${j.certificado ? `<a href="${j.certificado}" target="_blank" class="text-blue-600 font-bold text-xs flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
-      <p class="text-[9px] text-slate-400">Enviada por la familia de ${j.alumnoNombre} el ${d}</p>
+      ${j.detalle ? `<p class="text-sm text-slate-600 mb-3">${j.detalle}</p>` : ''}
+      ${j.urlCertificado ? `<a href="${j.urlCertificado}" target="_blank" class="text-[10px] font-black text-blue-600 flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
+      <p class="text-[9px] text-slate-400">Enviada por ${j.familiaNombre} el ${d}</p>
+      ${j.estado === 'pendiente' ? `<div class="flex gap-2 mt-3">
+        <button onclick="resolverJustificacion('${j.id}','aprobada')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
+        <button onclick="resolverJustificacion('${j.id}','rechazada')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
+      </div>` : ''}
     </div>`;
   }).join('');
+}
+
+async function resolverJustificacion(justId, estado) {
+  await db.collection('justificaciones').doc(justId).update({ estado, resueltaPor: docenteEmail, fechaResolucion: new Date().toISOString() });
+  const j = todasLasJustDoc.find(j => j.id === justId);
+  if (j) j.estado = estado;
+  renderJustDoc();
+  // Actualizar badge
+  const pendientes = todasLasJustDoc.filter(j => j.estado === 'pendiente').length;
+  document.getElementById('badge-just-doc').classList.toggle('hidden', pendientes === 0);
 }
 
 function filtrarJustDoc(filtro, btn) {
