@@ -3,426 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Comunicaciones - Iosef Caro</title>
+    <title>Comunicación Integral - Iosef Caro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; padding-bottom: 40px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; font-family: inherit; }
+        .tab-content.active { display: block; }
+        .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; }
         .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* ── Mensajería ── */
-        #msg-sidebar { width: 300px; min-width: 300px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 57px); position: sticky; top: 57px; }
-        #msg-chat-area { flex: 1; display: flex; flex-direction: column; height: calc(100vh - 57px); }
-        .conv-item { padding: 12px 14px; border-bottom: 1px solid #f8fafc; cursor: pointer; transition: background 0.15s; }
-        .conv-item:hover { background: #f8fafc; }
-        .conv-item.active { background: #eff6ff; border-left: 3px solid #2563eb; }
-        .msg-burbuja-wrapper { display: flex; flex-direction: column; max-width: 72%; margin-bottom: 4px; }
-        .msg-burbuja-wrapper.yo   { align-self: flex-end;   align-items: flex-end; }
-        .msg-burbuja-wrapper.otro { align-self: flex-start; align-items: flex-start; }
-        .msg-burbuja { padding: 10px 15px; border-radius: 18px; font-size: 13px; line-height: 1.5; word-break: break-word; }
-        .msg-burbuja.yo   { background: #0f172a; color: white; border-bottom-right-radius: 4px; }
-        .msg-burbuja.otro { background: white; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
-        .msg-meta { font-size: 10px; color: #94a3b8; font-weight: 700; margin-top: 3px; }
-        .etiqueta-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
-        .et-consulta { background: #dbeafe; color: #1e40af; }
-        .et-tramite   { background: #d1fae5; color: #065f46; }
-        .et-urgente   { background: #fee2e2; color: #991b1b; }
-        .et-resuelto  { background: #f1f5f9; color: #64748b; }
-        .nivel-pill { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
-        .nivel-inicial    { background: #fce7f3; color: #9d174d; }
-        .nivel-primario   { background: #dbeafe; color: #1e40af; }
-        .nivel-secundario { background: #d1fae5; color: #065f46; }
-        .input-pro{border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;transition:all .2s;font-size:14px;font-family:inherit;background:white}
-        .input-pro:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
     </style>
 </head>
 <body>
 
-    <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[2000] flex items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
-            <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-bullhorn"></i></div>
-            <h1 class="text-3xl font-black tracking-tighter">Panel de Comunicación</h1>
-            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 mb-8">Iosef Caro</p>
-            <div class="space-y-4">
-                <input type="email" id="log-email" placeholder="Tu email" class="input-pro">
-                <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
-                <button onclick="loginComunicacion()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">ACCEDER</button>
-            </div>
-            <p id="login-err" class="text-red-500 text-xs font-bold mt-4 hidden"></p>
-        </div>
-    </div>
-
-    <div id="app-content" class="hidden">
-        <nav class="bg-white border-b p-3 flex gap-2 sticky top-0 z-50 shadow-sm overflow-x-auto" id="main-nav">
-            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm" style="display:inline-flex">
+    <div id="app-content">
+        <nav class="bg-white border-b p-3 flex gap-2 sticky top-0 z-50 shadow-sm">
+            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 text-sm">
                 <i class="fas fa-bullhorn mr-2"></i>Noticias
             </button>
-            <button onclick="switchTab('calendario')" id="navbtn-calendario" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm">
-                <i class="fas fa-calendar-star mr-2"></i>Calendario
+            <button onclick="switchTab('calendario')" id="navbtn-calendario" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 text-sm">
+                <i class="fas fa-calendar-alt mr-2"></i>Calendario
             </button>
-
-            <div class="ml-auto flex items-center gap-2">
-                <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
-                <button onclick="location.reload()" class="text-rose-500 font-bold p-2 hover:bg-rose-50 rounded-xl transition"><i class="fas fa-power-off"></i></button>
-            </div>
         </nav>
 
         <main class="p-4 max-w-5xl mx-auto">
-
+            
             <section id="tab-noticias" class="tab-content active space-y-6">
-                <div id="form-noticias" class="bg-white p-6 rounded-3xl shadow-sm border">
-                    <h2 id="noticia-form-title" class="font-black text-xl mb-4 text-slate-800">Nueva Publicación</h2>
-                    <input type="hidden" id="noticia-id">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                    <h2 class="font-black text-xl mb-4 text-slate-800">Crear Comunicado</h2>
+                    
                     <div class="grid grid-cols-1 gap-4">
-                        <input type="text" id="not-titulo" placeholder="Asunto o Título" class="input-pro">
-                        <textarea id="not-texto" placeholder="Escribe el cuerpo del mensaje..." class="input-pro h-32"></textarea>
-                        <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Programar Publicación</label>
-                                <input type="datetime-local" id="not-programacion" class="input-pro">
+                        <input type="text" id="not-titulo" placeholder="Asunto / Título" class="input-pro font-bold">
+                        <textarea id="not-texto" placeholder="Cuerpo del mensaje..." class="input-pro h-32"></textarea>
+                        
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Destinatarios (Cursos):</label>
+                            <div id="cursos-noticia" class="flex flex-wrap gap-2">
+                                </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="relative">
+                                <i class="fas fa-image absolute left-3 top-3.5 text-slate-400"></i>
+                                <input type="text" id="not-img" placeholder="URL Imagen" class="input-pro pl-10 text-xs">
                             </div>
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Cursos Destinatarios</label>
-                                <div id="cursos-noticia" class="flex flex-wrap gap-2 mt-1"><span class="text-xs text-slate-400 italic">Cargando cursos...</span></div>
+                            <div class="relative">
+                                <i class="fas fa-video absolute left-3 top-3.5 text-slate-400"></i>
+                                <input type="text" id="not-video" placeholder="URL Video (YouTube/Drive)" class="input-pro pl-10 text-xs">
+                            </div>
+                            <div class="relative">
+                                <i class="fas fa-file-pdf absolute left-3 top-3.5 text-slate-400"></i>
+                                <input type="text" id="not-pdf" placeholder="URL PDF / Documento" class="input-pro pl-10 text-xs">
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
-                              <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📷 Imagen / Foto</label>
-                              <div class="flex gap-2 items-center">
-                                <input type="file" id="not-img-file" accept="image/*" class="hidden" onchange="previewMedia('img',this)">
-                                <button type="button" onclick="document.getElementById('not-img-file').click()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0"><i class="fas fa-upload mr-1"></i>Subir imagen</button>
-                                <input type="text" id="not-img" placeholder="o pegar URL de imagen" class="input-pro text-xs" style="font-size:11px">
-                              </div>
-                              <div id="prev-img" class="mt-2 hidden"><img id="prev-img-el" class="w-full h-28 object-cover rounded-xl" src=""></div>
-                              <div id="upload-prog-img" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-img" class="bg-blue-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-img" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
-                            </div>
-                            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
-                              <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">🎬 Video</label>
-                              <div class="flex gap-2 items-center">
-                                <input type="file" id="not-video-file" accept="video/*" class="hidden" onchange="previewMedia('video',this)">
-                                <button type="button" onclick="document.getElementById('not-video-file').click()" class="bg-purple-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0"><i class="fas fa-video mr-1"></i>Subir video</button>
-                                <input type="text" id="not-video" placeholder="o URL YouTube/Vimeo" class="input-pro text-xs" style="font-size:11px">
-                              </div>
-                              <div id="prev-video" class="mt-2 hidden"><video id="prev-video-el" class="w-full h-28 object-cover rounded-xl" controls src=""></video></div>
-                              <div id="upload-prog-video" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-video" class="bg-purple-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-video" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
-                            </div>
-                            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
-                              <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📄 Archivo / PDF</label>
-                              <div class="flex gap-2 items-center">
-                                <input type="file" id="not-pdf-file" accept=".pdf,.doc,.docx,.xls,.xlsx" class="hidden" onchange="previewMedia('pdf',this)">
-                                <button type="button" onclick="document.getElementById('not-pdf-file').click()" class="bg-red-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex-shrink-0"><i class="fas fa-file-pdf mr-1"></i>Subir archivo</button>
-                                <input type="text" id="not-pdf" placeholder="o pegar URL de PDF/archivo" class="input-pro text-xs" style="font-size:11px">
-                              </div>
-                              <p id="prev-pdf-nombre" class="text-xs font-bold text-red-600 mt-1 hidden"></p>
-                              <div id="upload-prog-pdf" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-pdf" class="bg-red-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-pdf" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
-                            </div>
-                            <input type="text" id="not-link" placeholder="🔗 Enlace externo (opcional)" class="input-pro text-sm">
+
+                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                            <label class="text-[10px] font-black uppercase text-blue-500 block mb-1">Programar Publicación:</label>
+                            <input type="datetime-local" id="not-programar" class="input-pro">
+                            <p class="text-[9px] text-blue-400 mt-1 italic">* Si no seleccionas fecha, se publicará al instante.</p>
                         </div>
-                        <div class="flex gap-2 mt-2">
-                            <button onclick="guardarNoticia()" id="btn-noticia" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">Publicar y Enviar Mail</button>
-                            <button onclick="resetFormNoticia()" id="btn-cancel-noticia" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">Cancelar</button>
-                        </div>
+
+                        <button onclick="guardarNoticia()" class="bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700">Publicar Comunicado</button>
                     </div>
                 </div>
-                <div>
-                    <h3 class="font-black text-lg text-slate-800 ml-2 mb-4">Historial de Publicaciones</h3>
-                    <div id="lista-noticias" class="space-y-4"></div>
-                </div>
+                <div id="lista-noticias" class="space-y-4"></div>
             </section>
 
             <section id="tab-calendario" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border">
-                    <h2 id="cal-form-title" class="font-black text-xl mb-4 text-slate-800">Agendar al Calendario</h2>
-                    <input type="hidden" id="cal-id">
+                    <h2 class="font-black text-xl mb-4 text-slate-800">Nuevo Evento de Calendario</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2"><input type="text" id="cal-titulo" placeholder="Título del evento" class="input-pro"></div>
-                        <textarea id="cal-desc" placeholder="Breve descripción..." class="input-pro md:col-span-2 h-20"></textarea>
+                        <input type="text" id="cal-titulo" placeholder="Nombre del evento (ej: Examen Historia)" class="input-pro md:col-span-2">
                         <input type="date" id="cal-fecha" class="input-pro">
                         <select id="cal-tipo" class="input-pro">
                             <option value="evento">Evento General</option>
                             <option value="examen">Examen / Entrega</option>
-                            <option value="feriado">Feriado / Sin Actividad</option>
+                            <option value="feriado">Feriado / Sin clases</option>
                         </select>
-                        <div class="md:col-span-2">
-                            <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Visible para:</label>
-                            <div id="cursos-calendario" class="flex flex-wrap gap-2 mt-1"></div>
+                        
+                        <div class="md:col-span-2 bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Visible para los cursos:</label>
+                            <div id="cursos-calendario" class="flex flex-wrap gap-2">
+                                </div>
                         </div>
-                        <div class="md:col-span-2 flex gap-2">
-                            <button onclick="guardarCalendario()" class="flex-1 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700">Guardar Evento</button>
-                            <button onclick="resetFormCalendario()" id="btn-cancel-cal" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">X</button>
-                        </div>
+
+                        <button onclick="guardarCalendario()" class="md:col-span-2 bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700">Agregar al Calendario</button>
                     </div>
                 </div>
                 <div id="lista-calendario" class="space-y-3"></div>
             </section>
+
         </main>
     </div>
 
     <script>
-        // Inicializar Firebase (Asegúrate de tener firebase.initializeApp(config) antes de esto)
-        // const db = firebase.firestore(); 
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
+            authDomain: "app-iosefcaro.firebaseapp.com",
+            projectId: "app-iosefcaro",
+            storageBucket: "app-iosefcaro.firebasestorage.app",
+            messagingSenderId: "651320124288",
+            appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
+        };
 
-        // Variables de estado global
-        let db; // Asegúrate de asignar tu instancia de firestore aquí
-        let staffEmail = "";
-        let staffNombre = "";
-        let staffRol = "";
-        let staffNiveles = [];
-        let esSecOAdmin = false; // Define la regla para secretaría o admin
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // Navegación entre Pestañas
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-50', 'text-blue-600');
-                btn.classList.add('text-slate-500');
-            });
-            
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-            const activeBtn = document.getElementById(`navbtn-${tabId}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-500');
-                activeBtn.classList.add('bg-blue-50', 'text-blue-600');
-            }
-        }
-
-        // ═══ LOGIN ═══
-        async function loginComunicacion() {
-            const email = document.getElementById('log-email').value.toLowerCase().trim();
-            const pass  = document.getElementById('log-pass').value;
-            const errEl = document.getElementById('login-err');
-            errEl.classList.add('hidden');
-
-            if (!email || !pass) { errEl.textContent = 'Ingresá tus datos.'; errEl.classList.remove('hidden'); return; }
-
-            // Superadmin
-            if (email === 'uriel.bacher@gmail.com' && pass === 'Gallardo10') {
-                staffEmail = email; staffNombre = 'Administrador'; staffRol = 'admin'; staffNiveles = ['inicial','primario','secundario'];
-                iniciarApp(); return;
-            }
-
-            try {
-                const doc = await db.collection('usuarios').doc(email).get();
-                if (!doc.exists) { errEl.textContent = 'Usuario no encontrado.'; errEl.classList.remove('hidden'); return; }
-                const data = doc.data();
-                if (data.pass !== pass) { errEl.textContent = 'Contraseña incorrecta.'; errEl.classList.remove('hidden'); return; }
-                const rolesPermitidos = ['admin','comunicacion'];
-                if (!rolesPermitidos.includes(data.rol)) { errEl.textContent = 'Sin permisos para este panel.'; errEl.classList.remove('hidden'); return; }
-                staffEmail  = email;
-                staffNombre = data.nombre;
-                staffRol    = data.rol;
-                staffNiveles = data.niveles || [];
-                iniciarApp();
-            } catch(e) { errEl.textContent = 'Error de conexión.'; errEl.classList.remove('hidden'); }
-        }
-
-        function iniciarApp() {
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('app-content').classList.remove('hidden');
-            document.getElementById('user-label').textContent = staffNombre;
-            document.getElementById('user-label').classList.remove('hidden');
-
-            // Solo admin y comunicacion ven publicar noticias
-            const puedePublicar = ['admin','comunicacion'].includes(staffRol);
-            if (!puedePublicar) document.getElementById('form-noticias').classList.add('hidden');
-
-            inicializarApp();
-            // Set default datetime for call form
-            const callFecha = document.getElementById('call-fecha');
-            if(callFecha){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());callFecha.value=now.toISOString().slice(0,16);}
-            if (esSecOAdmin && typeof escucharConvsSec === "function") escucharConvsSec();
-        }
-
-        function inicializarApp() {
+        // Al iniciar
+        window.onload = () => {
             cargarCursos();
             cargarNoticias();
-            cargarEventosCalendario();
-        }
+            cargarCalendario();
+        };
 
-        // ═══ CURSOS ═══
         async function cargarCursos() {
-            try {
-                const snap = await db.collection('cursos').get();
-                const cursos = snap.docs.map(doc => ({ nombre: doc.data().nombre, nivel: doc.data().nivel })).sort((a,b) => a.nombre.localeCompare(b.nombre));
-                const contNot = document.getElementById('cursos-noticia');
-                const contCal = document.getElementById('cursos-calendario');
-                [contNot, contCal].forEach(cont => {
-                    if (!cont) return;
-                    cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="all-${cont.id}" onchange="toggleTodos(this,'${cont.id}')"> TODOS</label>`;
-                    cursos.forEach(c => {
-                        cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c.nombre}"> ${c.nombre}</label>`;
-                    });
+            const snap = await db.collection('cursos').get();
+            const cursos = snap.docs.map(doc => doc.data().nombre).sort();
+            
+            const renderCursos = (containerId, prefix) => {
+                const cont = document.getElementById(containerId);
+                cont.innerHTML = `
+                    <label class="border px-3 py-1.5 rounded-xl text-[10px] font-black cursor-pointer hover:bg-white flex items-center gap-1">
+                        <input type="checkbox" onchange="document.querySelectorAll('.check-${prefix}').forEach(c=>c.checked=this.checked)"> TODOS
+                    </label>
+                `;
+                cursos.forEach(c => {
+                    cont.innerHTML += `
+                        <label class="border px-3 py-1.5 rounded-xl text-[10px] font-black cursor-pointer hover:bg-white flex items-center gap-1">
+                            <input type="checkbox" class="check-${prefix}" value="${c}"> ${c}
+                        </label>
+                    `;
                 });
-            } catch(e) { console.error('Error cursos:', e); document.getElementById('cursos-noticia').innerHTML = '<span class="text-xs text-rose-500">Error cargando cursos: ' + e.message + '</span>'; }
+            };
+
+            renderCursos('cursos-noticia', 'not');
+            renderCursos('cursos-calendario', 'cal');
         }
 
-        function toggleTodos(source, contId) { 
-            document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked); 
+        async function guardarNoticia() {
+            const titulo = document.getElementById('not-titulo').value;
+            const texto = document.getElementById('not-texto').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-not:checked')).map(cb => cb.value);
+            const fechaProg = document.getElementById('not-programar').value;
+
+            if (!titulo || seleccionados.length === 0) return alert("Falta título o destinatarios.");
+
+            const data = {
+                titulo, texto,
+                curso: seleccionados,
+                fechaCreacion: new Date().toISOString(),
+                // Si no hay fecha programada, usa la actual
+                fechaPublicacion: fechaProg ? new Date(fechaProg).toISOString() : new Date().toISOString(),
+                adjuntos: {
+                    img: document.getElementById('not-img').value,
+                    video: document.getElementById('not-video').value,
+                    pdf: document.getElementById('not-pdf').value
+                }
+            };
+
+            await db.collection('comunicados').add(data);
+            alert("Enviado correctamente.");
+            location.reload();
         }
 
-        // Helper para eliminar documentos genéricos
-        async function eliminarDoc(coleccion, id) {
-            if(!confirm("¿Estás seguro de que deseas eliminar este elemento?")) return;
-            try {
-                await db.collection(coleccion).doc(id).delete();
-                alert("Eliminado correctamente.");
-                location.reload();
-            } catch(e) { alert("Error al eliminar: " + e.message); }
+        async function guardarCalendario() {
+            const titulo = document.getElementById('cal-titulo').value;
+            const fecha = document.getElementById('cal-fecha').value;
+            const seleccionados = Array.from(document.querySelectorAll('.check-cal:checked')).map(cb => cb.value);
+
+            if (!titulo || !fecha || seleccionados.length === 0) return alert("Completa todos los campos.");
+
+            await db.collection('eventos').add({
+                titulo, fecha,
+                tipo: document.getElementById('cal-tipo').value,
+                tag: seleccionados
+            });
+            location.reload();
         }
 
-        // Placeholder para previsualización multimedia
-        function previewMedia(type, input) {
-            console.log(`Previsualizando ${type} para el archivo seleccionado.`);
-        }
-
-        // ═══ NOTICIAS ═══
+        // --- Funciones de Carga de Listas y Tabs ---
         async function cargarNoticias() {
-            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').limit(10).get();
             const cont = document.getElementById('lista-noticias');
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const n = doc.data();
-                const puedeEditar = ['admin','comunicacion'].includes(staffRol);
-                cont.innerHTML += `<div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col gap-3">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="font-bold text-slate-800">${n.titulo}</h4>
-                            <p class="text-xs text-slate-400">${new Date(n.fechaCreacion).toLocaleString('es-AR')}</p>
-                        </div>
-                        ${puedeEditar ? `<div class="flex gap-2">
-                            <button onclick="editarNoticia('${doc.id}')" class="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><i class="fas fa-edit"></i></button>
-                            <button onclick="eliminarDoc('comunicados','${doc.id}')" class="text-rose-400 p-2 hover:bg-rose-50 rounded-lg"><i class="fas fa-trash"></i></button>
-                        </div>` : ''}
-                    </div>
-                    <p class="text-sm text-slate-600 line-clamp-2">${n.texto}</p>
-                    <div class="flex flex-wrap gap-1">
-                        ${n.curso ? n.curso.map(c => `<span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded text-slate-500">${c}</span>`).join('') : ''}
-                    </div>
+                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border text-sm">
+                    <div class="flex justify-between font-bold"><span>${n.titulo}</span><button onclick="eliminar('comunicados','${doc.id}')" class="text-rose-400"><i class="fas fa-trash"></i></button></div>
+                    <div class="text-[10px] text-slate-400">Para: ${n.curso.join(', ')}</div>
                 </div>`;
             });
         }
 
-        async function guardarNoticia() {
-            const id    = document.getElementById('noticia-id').value;
-            const titulo = document.getElementById('not-titulo').value;
-            const textVal  = document.getElementById('not-texto').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-            const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-            if (!titulo || !textVal || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
-            const btn = document.getElementById('btn-noticia');
-            btn.disabled = true; btn.innerText = "Procesando...";
-            const data = {
-                titulo, texto: textVal, curso: seleccionados,
-                programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-                adjuntos: { img: document.getElementById('not-img').value, video: document.getElementById('not-video').value, pdf: document.getElementById('not-pdf').value, link: document.getElementById('not-link').value },
-                fechaCreacion: new Date().toISOString()
-            };
-            try {
-                if (id) { 
-                    await db.collection('comunicados').doc(id).update(data); 
-                    alert("Publicación actualizada."); 
-                } else { 
-                    await db.collection('comunicados').add(data); 
-                    if(typeof enviarAvisosPorEmail === "function") {
-                        await enviarAvisosPorEmail(titulo, textVal, seleccionados, esTodos); 
-                    }
-                    alert("Publicado y mails enviados."); 
-                }
-                location.reload();
-            } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
-        }
-
-        async function editarNoticia(id) {
-            const doc = await db.collection('comunicados').doc(id).get();
-            const n = doc.data();
-            document.getElementById('noticia-id').value = id;
-            document.getElementById('not-titulo').value  = n.titulo;
-            document.getElementById('not-texto').value   = n.texto;
-            document.getElementById('not-img').value     = n.adjuntos?.img   || "";
-            document.getElementById('not-video').value   = n.adjuntos?.video || "";
-            document.getElementById('not-pdf').value     = n.adjuntos?.pdf   || "";
-            document.getElementById('not-link').value    = n.adjuntos?.link  || "";
-            document.querySelectorAll('.check-cursos-noticia').forEach(cb => { cb.checked = n.curso && n.curso.includes(cb.value); });
-            document.getElementById('noticia-form-title').innerText = "Editando Publicación";
-            document.getElementById('btn-cancel-noticia').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function resetFormNoticia() {
-            document.getElementById('noticia-id').value = "";
-            document.getElementById('not-titulo').value = "";
-            document.getElementById('not-texto').value  = "";
-            document.querySelectorAll('.check-cursos-noticia').forEach(cb => cb.checked = false);
-            document.getElementById('noticia-form-title').innerText = "Nueva Publicación";
-            document.getElementById('btn-cancel-noticia').classList.add('hidden');
-        }
-
-        // ═══ CALENDARIO ═══
-        async function cargarEventosCalendario() {
+        async function cargarCalendario() {
             const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
             const cont = document.getElementById('lista-calendario');
             cont.innerHTML = "";
             snap.forEach(doc => {
                 const e = doc.data();
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
-                    <div class="flex-1">
-                        <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
-                        <h4 class="font-bold text-slate-800">${e.titulo}</h4>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="editarCalendario('${doc.id}')" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
-                        <button onclick="eliminarDoc('eventos','${doc.id}')"   class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
-                    </div>
+                cont.innerHTML += `<div class="bg-white p-3 rounded-xl border flex justify-between items-center text-xs">
+                    <div><b>${e.fecha}</b> - ${e.titulo} <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded ml-2">${e.tag.join(', ')}</span></div>
+                    <button onclick="eliminar('eventos','${doc.id}')" class="text-slate-300"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
         }
 
-        async function guardarCalendario() {
-            const id = document.getElementById('cal-id').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
-            const data = {
-                titulo: document.getElementById('cal-titulo').value,
-                descripcion: document.getElementById('cal-desc').value,
-                fecha: document.getElementById('cal-fecha').value,
-                tipo: document.getElementById('cal-tipo').value,
-                tag: seleccionados
-            };
-            if (!data.titulo || !data.fecha) return alert("Título y Fecha son obligatorios.");
-            if (id) await db.collection('eventos').doc(id).update(data);
-            else    await db.collection('eventos').add(data);
-            location.reload();
+        async function eliminar(col, id) {
+            if(confirm("¿Eliminar?")) { await db.collection(col).doc(id).delete(); location.reload(); }
         }
 
-        async function editarCalendario(id) {
-            const doc = await db.collection('eventos').doc(id).get();
-            const e = doc.data();
-            document.getElementById('cal-id').value    = id;
-            document.getElementById('cal-titulo').value = e.titulo;
-            document.getElementById('cal-desc').value   = e.descripcion;
-            document.getElementById('cal-fecha').value  = e.fecha;
-            document.getElementById('cal-tipo').value   = e.tipo;
-            document.querySelectorAll('.check-cursos-calendario').forEach(cb => { cb.checked = e.tag && e.tag.includes(cb.value); });
-            document.getElementById('cal-form-title').innerText = "Editando Evento";
-            document.getElementById('btn-cancel-cal').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function resetFormCalendario() {
-            document.getElementById('cal-id').value = "";
-            document.getElementById('cal-titulo').value = "";
-            document.getElementById('cal-desc').value = "";
-            document.getElementById('cal-fecha').value = "";
-            document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
-            document.getElementById('btn-cancel-cal').classList.add('hidden');
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('bg-blue-50', 'text-slate-500'));
+            document.getElementById('navbtn-' + id).classList.replace('text-slate-500', 'bg-blue-50');
         }
     </script>
 </body>
