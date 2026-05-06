@@ -64,6 +64,54 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
   </div>
 </div>
 
+<!-- Modal editar staff -->
+<div id="modal-staff" style="position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px">
+  <div class="bg-white rounded-[2rem] w-full max-w-md p-7 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-black text-xl" id="modal-staff-titulo">Editar usuario</h3>
+      <button onclick="cerrarModalStaff()" class="text-slate-400 text-2xl">&times;</button>
+    </div>
+    <div class="space-y-3">
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Email</label><p id="staff-edit-email" class="font-bold text-slate-600 text-sm mt-1 bg-slate-50 p-2 rounded-xl"></p></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Nombre</label><input type="text" id="staff-edit-nombre" class="input-pro mt-1"></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Nueva contraseña (dejar vacío para no cambiar)</label><input type="password" id="staff-edit-pass" class="input-pro mt-1" placeholder="••••••••"></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Rol</label>
+        <select id="staff-edit-rol" class="input-pro mt-1">
+          <option value="admin">Admin Total</option>
+          <option value="director">Director — solo lectura</option>
+          <option value="comunicacion">Comunicación</option>
+          <option value="secretaria_inicial">Secretaría — Inicial</option>
+          <option value="secretaria_primario">Secretaría — Primario</option>
+          <option value="secretaria_secundario">Secretaría — Secundario</option>
+          <option value="eoe">EOE</option>
+        </select>
+      </div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Niveles asignados</label>
+        <div class="flex gap-3 flex-wrap">
+          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="inicial"> Inicial</label>
+          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="primario"> Primario</label>
+          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="secundario"> Secundario</label>
+        </div>
+      </div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Permisos adicionales</label>
+        <div class="flex flex-wrap gap-2">
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="ver_stats"> Stats</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="ver_notas"> Notas</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="ver_legajos"> Legajos EOE</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="publicar_comunicados"> Publicar comunicados</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="editar_alumnos"> Editar alumnos</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="exportar_datos"> Exportar</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_comunicados"> Comunicados</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_calendario"> Calendario</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_mensajes"> Mensajes</label>
+          <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer bg-slate-50 px-2 py-1.5 rounded-lg"><input type="checkbox" class="perm-edit-check" value="acceso_llamadas"> Llamadas</label>
+        </div>
+      </div>
+      <button onclick="guardarEdicionStaff()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-2"><i class="fas fa-save mr-2"></i>GUARDAR CAMBIOS</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal perfil alumno -->
 <div id="modal-alumno">
   <div class="modal-box">
@@ -460,7 +508,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         </select>
         <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase ml-auto">Cargando...</span>
       </div>
-      <p class="text-xs text-slate-400 px-1"><i class="fas fa-info-circle mr-1"></i>Tocá cualquier alumno para editar su perfil completo (contacto de emergencia, autorización de imagen, datos médicos).</p>
+      <p class="text-xs text-slate-400 px-1"><i class="fas fa-info-circle mr-1"></i>Tocá el nombre para editar el perfil. Seleccioná con la casilla para eliminar múltiples a la vez.</p>
+      <div class="flex items-center gap-3 px-1">
+        <input type="checkbox" id="select-all-alu" onclick="toggleSeleccionarTodoAlumnos(this)" class="w-4 h-4 accent-rose-600">
+        <label for="select-all-alu" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos</label>
+        <button id="btn-eliminar-masivo-alu" onclick="eliminarAlumnosSeleccionados()" class="hidden bg-rose-600 text-white px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1"><i class="fas fa-trash-alt"></i> Eliminar (<span id="count-alu-sel">0</span>)</button>
+      </div>
       <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
     </section>
 
@@ -552,9 +605,22 @@ function autorizar(){
   refrescarTodo();
 }
 window.onload=()=>{
+  // Sesión propia del admin
   if(sessionStorage.getItem('iosef_admin_session')){
-    adminEmail=sessionStorage.getItem('iosef_admin_email')||'admin';
-    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||'Admin';
+    adminEmail=sessionStorage.getItem('iosef_admin_email')||sessionStorage.getItem('iosef_email')||'admin';
+    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+    return;
+  }
+  // Sesión desde index.html
+  const em=sessionStorage.getItem('iosef_email');
+  const rol=sessionStorage.getItem('iosef_rol');
+  const nm=sessionStorage.getItem('iosef_nombre');
+  if(em&&(rol==='admin'||rol==='director')){
+    adminEmail=em;adminNombre=nm||em;
+    sessionStorage.setItem('iosef_admin_session','admin');
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('admin-content').classList.remove('hidden');
     refrescarTodo();
@@ -1168,12 +1234,53 @@ async function eliminarDoc(col,id){
     refrescarTodo();
   }
 }
+let staffEditandoId=null;
+async function abrirEditarStaff(id){
+  staffEditandoId=id;
+  const doc=await db.collection('usuarios').doc(id).get();if(!doc.exists)return;
+  const u=doc.data();
+  document.getElementById('staff-edit-email').textContent=id;
+  document.getElementById('staff-edit-nombre').value=u.nombre||'';
+  document.getElementById('staff-edit-pass').value='';
+  document.getElementById('staff-edit-rol').value=u.rol||'';
+  document.querySelectorAll('.staff-edit-nivel-check').forEach(cb=>cb.checked=(u.niveles||[]).includes(cb.value));
+  document.querySelectorAll('.perm-edit-check').forEach(cb=>cb.checked=(u.permisos||[]).includes(cb.value));
+  document.getElementById('modal-staff').style.display='flex';
+}
+async function guardarEdicionStaff(){
+  if(!staffEditandoId)return;
+  const nombre=document.getElementById('staff-edit-nombre').value.trim();
+  const pass=document.getElementById('staff-edit-pass').value.trim();
+  const rol=document.getElementById('staff-edit-rol').value;
+  const niveles=Array.from(document.querySelectorAll('.staff-edit-nivel-check:checked')).map(c=>c.value);
+  const permisos=Array.from(document.querySelectorAll('.perm-edit-check:checked')).map(c=>c.value);
+  const data={nombre,rol,niveles,permisos};if(pass)data.pass=pass;
+  await db.collection('usuarios').doc(staffEditandoId).update(data);
+  registrarLog('editar',`Staff editado: ${nombre} (${staffEditandoId})`,'staff');
+  alert('✅ Usuario actualizado.');cerrarModalStaff();cargarStaff();
+}
+function cerrarModalStaff(){document.getElementById('modal-staff').style.display='none';staffEditandoId=null;}
+document.getElementById('modal-staff').addEventListener('click',function(e){if(e.target===this)cerrarModalStaff();});
+
 async function eliminarStaff(id,nombre){
   if(confirm(`¿Eliminar usuario ${nombre}?`)){
     await db.collection('usuarios').doc(id).delete();
     registrarLog('eliminar',`Usuario staff eliminado: ${nombre} (${id})`,'eliminar');
     cargarStaff();
   }
+}
+function actualizarContAlu(){const sel=document.querySelectorAll('.alu-checkbox:checked').length;document.getElementById('count-alu-sel').textContent=sel;document.getElementById('btn-eliminar-masivo-alu').classList.toggle('hidden',sel===0);}
+function toggleSeleccionarTodoAlumnos(master){document.querySelectorAll('.alu-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContAlu();}
+async function eliminarAlumnosSeleccionados(){
+  const sel=Array.from(document.querySelectorAll('.alu-checkbox:checked')).map(cb=>cb.value);if(!sel.length)return;
+  if(!confirm(`¿Eliminar ${sel.length} alumno/s seleccionado/s?
+
+Sus fichas serán eliminadas. Las notas históricas se conservan.`))return;
+  const batch=db.batch();sel.forEach(id=>batch.delete(db.collection('alumnos').doc(id)));
+  await batch.commit();
+  registrarLog('eliminar',`${sel.length} alumnos eliminados en bloque`,'alumno');
+  document.getElementById('btn-eliminar-masivo-alu').classList.add('hidden');
+  cargarAlumnosFiltrados();
 }
 function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
 function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
