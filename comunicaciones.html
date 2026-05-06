@@ -39,6 +39,8 @@
         .nivel-inicial    { background: #fce7f3; color: #9d174d; }
         .nivel-primario   { background: #dbeafe; color: #1e40af; }
         .nivel-secundario { background: #d1fae5; color: #065f46; }
+        .input-pro{border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;transition:all .2s;font-size:14px;font-family:inherit;background:white}
+        .input-pro:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
     </style>
 </head>
 <body>
@@ -71,6 +73,9 @@
             <button onclick="switchTab('mensajes')" id="navbtn-mensajes" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
                 <i class="fas fa-comments mr-2"></i>Mensajes
                 <span id="badge-msg-sec" class="hidden ml-1 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">!</span>
+            </button>
+            <button onclick="switchTab('llamadas')" id="navbtn-llamadas" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm hidden">
+                <i class="fas fa-phone-alt mr-2"></i>Llamadas
             </button>
             <div class="ml-auto flex items-center gap-2">
                 <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
@@ -200,6 +205,81 @@
                 </div>
             </section>
 
+        <!-- ════ REGISTRO DE LLAMADAS ════ -->
+        <section id="tab-llamadas" class="tab-content space-y-6">
+            <h2 class="text-2xl font-black tracking-tight">Registro de Llamadas</h2>
+            <p class="text-slate-400 text-xs -mt-3">Registrá cada contacto con una familia para tener historial completo.</p>
+
+            <!-- Formulario nueva llamada -->
+            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                <h3 class="font-black text-base flex items-center gap-2"><i class="fas fa-plus-circle text-blue-500"></i> Nueva llamada / contacto</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Familia / Apellido</label>
+                        <input type="text" id="call-familia" placeholder="Buscar familia..." class="input-pro mt-1" oninput="buscarFamiliaCall(this.value)">
+                        <div id="call-sugerencias" class="mt-1 space-y-1"></div>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Fecha y hora</label>
+                        <input type="datetime-local" id="call-fecha" class="input-pro mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de contacto</label>
+                        <select id="call-tipo" class="input-pro mt-1">
+                            <option value="llamada_entrante">Llamada entrante</option>
+                            <option value="llamada_saliente">Llamada saliente</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="presencial">Presencial</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Resultado</label>
+                        <select id="call-resultado" class="input-pro mt-1">
+                            <option value="comunicado">Comunicado exitosamente</option>
+                            <option value="no_contesta">No contesta</option>
+                            <option value="pendiente">Pendiente de respuesta</option>
+                            <option value="buzon">Dejé mensaje en buzón</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Motivo / Detalle</label>
+                        <textarea id="call-motivo" placeholder="Describí el motivo y lo que se habló..." class="input-pro mt-1 h-20 resize-none"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Alumno relacionado (opcional)</label>
+                        <input type="text" id="call-alumno" placeholder="Nombre del alumno" class="input-pro mt-1">
+                    </div>
+                </div>
+                <button onclick="guardarLlamada()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">
+                    <i class="fas fa-save mr-2"></i> REGISTRAR CONTACTO
+                </button>
+            </div>
+
+            <!-- Filtros y búsqueda -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <input type="text" id="call-search" placeholder="Buscar por familia o alumno..." class="input-pro" style="max-width:250px" oninput="filtrarLlamadas()">
+                <select id="call-filter-tipo" onchange="filtrarLlamadas()" class="input-pro" style="max-width:180px">
+                    <option value="">Todos los tipos</option>
+                    <option value="llamada_entrante">Entrantes</option>
+                    <option value="llamada_saliente">Salientes</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="presencial">Presencial</option>
+                </select>
+                <select id="call-filter-resultado" onchange="filtrarLlamadas()" class="input-pro" style="max-width:200px">
+                    <option value="">Todos los resultados</option>
+                    <option value="comunicado">Comunicado</option>
+                    <option value="no_contesta">No contesta</option>
+                    <option value="pendiente">Pendiente</option>
+                </select>
+            </div>
+
+            <!-- Lista de llamadas -->
+            <div id="lista-llamadas" class="space-y-3">
+                <p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+            </div>
+        </section>
+
         </main>
     </div>
 
@@ -275,13 +355,20 @@
 
             // Solo secretarías y admin ven tab mensajes
             const esSecOAdmin = staffRol === 'admin' || staffRol.startsWith('secretaria_');
-            if (esSecOAdmin) document.getElementById('navbtn-mensajes').classList.remove('hidden');
+            if (esSecOAdmin) {
+                document.getElementById('navbtn-mensajes').classList.remove('hidden');
+                document.getElementById('navbtn-llamadas').classList.remove('hidden');
+                cargarLlamadas();
+            }
 
             // Solo admin y comunicacion ven publicar noticias
             const puedePublicar = ['admin','comunicacion'].includes(staffRol);
             if (!puedePublicar) document.getElementById('form-noticias').classList.add('hidden');
 
             inicializarApp();
+            // Set default datetime for call form
+            const callFecha = document.getElementById('call-fecha');
+            if(callFecha){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());callFecha.value=now.toISOString().slice(0,16);}
             if (esSecOAdmin) escucharConvsSec();
         }
 
@@ -625,8 +712,98 @@
         }
 
         document.getElementById('log-pass').addEventListener('keydown', e => { if (e.key === 'Enter') loginComunicacion(); });
+
+        // ════ REGISTRO DE LLAMADAS ════
+        let todasLasLlamadas = [];
+
+        async function cargarLlamadas() {
+            const cont = document.getElementById('lista-llamadas');
+            let query = db.collection('registro_llamadas').orderBy('fecha', 'desc').limit(100);
+            // Secretaria solo ve su nivel
+            const snap = await query.get();
+            todasLasLlamadas = [];
+            snap.forEach(doc => todasLasLlamadas.push({ id: doc.id, ...doc.data() }));
+            filtrarLlamadas();
+        }
+
+        function filtrarLlamadas() {
+            const busq    = (document.getElementById('call-search')?.value || '').toLowerCase();
+            const tipo    = document.getElementById('call-filter-tipo')?.value || '';
+            const result  = document.getElementById('call-filter-resultado')?.value || '';
+            const lista   = todasLasLlamadas.filter(l => {
+                if (tipo   && l.tipo      !== tipo)   return false;
+                if (result && l.resultado !== result) return false;
+                if (busq && !((l.familia||'').toLowerCase().includes(busq) || (l.alumno||'').toLowerCase().includes(busq) || (l.motivo||'').toLowerCase().includes(busq))) return false;
+                return true;
+            });
+            const cont = document.getElementById('lista-llamadas');
+            if (!lista.length) { cont.innerHTML = '<p class="text-slate-400 text-sm text-center py-6">Sin registros.</p>'; return; }
+            const iconos = { llamada_entrante:'📞', llamada_saliente:'📲', whatsapp:'💬', presencial:'🤝', email:'📧' };
+            const colResult = { comunicado:'bg-emerald-100 text-emerald-700', no_contesta:'bg-rose-100 text-rose-600', pendiente:'bg-amber-100 text-amber-700', buzon:'bg-slate-100 text-slate-600' };
+            cont.innerHTML = lista.map(l => {
+                const d = l.fecha ? new Date(l.fecha).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+                return `<div class="bg-white p-5 rounded-2xl border shadow-sm">
+                    <div class="flex items-start justify-between flex-wrap gap-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">${iconos[l.tipo]||'📞'}</span>
+                            <div>
+                                <p class="font-black text-slate-900">${l.familia||'Sin nombre'}</p>
+                                ${l.alumno?`<p class="text-[10px] text-slate-400 font-bold">Alumno: ${l.alumno}</p>`:''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${colResult[l.resultado]||'bg-slate-100 text-slate-600'}">${l.resultado?.replace('_',' ')}</span>
+                            <span class="text-[9px] text-slate-400 font-bold">${d}</span>
+                        </div>
+                    </div>
+                    ${l.motivo ? `<p class="text-sm text-slate-600 mt-2">${l.motivo}</p>` : ''}
+                    <p class="text-[9px] text-slate-400 mt-2 font-bold">Registrado por: ${l.staffNombre || l.staffEmail}</p>
+                </div>`;
+            }).join('');
+        }
+
+        async function guardarLlamada() {
+            const familia  = document.getElementById('call-familia').value.trim();
+            const fecha    = document.getElementById('call-fecha').value;
+            const tipo     = document.getElementById('call-tipo').value;
+            const resultado= document.getElementById('call-resultado').value;
+            const motivo   = document.getElementById('call-motivo').value.trim();
+            const alumno   = document.getElementById('call-alumno').value.trim();
+            if (!familia) return alert('Ingresá el nombre de la familia.');
+            if (!fecha)   return alert('Ingresá la fecha y hora.');
+            await db.collection('registro_llamadas').add({
+                familia, fecha, tipo, resultado, motivo, alumno: alumno || null,
+                staffEmail, staffNombre, staffRol,
+                creadoEn: new Date().toISOString()
+            });
+            alert('✅ Contacto registrado.');
+            document.getElementById('call-familia').value = '';
+            document.getElementById('call-fecha').value   = '';
+            document.getElementById('call-motivo').value  = '';
+            document.getElementById('call-alumno').value  = '';
+            await cargarLlamadas();
+        }
+
+        async function buscarFamiliaCall(q) {
+            const cont = document.getElementById('call-sugerencias');
+            if (q.length < 2) { cont.innerHTML = ''; return; }
+            const snap = await db.collection('usuarios').where('rol','==','familia').get();
+            const resultados = [];
+            snap.forEach(doc => { if (doc.data().nombre.toLowerCase().includes(q.toLowerCase())) resultados.push(doc.data().nombre); });
+            cont.innerHTML = resultados.slice(0,5).map(n =>
+                `<div onclick="document.getElementById('call-familia').value='${n}';document.getElementById('call-sugerencias').innerHTML=''" class="bg-white border p-2 rounded-xl text-sm font-bold cursor-pointer hover:bg-slate-50">${n}</div>`
+            ).join('');
+        }
+
+        // Actualizar switchTab para llamadas
+        const _origSwitchTab = switchTab;
+        function switchTab(tabId) {
+            _origSwitchTab(tabId);
+            if (tabId === 'llamadas') cargarLlamadas();
+        }
         document.getElementById('modal-nueva-sec').addEventListener('click', function(e) { if (e.target === this) cerrarModalNuevaSec(); });
     </script>
 </body>
 </html>
+
 
