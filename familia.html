@@ -339,8 +339,8 @@ let iosiHistorial=[],iosiAprendido=[];
 if('serviceWorker' in navigator)navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
 
 // ─── LOGIN ───
-async function login(){
-  userEmail=document.getElementById('login-email').value.toLowerCase().trim();
+async function login(emailOverride){
+  userEmail=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
   const doc=await db.collection('usuarios').doc(userEmail).get();
   if(!doc.exists){alert("Acceso denegado.");return;}
   userData=doc.data();
@@ -530,19 +530,33 @@ async function cargarAgenda(){
 }
 
 function renderCalendario(){
-  const y=calMesActual.getFullYear(),m=calMesActual.getMonth();
-  document.getElementById('cal-mes-label').textContent=new Date(y,m,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
-  const primerDia=new Date(y,m,1).getDay(),diasEnMes=new Date(y,m+1,0).getDate();
-  const hoy=new Date().toISOString().slice(0,10);
+  // Usar valores inmutables para evitar bugs de mutación
+  const y=calMesActual.getFullYear();
+  const m=calMesActual.getMonth();
   const mesStr=`${y}-${String(m+1).padStart(2,'0')}`;
-  const evsDelMes={};todosLosEventos.filter(e=>e.fecha?.startsWith(mesStr)).forEach(e=>{const d=parseInt(e.fecha.slice(8,10));if(!evsDelMes[d])evsDelMes[d]=[];evsDelMes[d].push(e);});
-  const grid=document.getElementById('cal-days');grid.innerHTML='';
-  for(let i=0;i<primerDia;i++)grid.innerHTML+=`<div></div>`;
+  const label=new Date(y,m,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  document.getElementById('cal-mes-label').textContent=label.charAt(0).toUpperCase()+label.slice(1);
+  const primerDia=new Date(y,m,1).getDay();
+  const diasEnMes=new Date(y,m+1,0).getDate();
+  const hoy=new Date().toISOString().slice(0,10);
+  // Agrupar eventos del mes
+  const evsDelMes={};
+  todosLosEventos.filter(e=>e.fecha&&e.fecha.startsWith(mesStr)).forEach(e=>{
+    const d=parseInt(e.fecha.slice(8,10));
+    if(!evsDelMes[d])evsDelMes[d]=[];
+    evsDelMes[d].push(e);
+  });
+  const grid=document.getElementById('cal-days');
+  grid.innerHTML='';
+  for(let i=0;i<primerDia;i++) grid.innerHTML+=`<div></div>`;
   for(let d=1;d<=diasEnMes;d++){
-    const fecha=`${mesStr}-${String(d).padStart(2,'0')}`;const esHoy=fecha===hoy;const evs=evsDelMes[d]||[];
+    const dia=String(d).padStart(2,'0');
+    const fecha=`${mesStr}-${dia}`;
+    const esHoy=fecha===hoy;
+    const evs=evsDelMes[d]||[];
     const tieneEvento=evs.length>0;
     const dotColor=evs[0]?.tipo==='examen'?'#ef4444':evs[0]?.tipo==='feriado'?'#f59e0b':'#2563eb';
-    grid.innerHTML+=`<div class="cal-day ${esHoy?'today':''}" onclick="seleccionarDia('${fecha}')">
+    grid.innerHTML+=`<div class="cal-day${esHoy?' today':''}${tieneEvento?' has-ev':''}" onclick="seleccionarDia('${fecha}')">
       <span class="cal-num">${d}</span>
       ${tieneEvento?`<span class="cal-dot" style="background:${esHoy?'white':dotColor}"></span>`:''}
     </div>`;
@@ -557,7 +571,13 @@ function seleccionarDia(fecha){
   document.getElementById('cal-dia-lista').innerHTML=evs.map(ev=>{const tc=ev.tipo==='examen'?'bg-rose-50 border-rose-200':ev.tipo==='feriado'?'bg-amber-50 border-amber-200':'bg-blue-50 border-blue-200';return`<div class="p-3 rounded-2xl border ${tc} flex items-center gap-3"><span class="text-xl">${ev.tipo==='examen'?'📝':ev.tipo==='feriado'?'🏖️':'📅'}</span><div class="flex-1"><p class="font-bold text-sm">${ev.titulo}</p>${ev.descripcion?`<p class="text-xs text-slate-500">${ev.descripcion}</p>`:''}</div><button onclick="exportarEventoICS('${ev.titulo.replace(/'/g,"\\'")}','${ev.fecha}','${(ev.descripcion||'').replace(/'/g,"\\'")}')" class="text-[9px] font-black bg-white border px-2 py-1.5 rounded-xl text-slate-600 flex-shrink-0" title="Agregar al calendario"><i class="fas fa-calendar-plus"></i></button></div>`;}).join('');
 }
 
-function cambiarMes(delta){calMesActual.setMonth(calMesActual.getMonth()+delta);renderCalendario();document.getElementById('cal-dia-eventos').classList.add('hidden');}
+function cambiarMes(delta){
+  // Crear nueva fecha para evitar mutación de calMesActual que causa bugs
+  const y=calMesActual.getFullYear();const m=calMesActual.getMonth();
+  calMesActual=new Date(y,m+delta,1);
+  renderCalendario();
+  document.getElementById('cal-dia-eventos').classList.add('hidden');
+}
 
 function renderProximosEventos(){
   const cont=document.getElementById('container-agenda');cont.innerHTML="";brain.agenda=[];
@@ -741,12 +761,86 @@ function cambiarHijo(id){alumnoSeleccionadoId=id;inicializarApp();}
 function toggleIosi(){const m=document.getElementById('iosi-modal');m.style.display=m.style.display==='flex'?'none':'flex';}
 async function generarBoletinPDF(){
   const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId);
-  document.getElementById('pdf-nombre').innerText=hijo.nombre;document.getElementById('pdf-fecha').innerText=new Date().toLocaleDateString();
-  const body=document.getElementById('pdf-body');body.innerHTML="";
-  brain.notas.forEach(n=>{const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_'));const c=n.rite||(cols.length?cols.map(([,v])=>v).join(' / '):'—');body.innerHTML+=`<tr><td style="border:1px solid #000;padding:8px">${n.materia}</td><td style="border:1px solid #000;padding:8px;text-align:center">${c}</td></tr>`;});
-  const el=document.getElementById('pdf-template');el.style.display='block';html2pdf().from(el).save().then(()=>el.style.display='none');
+  if(!hijo)return;
+  // Recopilar notas agrupadas por período
+  const periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();
+  const periodos=[]; periodosSnap.forEach(doc=>periodos.push({id:doc.id,...doc.data()}));
+  const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
+  const cursoAlu=alumnoDoc.data()?.curso||'';
+  // Obtener todas las materias con notas
+  const todasNotasSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').get();
+  const materias=new Set(); const notasPorMateriaPeriodo={};
+  todasNotasSnap.forEach(doc=>{
+    const n=doc.data();if(!n.materia)return;materias.add(n.materia);
+    if(!notasPorMateriaPeriodo[n.materia])notasPorMateriaPeriodo[n.materia]={};
+    const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_')&&n[k]!=='');
+    if(n.rite) notasPorMateriaPeriodo[n.materia][n.periodo]=n.rite;
+    else if(cols.length) notasPorMateriaPeriodo[n.materia][n.periodo]=cols.map(([,v])=>parseFloat(v)).filter(Boolean).reduce((a,b,_,arr)=>a+b/arr.length,0).toFixed(1);
+    else notasPorMateriaPeriodo[n.materia][n.periodo]='';
+  });
+  const materiasArr=[...materias].sort();
+  const periodosArr=periodos.filter(p=>materias.size>0);
+  // Asistencia
+  const asisSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
+  let faltas=0,tardes=0; asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
+  // Construir HTML del boletín
+  const colores={'TEA':'#16a34a','TEP':'#2563eb','TED':'#d97706'};
+  const getColor=v=>{if(v==='TEA'||v==='TEP'||v==='TED')return colores[v];const n=parseFloat(v);if(isNaN(n))return '#64748b';return n>=7?'#16a34a':n>=6?'#d97706':'#ef4444';};
+  let thead=`<tr style="background:#0f172a;color:white"><th style="padding:8px 10px;text-align:left;font-size:11px">ASIGNATURA</th>`;
+  periodosArr.forEach(p=>thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">${p.slug||p.nombre.slice(0,4)}</th>`);
+  thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">PROM.</th></tr>`;
+  let tbody='';
+  materiasArr.forEach((mat,idx)=>{
+    const bg=idx%2===0?'#f8fafc':'white';tbody+=`<tr style="background:${bg}"><td style="padding:7px 10px;font-size:11px;font-weight:600;border-bottom:1px solid #f1f5f9">${mat}</td>`;
+    let suma=0,cnt=0;
+    periodosArr.forEach(p=>{const v=notasPorMateriaPeriodo[mat]?.[p.slug]||notasPorMateriaPeriodo[mat]?.[p.nombre]||'';const color=getColor(v);if(parseFloat(v)){suma+=parseFloat(v);cnt++;}tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${color};border-bottom:1px solid #f1f5f9">${v||'—'}</td>`;});
+    const prom=cnt>0?(suma/cnt).toFixed(1):'—';const promColor=getColor(prom);
+    tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${promColor};border-bottom:1px solid #f1f5f9;background:#f0fdf4">${prom}</td></tr>`;
+  });
+  const htmlBoletín=`
+  <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#1e293b;padding:32px;max-width:700px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0f172a;padding-bottom:16px;margin-bottom:20px">
+      <div>
+        <p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#64748b">Instituto Iosef Caro</p>
+        <h1 style="font-size:22px;font-weight:800;margin:4px 0;color:#0f172a">Boletín de Calificaciones</h1>
+        <p style="font-size:13px;color:#64748b">Año lectivo ${new Date().getFullYear()}</p>
+      </div>
+      <div style="text-align:right">
+        <div style="width:52px;height:52px;background:#0f172a;border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px">🏫</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Alumno/a</p><p style="font-size:15px;font-weight:800;color:#0f172a">${hijo.nombre}</p></div>
+      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Curso</p><p style="font-size:15px;font-weight:800;color:#0f172a">${cursoAlu}</p></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+      <thead>${thead}</thead><tbody>${tbody}</tbody>
+    </table>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px">
+      <div style="background:#fff5f5;border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f87171;margin-bottom:4px">Inasistencias</p><p style="font-size:24px;font-weight:800;color:#ef4444">${faltas}</p></div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f59e0b;margin-bottom:4px">Tardanzas</p><p style="font-size:24px;font-weight:800;color:#d97706">${tardes}</p></div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#4ade80;margin-bottom:4px">Generado</p><p style="font-size:11px;font-weight:800;color:#16a34a">${new Date().toLocaleDateString('es-AR')}</p></div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
+      <div><p style="font-size:9px;color:#94a3b8;font-weight:700">TEA = Trayectoria Avanzada · TEP = En Proceso · TED = En Desarrollo</p><p style="font-size:9px;color:#94a3b8;font-weight:700;margin-top:2px">Verde ≥ 7 · Naranja = 6 · Rojo &lt; 6</p></div>
+      <p style="font-size:9px;color:#94a3b8;font-weight:700">Iosef Caro © ${new Date().getFullYear()}</p>
+    </div>
+  </div>`;
+  const container=document.createElement('div');container.innerHTML=htmlBoletín;document.body.appendChild(container);
+  html2pdf().from(container).set({margin:0,filename:`Boletín_${hijo.nombre}_${new Date().getFullYear()}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).save().then(()=>container.remove());
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+// Auto-login desde index.html (URL param o sessionStorage)
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  const emailUrl=params.get('email');
+  const emailSess=sessionStorage.getItem('iosef_email');
+  const email=emailUrl||emailSess;
+  if(email){
+    document.getElementById('login-email').value=email;
+    login(email);
+  }
+})();
 </script>
 </body>
 </html>
