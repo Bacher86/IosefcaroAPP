@@ -46,7 +46,6 @@
 </head>
 <body>
 
-    <!-- ══ LOGIN ══ -->
     <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[2000] flex items-center justify-center p-6">
         <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
             <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-bullhorn"></i></div>
@@ -62,7 +61,6 @@
     </div>
 
     <div id="app-content" class="hidden">
-        <!-- ══ NAVBAR ══ -->
         <nav class="bg-white border-b p-3 flex gap-2 sticky top-0 z-50 shadow-sm overflow-x-auto" id="main-nav">
             <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm" style="display:inline-flex">
                 <i class="fas fa-bullhorn mr-2"></i>Noticias
@@ -70,9 +68,6 @@
             <button onclick="switchTab('calendario')" id="navbtn-calendario" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm">
                 <i class="fas fa-calendar-star mr-2"></i>Calendario
             </button>
-            <!-- Solo visible para secretarías y admin -->
-
-
 
             <div class="ml-auto flex items-center gap-2">
                 <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
@@ -82,7 +77,6 @@
 
         <main class="p-4 max-w-5xl mx-auto">
 
-            <!-- ════ TAB NOTICIAS ════ -->
             <section id="tab-noticias" class="tab-content active space-y-6">
                 <div id="form-noticias" class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="noticia-form-title" class="font-black text-xl mb-4 text-slate-800">Nueva Publicación</h2>
@@ -101,7 +95,6 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Upload de imagen -->
                             <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
                               <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📷 Imagen / Foto</label>
                               <div class="flex gap-2 items-center">
@@ -112,7 +105,6 @@
                               <div id="prev-img" class="mt-2 hidden"><img id="prev-img-el" class="w-full h-28 object-cover rounded-xl" src=""></div>
                               <div id="upload-prog-img" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-img" class="bg-blue-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-img" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
                             </div>
-                            <!-- Upload de video -->
                             <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
                               <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">🎬 Video</label>
                               <div class="flex gap-2 items-center">
@@ -123,7 +115,6 @@
                               <div id="prev-video" class="mt-2 hidden"><video id="prev-video-el" class="w-full h-28 object-cover rounded-xl" controls src=""></video></div>
                               <div id="upload-prog-video" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-video" class="bg-purple-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-video" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
                             </div>
-                            <!-- Upload de PDF/archivo -->
                             <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
                               <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📄 Archivo / PDF</label>
                               <div class="flex gap-2 items-center">
@@ -148,7 +139,6 @@
                 </div>
             </section>
 
-            <!-- ════ TAB CALENDARIO ════ -->
             <section id="tab-calendario" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="cal-form-title" class="font-black text-xl mb-4 text-slate-800">Agendar al Calendario</h2>
@@ -176,6 +166,34 @@
             </section>
         </main>
     </div>
+
+    <script>
+        // Inicializar Firebase (Asegúrate de tener firebase.initializeApp(config) antes de esto)
+        // const db = firebase.firestore(); 
+
+        // Variables de estado global
+        let db; // Asegúrate de asignar tu instancia de firestore aquí
+        let staffEmail = "";
+        let staffNombre = "";
+        let staffRol = "";
+        let staffNiveles = [];
+        let esSecOAdmin = false; // Define la regla para secretaría o admin
+
+        // Navegación entre Pestañas
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-blue-600');
+                btn.classList.add('text-slate-500');
+            });
+            
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            const activeBtn = document.getElementById(`navbtn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-500');
+                activeBtn.classList.add('bg-blue-50', 'text-blue-600');
+            }
+        }
 
         // ═══ LOGIN ═══
         async function loginComunicacion() {
@@ -221,7 +239,7 @@
             // Set default datetime for call form
             const callFecha = document.getElementById('call-fecha');
             if(callFecha){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());callFecha.value=now.toISOString().slice(0,16);}
-            if (esSecOAdmin) escucharConvsSec();
+            if (esSecOAdmin && typeof escucharConvsSec === "function") escucharConvsSec();
         }
 
         function inicializarApp() {
@@ -239,7 +257,6 @@
                 const contCal = document.getElementById('cursos-calendario');
                 [contNot, contCal].forEach(cont => {
                     if (!cont) return;
-                    const suffix = cont.id.replace('cursos-', '');
                     cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="all-${cont.id}" onchange="toggleTodos(this,'${cont.id}')"> TODOS</label>`;
                     cursos.forEach(c => {
                         cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c.nombre}"> ${c.nombre}</label>`;
@@ -248,7 +265,24 @@
             } catch(e) { console.error('Error cursos:', e); document.getElementById('cursos-noticia').innerHTML = '<span class="text-xs text-rose-500">Error cargando cursos: ' + e.message + '</span>'; }
         }
 
-        function toggleTodos(source, contId) { document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked); }
+        function toggleTodos(source, contId) { 
+            document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked); 
+        }
+
+        // Helper para eliminar documentos genéricos
+        async function eliminarDoc(coleccion, id) {
+            if(!confirm("¿Estás seguro de que deseas eliminar este elemento?")) return;
+            try {
+                await db.collection(coleccion).doc(id).delete();
+                alert("Eliminado correctamente.");
+                location.reload();
+            } catch(e) { alert("Error al eliminar: " + e.message); }
+        }
+
+        // Placeholder para previsualización multimedia
+        function previewMedia(type, input) {
+            console.log(`Previsualizando ${type} para el archivo seleccionado.`);
+        }
 
         // ═══ NOTICIAS ═══
         async function cargarNoticias() {
@@ -280,21 +314,29 @@
         async function guardarNoticia() {
             const id    = document.getElementById('noticia-id').value;
             const titulo = document.getElementById('not-titulo').value;
-            const texto  = document.getElementById('not-texto').value;
+            const textVal  = document.getElementById('not-texto').value;
             const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
             const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-            if (!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
+            if (!titulo || !textVal || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
             const btn = document.getElementById('btn-noticia');
             btn.disabled = true; btn.innerText = "Procesando...";
             const data = {
-                titulo, texto, curso: seleccionados,
+                titulo, texto: textVal, curso: seleccionados,
                 programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
                 adjuntos: { img: document.getElementById('not-img').value, video: document.getElementById('not-video').value, pdf: document.getElementById('not-pdf').value, link: document.getElementById('not-link').value },
                 fechaCreacion: new Date().toISOString()
             };
             try {
-                if (id) { await db.collection('comunicados').doc(id).update(data); alert("Publicación actualizada."); }
-                else { await db.collection('comunicados').add(data); await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos); alert("Publicado y mails enviados."); }
+                if (id) { 
+                    await db.collection('comunicados').doc(id).update(data); 
+                    alert("Publicación actualizada."); 
+                } else { 
+                    await db.collection('comunicados').add(data); 
+                    if(typeof enviarAvisosPorEmail === "function") {
+                        await enviarAvisosPorEmail(titulo, textVal, seleccionados, esTodos); 
+                    }
+                    alert("Publicado y mails enviados."); 
+                }
                 location.reload();
             } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
         }
@@ -382,8 +424,6 @@
             document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
             document.getElementById('btn-cancel-cal').classList.add('hidden');
         }
-        })();
-        </script>
+    </script>
 </body>
 </html>
-
