@@ -392,11 +392,19 @@ let nivelSeguimientoEOE="bajo";
 let legajoAlumnoActual=null, todosLosItems=[];
 
 document.getElementById('fecha-hoy').valueAsDate=new Date();
+// Auto-login si viene desde index.html
+const _sessionEmail=sessionStorage.getItem('iosef_email');
+if(_sessionEmail){document.getElementById('login-email').value=_sessionEmail;login();}
 
 // ══════════════════════════════
 // LOGIN
 // ══════════════════════════════
 async function login(){
+  // Check if coming from index.html with session
+  const sessionEmail=sessionStorage.getItem('iosef_email');
+  if(sessionEmail&&!document.getElementById('login-email').value){
+    document.getElementById('login-email').value=sessionEmail;
+  }
   const email=document.getElementById('login-email').value.toLowerCase().trim();
   const errEl=document.getElementById('login-error');
   errEl.classList.add('hidden');
@@ -424,8 +432,13 @@ async function login(){
       await cargarRecientesEOE();
       switchTabSilent('eoe');
     } else {
-      // Panel docente normal
+      // Panel docente normal — EOE y Legajo siempre visibles
       document.getElementById('doc-nom').innerText=data.nombre;
+      // Asegurar que EOE y Legajo estén visibles (a veces quedan ocultos por CSS)
+      const btnEoe=document.getElementById('btn-eoe');
+      const btnLeg=document.getElementById('btn-legajo');
+      if(btnEoe){btnEoe.style.display='flex';btnEoe.style.opacity='1';}
+      if(btnLeg){btnLeg.style.display='flex';btnLeg.style.opacity='1';}
       const sMat=document.getElementById('select-materia'); sMat.innerHTML='';
       const materias=Array.isArray(data.materias)?data.materias:(data.materia?[data.materia]:[]);
       materias.forEach(m=>sMat.innerHTML+=`<option value="${m}">${m}</option>`);
