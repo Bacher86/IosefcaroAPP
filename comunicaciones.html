@@ -64,7 +64,7 @@
     <div id="app-content" class="hidden">
         <!-- ══ NAVBAR ══ -->
         <nav class="bg-white border-b p-3 flex gap-2 sticky top-0 z-50 shadow-sm overflow-x-auto" id="main-nav">
-            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm">
+            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm" style="display:inline-flex">
                 <i class="fas fa-bullhorn mr-2"></i>Noticias
             </button>
             <button onclick="switchTab('calendario')" id="navbtn-calendario" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm">
@@ -372,6 +372,12 @@
         let secUnsubConvs  = null;
 
         // ═══ LOGIN ═══
+        // Auto-login from index.html session
+        window.addEventListener('DOMContentLoaded',()=>{
+            const em=sessionStorage.getItem('iosef_email');const nm=sessionStorage.getItem('iosef_nombre');
+            if(em){document.getElementById('log-email').value=em;if(nm)document.getElementById('log-nombre-display')?.textContent && (document.getElementById('log-nombre-display').textContent=nm);loginComunicacion();}
+        });
+
         async function loginComunicacion() {
             const email = document.getElementById('log-email').value.toLowerCase().trim();
             const pass  = document.getElementById('log-pass').value;
@@ -410,20 +416,20 @@
             // Solo secretarías y admin ven tab mensajes
             const esSecOAdmin = staffRol === 'admin' || staffRol.startsWith('secretaria_');
             if (esSecOAdmin) {
-                document.getElementById('navbtn-mensajes').classList.remove('hidden');
-                document.getElementById('navbtn-llamadas').classList.remove('hidden');
                 document.getElementById('navbtn-justificaciones-sec').classList.remove('hidden');
                 cargarLlamadas();
                 cargarJustificacionesSec();
             }
-            // Mostrar/ocultar tabs según permisos del usuario
+            // Mostrar/ocultar tabs según permisos
             const perms = data.permisos || [];
-            if (perms.includes('acceso_comunicados') || staffRol === 'admin' || staffRol === 'comunicacion') {
-                document.getElementById('navbtn-noticias').classList.remove('hidden');
-            }
-            if (perms.includes('acceso_calendario') || staffRol === 'admin' || staffRol === 'comunicacion') {
-                document.getElementById('navbtn-calendario').classList.remove('hidden');
-            }
+            const puedeNoticias = perms.includes('acceso_comunicados')||staffRol==='admin'||staffRol==='comunicacion'||perms.includes('publicar_comunicados');
+            const puedeCalendario = perms.includes('acceso_calendario')||staffRol==='admin'||staffRol==='comunicacion';
+            const puedeMensajes = perms.includes('acceso_mensajes')||esSecOAdmin;
+            const puedeLlamadas = perms.includes('acceso_llamadas')||esSecOAdmin;
+            if(!puedeNoticias) document.getElementById('navbtn-noticias').style.display='none';
+            if(!puedeCalendario) document.getElementById('navbtn-calendario').style.display='none';
+            if(puedeMensajes){document.getElementById('navbtn-mensajes').classList.remove('hidden');}
+            if(puedeLlamadas){document.getElementById('navbtn-llamadas').classList.remove('hidden');}
 
             // Solo admin y comunicacion ven publicar noticias
             const puedePublicar = ['admin','comunicacion'].includes(staffRol);
@@ -969,6 +975,4 @@
     </script>
 </body>
 </html>
-
-
 
