@@ -1,134 +1,249 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Institucional - Iosef Caro</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="logo.png.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Instituto Iosef Caro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:100vh;overflow-x:hidden}
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+/* Portal de selección */
+#portal-selector{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;animation:fadeUp .5s ease}
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .card-btn { 
-            background: white; 
-            border-radius: 2.5rem; 
-            padding: 2rem 1.5rem; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid #f1f5f9;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .card-btn:hover { 
-            transform: translateY(-10px); 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
-            border-color: #e2e8f0;
-        }
-    </style>
+/* Login modal */
+#login-modal{position:fixed;inset:0;background:rgba(15,23,42,.95);backdrop-filter:blur(8px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+#login-modal.open{display:flex;animation:fadeUp .3s ease}
 
-    <script>
-        // CONFIGURACIÓN DE FIREBASE
-        const firebaseConfig = { 
-            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", 
-            authDomain: "app-iosefcaro.firebaseapp.com", 
-            projectId: "app-iosefcaro", 
-            storageBucket: "app-iosefcaro.firebasestorage.app", 
-            messagingSenderId: "651320124248", 
-            appId: "1:651320124248:web:97c8ca00e29114e1983b2d" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
-        // REGISTRO DEL SERVICE WORKER
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('firebase-messaging-sw.js')
-                    .then(reg => {
-                        console.log('Service Worker registrado para notificaciones');
-                        // Si ya hay un usuario logueado, podríamos llamar a setupNotifications() aquí
-                    })
-                    .catch(err => console.log('Error de registro SW', err));
-            });
-        }
+/* Portal cards */
+.portal-card{background:white;border-radius:2.5rem;padding:2.5rem 2rem;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);border:2px solid transparent;text-align:center;position:relative;overflow:hidden}
+.portal-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s}
+.portal-card:hover{transform:translateY(-8px);box-shadow:0 30px 60px -12px rgba(0,0,0,.25)}
+.portal-card.familia:hover{border-color:#a78bfa}
+.portal-card.escuela:hover{border-color:#38bdf8}
+.portal-card:active{transform:scale(.97)}
 
-        async function setupNotifications() {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await messaging.getToken({ 
-                        vapidKey: 'hqO1x0iKbdZsxkXK_bQWWH_JEV_eoL4E78UDrD3Yyq4' 
-                    });
-                    if (token) {
-                        console.log('Token generado correctamente');
-                        // Nota: El guardado en base de datos conviene hacerlo en familia.html 
-                        // donde tenemos el email del usuario.
-                    }
-                }
-            } catch (err) {
-                console.error('Error en notificaciones:', err);
-            }
-        }
-    </script>
+/* Input estilo pro */
+.input-pro{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:1rem;padding:.85rem 1rem;width:100%;outline:none;font-size:15px;font-family:inherit;font-weight:600;transition:all .2s;color:#0f172a}
+.input-pro:focus{border-color:#0f172a;background:white;box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+
+/* Progress bar login */
+.progress-bar{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden}
+.progress-bar-inner{height:100%;background:#0f172a;border-radius:2px;transition:width .3s;width:0}
+</style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-6">
+<body>
 
-    <header class="text-center mb-12">
-        <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
-            <i class="fas fa-school"></i>
-        </div>
-        <h1 class="text-4xl font-black text-slate-800 tracking-tighter">Plataforma Académica</h1>
-        <p class="text-slate-400 font-bold mt-2 uppercase text-[10px] tracking-[0.3em]">Seleccione su perfil de acceso</p>
-    </header>
+<!-- ══ SELECTOR DE PORTAL ══ -->
+<div id="portal-selector">
+  <!-- Logo -->
+  <div class="text-center mb-12">
+    <div class="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-4xl mx-auto mb-5 shadow-2xl">🏫</div>
+    <h1 class="text-4xl font-black text-white tracking-tighter">Iosef Caro</h1>
+    <p class="text-slate-400 text-sm font-bold mt-2 uppercase tracking-widest">Plataforma Educativa</p>
+  </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
-        <a href="familia.html" class="card-btn group text-center">
-            <div class="w-16 h-16 bg-pink-50 text-pink-400 group-hover:bg-pink-500 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
-                <i class="fas fa-heart"></i>
-            </div>
-            <h3 class="font-black text-slate-800 text-xl tracking-tight">Familias</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Seguimiento académico y comunicación con la escuela.</p>
-        </a>
+  <!-- Los dos portales -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-lg">
 
-        <a href="docente.html" class="card-btn group text-center">
-            <div class="w-16 h-16 bg-blue-50 text-blue-400 group-hover:bg-blue-600 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
-                <i class="fas fa-chalkboard-teacher"></i>
-            </div>
-            <h3 class="font-black text-slate-800 text-xl tracking-tight">Panel Docente</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Calificaciones, asistencia y seguimiento de curso.</p>
-        </a>
-
-        <a href="comunicaciones.html" class="card-btn group text-center border-emerald-100 bg-emerald-50/10">
-            <div class="w-16 h-16 bg-emerald-50 text-emerald-500 group-hover:bg-emerald-600 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
-                <i class="fas fa-bullhorn"></i>
-            </div>
-            <h3 class="font-black text-slate-800 text-xl tracking-tight">Comunicación</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Muro de noticias, agenda escolar y avisos multimedia.</p>
-        </a>
-
-        <a href="admin.html" class="card-btn group text-center">
-            <div class="w-16 h-16 bg-slate-50 text-slate-400 group-hover:bg-slate-900 group-hover:text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 transition-colors">
-                <i class="fas fa-user-shield"></i>
-            </div>
-            <h3 class="font-black text-slate-800 text-xl tracking-tight">Gestión</h3>
-            <p class="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Base de datos, carga masiva y equipo docente.</p>
-        </a>
+    <!-- Portal Familias -->
+    <div class="portal-card familia" onclick="abrirLogin('familia')">
+      <div class="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">💜</div>
+      <h2 class="text-xl font-black text-slate-900 mb-2">Portal Familias</h2>
+      <p class="text-slate-400 text-sm leading-relaxed">Seguí el desempeño de tu hijo/a, comunicaciones y autorizaciones.</p>
+      <div class="mt-5 flex items-center justify-center gap-2 text-violet-600 font-black text-xs uppercase tracking-wide">
+        <span>Ingresar</span><i class="fas fa-arrow-right text-[10px]"></i>
+      </div>
     </div>
 
-    <footer class="mt-16">
-        <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest">© 2026 Sistema de Gestión Educativa</p>
-    </footer>
+    <!-- Portal Escuela -->
+    <div class="portal-card escuela" onclick="abrirLogin('escuela')">
+      <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">🏫</div>
+      <h2 class="text-xl font-black text-slate-900 mb-2">Portal Escuela</h2>
+      <p class="text-slate-400 text-sm leading-relaxed">Docentes, secretaría, comunicaciones y administración.</p>
+      <div class="mt-5 flex items-center justify-center gap-2 text-sky-600 font-black text-xs uppercase tracking-wide">
+        <span>Ingresar</span><i class="fas fa-arrow-right text-[10px]"></i>
+      </div>
+    </div>
+  </div>
 
+  <p class="text-slate-600 text-xs font-bold mt-10 uppercase tracking-widest">© 2026 Instituto Iosef Caro</p>
+</div>
+
+<!-- ══ MODAL LOGIN ══ -->
+<div id="login-modal">
+  <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl">
+    <!-- Header dinámico -->
+    <div class="text-center mb-7">
+      <div id="login-icon" class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">💜</div>
+      <h2 id="login-title" class="text-2xl font-black text-slate-900 tracking-tight">Portal Familias</h2>
+      <p id="login-subtitle" class="text-slate-400 text-sm mt-1">Ingresá con tu email registrado</p>
+    </div>
+
+    <!-- Form -->
+    <div class="space-y-4">
+      <div>
+        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 block mb-1.5">Email</label>
+        <input type="email" id="login-email" class="input-pro" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div id="pass-field" class="hidden">
+        <label class="text-[10px] font-black text-slate-400 uppercase ml-1 block mb-1.5">Contraseña</label>
+        <input type="password" id="login-pass" class="input-pro" placeholder="Tu contraseña" autocomplete="current-password">
+      </div>
+      <p id="login-hint" class="text-[11px] text-slate-400 text-center">Las familias ingresan solo con email, sin contraseña</p>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar mt-5 mb-1" id="progress-cont" style="display:none">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+
+    <p id="login-error" class="text-rose-500 text-xs font-bold text-center mt-3 hidden"></p>
+
+    <button id="btn-ingresar" onclick="realizarLogin()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-black mt-5 hover:bg-black transition active:scale-95 flex items-center justify-center gap-2">
+      <i class="fas fa-arrow-right"></i> INGRESAR
+    </button>
+    <button onclick="cerrarLogin()" class="w-full text-slate-400 text-xs font-bold py-3 mt-1">← Volver</button>
+  </div>
+</div>
+
+<script>
+const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+firebase.initializeApp(FB);
+const db=firebase.firestore();
+
+let modoActual='familia'; // 'familia' | 'escuela'
+
+function abrirLogin(modo){
+  modoActual=modo;
+  const modal=document.getElementById('login-modal');
+  const icon=document.getElementById('login-icon');
+  const title=document.getElementById('login-title');
+  const subtitle=document.getElementById('login-subtitle');
+  const hint=document.getElementById('login-hint');
+  const passField=document.getElementById('pass-field');
+  document.getElementById('login-error').classList.add('hidden');
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pass').value='';
+
+  if(modo==='familia'){
+    icon.textContent='💜';icon.style.background='#f5f3ff';
+    title.textContent='Portal Familias';
+    subtitle.textContent='Ingresá con tu email registrado';
+    hint.textContent='Las familias ingresan solo con email, sin contraseña';
+    hint.classList.remove('hidden');
+    passField.classList.add('hidden');
+  } else {
+    icon.textContent='🏫';icon.style.background='#f0f9ff';
+    title.textContent='Portal Escuela';
+    subtitle.textContent='Personal docente y administrativo';
+    hint.textContent='Docentes y secretaría ingresan con email y contraseña';
+    hint.classList.remove('hidden');
+    passField.classList.remove('hidden');
+  }
+  modal.classList.add('open');
+  setTimeout(()=>document.getElementById('login-email').focus(),300);
+}
+
+function cerrarLogin(){
+  document.getElementById('login-modal').classList.remove('open');
+}
+
+function setProgress(pct){
+  const cont=document.getElementById('progress-cont');
+  const bar=document.getElementById('progress-bar');
+  if(pct===0){cont.style.display='none';bar.style.width='0%';return;}
+  cont.style.display='block';bar.style.width=pct+'%';
+}
+
+function showError(msg){
+  const el=document.getElementById('login-error');
+  el.textContent=msg;el.classList.remove('hidden');
+  setProgress(0);
+  document.getElementById('btn-ingresar').disabled=false;
+  document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
+}
+
+async function realizarLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value.trim();
+  const errEl=document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  if(!email){showError('Ingresá tu email.');return;}
+  if(modoActual==='escuela'&&!pass){showError('Ingresá tu contraseña.');return;}
+
+  document.getElementById('btn-ingresar').disabled=true;
+  document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';
+  setProgress(30);
+
+  // Superadmin hardcodeado
+  if(modoActual==='escuela'&&email==='uriel.bacher@gmail.com'&&pass==='Gallardo10'){
+    setProgress(100);setTimeout(()=>window.location.href='admin.html',300);return;
+  }
+
+  try{
+    const doc=await db.collection('usuarios').doc(email).get();
+    setProgress(70);
+
+    if(!doc.exists){showError('Email no registrado en el sistema.');return;}
+    const data=doc.data();
+
+    if(modoActual==='familia'){
+      if(data.rol!=='familia'){showError('Este email pertenece a personal de la institución. Usá el Portal Escuela.');return;}
+      // Familias sin contraseña — redirigir directo
+      setProgress(100);setTimeout(()=>window.location.href='familia.html?email='+encodeURIComponent(email),300);
+      return;
+    }
+
+    // Portal Escuela — verificar contraseña
+    if(data.rol==='familia'){showError('Este email es de una familia. Usá el Portal Familias.');return;}
+    if(data.pass!==pass){showError('Contraseña incorrecta.');return;}
+
+    setProgress(100);
+
+    // Redirigir según rol
+    const rol=data.rol;
+    const rolesAdmin=['admin','director'];
+    const rolesComun=['comunicacion'];
+    const rolesSecretaria=['secretaria_inicial','secretaria_primario','secretaria_secundario'];
+    const rolesDocente=['docente','eoe'];
+
+    let destino='admin.html';
+    if(rolesDocente.includes(rol)) destino='docente.html';
+    else if(rolesSecretaria.includes(rol)) destino='secretaria.html';
+    else if(rolesComun.includes(rol)) destino='comunicaciones.html';
+    else destino='admin.html';
+
+    // Guardar sesión para que el panel no pida login de nuevo
+    sessionStorage.setItem('iosef_email',email);
+    sessionStorage.setItem('iosef_rol',rol);
+    sessionStorage.setItem('iosef_nombre',data.nombre||email);
+
+    setTimeout(()=>window.location.href=destino,300);
+
+  }catch(e){showError('Error de conexión: '+e.message);}
+}
+
+// Tecla Enter
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('login-modal').classList.contains('open')) realizarLogin();
+  if(e.key==='Escape') cerrarLogin();
+});
+
+// Service Worker
+if('serviceWorker' in navigator){navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});}
+</script>
 </body>
 </html>
+
