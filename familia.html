@@ -383,8 +383,8 @@ async function inicializarApp(){
   await cargarConocimientoIosi();
 
   await cargarMuro('todos');
-  await cargarAcademico();
-  await cargarAgenda();
+  // Load all in parallel with individual error handling
+  await Promise.allSettled([cargarAcademico(), cargarAgenda()]);
   await cargarWidgetHoy();
   const snap=await db.collection('comunicados').get();let sinLeer=0;
   const lSnap=await db.collection('usuarios').doc(userEmail).collection('leidos_comunicados').get();const lSet=new Set();lSnap.forEach(d=>lSet.add(d.id));
@@ -412,7 +412,13 @@ async function cargarMuro(filtro='todos'){
   const container=document.getElementById('muro-posts');
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('filter-'+filtro)?.classList.add('active');
-  const snap=await db.collection('comunicados').orderBy('creadoEn','desc').get();
+  let snap;
+  try {
+    snap=await db.collection('comunicados').orderBy('creadoEn','desc').get();
+  } catch(e) {
+    console.warn('Índice faltante, cargando sin orden:',e.message);
+    snap=await db.collection('comunicados').get();
+  }
   const lSnap=await db.collection('usuarios').doc(userEmail).collection('leidos_comunicados').get();
   const lSet=new Set();lSnap.forEach(d=>lSet.add(d.id));
   container.innerHTML="";brain.noticias=[];
@@ -522,7 +528,13 @@ async function cargarLogros(){
 
 // ─── CALENDARIO VISUAL ───
 async function cargarAgenda(){
-  const snap=await db.collection('eventos').orderBy('fecha','asc').get();
+  let snap;
+  try {
+    snap=await db.collection('eventos').orderBy('fecha','asc').get();
+  } catch(e) {
+    console.warn('Error cargando eventos:',e.message);
+    snap=await db.collection('eventos').get();
+  }
   todosLosEventos=[];snap.forEach(doc=>todosLosEventos.push({id:doc.id,...doc.data()}));
   renderCalendario();renderProximosEventos();
 }
