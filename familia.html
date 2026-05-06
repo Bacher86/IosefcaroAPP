@@ -283,7 +283,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
   <button onclick="switchTab('academico')"      id="nav-academico"      class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-star text-xl"></i><span>BOLETÍN</span></button>
   <button onclick="switchTab('mensajes')"       id="nav-mensajes"       class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-comments text-xl"></i><span id="badge-msg-fam" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>MSG</span></button>
   <button onclick="switchTab('autorizaciones')" id="nav-autorizaciones" class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-clipboard-check text-xl"></i><span id="badge-aut" class="hidden absolute -top-1 -right-2 bg-amber-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>PERMISOS</span></button>
-  <button onclick="switchTab('circulares')"     id="nav-circulares"     class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-pen-to-square text-xl"></i><span id="badge-circ" class="hidden absolute -top-1 -right-2 bg-rose-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>CIRC.</span></button>
+
 </nav>
 
 <!-- Modal noticia -->
@@ -381,7 +381,7 @@ async function login(emailOverride){
 
 async function inicializarApp(){
   await cargarConocimientoIosi();
-  cargarCirculares();
+
   await cargarMuro('todos');
   await cargarAcademico();
   await cargarAgenda();
@@ -402,9 +402,7 @@ async function cargarWidgetHoy(){
   // Circulares pendientes rápido
   const alumnoDoc=alumnoSeleccionadoId?await db.collection('alumnos').doc(alumnoSeleccionadoId).get():null;
   const cursoAlu=alumnoDoc?.data()?.curso||'';
-  const circSnap=await db.collection('circulares').orderBy('fechaCreacion','desc').limit(10).get();
-  let circPend=0;circSnap.forEach(doc=>{const c=doc.data();if(((c.cursos||[]).includes('TODOS')||(c.cursos||[]).includes(cursoAlu))&&!(c.firmas||{})[userEmail])circPend++;});
-  if(circPend>0)items.push({tipo:'circular',titulo:`${circPend} circular/es sin firmar`,desc:'Tocá para ir a circulares',icon:'✍️',cls:'hoy-circular',accion:"switchTab('circulares')"});
+  // Circulares removidas de familia
   if(!items.length)return;
   cont.innerHTML=`<p class="text-[10px] font-black text-slate-400 uppercase mb-2">📌 Resumen de hoy</p>`+items.map(it=>`<div class="hoy-card ${it.cls}" ${it.accion?`onclick="${it.accion}" style="cursor:pointer"`:''} role="${it.accion?'button':''}">`+`<span class="text-2xl flex-shrink-0">${it.icon}</span><div><p class="font-black text-sm text-slate-900">${it.titulo}</p><p class="text-[10px] text-slate-600 font-bold mt-0.5">${it.desc}</p></div></div>`).join('');
 }
@@ -614,11 +612,21 @@ async function suscribirRecordatorio(evId,titulo,fecha){
 
 // ─── MENSAJERÍA ───
 async function inicializarMensajeria(){
-  const niv=userData.nivel||'primario';
+  const niv=(userData.nivel||'primario').toLowerCase();
+  // Paso 1: rol exacto secretaria_{nivel}
   let secSnap=await db.collection('usuarios').where('rol','==',`secretaria_${niv}`).limit(1).get();
-  if(secSnap.empty){const all=await db.collection('usuarios').where('rol','in',['secretaria_inicial','secretaria_primario','secretaria_secundario']).get();all.forEach(doc=>{if(!msgFamNivelSec&&(doc.data().niveles||[]).includes(niv))msgFamNivelSec=doc.id;});}
-  else msgFamNivelSec=secSnap.docs[0].id;
-  if(!msgFamNivelSec){const adm=await db.collection('usuarios').where('rol','==','admin').limit(1).get();if(!adm.empty)msgFamNivelSec=adm.docs[0].id;}
+  if(!secSnap.empty){msgFamNivelSec=secSnap.docs[0].id;console.log('Sec encontrada por rol exacto:',msgFamNivelSec);return;}
+  // Paso 2: cualquier secretaria con ese nivel en array 'niveles'
+  const allSecSnap=await db.collection('usuarios').where('rol','in',['secretaria_inicial','secretaria_primario','secretaria_secundario']).get();
+  allSecSnap.forEach(doc=>{if(!msgFamNivelSec&&(doc.data().niveles||[]).includes(niv)){msgFamNivelSec=doc.id;console.log('Sec encontrada por nivel array:',msgFamNivelSec);}});
+  if(msgFamNivelSec) return;
+  // Paso 3: cualquier secretaria (sin filtrar nivel)
+  allSecSnap.forEach(doc=>{if(!msgFamNivelSec){msgFamNivelSec=doc.id;console.log('Sec encontrada (cualquier nivel):',msgFamNivelSec);}});
+  if(msgFamNivelSec) return;
+  // Paso 4: admin como último fallback
+  const admSnap=await db.collection('usuarios').where('rol','==','admin').limit(1).get();
+  if(!admSnap.empty){msgFamNivelSec=admSnap.docs[0].id;console.log('Usando admin como fallback:',msgFamNivelSec);}
+  if(!msgFamNivelSec){console.warn('NO SE ENCONTRÓ SECRETARÍA. Verificar que existan usuarios con rol secretaria_* en Firestore.');}
   const convSnap=await db.collection('conversaciones').where('participantes','array-contains',userEmail).get();
   let convEx=null;convSnap.forEach(doc=>{const d=doc.data();if(msgFamNivelSec&&d.participantes?.includes(msgFamNivelSec))convEx={id:doc.id,...d};});
   if(convEx){msgFamConvId=convEx.id;document.getElementById('msg-fam-empty').classList.add('hidden');document.getElementById('msg-fam-chat').classList.remove('hidden');document.getElementById('msg-fam-chat').classList.add('flex');if(convEx.nombreOtro)document.getElementById('msg-fam-nombre').textContent=convEx.nombreOtro;escucharMensajesFamilia(msgFamConvId);if((convEx.noLeidos||{})[userEmail]>0)document.getElementById('badge-msg-fam').classList.remove('hidden');}
@@ -632,7 +640,11 @@ function escucharMensajesFamilia(convId){
   });
 }
 async function iniciarConvFamilia(){
-  if(!msgFamNivelSec)return alert("No hay secretaría disponible para tu nivel.");
+  if(!msgFamNivelSec){
+    // Re-intentar buscar secretaría
+    await inicializarMensajeria();
+    if(!msgFamNivelSec) return alert("No se encontró secretaría disponible.\n\nEl administrador debe crear un usuario con rol 'secretaria_"+( userData.nivel||'primario')+"' desde el Panel Admin → Staff.");
+  }
   let nomSec='Secretaría';try{const sd=await db.collection('usuarios').doc(msgFamNivelSec).get();if(sd.exists)nomSec=sd.data().nombre||'Secretaría';}catch(e){}
   const pm=`Hola, soy ${userData.nombre}. Me comunico desde el portal de familias.`;
   const cr=db.collection('conversaciones').doc(),mr=cr.collection('mensajes').doc(),b=db.batch();
@@ -729,21 +741,6 @@ async function enviarJustificacion(){
   alert('✅ Justificación enviada.');['just-fecha','just-motivo','just-detalle','just-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});cargarJustificaciones();
 }
 
-// ─── CIRCULARES ───
-async function cargarCirculares(){
-  const snap=await db.collection('circulares').orderBy('fechaCreacion','desc').get();
-  const pC=document.getElementById('circulares-pendientes'),fC=document.getElementById('circulares-firmadas');pC.innerHTML='';fC.innerHTML='';
-  const ad=alumnoSeleccionadoId?await db.collection('alumnos').doc(alumnoSeleccionadoId).get():null;const curso=ad?.data()?.curso||'';
-  let hayP=false;
-  for(const doc of snap.docs){const c=doc.data();const eM=(c.cursos||[]).includes('TODOS')||(c.cursos||[]).includes(curso);if(!eM)continue;const yF=(c.firmas||{})[userEmail];const dl=new Date(c.fechaCreacion).toLocaleDateString('es-AR');
-    if(yF)fC.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex items-center gap-3 shadow-sm opacity-70"><i class="fas fa-check-circle text-emerald-500 text-xl flex-shrink-0"></i><div class="flex-1"><p class="font-bold text-sm">${c.titulo}</p><p class="text-[10px] text-slate-400">${dl}</p></div><span class="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Firmada</span></div>`;
-    else{hayP=true;pC.innerHTML+=`<div class="bg-white p-5 rounded-3xl border-2 border-rose-200 shadow-sm space-y-3"><div class="flex items-start gap-3"><div class="w-10 h-10 bg-rose-100 text-rose-500 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-pen-to-square"></i></div><div class="flex-1"><p class="font-black">${c.titulo}</p><p class="text-[10px] text-rose-500 font-black uppercase">⚠ Requiere tu firma</p><p class="text-[10px] text-slate-400 mt-0.5">${dl}</p></div></div><div class="bg-slate-50 p-4 rounded-2xl"><p class="text-sm text-slate-700">${c.texto}</p></div><button onclick="firmarCircular('${doc.id}')" class="w-full bg-rose-600 text-white p-4 rounded-2xl font-bold active:scale-95 transition-all"><i class="fas fa-pen mr-2"></i>FIRMAR Y CONFIRMAR LECTURA</button></div>`;}
-  }
-  if(!hayP)pC.innerHTML='<div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-2xl mb-2 block"></i><p class="font-bold text-emerald-700">Sin circulares pendientes</p></div>';
-  if(!fC.innerHTML)fC.innerHTML='<p class="text-slate-400 text-sm text-center py-3">Sin circulares firmadas aún.</p>';
-  document.getElementById('badge-circ').classList.toggle('hidden',!hayP);
-}
-async function firmarCircular(cid){await db.collection('circulares').doc(cid).update({[`firmas.${userEmail}`]:{nombre:userData.nombre,fecha:new Date().toISOString()}});alert('✅ Circular firmada.');cargarCirculares();}
 
 // ─── UTILS ───
 function switchTab(tab){
@@ -753,7 +750,7 @@ function switchTab(tab){
   if(tab==='mensajes'&&msgFamConvId){db.collection('conversaciones').doc(msgFamConvId).update({[`noLeidos.${userEmail}`]:0});document.getElementById('badge-msg-fam').classList.add('hidden');}
   if(tab==='autorizaciones')cargarAutorizaciones();
   if(tab==='justificaciones')cargarJustificaciones();
-  if(tab==='circulares')cargarCirculares();
+
   if(tab==='perfil')cargarFichaAlumno();
 }
 function setModalidad(m){modalidadFiltro=m;document.getElementById('switch-selector').style.left=m==='num'?'4px':'calc(50%)';cargarAcademico();}
@@ -844,3 +841,4 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
 </script>
 </body>
 </html>
+
