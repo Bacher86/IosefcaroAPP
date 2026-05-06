@@ -464,39 +464,53 @@
 
         // ════ LOGIN ════
         async function login() {
-            userEmail = document.getElementById('login-email').value.toLowerCase().trim();
-            const doc = await db.collection('usuarios').doc(userEmail).get();
-            if (doc.exists) {
-                userData = doc.data();
-                if (userData.rol !== 'familia') { alert("Este acceso es solo para familias."); return; }
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('user-display-name').innerText = "Familia " + userData.nombre.split(' ')[0];
-                document.getElementById('perfil-nombre').value = userData.telefono ? userData.nombre : userData.nombre;
-                document.getElementById('perfil-nombre').value = userData.nombre;
-                document.getElementById('perfil-tel').value    = userData.telefono || "";
+    const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
+    if (!emailInput) {
+        alert("Por favor, ingresá tu dirección de email.");
+        return;
+    }
 
-                if (userData.fcmTokens?.length > 0 && Notification.permission === 'granted') {
-                    const btn = document.getElementById('btn-push');
-                    btn.innerText = "ACTIVADO";
-                    btn.classList.replace('bg-slate-900', 'bg-emerald-500');
-                }
+    try {
+        // Consultar de forma flexible por email del tutor o familia
+        const snap = await db.collection('usuarios')
+                             .where('email', '==', emailInput)
+                             .get();
 
-                const select = document.getElementById('select-hijo');
-                select.innerHTML = ""; listaHijos = [];
-                if (userData.hijos?.length > 0) {
-                    for (let hijoObj of userData.hijos) {
-                        const snap = await db.collection('alumnos').where('nombre', '==', hijoObj.nombre).get();
-                        snap.forEach(d => {
-                            listaHijos.push({ id: d.id, nombre: d.data().nombre });
-                            select.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
-                        });
-                    }
-                }
-                if (listaHijos.length > 0) { alumnoSeleccionadoId = listaHijos[0].id; await inicializarApp(); }
-                // Mensajería: buscar secretaría del nivel
-                await inicializarMensajeria();
-            } else { alert("Acceso denegado. Email no registrado."); }
+        if (snap.empty) {
+            alert("❌ El email ingresado no se encuentra registrado como familia o tutor. Por favor contáctese con la administración.");
+            return;
         }
+
+        let usuarioEncontrado = null;
+        snap.forEach(doc => {
+            const data = doc.data();
+            // Validamos que sea de rol familia o tutor
+            if (data.rol === 'familia' || data.rol === 'tutor') {
+                usuarioEncontrado = { id: doc.id, ...data };
+            }
+        });
+
+        if (!usuarioEncontrado) {
+            alert("❌ El email existe pero no tiene asignado un perfil de Familias.");
+            return;
+        }
+
+        // Login Exitoso
+        localStorage.setItem('familia_email', usuarioEncontrado.email);
+        localStorage.setItem('familia_nombre', usuarioEncontrado.nombre);
+        
+        // Ocultar pantalla de login e inicializar el panel
+        document.getElementById('login-screen').classList.add('hidden');
+        userEmail = usuarioEncontrado.email;
+        userName = usuarioEncontrado.nombre;
+        document.getElementById('user-display-name').textContent = `Hola, ${userName}`;
+        
+        await cargarHijosAsociados();
+    } catch (e) {
+        console.error(e);
+        alert("Ocurrió un error al intentar ingresar: " + e.message);
+    }
+}
 
         async function inicializarApp() {
             await cargarConocimientoIosi();
