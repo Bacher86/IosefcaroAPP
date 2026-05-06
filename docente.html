@@ -200,25 +200,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   </section>
 
   <!-- MENSAJES -->
-  <section id="tab-mensajes" class="tab-content" style="padding-bottom:0">
-    <div id="msg-doc-lista">
-      <h3 class="font-black text-xl mb-4">Conversaciones</h3>
-      <div id="msg-doc-convs" class="space-y-2"></div>
-      <button onclick="abrirNuevaConvDocente()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-4"><i class="fas fa-plus mr-2"></i>Nuevo mensaje a secretaría</button>
-    </div>
-    <div id="msg-doc-chat" class="hidden flex-col" style="height:calc(100vh - 160px)">
-      <div class="flex items-center gap-3 p-4 bg-white rounded-2xl border mb-3">
-        <button onclick="volverListaDocente()" class="text-slate-400 text-xl mr-1"><i class="fas fa-chevron-left"></i></button>
-        <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0">SC</div>
-        <div><p class="font-black text-sm" id="msg-doc-chat-nombre">Secretaría</p><p class="text-[10px] text-slate-400 font-bold">Iosef Caro</p></div>
-      </div>
-      <div id="msg-doc-mensajes" class="flex-1 overflow-y-auto flex flex-col gap-2 bg-white rounded-2xl p-4 border" style="scroll-behavior:smooth"></div>
-      <div class="bg-white border rounded-2xl p-3 mt-3 flex gap-2 items-end">
-        <textarea id="msg-doc-input" rows="1" placeholder="Escribí tu mensaje..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs resize-none outline-none" style="max-height:80px;font-family:inherit" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();msgDocEnviar()}"></textarea>
-        <button onclick="msgDocEnviar()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0"><i class="fas fa-paper-plane text-xs"></i></button>
-      </div>
-    </div>
-  </section>
 
   <!-- ════ EOE — EQUIPO DE ORIENTACIÓN ESCOLAR ════ -->
   <section id="tab-eoe" class="tab-content space-y-5">
@@ -1179,41 +1160,32 @@ async function cargarJustificacionesDocente() {
   document.getElementById('badge-just-doc').classList.toggle('hidden', pendientes === 0);
 }
 
+// Mostrar justificaciones aprobadas por la secretaría (Rol de visualización para el docente)
 function renderJustDoc() {
-  const cont = document.getElementById('lista-just-doc');
-  const lista = justFiltroActivo === 'todas' ? todasLasJustDoc : todasLasJustDoc.filter(j => j.estado === justFiltroActivo);
-  if (!lista.length) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Sin justificaciones ${justFiltroActivo !== 'todas' ? justFiltroActivo+'s' : ''}.</p>`; return; }
-  const colores = { pendiente: 'border-amber-200 bg-amber-50', aprobada: 'border-emerald-200 bg-emerald-50', rechazada: 'border-rose-200 bg-rose-50' };
-  cont.innerHTML = lista.map(j => {
-    const d = new Date(j.fechaEnvio).toLocaleDateString('es-AR');
-    const motivos = { medico:'Certificado médico', familiar:'Causa familiar', viaje:'Viaje', otro:'Otro' };
-    return `<div class="bg-white p-5 rounded-2xl border-2 ${colores[j.estado]||'border-slate-100'} shadow-sm">
-      <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
-        <div>
-          <p class="font-black text-slate-900">${j.alumnoNombreReal || j.alumnoNombre}</p>
-          <p class="text-[10px] text-slate-400 font-bold mt-0.5">Falta: ${j.fecha} · ${motivos[j.motivo]||j.motivo}</p>
-        </div>
-        <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${j.estado==='pendiente'?'bg-amber-100 text-amber-700':j.estado==='aprobada'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${j.estado}</span>
+  const cont = document.getElementById('doc-justificaciones-cont');
+  
+  // Filtrar solo las aprobadas para la visualización del docente
+  const aprobadas = todasLasJustDoc.filter(j => j.estado === 'aprobada');
+  
+  if (aprobadas.length === 0) {
+    cont.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs font-bold"><i class="fas fa-file-invoice text-2xl mb-2 block"></i>Sin novedades justificadas</div>`;
+    return;
+  }
+  
+  cont.innerHTML = aprobadas.map(j => {
+    const d = new Date(j.fechaEnvio).toLocaleDateString();
+    return `
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative">
+      <div class="absolute top-4 right-4 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase px-2 py-1 rounded-md">
+         <i class="fas fa-check-circle mr-1"></i> Aprobado por Secretaría
       </div>
-      ${j.detalle ? `<p class="text-sm text-slate-600 mb-3">${j.detalle}</p>` : ''}
-      ${j.urlCertificado ? `<a href="${j.urlCertificado}" target="_blank" class="text-[10px] font-black text-blue-600 flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
-      <p class="text-[9px] text-slate-400">Enviada por ${j.familiaNombre} el ${d}</p>
-      ${j.estado === 'pendiente' ? `<div class="flex gap-2 mt-3">
-        <button onclick="resolverJustificacion('${j.id}','aprobada')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
-        <button onclick="resolverJustificacion('${j.id}','rechazada')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
-      </div>` : ''}
+      <p class="font-black text-slate-800 text-sm mb-1">${j.alumnoNombre}</p>
+      <p class="text-[10px] text-slate-400 font-bold mb-3 uppercase tracking-wider">${j.curso || ''}</p>
+      <p class="text-xs text-slate-600 mb-3 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">"${j.motivo}"</p>
+      ${j.certificado ? `<a href="${j.certificado}" target="_blank" class="text-blue-600 font-bold text-xs flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
+      <p class="text-[9px] text-slate-400">Enviada por la familia de ${j.alumnoNombre} el ${d}</p>
     </div>`;
   }).join('');
-}
-
-async function resolverJustificacion(justId, estado) {
-  await db.collection('justificaciones').doc(justId).update({ estado, resueltaPor: docenteEmail, fechaResolucion: new Date().toISOString() });
-  const j = todasLasJustDoc.find(j => j.id === justId);
-  if (j) j.estado = estado;
-  renderJustDoc();
-  // Actualizar badge
-  const pendientes = todasLasJustDoc.filter(j => j.estado === 'pendiente').length;
-  document.getElementById('badge-just-doc').classList.toggle('hidden', pendientes === 0);
 }
 
 function filtrarJustDoc(filtro, btn) {
