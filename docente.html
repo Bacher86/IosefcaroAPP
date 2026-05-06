@@ -532,7 +532,14 @@ async function renderGrilla(fecha){
     let cols=''; let suma=0,cnt=0;
     columnaExamenes.forEach(col=>{
       const val=nData[col.key]||''; const bloq=periodoActivo.bloqueado;
-      cols+=`<td style="text-align:center"><input type="number" min="1" max="10" value="${val}" ${bloq?'disabled':''} style="${bloq?'color:#94a3b8':''}" oninput="cambiarNota('${al.id}','${col.key}',this.value)" placeholder="—"></td>`;
+      cols+=`<td style="text-align:center"><input type="number" 
+       min="1" 
+       max="10" 
+       step="0.1"
+       value="${notaActual}" 
+       oninput="validarYCalcularPromedio(this)" 
+       class="input-pro text-center text-sm font-black w-16 nota-input" 
+       data-alumno-id="${alumno.id}">
       if(val!==''){suma+=parseFloat(val)||0;cnt++;}
     });
     const prom=cnt>0?(suma/cnt).toFixed(1):'—';
@@ -575,7 +582,51 @@ async function confirmarNotas(){
   alert("✅ Notas guardadas.");cambiosNotas={};document.getElementById('btn-guardar-notas').style.display='none';
   btn.innerHTML='<i class="fas fa-save"></i> GUARDAR NOTAS';
 }
+function validarYCalcularPromedio(input) {
+  let val = parseFloat(input.value);
+  
+  // Limitar el rango entre 1 y 10 estrictamente
+  if (val > 10) {
+    input.value = 10;
+    val = 10;
+  } else if (val < 1) {
+    input.value = 1;
+    val = 1;
+  }
 
+  // Buscar todos los inputs de notas de esta fila o contenedor de alumno
+  const fila = input.closest('.fila-alumno-notas'); 
+  if (fila) {
+    const inputs = fila.querySelectorAll('.nota-input');
+    let suma = 0;
+    let contador = 0;
+    
+    inputs.forEach(inp => {
+      const v = parseFloat(inp.value);
+      if (!isNaN(v)) {
+        suma += v;
+        contador++;
+      }
+    });
+    
+    const promedioSpan = fila.querySelector('.promedio-output');
+    if (promedioSpan && contador > 0) {
+      const promedio = (suma / contador).toFixed(2);
+      promedioSpan.textContent = promedio;
+      
+      // Si querés que se guarde en la BD automáticamente el promedio:
+      const alumnoId = input.getAttribute('data-alumno-id');
+      guardarPromedioAutomatico(alumnoId, promedio);
+    }
+  }
+}
+
+async function guardarPromedioAutomatico(alumnoId, promedio) {
+  // Lógica para actualizar el promedio final en la subcolección de notas de Firestore
+  await db.collection('alumnos').doc(alumnoId).update({
+    promedioGeneral: parseFloat(promedio)
+  });
+}
 function renderTagsExamenes(){
   document.getElementById('tags-examenes').innerHTML=columnaExamenes.map(c=>`<span style="background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #e2e8f0">${c.label}</span>`).join('');
 }
