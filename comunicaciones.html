@@ -18,24 +18,6 @@
         .input-pro { border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; outline: none; width: 100%; transition: all 0.3s; font-size: 14px; font-family: inherit; }
         .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* ── Mensajería ── */
-        #msg-sidebar { width: 300px; min-width: 300px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 57px); position: sticky; top: 57px; }
-        #msg-chat-area { flex: 1; display: flex; flex-direction: column; height: calc(100vh - 57px); }
-        .conv-item { padding: 12px 14px; border-bottom: 1px solid #f8fafc; cursor: pointer; transition: background 0.15s; }
-        .conv-item:hover { background: #f8fafc; }
-        .conv-item.active { background: #eff6ff; border-left: 3px solid #2563eb; }
-        .msg-burbuja-wrapper { display: flex; flex-direction: column; max-width: 72%; margin-bottom: 4px; }
-        .msg-burbuja-wrapper.yo   { align-self: flex-end;   align-items: flex-end; }
-        .msg-burbuja-wrapper.otro { align-self: flex-start; align-items: flex-start; }
-        .msg-burbuja { padding: 10px 15px; border-radius: 18px; font-size: 13px; line-height: 1.5; word-break: break-word; }
-        .msg-burbuja.yo   { background: #0f172a; color: white; border-bottom-right-radius: 4px; }
-        .msg-burbuja.otro { background: white; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
-        .msg-meta { font-size: 10px; color: #94a3b8; font-weight: 700; margin-top: 3px; }
-        .etiqueta-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
-        .et-consulta { background: #dbeafe; color: #1e40af; }
-        .et-tramite   { background: #d1fae5; color: #065f46; }
-        .et-urgente   { background: #fee2e2; color: #991b1b; }
-        .et-resuelto  { background: #f1f5f9; color: #64748b; }
         .nivel-pill { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; }
         .nivel-inicial    { background: #fce7f3; color: #9d174d; }
         .nivel-primario   { background: #dbeafe; color: #1e40af; }
@@ -46,7 +28,6 @@
 </head>
 <body>
 
-    <!-- ══ LOGIN ══ -->
     <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[2000] flex items-center justify-center p-6">
         <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl">
             <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-bullhorn"></i></div>
@@ -62,18 +43,13 @@
     </div>
 
     <div id="app-content" class="hidden">
-        <!-- ══ NAVBAR ══ -->
         <nav class="bg-white border-b p-3 flex gap-2 sticky top-0 z-50 shadow-sm overflow-x-auto" id="main-nav">
-            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm" style="display:inline-flex">
+            <button onclick="switchTab('noticias')" id="navbtn-noticias" class="nav-btn font-bold px-4 py-2 rounded-xl bg-blue-50 text-blue-600 whitespace-nowrap text-sm">
                 <i class="fas fa-bullhorn mr-2"></i>Noticias
             </button>
             <button onclick="switchTab('calendario')" id="navbtn-calendario" class="nav-btn font-bold px-4 py-2 rounded-xl text-slate-500 whitespace-nowrap text-sm">
                 <i class="fas fa-calendar-star mr-2"></i>Calendario
             </button>
-            <!-- Solo visible para secretarías y admin -->
-            
-            
-            
             <div class="ml-auto flex items-center gap-2">
                 <span id="user-label" class="text-[10px] font-black text-slate-400 uppercase hidden"></span>
                 <button onclick="location.reload()" class="text-rose-500 font-bold p-2 hover:bg-rose-50 rounded-xl transition"><i class="fas fa-power-off"></i></button>
@@ -82,7 +58,6 @@
 
         <main class="p-4 max-w-5xl mx-auto">
 
-            <!-- ════ TAB NOTICIAS ════ -->
             <section id="tab-noticias" class="tab-content active space-y-6">
                 <div id="form-noticias" class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="noticia-form-title" class="font-black text-xl mb-4 text-slate-800">Nueva Publicación</h2>
@@ -101,7 +76,6 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Upload de imagen -->
                             <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
                               <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📷 Imagen / Foto</label>
                               <div class="flex gap-2 items-center">
@@ -112,7 +86,6 @@
                               <div id="prev-img" class="mt-2 hidden"><img id="prev-img-el" class="w-full h-28 object-cover rounded-xl" src=""></div>
                               <div id="upload-prog-img" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-img" class="bg-blue-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-img" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
                             </div>
-                            <!-- Upload de video -->
                             <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
                               <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">🎬 Video</label>
                               <div class="flex gap-2 items-center">
@@ -123,7 +96,6 @@
                               <div id="prev-video" class="mt-2 hidden"><video id="prev-video-el" class="w-full h-28 object-cover rounded-xl" controls src=""></video></div>
                               <div id="upload-prog-video" class="hidden mt-2"><div class="bg-slate-200 rounded-full h-1.5"><div id="prog-bar-video" class="bg-purple-600 h-1.5 rounded-full transition-all" style="width:0%"></div></div><p id="prog-txt-video" class="text-[9px] text-slate-400 mt-1">Subiendo...</p></div>
                             </div>
-                            <!-- Upload de PDF/archivo -->
                             <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
                               <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📄 Archivo / PDF</label>
                               <div class="flex gap-2 items-center">
@@ -148,7 +120,6 @@
                 </div>
             </section>
 
-            <!-- ════ TAB CALENDARIO ════ -->
             <section id="tab-calendario" class="tab-content space-y-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border">
                     <h2 id="cal-form-title" class="font-black text-xl mb-4 text-slate-800">Agendar al Calendario</h2>
@@ -175,253 +146,379 @@
                 <div id="lista-calendario" class="space-y-3"></div>
             </section>
 
-        <!-- ════ REGISTRO DE LLAMADAS ════ -->
-        <section id="tab-llamadas" class="tab-content space-y-6">
-            <h2 class="text-2xl font-black tracking-tight">Registro de Llamadas</h2>
-            <p class="text-slate-400 text-xs -mt-3">Registrá cada contacto con una familia para tener historial completo.</p>
-
-            <!-- Formulario nueva llamada -->
-            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                <h3 class="font-black text-base flex items-center gap-2"><i class="fas fa-plus-circle text-blue-500"></i> Nueva llamada / contacto</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Familia / Apellido</label>
-                        <input type="text" id="call-familia" placeholder="Buscar familia..." class="input-pro mt-1" oninput="buscarFamiliaCall(this.value)">
-                        <div id="call-sugerencias" class="mt-1 space-y-1"></div>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Fecha y hora</label>
-                        <input type="datetime-local" id="call-fecha" class="input-pro mt-1">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de contacto</label>
-                        <select id="call-tipo" class="input-pro mt-1">
-                            <option value="llamada_entrante">Llamada entrante</option>
-                            <option value="llamada_saliente">Llamada saliente</option>
-                            <option value="whatsapp">WhatsApp</option>
-                            <option value="presencial">Presencial</option>
-                            <option value="email">Email</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Resultado</label>
-                        <select id="call-resultado" class="input-pro mt-1">
-                            <option value="comunicado">Comunicado exitosamente</option>
-                            <option value="no_contesta">No contesta</option>
-                            <option value="pendiente">Pendiente de respuesta</option>
-                            <option value="buzon">Dejé mensaje en buzón</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Motivo / Detalle</label>
-                        <textarea id="call-motivo" placeholder="Describí el motivo y lo que se habló..." class="input-pro mt-1 h-20 resize-none"></textarea>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="text-[9px] font-black text-slate-400 uppercase">Alumno relacionado (opcional)</label>
-                        <input type="text" id="call-alumno" placeholder="Nombre del alumno" class="input-pro mt-1">
-                    </div>
-                </div>
-                <button onclick="guardarLlamada()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">
-                    <i class="fas fa-save mr-2"></i> REGISTRAR CONTACTO
-                </button>
-            </div>
-
-            <!-- Filtros y búsqueda -->
-            <div class="flex flex-wrap gap-3 items-center">
-                <input type="text" id="call-search" placeholder="Buscar por familia o alumno..." class="input-pro" style="max-width:250px" oninput="filtrarLlamadas()">
-                <select id="call-filter-tipo" onchange="filtrarLlamadas()" class="input-pro" style="max-width:180px">
-                    <option value="">Todos los tipos</option>
-                    <option value="llamada_entrante">Entrantes</option>
-                    <option value="llamada_saliente">Salientes</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="presencial">Presencial</option>
-                </select>
-                <select id="call-filter-resultado" onchange="filtrarLlamadas()" class="input-pro" style="max-width:200px">
-                    <option value="">Todos los resultados</option>
-                    <option value="comunicado">Comunicado</option>
-                    <option value="no_contesta">No contesta</option>
-                    <option value="pendiente">Pendiente</option>
-                </select>
-            </div>
-
-            <!-- Lista de llamadas -->
-            <div id="lista-llamadas" class="space-y-3">
-                <p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
-            </div>
-        </section>
-
-        <!-- ════ JUSTIFICACIONES (SECRETARIA) ════ -->
-        <section id="tab-justificaciones-sec" class="tab-content space-y-5">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h2 class="text-2xl font-black tracking-tight">Justificaciones</h2>
-                    <p class="text-slate-400 text-xs mt-1">Aprobá o rechazá las justificaciones enviadas por las familias.</p>
-                </div>
-                <select id="just-sec-filtro" onchange="cargarJustificacionesSec()" class="input-pro" style="max-width:160px">
-                    <option value="pendiente">Pendientes</option>
-                    <option value="aprobada">Aprobadas</option>
-                    <option value="rechazada">Rechazadas</option>
-                    <option value="todas">Todas</option>
-                </select>
-            </div>
-            <div id="lista-just-sec" class="space-y-3">
-                <p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
-            </div>
-        </section>
-
         </main>
     </div>
-<script>
-        (function(){ emailjs.init("hDKMmExBMzhAWF_KH"); })();
 
-        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    <script>
+        (function(){
+            emailjs.init("hDKMmExBMzhAWF_KH");
+        })();
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",
+            authDomain: "app-iosefcaro.firebaseapp.com",
+            projectId: "app-iosefcaro",
+            storageBucket: "app-iosefcaro.appspot.com",
+            messagingSenderId: "651320124248",
+            appId: "1:651320124248:web:97c8ca00e29114e1983b2d"
+        };
+
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const storage = firebase.storage();
 
-        let staffEmail  = "";
+        let staffEmail = "";
         let staffNombre = "";
-        let staffRol    = "";
-        let staffNiveles = [];
+        let staffRol = ""; 
+        let cursosListaGlobal = [];
 
-        // ═══ MENSAJERÍA ═══
-        let secConvActiva  = null;
-        let secConvs       = [];
-        let secFiltro      = 'todas';
-        let secUnsubChat   = null;
-        let secUnsubConvs  = null;
-
-        // ═══ LOGIN ═══
-        // Auto-login from index.html session
-        window.addEventListener('DOMContentLoaded',()=>{
-            const em=sessionStorage.getItem('iosef_email');const nm=sessionStorage.getItem('iosef_nombre');
-            if(em){document.getElementById('log-email').value=em;if(nm)document.getElementById('log-nombre-display')?.textContent && (document.getElementById('log-nombre-display').textContent=nm);loginComunicacion();}
-        });
-
+        // ═══ LOGIN Y CONTROL DE ACCESO ═══
         async function loginComunicacion() {
-            const email = document.getElementById('log-email').value.toLowerCase().trim();
-            const pass  = document.getElementById('log-pass').value;
-            const errEl = document.getElementById('login-err');
-            errEl.classList.add('hidden');
+            const email = document.getElementById('log-email').value.trim();
+            const pass = document.getElementById('log-pass').value;
+            const err = document.getElementById('login-err');
 
-            if (!email || !pass) { errEl.textContent = 'Ingresá tus datos.'; errEl.classList.remove('hidden'); return; }
-
-            // Superadmin
-            if (email === 'uriel.bacher@gmail.com' && pass === 'Gallardo10') {
-                staffEmail = email; staffNombre = 'Administrador'; staffRol = 'admin'; staffNiveles = ['inicial','primario','secundario'];
-                iniciarApp(); return;
+            if (!email || !pass) {
+                err.innerText = "Por favor completa todos los campos.";
+                err.classList.remove('hidden');
+                return;
             }
 
             try {
-                const doc = await db.collection('usuarios').doc(email).get();
-                if (!doc.exists) { errEl.textContent = 'Usuario no encontrado.'; errEl.classList.remove('hidden'); return; }
-                const data = doc.data();
-                if (data.pass !== pass) { errEl.textContent = 'Contraseña incorrecta.'; errEl.classList.remove('hidden'); return; }
-                const rolesPermitidos = ['admin','comunicacion'];
-                if (!rolesPermitidos.includes(data.rol)) { errEl.textContent = 'Sin permisos para este panel.'; errEl.classList.remove('hidden'); return; }
-                staffEmail  = email;
-                staffNombre = data.nombre;
-                staffRol    = data.rol;
-                staffNiveles = data.niveles || [];
-                iniciarApp();
-            } catch(e) { errEl.textContent = 'Error de conexión.'; errEl.classList.remove('hidden'); }
+                const snap = await db.collection('usuarios')
+                    .where('email', '==', email.toLowerCase())
+                    .where('password', '==', pass)
+                    .get();
+
+                if (snap.empty) {
+                    err.innerText = "Credenciales incorrectas.";
+                    err.classList.remove('hidden');
+                    return;
+                }
+
+                let userDoc = null;
+                snap.forEach(d => userDoc = d.data());
+
+                if (userDoc.rol !== 'admin' && userDoc.rol !== 'secretaria') {
+                    err.innerText = "No tienes permisos de comunicación.";
+                    err.classList.remove('hidden');
+                    return;
+                }
+
+                staffEmail = userDoc.email;
+                staffNombre = userDoc.nombre;
+                staffRol = userDoc.rol;
+
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+
+                const label = document.getElementById('user-label');
+                label.innerText = `${staffNombre} (${staffRol})`;
+                label.classList.remove('hidden');
+
+                inicializarModulo();
+
+            } catch (e) {
+                console.error(e);
+                err.innerText = "Error de conexión.";
+                err.classList.remove('hidden');
+            }
         }
 
-        function iniciarApp() {
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('app-content').classList.remove('hidden');
-            document.getElementById('user-label').textContent = staffNombre;
-            document.getElementById('user-label').classList.remove('hidden');
-
-            // Solo secretarías y admin ven tab mensajes
-            // Comunicaciones: acceso completo para roles permitidos
-        }
-
-        function inicializarApp() {
-            cargarCursos();
+        async function inicializarModulo() {
+            await cargarCursosMaestros();
             cargarNoticias();
             cargarEventosCalendario();
         }
 
-        // ═══ CURSOS ═══
-        async function cargarCursos() {
-            try {
-                const snap = await db.collection('cursos').get();
-                const cursos = snap.docs.map(doc => ({ nombre: doc.data().nombre, nivel: doc.data().nivel })).sort((a,b) => a.nombre.localeCompare(b.nombre));
-                const contNot = document.getElementById('cursos-noticia');
-                const contCal = document.getElementById('cursos-calendario');
-                [contNot, contCal].forEach(cont => {
-                    if (!cont) return;
-                    const suffix = cont.id.replace('cursos-', '');
-                    cont.innerHTML = `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-50"><input type="checkbox" id="all-${cont.id}" onchange="toggleTodos(this,'${cont.id}')"> TODOS</label>`;
-                    cursos.forEach(c => {
-                        cont.innerHTML += `<label class="border px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50"><input type="checkbox" class="check-${cont.id}" value="${c.nombre}"> ${c.nombre}</label>`;
-                    });
-                });
-            } catch(e) { console.log("Error cursos:", e); }
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-blue-600', 'bg-emerald-50', 'text-emerald-600');
+                btn.classList.add('text-slate-500');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            const btnActivo = document.getElementById(`navbtn-${tabId}`);
+
+            if (tabId === 'noticias') {
+                btnActivo.classList.add('bg-blue-50', 'text-blue-600');
+            } else if (tabId === 'calendario') {
+                btnActivo.classList.add('bg-emerald-50', 'text-emerald-600');
+            }
         }
 
-        function toggleTodos(source, contId) { document.querySelectorAll(`.check-${contId}`).forEach(cb => cb.checked = source.checked); }
+        // Cargar cursos desde Firestore para los Checkboxes
+        async function cargarCursosMaestros() {
+            try {
+                const snap = await db.collection('cursos').orderBy('nombre', 'asc').get();
+                const contNoticias = document.getElementById('cursos-noticia');
+                const contCalendario = document.getElementById('cursos-calendario');
 
-        // ═══ NOTICIAS ═══
+                let html = `<label class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer hover:bg-slate-50">
+                    <input type="checkbox" id="chk-todos-not" onchange="toggleTodosCursos('noticia', this.checked)"> Todos los cursos
+                </label>`;
+                let htmlCal = `<label class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer hover:bg-slate-50">
+                    <input type="checkbox" id="chk-todos-cal" onchange="toggleTodosCursos('calendario', this.checked)"> Todos los cursos
+                </label>`;
+
+                cursosListaGlobal = [];
+                snap.forEach(doc => {
+                    const c = doc.data().nombre;
+                    cursosListaGlobal.push(c);
+                    html += `
+                    <label class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer hover:bg-slate-50">
+                        <input type="checkbox" value="${c}" class="check-cursos-noticia"> ${c}
+                    </label>`;
+                    htmlCal += `
+                    <label class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer hover:bg-slate-50">
+                        <input type="checkbox" value="${c}" class="check-cursos-cal"> ${c}
+                    </label>`;
+                });
+
+                contNoticias.innerHTML = html;
+                contCalendario.innerHTML = htmlCal;
+            } catch(e) {
+                console.error("Error cargando cursos:", e);
+            }
+        }
+
+        function toggleTodosCursos(contexto, isChecked) {
+            const selector = contexto === 'noticia' ? '.check-cursos-noticia' : '.check-cursos-cal';
+            document.querySelectorAll(selector).forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        }
+
+        // Subida de archivos a Firebase Storage
+        async function uploadFileToStorage(file, folder) {
+            const fileRef = storage.ref().child(`comunicados/${folder}/${Date.now()}_${file.name}`);
+            return fileRef.put(file);
+        }
+
+        async function previewMedia(type, input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const previewImg = document.getElementById('prev-img');
+            const previewImgEl = document.getElementById('prev-img-el');
+            const previewVideo = document.getElementById('prev-video');
+            const previewVideoEl = document.getElementById('prev-video-el');
+            const previewPdfNombre = document.getElementById('prev-pdf-nombre');
+
+            const progDiv = document.getElementById(`upload-prog-${type}`);
+            const progBar = document.getElementById(`prog-bar-${type}`);
+            const progTxt = document.getElementById(`prog-txt-${type}`);
+
+            progDiv.classList.remove('hidden');
+            progBar.style.width = '0%';
+            progTxt.innerText = "Subiendo archivo...";
+
+            try {
+                const uploadTask = await uploadFileToStorage(file, type === 'img' ? 'imgs' : type === 'video' ? 'videos' : 'pdfs');
+                const downloadURL = await uploadTask.ref.getDownloadURL();
+
+                progBar.style.width = '100%';
+                progTxt.innerText = "¡Subido con éxito!";
+
+                if (type === 'img') {
+                    document.getElementById('not-img').value = downloadURL;
+                    previewImgEl.src = downloadURL;
+                    previewImg.classList.remove('hidden');
+                } else if (type === 'video') {
+                    document.getElementById('not-video').value = downloadURL;
+                    previewVideoEl.src = downloadURL;
+                    previewVideo.classList.remove('hidden');
+                } else if (type === 'pdf') {
+                    document.getElementById('not-pdf').value = downloadURL;
+                    previewPdfNombre.innerText = `📄 ${file.name}`;
+                    previewPdfNombre.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+                progTxt.innerText = "Error al subir.";
+            }
+        }
+
+        // ═══ NOTICIAS / COMUNICADOS ═══
         async function cargarNoticias() {
-            const snap = await db.collection('comunicados').orderBy('fechaCreacion', 'desc').get();
+            const snap = await db.collection('noticias').orderBy('fecha', 'desc').get();
             const cont = document.getElementById('lista-noticias');
             cont.innerHTML = "";
+
             snap.forEach(doc => {
                 const n = doc.data();
-                const puedeEditar = ['admin','comunicacion'].includes(staffRol);
-                cont.innerHTML += `<div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col gap-3">
-                    <div class="flex justify-between items-start">
+                const id = doc.id;
+                const progStr = n.programada ? `<span class="bg-amber-100 text-amber-800 text-[9px] font-black uppercase px-2 py-1 rounded">Programada: ${new Date(n.programada).toLocaleString()}</span>` : '';
+                const cursStr = n.cursos && n.cursos.length ? n.cursos.map(c => `<span class="bg-slate-100 text-slate-700 text-[9px] font-bold px-2 py-1 rounded">${c}</span>`).join(' ') : '<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-2 py-1 rounded">Todos</span>';
+
+                let mediaHtml = "";
+                if (n.img) mediaHtml += `<img src="${n.img}" class="w-full h-48 object-cover rounded-2xl mb-4">`;
+                if (n.video) {
+                    if (n.video.includes('youtube.com') || n.video.includes('youtu.be')) {
+                        mediaHtml += `<div class="aspect-video w-full mb-4"><iframe class="w-full h-full rounded-2xl" src="${n.video.replace('watch?v=', 'embed/')}" frameborder="0" allowfullscreen></iframe></div>`;
+                    } else {
+                        mediaHtml += `<video src="${n.video}" controls class="w-full rounded-2xl mb-4 max-h-80 bg-black"></video>`;
+                    }
+                }
+                if (n.pdf) mediaHtml += `<a href="${n.pdf}" target="_blank" class="inline-flex items-center gap-2 bg-red-50 text-red-600 font-bold px-4 py-2.5 rounded-xl border border-red-100 text-xs hover:bg-red-100 transition mb-4"><i class="fas fa-file-pdf text-lg"></i> Descargar Documento Adjunto</a>`;
+                if (n.link) mediaHtml += `<a href="${n.link}" target="_blank" class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 font-bold px-4 py-2.5 rounded-xl border border-blue-100 text-xs hover:bg-blue-100 transition mb-4 ml-2"><i class="fas fa-link"></i> Enlace de Interés</a>`;
+
+                cont.innerHTML += `
+                <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                    <div class="flex justify-between items-start mb-3">
                         <div>
-                            <h4 class="font-bold text-slate-800">${n.titulo}</h4>
-                            <p class="text-xs text-slate-400">${new Date(n.fechaCreacion).toLocaleString('es-AR')}</p>
+                            <h4 class="font-black text-lg text-slate-800 leading-tight">${n.titulo}</h4>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Por ${n.autor || 'Staff'} • ${new Date(n.fecha).toLocaleString()}</p>
                         </div>
-                        ${puedeEditar ? `<div class="flex gap-2">
-                            <button onclick="editarNoticia('${doc.id}')" class="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><i class="fas fa-edit"></i></button>
-                            <button onclick="eliminarDoc('comunicados','${doc.id}')" class="text-rose-400 p-2 hover:bg-rose-50 rounded-lg"><i class="fas fa-trash"></i></button>
-                        </div>` : ''}
+                        <div class="flex gap-2">
+                            <button onclick="editarNoticia('${id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-xl text-xs font-bold transition"><i class="fas fa-edit"></i></button>
+                            <button onclick="eliminarNoticia('${id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-xl text-xs font-bold transition"><i class="fas fa-trash-alt"></i></button>
+                        </div>
                     </div>
-                    <p class="text-sm text-slate-600 line-clamp-2">${n.texto}</p>
-                    <div class="flex flex-wrap gap-1">
-                        ${n.curso ? n.curso.map(c => `<span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded text-slate-500">${c}</span>`).join('') : ''}
+                    <p class="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed mb-4">${n.texto}</p>
+                    ${mediaHtml}
+                    <div class="flex flex-wrap gap-1 items-center border-t pt-3 mt-2">
+                        <span class="text-[9px] text-slate-400 font-black uppercase mr-1">Visibilidad:</span>
+                        ${cursStr}
+                        ${progStr}
                     </div>
                 </div>`;
             });
         }
 
         async function guardarNoticia() {
-            const id    = document.getElementById('noticia-id').value;
-            const titulo = document.getElementById('not-titulo').value;
-            const texto  = document.getElementById('not-texto').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-            const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-            if (!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
-            const btn = document.getElementById('btn-noticia');
-            btn.disabled = true; btn.innerText = "Procesando...";
-            const data = {
-                titulo, texto, curso: seleccionados,
-                programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-                adjuntos: { img: document.getElementById('not-img').value, video: document.getElementById('not-video').value, pdf: document.getElementById('not-pdf').value, link: document.getElementById('not-link').value },
-                fechaCreacion: new Date().toISOString()
+            const id = document.getElementById('noticia-id').value;
+            const titulo = document.getElementById('not-titulo').value.trim();
+            const texto = document.getElementById('not-texto').value.trim();
+            const programada = document.getElementById('not-programacion').value;
+            const img = document.getElementById('not-img').value.trim();
+            const video = document.getElementById('not-video').value.trim();
+            const pdf = document.getElementById('not-pdf').value.trim();
+            const link = document.getElementById('not-link').value.trim();
+
+            const selectedCursos = [];
+            document.querySelectorAll('.check-cursos-noticia:checked').forEach(cb => selectedCursos.push(cb.value));
+
+            if (!titulo || !texto) {
+                alert("Completa título y texto.");
+                return;
+            }
+
+            const payload = {
+                titulo,
+                texto,
+                fecha: new Date().toISOString(),
+                autor: staffNombre,
+                cursos: selectedCursos,
+                img: img || null,
+                video: video || null,
+                pdf: pdf || null,
+                link: link || null,
+                programada: programada ? new Date(programada).toISOString() : null
             };
+
             try {
-                if (id) { await db.collection('comunicados').doc(id).update(data); alert("Publicación actualizada."); }
-                else { await db.collection('comunicados').add(data); await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos); alert("Publicado y mails enviados."); }
-                location.reload();
-            } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
+                if (id) {
+                    await db.collection('noticias').doc(id).update(payload);
+                } else {
+                    await db.collection('noticias').add(payload);
+                    
+                    // Solo enviar mails a familias si es un comunicado inmediato y no es editado
+                    if (!programada) {
+                        await enviarAvisoMailFamilias(titulo, texto, selectedCursos);
+                    }
+                }
+
+                resetFormNoticia();
+                cargarNoticias();
+            } catch (e) {
+                console.error(e);
+                alert("Error al guardar.");
+            }
+        }
+
+        async function enviarAvisoMailFamilias(titulo, texto, cursosDest) {
+            try {
+                let usuariosSnap;
+                if (cursosDest.length === 0 || document.getElementById('chk-todos-not')?.checked) {
+                    usuariosSnap = await db.collection('usuarios').where('rol', '==', 'familia').get();
+                } else {
+                    // Filtrar por los alumnos que pertenezcan a los cursos destinados
+                    const alumnosSnap = await db.collection('alumnos').where('curso', 'in', cursosDest).get();
+                    const responsemails = new Set();
+                    alumnosSnap.forEach(doc => {
+                        const data = doc.data();
+                        if (data.responsableEmail) responsemails.add(data.responsableEmail.toLowerCase());
+                    });
+                    
+                    if (responsemails.size === 0) return;
+                    
+                    // Buscar en usuarios
+                    usuariosSnap = await db.collection('usuarios')
+                        .where('rol', '==', 'familia')
+                        .get();
+                }
+
+                usuariosSnap.forEach(async (uDoc) => {
+                    const u = uDoc.data();
+                    // Si filtramos por curso específico, verificar si el mail del tutor está incluido
+                    if (cursosDest.length > 0 && !document.getElementById('chk-todos-not')?.checked) {
+                        const alumnosSnap = await db.collection('alumnos').where('curso', 'in', cursosDest).get();
+                        const emailsPermitidos = [];
+                        alumnosSnap.forEach(a => emailsPermitidos.push(a.data().responsableEmail?.toLowerCase()));
+                        if (!emailsPermitidos.includes(u.email?.toLowerCase())) return;
+                    }
+
+                    emailjs.send("service_x9r2b6e", "template_noticia", {
+                        to_email: u.email,
+                        to_name: u.nombre,
+                        noticia_titulo: titulo,
+                        noticia_texto: texto.substring(0, 300) + "..."
+                    });
+                });
+
+            } catch (e) {
+                console.error("Error enviando mails:", e);
+            }
         }
 
         async function editarNoticia(id) {
-            const doc = await db.collection('comunicados').doc(id).get();
+            const doc = await db.collection('noticias').doc(id).get();
+            if (!doc.exists) return;
             const n = doc.data();
+
             document.getElementById('noticia-id').value = id;
-            document.getElementById('not-titulo').value  = n.titulo;
-            document.getElementById('not-texto').value   = n.texto;
-            document.getElementById('not-img').value     = n.adjuntos?.img   || "";
-            document.getElementById('not-video').value   = n.adjuntos?.video || "";
-            document.getElementById('not-pdf').value     = n.adjuntos?.pdf   || "";
-            document.getElementById('not-link').value    = n.adjuntos?.link  || "";
-            document.querySelectorAll('.check-cursos-noticia').forEach(cb => { cb.checked = n.curso && n.curso.includes(cb.value); });
+            document.getElementById('not-titulo').value = n.titulo;
+            document.getElementById('not-texto').value = n.texto;
+            document.getElementById('not-programacion').value = n.programada ? n.programada.substring(0, 16) : "";
+            document.getElementById('not-img').value = n.img || "";
+            document.getElementById('not-video').value = n.video || "";
+            document.getElementById('not-pdf').value = n.pdf || "";
+            document.getElementById('not-link').value = n.link || "";
+
+            // Reset media previews
+            document.getElementById('prev-img').classList.add('hidden');
+            document.getElementById('prev-video').classList.add('hidden');
+            document.getElementById('prev-pdf-nombre').classList.add('hidden');
+
+            if (n.img) {
+                document.getElementById('prev-img-el').src = n.img;
+                document.getElementById('prev-img').classList.remove('hidden');
+            }
+            if (n.video) {
+                document.getElementById('prev-video-el').src = n.video;
+                document.getElementById('prev-video').classList.remove('hidden');
+            }
+            if (n.pdf) {
+                document.getElementById('prev-pdf-nombre').innerText = "📄 Archivo cargado";
+                document.getElementById('prev-pdf-nombre').classList.remove('hidden');
+            }
+
+            document.querySelectorAll('.check-cursos-noticia').forEach(cb => {
+                cb.checked = n.cursos && n.cursos.includes(cb.value);
+            });
+
             document.getElementById('noticia-form-title').innerText = "Editando Publicación";
             document.getElementById('btn-cancel-noticia').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -430,10 +527,33 @@
         function resetFormNoticia() {
             document.getElementById('noticia-id').value = "";
             document.getElementById('not-titulo').value = "";
-            document.getElementById('not-texto').value  = "";
+            document.getElementById('not-texto').value = "";
+            document.getElementById('not-programacion').value = "";
+            document.getElementById('not-img').value = "";
+            document.getElementById('not-video').value = "";
+            document.getElementById('not-pdf').value = "";
+            document.getElementById('not-link').value = "";
+            
+            document.getElementById('prev-img').classList.add('hidden');
+            document.getElementById('prev-video').classList.add('hidden');
+            document.getElementById('prev-pdf-nombre').classList.add('hidden');
+            
+            document.getElementById('upload-prog-img').classList.add('hidden');
+            document.getElementById('upload-prog-video').classList.add('hidden');
+            document.getElementById('upload-prog-pdf').classList.add('hidden');
+
             document.querySelectorAll('.check-cursos-noticia').forEach(cb => cb.checked = false);
+            if(document.getElementById('chk-todos-not')) document.getElementById('chk-todos-not').checked = false;
+            
             document.getElementById('noticia-form-title').innerText = "Nueva Publicación";
             document.getElementById('btn-cancel-noticia').classList.add('hidden');
+        }
+
+        async function eliminarNoticia(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este comunicado?")) {
+                await db.collection('noticias').doc(id).delete();
+                cargarNoticias();
+            }
         }
 
         // ═══ CALENDARIO ═══
@@ -441,16 +561,35 @@
             const snap = await db.collection('eventos').orderBy('fecha', 'asc').get();
             const cont = document.getElementById('lista-calendario');
             cont.innerHTML = "";
+
             snap.forEach(doc => {
                 const e = doc.data();
-                cont.innerHTML += `<div class="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
+                const id = doc.id;
+                const dateParsed = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+                let badgeColor = "bg-blue-100 text-blue-800";
+                if (e.tipo === 'examen') badgeColor = "bg-rose-100 text-rose-800";
+                if (e.tipo === 'feriado') badgeColor = "bg-slate-100 text-slate-800";
+
+                const visStr = e.cursos && e.cursos.length ? e.cursos.map(c => `<span class="bg-slate-100 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded">${c}</span>`).join(' ') : '<span class="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded">Todos</span>';
+
+                cont.innerHTML += `
+                <div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="flex-1">
-                        <p class="text-[10px] font-black uppercase text-slate-400">${e.fecha}</p>
-                        <h4 class="font-bold text-slate-800">${e.titulo}</h4>
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="${badgeColor} text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full">${e.tipo}</span>
+                            <span class="text-xs text-slate-400 font-bold capitalize">${dateParsed}</span>
+                        </div>
+                        <h4 class="font-black text-base text-slate-800 leading-snug">${e.titulo}</h4>
+                        ${e.descripcion ? `<p class="text-slate-500 text-xs mt-1 leading-relaxed">${e.descripcion}</p>` : ''}
+                        <div class="flex flex-wrap gap-1 items-center mt-3 pt-2 border-t">
+                            <span class="text-[9px] text-slate-400 font-black uppercase mr-1">Visibilidad:</span>
+                            ${visStr}
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="editarCalendario('${doc.id}')" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
-                        <button onclick="eliminarDoc('eventos','${doc.id}')"   class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash"></i></button>
+                    <div class="flex gap-1 self-end md:self-auto">
+                        <button onclick="editarCalendario('${id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-xl text-xs font-bold transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarCalendario('${id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-xl text-xs font-bold transition"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>`;
             });
@@ -458,30 +597,58 @@
 
         async function guardarCalendario() {
             const id = document.getElementById('cal-id').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-calendario:checked')).map(c => c.value);
-            const data = {
-                titulo: document.getElementById('cal-titulo').value,
-                descripcion: document.getElementById('cal-desc').value,
-                fecha: document.getElementById('cal-fecha').value,
-                tipo: document.getElementById('cal-tipo').value,
-                tag: seleccionados
+            const titulo = document.getElementById('cal-titulo').value.trim();
+            const descripcion = document.getElementById('cal-desc').value.trim();
+            const fecha = document.getElementById('cal-fecha').value;
+            const tipo = document.getElementById('cal-tipo').value;
+
+            const selectedCursos = [];
+            document.querySelectorAll('.check-cursos-cal:checked').forEach(cb => selectedCursos.push(cb.value));
+
+            if (!titulo || !fecha) {
+                alert("Completa el título y la fecha del evento.");
+                return;
+            }
+
+            const payload = {
+                titulo,
+                descripcion: descripcion || null,
+                fecha,
+                tipo,
+                cursos: selectedCursos
             };
-            if (!data.titulo || !data.fecha) return alert("Título y Fecha son obligatorios.");
-            if (id) await db.collection('eventos').doc(id).update(data);
-            else    await db.collection('eventos').add(data);
-            location.reload();
+
+            try {
+                if (id) {
+                    await db.collection('eventos').doc(id).update(payload);
+                } else {
+                    await db.collection('eventos').add(payload);
+                }
+
+                resetFormCalendario();
+                cargarEventosCalendario();
+            } catch (e) {
+                console.error(e);
+                alert("Error al guardar en el calendario.");
+            }
         }
 
         async function editarCalendario(id) {
             const doc = await db.collection('eventos').doc(id).get();
+            if (!doc.exists) return;
             const e = doc.data();
-            document.getElementById('cal-id').value    = id;
+
+            document.getElementById('cal-id').value = id;
             document.getElementById('cal-titulo').value = e.titulo;
-            document.getElementById('cal-desc').value   = e.descripcion;
-            document.getElementById('cal-fecha').value  = e.fecha;
-            document.getElementById('cal-tipo').value   = e.tipo;
-            document.querySelectorAll('.check-cursos-calendario').forEach(cb => { cb.checked = e.tag && e.tag.includes(cb.value); });
-            document.getElementById('cal-form-title').innerText = "Editando Evento";
+            document.getElementById('cal-desc').value = e.descripcion || "";
+            document.getElementById('cal-fecha').value = e.fecha;
+            document.getElementById('cal-tipo').value = e.tipo;
+
+            document.querySelectorAll('.check-cursos-cal').forEach(cb => {
+                cb.checked = e.cursos && e.cursos.includes(cb.value);
+            });
+
+            document.getElementById('cal-form-title').innerText = "Editar Evento";
             document.getElementById('btn-cancel-cal').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -491,387 +658,21 @@
             document.getElementById('cal-titulo').value = "";
             document.getElementById('cal-desc').value = "";
             document.getElementById('cal-fecha').value = "";
+            document.getElementById('cal-tipo').value = "evento";
+
+            document.querySelectorAll('.check-cursos-cal').forEach(cb => cb.checked = false);
+            if(document.getElementById('chk-todos-cal')) document.getElementById('chk-todos-cal').checked = false;
+
             document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
             document.getElementById('btn-cancel-cal').classList.add('hidden');
         }
 
-        // ═══ MENSAJERÍA DE SECRETARÍA ═══
-        function escucharConvsSec() {
-            if (secUnsubConvs) secUnsubConvs();
-            secUnsubConvs = db.collection('conversaciones')
-                .where('participantes', 'array-contains', staffEmail)
-                .onSnapshot(snap => {
-                    secConvs = [];
-                    let noLeidos = 0;
-                    snap.forEach(doc => {
-                        const d = doc.data();
-                        secConvs.push({ id: doc.id, ...d });
-                        if (d.noLeidos?.[staffEmail] > 0) noLeidos++;
-                    });
-                    secConvs.sort((a,b) => (b.ultimoTimestamp?.seconds||0) - (a.ultimoTimestamp?.seconds||0));
-                    renderConvsSec();
-                    const badge = document.getElementById('badge-msg-sec');
-                    if (noLeidos > 0) { badge.textContent = noLeidos; badge.classList.remove('hidden'); }
-                    else badge.classList.add('hidden');
-                }, () => {
-                    db.collection('conversaciones').where('participantes', 'array-contains', staffEmail).onSnapshot(snap => {
-                        secConvs = [];
-                        snap.forEach(doc => secConvs.push({ id: doc.id, ...doc.data() }));
-                        secConvs.sort((a,b) => (b.ultimoTimestamp?.seconds||0) - (a.ultimoTimestamp?.seconds||0));
-                        renderConvsSec();
-                    });
-                });
-        }
-
-        const colores = [{ bg:'#dbeafe',t:'#1e40af' },{ bg:'#d1fae5',t:'#065f46' },{ bg:'#fce7f3',t:'#9d174d' },{ bg:'#ede9fe',t:'#5b21b6' },{ bg:'#ffedd5',t:'#9a3412' }];
-        function colorPor(n) { const i=(n||'A').charCodeAt(0)%colores.length; return colores[i]; }
-        function iniciales(n) { return (n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
-        function fmtTs(ts) {
-            if (!ts) return '';
-            const d = ts.toDate ? ts.toDate() : new Date(ts.seconds*1000);
-            const hoy = new Date();
-            return d.toDateString() === hoy.toDateString() ? d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
-        }
-
-        function renderConvsSec() {
-            const busq = (document.getElementById('msg-buscador')?.value || '').toLowerCase();
-            const cont = document.getElementById('msg-lista-convs');
-            let lista = secConvs.filter(c => {
-                if (secFiltro === 'no-leidas' && !(c.noLeidos?.[staffEmail] > 0)) return false;
-                if (secFiltro === 'urgente'   && c.etiqueta !== 'urgente')  return false;
-                if (secFiltro === 'resuelto'  && c.etiqueta !== 'resuelto') return false;
-                if (busq && !((c.nombreOtro||'').toLowerCase().includes(busq)||(c.emailOtro||'').toLowerCase().includes(busq))) return false;
-                return true;
-            });
-            if (lista.length === 0) { cont.innerHTML = `<p class="text-slate-400 text-xs text-center p-6">Sin conversaciones${secFiltro!=='todas'?' con este filtro':''}</p>`; return; }
-            const col = (n) => colorPor(n);
-            cont.innerHTML = lista.map(c => {
-                const noL = c.noLeidos?.[staffEmail] || 0;
-                const cl  = col(c.nombreOtro);
-                const etq = c.etiqueta ? `<span class="etiqueta-tag et-${c.etiqueta} mr-1">${c.etiqueta}</span>` : '';
-                return `<div class="conv-item ${secConvActiva?.id === c.id ? 'active' : ''}" onclick="abrirConvSec('${c.id}')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0" style="background:${cl.bg};color:${cl.t}">${iniciales(c.nombreOtro)}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-between"><p class="font-bold text-xs truncate">${c.nombreOtro||c.emailOtro}</p><span class="text-[9px] text-slate-400 whitespace-nowrap">${fmtTs(c.ultimoTimestamp)}</span></div>
-                            <div class="flex items-center gap-1 mt-0.5">${etq}<p class="text-[10px] text-slate-400 truncate">${c.ultimoMensaje||''}</p></div>
-                        </div>
-                        ${noL > 0 ? `<span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0">${noL}</span>` : ''}
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        async function abrirConvSec(convId) {
-            const conv = secConvs.find(c => c.id === convId);
-            if (!conv) return;
-            secConvActiva = conv;
-            renderConvsSec();
-            await db.collection('conversaciones').doc(convId).update({ [`noLeidos.${staffEmail}`]: 0 });
-            const cl = colorPor(conv.nombreOtro);
-            document.getElementById('msg-chat-avatar').style.cssText = `background:${cl.bg};color:${cl.t}`;
-            document.getElementById('msg-chat-avatar').textContent = iniciales(conv.nombreOtro);
-            document.getElementById('msg-chat-nombre').textContent = conv.nombreOtro || conv.emailOtro;
-            document.getElementById('msg-chat-sub').textContent    = conv.emailOtro;
-            document.getElementById('msg-estado-vacio').classList.add('hidden');
-            document.getElementById('msg-chat-activo').classList.remove('hidden');
-            document.getElementById('msg-chat-activo').classList.add('flex');
-            if (secUnsubChat) secUnsubChat();
-            secUnsubChat = db.collection('conversaciones').doc(convId).collection('mensajes')
-                .orderBy('timestamp', 'asc')
-                .onSnapshot(snap => {
-                    const cont = document.getElementById('msg-mensajes-cont');
-                    let html = '';
-                    snap.forEach(doc => {
-                        const m = doc.data();
-                        const esMio = m.autorEmail === staffEmail;
-                        const hora  = m.timestamp ? fmtTs(m.timestamp) : '';
-                        html += `<div class="msg-burbuja-wrapper ${esMio ? 'yo' : 'otro'}">
-                            <div class="msg-burbuja ${esMio ? 'yo' : 'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
-                            <span class="msg-meta">${hora} · ${esMio ? 'Vos' : (m.autorNombre||m.autorEmail)}</span>
-                        </div>`;
-                    });
-                    cont.innerHTML = html || '<p class="text-center text-slate-300 text-sm py-6">Comenzá la conversación 👋</p>';
-                    cont.scrollTop = cont.scrollHeight;
-                });
-        }
-
-        async function enviarMsgSec() {
-            if (!secConvActiva) return;
-            const input = document.getElementById('msg-sec-input');
-            const texto = input.value.trim();
-            if (!texto) return;
-            input.value = '';
-            const emailOtro = secConvActiva.emailOtro;
-            const batch = db.batch();
-            const convRef = db.collection('conversaciones').doc(secConvActiva.id);
-            const msgRef  = convRef.collection('mensajes').doc();
-            batch.set(msgRef, { texto, autorEmail: staffEmail, autorNombre: staffNombre, autorRol: staffRol, timestamp: firebase.firestore.FieldValue.serverTimestamp(), leido: false });
-            batch.update(convRef, { ultimoMensaje: texto, ultimoTimestamp: firebase.firestore.FieldValue.serverTimestamp(), [`noLeidos.${emailOtro}`]: firebase.firestore.FieldValue.increment(1) });
-            await batch.commit();
-        }
-
-        async function setEtiquetaSec(etiqueta) {
-            if (!secConvActiva) return;
-            await db.collection('conversaciones').doc(secConvActiva.id).update({ etiqueta });
-            secConvActiva.etiqueta = etiqueta;
-        }
-
-        function setFiltroSec(filtro, btn) {
-            secFiltro = filtro;
-            document.querySelectorAll('.filtro-btn-sec').forEach(b => { b.classList.remove('bg-slate-900','text-white'); b.classList.add('bg-white','border','text-slate-500'); });
-            btn.classList.add('bg-slate-900','text-white'); btn.classList.remove('bg-white','border','text-slate-500');
-            renderConvsSec();
-        }
-
-        // Modal nueva conv
-        function abrirModalNuevaSec()  { document.getElementById('modal-nueva-sec').classList.remove('hidden'); document.getElementById('modal-nueva-sec').classList.add('flex'); }
-        function cerrarModalNuevaSec() { document.getElementById('modal-nueva-sec').classList.add('hidden');    document.getElementById('modal-nueva-sec').classList.remove('flex'); }
-
-        async function crearConvSec() {
-            const email = document.getElementById('nueva-sec-email').value.toLowerCase().trim();
-            const msg   = document.getElementById('nueva-sec-msg').value.trim();
-            if (!email || !msg) { alert('Completá email y mensaje.'); return; }
-            const existe = secConvs.find(c => c.emailOtro === email);
-            if (existe) { cerrarModalNuevaSec(); abrirConvSec(existe.id); return; }
-            let nombreOtro = email;
-            try { const ud = await db.collection('usuarios').doc(email).get(); if (ud.exists) nombreOtro = ud.data().nombre || email; } catch(e) {}
-            const convRef = db.collection('conversaciones').doc();
-            const msgRef  = convRef.collection('mensajes').doc();
-            const batch   = db.batch();
-            batch.set(convRef, { participantes: [staffEmail, email], emailOtro: email, nombreOtro, emailSecretaria: staffEmail, nombreSecretaria: staffNombre, ultimoMensaje: msg, ultimoTimestamp: firebase.firestore.FieldValue.serverTimestamp(), noLeidos: { [email]: 1, [staffEmail]: 0 }, etiqueta: null, creadoEn: firebase.firestore.FieldValue.serverTimestamp() });
-            batch.set(msgRef, { texto: msg, autorEmail: staffEmail, autorNombre: staffNombre, autorRol: staffRol, timestamp: firebase.firestore.FieldValue.serverTimestamp(), leido: false });
-            await batch.commit();
-            cerrarModalNuevaSec();
-        }
-
-        // ═══ EMAIL ═══
-        async function enviarAvisosPorEmail(titulo, cuerpo, cursosFiltro, esTodos) {
-            try {
-                let query = db.collection('usuarios').where('rol', '==', 'familia');
-                if (!esTodos && cursosFiltro.length > 0) query = query.where('curso', 'in', cursosFiltro);
-                const snap = await query.get();
-                const promesas = [];
-                snap.forEach(doc => {
-                    const emailDest = doc.id;
-                    if (emailDest && emailDest.includes('@')) {
-                        const p = emailjs.send("service_5lf6k9v", "template_noticias", { to_email: emailDest.trim(), subject: titulo, message: cuerpo, school_name: "Iosef Caro" })
-                            .catch(err => console.error(`Error email ${emailDest}:`, err));
-                        promesas.push(p);
-                    }
-                });
-                return await Promise.all(promesas);
-            } catch(e) { console.error("Error envío emails:", e); }
-        }
-
-        // ═══ UTILS ═══
-        async function eliminarDoc(col, id) { if (confirm("¿Eliminar permanentemente?")) { await db.collection(col).doc(id).delete(); location.reload(); } }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-50','text-blue-600'); b.classList.add('text-slate-500'); });
-            document.getElementById('navbtn-' + tabId).classList.add('bg-blue-50','text-blue-600');
-            if (tabId === 'mensajes') document.getElementById('badge-msg-sec').classList.add('hidden');
-        }
-
-        document.getElementById('log-pass').addEventListener('keydown', e => { if (e.key === 'Enter') loginComunicacion(); });
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const em = sessionStorage.getItem('iosef_email');
-                const ps = sessionStorage.getItem('iosef_pass_tmp') || '';
-                if (em) {
-                    document.getElementById('log-email').value = em;
-                    if (ps) document.getElementById('log-pass').value = ps;
-                    loginComunicacion();
-                }
-            }, 200);
-        });
-
-        // ════ FIREBASE STORAGE — UPLOAD DE ARCHIVOS ════
-        const storage = firebase.storage();
-
-        function previewMedia(tipo, input) {
-            const file = input.files[0]; if (!file) return;
-            const progCont = document.getElementById('upload-prog-' + tipo);
-            const progBar  = document.getElementById('prog-bar-' + tipo);
-            const progTxt  = document.getElementById('prog-txt-' + tipo);
-            progCont.classList.remove('hidden');
-            const path = `comunicados/${tipo}s/${Date.now()}_${file.name}`;
-            const ref  = storage.ref(path);
-            const task = ref.put(file);
-            task.on('state_changed',
-                snap => {
-                    const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-                    progBar.style.width = pct + '%';
-                    progTxt.textContent = `Subiendo... ${pct}%`;
-                },
-                err => { progTxt.textContent = 'Error: ' + err.message; },
-                async () => {
-                    const url = await task.snapshot.ref.getDownloadURL();
-                    document.getElementById('not-' + tipo).value = url;
-                    progTxt.textContent = '✅ Subido correctamente';
-                    // Preview
-                    if (tipo === 'img') {
-                        document.getElementById('prev-img-el').src = url;
-                        document.getElementById('prev-img').classList.remove('hidden');
-                    } else if (tipo === 'video') {
-                        document.getElementById('prev-video-el').src = url;
-                        document.getElementById('prev-video').classList.remove('hidden');
-                    } else if (tipo === 'pdf') {
-                        document.getElementById('prev-pdf-nombre').textContent = '📄 ' + file.name;
-                        document.getElementById('prev-pdf-nombre').classList.remove('hidden');
-                    }
-                }
-            );
-        }
-
-        // ════ JUSTIFICACIONES SECRETARÍA ════
-        let todasLasJustSec = [];
-        async function cargarJustificacionesSec() {
-            const filtro = document.getElementById('just-sec-filtro')?.value || 'pendiente';
-            const cont = document.getElementById('lista-just-sec');
-            cont.innerHTML = '<p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
-            let query = db.collection('justificaciones').orderBy('fechaEnvio','desc').limit(100);
-            const snap = await query.get();
-            todasLasJustSec = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                // Filtrar por nivel de la secretaria
-                if (staffRol !== 'admin' && d.nivel && d.nivel !== staffNiveles[0] && !staffNiveles.includes(d.nivel)) return;
-                todasLasJustSec.push({ id: doc.id, ...d });
-            });
-            const lista = filtro === 'todas' ? todasLasJustSec : todasLasJustSec.filter(j => j.estado === filtro);
-            const pendientes = todasLasJustSec.filter(j => j.estado === 'pendiente').length;
-            const badge = document.getElementById('badge-just-sec');
-            if (badge) badge.classList.toggle('hidden', pendientes === 0);
-            if (!lista.length) { cont.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Sin justificaciones ${filtro !== 'todas' ? filtro + 's' : ''}.</p>`; return; }
-            const motivos = { medico:'Certificado médico', familiar:'Causa familiar', viaje:'Viaje', otro:'Otro' };
-            const colEst = { pendiente:'border-amber-200 bg-amber-50', aprobada:'border-emerald-200 bg-emerald-50', rechazada:'border-rose-200 bg-rose-50' };
-            cont.innerHTML = lista.map(j => {
-                const d = new Date(j.fechaEnvio).toLocaleDateString('es-AR');
-                return `<div class="bg-white p-5 rounded-2xl border-2 ${colEst[j.estado] || 'border-slate-100'} shadow-sm">
-                    <div class="flex items-start justify-between flex-wrap gap-2 mb-3">
-                        <div>
-                            <p class="font-black text-slate-900">${j.alumnoNombre}</p>
-                            <p class="text-[10px] text-slate-400 font-bold">Falta: ${j.fecha} · ${motivos[j.motivo] || j.motivo}</p>
-                            <p class="text-[10px] text-slate-400">Familia: ${j.familiaNombre}</p>
-                        </div>
-                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${j.estado==='pendiente'?'bg-amber-100 text-amber-700':j.estado==='aprobada'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${j.estado}</span>
-                    </div>
-                    ${j.detalle ? `<p class="text-sm text-slate-600 mb-3">${j.detalle}</p>` : ''}
-                    ${j.urlCertificado ? `<a href="${j.urlCertificado}" target="_blank" class="text-[10px] font-black text-blue-600 flex items-center gap-1 mb-3"><i class="fas fa-external-link-alt"></i> Ver certificado adjunto</a>` : ''}
-                    <p class="text-[9px] text-slate-400">Enviada el ${d}</p>
-                    ${j.estado === 'pendiente' ? `<div class="flex gap-2 mt-3">
-                        <button onclick="resolverJustSec('${j.id}','aprobada')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
-                        <button onclick="resolverJustSec('${j.id}','rechazada')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
-                    </div>` : ''}
-                </div>`;
-            }).join('');
-        }
-
-        async function resolverJustSec(justId, estado) {
-            const j = todasLasJustSec.find(x => x.id === justId); if (!j) return;
-            // 1. Actualizar estado
-            await db.collection('justificaciones').doc(justId).update({ estado, resueltaPor: staffEmail, fechaResolucion: new Date().toISOString() });
-            // 2. Notificar al docente del alumno via conversación
-            if (estado === 'aprobada') {
-                const docSnap = await db.collection('usuarios').where('rol','==','docente').where('cursos','array-contains', j.alumnoNombre || '').get();
-                // Fallback: notificar a todos los docentes del nivel
-                const notifMsg = `✅ Justificación APROBADA: ${j.alumnoNombre}, falta del ${j.fecha} (${j.motivo}). Aprobada por ${staffNombre}.`;
-                // Guardar como notificación global
-                await db.collection('notificaciones_docentes').add({ mensaje: notifMsg, nivel: j.nivel || 'primario', tipo: 'justificacion', fecha: new Date().toISOString(), leida: false });
+        async function eliminarCalendario(id) {
+            if (confirm("¿Estás seguro de eliminar este evento del calendario?")) {
+                await db.collection('eventos').doc(id).delete();
+                cargarEventosCalendario();
             }
-            // 3. Refrescar lista
-            j.estado = estado;
-            
         }
-
-        // ════ REGISTRO DE LLAMADAS ════
-        let todasLasLlamadas = [];
-
-        async function cargarLlamadas() {
-            const cont = document.getElementById('lista-llamadas');
-            let query = db.collection('registro_llamadas').orderBy('fecha', 'desc').limit(100);
-            // Secretaria solo ve su nivel
-            const snap = await query.get();
-            todasLasLlamadas = [];
-            snap.forEach(doc => todasLasLlamadas.push({ id: doc.id, ...doc.data() }));
-            filtrarLlamadas();
-        }
-
-        function filtrarLlamadas() {
-            const busq    = (document.getElementById('call-search')?.value || '').toLowerCase();
-            const tipo    = document.getElementById('call-filter-tipo')?.value || '';
-            const result  = document.getElementById('call-filter-resultado')?.value || '';
-            const lista   = todasLasLlamadas.filter(l => {
-                if (tipo   && l.tipo      !== tipo)   return false;
-                if (result && l.resultado !== result) return false;
-                if (busq && !((l.familia||'').toLowerCase().includes(busq) || (l.alumno||'').toLowerCase().includes(busq) || (l.motivo||'').toLowerCase().includes(busq))) return false;
-                return true;
-            });
-            const cont = document.getElementById('lista-llamadas');
-            if (!lista.length) { cont.innerHTML = '<p class="text-slate-400 text-sm text-center py-6">Sin registros.</p>'; return; }
-            const iconos = { llamada_entrante:'📞', llamada_saliente:'📲', whatsapp:'💬', presencial:'🤝', email:'📧' };
-            const colResult = { comunicado:'bg-emerald-100 text-emerald-700', no_contesta:'bg-rose-100 text-rose-600', pendiente:'bg-amber-100 text-amber-700', buzon:'bg-slate-100 text-slate-600' };
-            cont.innerHTML = lista.map(l => {
-                const d = l.fecha ? new Date(l.fecha).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
-                return `<div class="bg-white p-5 rounded-2xl border shadow-sm">
-                    <div class="flex items-start justify-between flex-wrap gap-2 mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xl">${iconos[l.tipo]||'📞'}</span>
-                            <div>
-                                <p class="font-black text-slate-900">${l.familia||'Sin nombre'}</p>
-                                ${l.alumno?`<p class="text-[10px] text-slate-400 font-bold">Alumno: ${l.alumno}</p>`:''}
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${colResult[l.resultado]||'bg-slate-100 text-slate-600'}">${l.resultado?.replace('_',' ')}</span>
-                            <span class="text-[9px] text-slate-400 font-bold">${d}</span>
-                        </div>
-                    </div>
-                    ${l.motivo ? `<p class="text-sm text-slate-600 mt-2">${l.motivo}</p>` : ''}
-                    <p class="text-[9px] text-slate-400 mt-2 font-bold">Registrado por: ${l.staffNombre || l.staffEmail}</p>
-                </div>`;
-            }).join('');
-        }
-
-        async function guardarLlamada() {
-            const familia  = document.getElementById('call-familia').value.trim();
-            const fecha    = document.getElementById('call-fecha').value;
-            const tipo     = document.getElementById('call-tipo').value;
-            const resultado= document.getElementById('call-resultado').value;
-            const motivo   = document.getElementById('call-motivo').value.trim();
-            const alumno   = document.getElementById('call-alumno').value.trim();
-            if (!familia) return alert('Ingresá el nombre de la familia.');
-            if (!fecha)   return alert('Ingresá la fecha y hora.');
-            await db.collection('registro_llamadas').add({
-                familia, fecha, tipo, resultado, motivo, alumno: alumno || null,
-                staffEmail, staffNombre, staffRol,
-                creadoEn: new Date().toISOString()
-            });
-            alert('✅ Contacto registrado.');
-            document.getElementById('call-familia').value = '';
-            document.getElementById('call-fecha').value   = '';
-            document.getElementById('call-motivo').value  = '';
-            document.getElementById('call-alumno').value  = '';
-            await 
-        }
-
-        async function buscarFamiliaCall(q) {
-            const cont = document.getElementById('call-sugerencias');
-            if (q.length < 2) { cont.innerHTML = ''; return; }
-            const snap = await db.collection('usuarios').where('rol','==','familia').get();
-            const resultados = [];
-            snap.forEach(doc => { if (doc.data().nombre.toLowerCase().includes(q.toLowerCase())) resultados.push(doc.data().nombre); });
-            cont.innerHTML = resultados.slice(0,5).map(n =>
-                `<div onclick="document.getElementById('call-familia').value='${n}';document.getElementById('call-sugerencias').innerHTML=''" class="bg-white border p-2 rounded-xl text-sm font-bold cursor-pointer hover:bg-slate-50">${n}</div>`
-            ).join('');
-        }
-
-        // Actualizar switchTab para llamadas
-        
-        document.getElementById('modal-nueva-sec').addEventListener('click', function(e) { if (e.target === this) cerrarModalNuevaSec(); });
     </script>
 </body>
 </html>
