@@ -103,12 +103,24 @@
                                 <div id="cursos-noticia" class="flex flex-wrap gap-2 mt-1"><span class="text-xs text-slate-400 italic">Cargando cursos...</span></div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" id="not-img"   placeholder="URL Imagen"         class="input-pro">
-                            <input type="text" id="not-video" placeholder="URL YouTube/Video"  class="input-pro">
-                            <input type="text" id="not-pdf"   placeholder="URL PDF"            class="input-pro">
-                            <input type="text" id="not-link"  placeholder="Enlace Externo"     class="input-pro">
-                        </div>
+                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+    <div>
+        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Subir Imagen o Foto</label>
+        <input type="file" id="not-file-img" accept="image/*" class="input-pro text-xs bg-white">
+    </div>
+    <div>
+        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Subir Archivo o PDF</label>
+        <input type="file" id="not-file-pdf" accept=".pdf,.doc,.docx,.xls,.xlsx" class="input-pro text-xs bg-white">
+    </div>
+    <div class="md:col-span-2">
+        <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">Subir Video Corto</label>
+        <input type="file" id="not-file-video" accept="video/*" class="input-pro text-xs bg-white">
+    </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <input type="text" id="not-video-url" placeholder="O pegar enlace de YouTube directo" class="input-pro">
+    <input type="text" id="not-link"  placeholder="Enlace web externo complementario"     class="input-pro">
+</div>
                         <div class="flex gap-2 mt-2">
                             <button onclick="guardarNoticia()" id="btn-noticia" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">Publicar y Enviar Mail</button>
                             <button onclick="resetFormNoticia()" id="btn-cancel-noticia" class="hidden bg-slate-100 text-slate-500 px-6 rounded-2xl font-bold">Cancelar</button>
@@ -425,27 +437,87 @@
             });
         }
 
-        async function guardarNoticia() {
-            const id    = document.getElementById('noticia-id').value;
-            const titulo = document.getElementById('not-titulo').value;
-            const texto  = document.getElementById('not-texto').value;
-            const seleccionados = Array.from(document.querySelectorAll('.check-cursos-noticia:checked')).map(c => c.value);
-            const esTodos = document.getElementById('all-cursos-noticia')?.checked;
-            if (!titulo || !texto || (seleccionados.length === 0 && !esTodos)) return alert("Faltan datos obligatorios.");
-            const btn = document.getElementById('btn-noticia');
-            btn.disabled = true; btn.innerText = "Procesando...";
-            const data = {
-                titulo, texto, curso: seleccionados,
-                programacion: document.getElementById('not-programacion').value || new Date().toISOString(),
-                adjuntos: { img: document.getElementById('not-img').value, video: document.getElementById('not-video').value, pdf: document.getElementById('not-pdf').value, link: document.getElementById('not-link').value },
-                fechaCreacion: new Date().toISOString()
-            };
-            try {
-                if (id) { await db.collection('comunicados').doc(id).update(data); alert("Publicación actualizada."); }
-                else { await db.collection('comunicados').add(data); await enviarAvisosPorEmail(titulo, texto, seleccionados, esTodos); alert("Publicado y mails enviados."); }
-                location.reload();
-            } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
+        // Asegúrate de tener Firebase Storage inicializado en tu archivo o agregá la importación si no la tenés:
+// <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+const storage = firebase.storage();
+
+async function subirArchivoAStorage(file, ruta) {
+    if (!file) return "";
+    const ref = storage.ref().child(`${ruta}/${Date.now()}_${file.name}`);
+    const snapshot = await ref.put(file);
+    return await snapshot.ref.getDownloadURL();
+}
+
+async function guardarNoticia() {
+    const titulo = document.getElementById('not-titulo').value.trim();
+    const texto = document.getElementById('not-texto').value.trim();
+    const programacion = document.getElementById('not-programacion').value;
+    const linkExterno = document.getElementById('not-link').value.trim();
+    const youtubeUrl = document.getElementById('not-video-url').value.trim();
+    
+    if (!titulo || !texto) {
+        alert("Por favor, completa título y cuerpo.");
+        return;
+    }
+
+    // Mostrar un spinner o indicador de carga para archivos pesados
+    const btn = document.getElementById('btn-noticia');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Subiendo archivos multimedia...`;
+
+    try {
+        // Obtener archivos de los inputs
+        const fileImg = document.getElementById('not-file-img').files[0];
+        const filePdf = document.getElementById('not-file-pdf').files[0];
+        const fileVid = document.getElementById('not-file-video').files[0];
+
+        // Subir concurrentemente a Storage
+        let imgUrl = "";
+        let pdfUrl = "";
+        let videoUrl = youtubeUrl; // Si no hay archivo de video, usa el link de youtube
+
+        if (fileImg) imgUrl = await subirArchivoAStorage(fileImg, 'comunicaciones/imagenes');
+        if (filePdf) pdfUrl = await subirArchivoAStorage(filePdf, 'comunicaciones/documentos');
+        if (fileVid) videoUrl = await subirArchivoAStorage(fileVid, 'comunicaciones/videos');
+
+        // Capturar cursos seleccionados
+        const cursosSeleccionados = [];
+        document.querySelectorAll('.chk-curso:checked').forEach(cb => cursosSeleccionados.push(cb.value));
+
+        const noticiaData = {
+            titulo,
+            texto,
+            programada: programacion ? new Date(programacion).toISOString() : null,
+            cursos: cursosSeleccionados,
+            img: imgUrl,
+            pdf: pdfUrl,
+            video: videoUrl,
+            link: linkExterno,
+            fecha: new Date().toISOString(),
+            autor: userEmail
+        };
+
+        const notId = document.getElementById('noticia-id').value;
+        if (notId) {
+            await db.collection('noticias').doc(notId).update(noticiaData);
+            alert("✅ Noticia actualizada con éxito.");
+        } else {
+            await db.collection('noticias').add(noticiaData);
+            alert("✅ Noticia publicada con éxito.");
         }
+
+        // Limpiar formulario y recargar
+        limpiarFormNoticias();
+        cargarNoticias();
+    } catch (error) {
+        console.error(error);
+        alert("Error al guardar la noticia: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
 
         async function editarNoticia(id) {
             const doc = await db.collection('comunicados').doc(id).get();
