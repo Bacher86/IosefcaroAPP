@@ -174,100 +174,8 @@
                 </div>
                 <div id="lista-calendario" class="space-y-3"></div>
             </section>
-
-            <!-- ════ TAB MENSAJES (SECRETARÍA) ════ -->
-            <section id="tab-mensajes" class="tab-content">
-                <div class="flex gap-0 -mx-4 -mt-4" style="height: calc(100vh - 140px);">
-
-                    <!-- Sidebar de conversaciones -->
-                    <div id="msg-sidebar">
-                        <div class="p-4 border-b">
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="font-black text-base">Bandeja</h3>
-                                <button onclick="abrirModalNuevaSec()" class="w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center text-sm hover:bg-blue-700 transition">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <input type="text" id="msg-buscador" placeholder="Buscar..." oninput="renderConvsSec()" class="input-pro py-2 text-sm">
-                        </div>
-                        <div class="flex gap-1 p-2 border-b overflow-x-auto">
-                            <button onclick="setFiltroSec('todas',this)"    class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-slate-900 text-white whitespace-nowrap">Todas</button>
-                            <button onclick="setFiltroSec('no-leidas',this)" class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-white border text-slate-500 whitespace-nowrap">No leídas</button>
-                            <button onclick="setFiltroSec('urgente',this)"   class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-white border text-slate-500 whitespace-nowrap">Urgentes</button>
-                            <button onclick="setFiltroSec('resuelto',this)"  class="filtro-btn-sec text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-white border text-slate-500 whitespace-nowrap">Resueltas</button>
-                        </div>
-                        <div id="msg-lista-convs" class="flex-1 overflow-y-auto"></div>
-                    </div>
-
-                    <!-- Área de chat -->
-                    <div id="msg-chat-area">
-                        <div id="msg-estado-vacio" class="flex flex-col items-center justify-center h-full text-slate-300 gap-4">
-                            <i class="fas fa-comments text-5xl"></i>
-                            <p class="font-bold">Seleccioná una conversación</p>
-                        </div>
-                        <div id="msg-chat-activo" class="hidden flex-col h-full">
-                            <div class="bg-white border-b px-5 py-3 flex items-center gap-3 flex-wrap">
-                                <div id="msg-chat-avatar" class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"></div>
-                                <div class="flex-1 min-w-0">
-                                    <p id="msg-chat-nombre" class="font-black text-sm truncate"></p>
-                                    <p id="msg-chat-sub"    class="text-[10px] text-slate-400 font-bold truncate"></p>
-                                </div>
-                                <div class="flex gap-1 flex-wrap">
-                                    <button onclick="setEtiquetaSec('consulta')" class="text-[9px] font-black px-2 py-1 rounded-lg et-consulta etiqueta-tag">Consulta</button>
-                                    <button onclick="setEtiquetaSec('tramite')"  class="text-[9px] font-black px-2 py-1 rounded-lg et-tramite etiqueta-tag">Trámite</button>
-                                    <button onclick="setEtiquetaSec('urgente')"  class="text-[9px] font-black px-2 py-1 rounded-lg et-urgente etiqueta-tag">Urgente</button>
-                                    <button onclick="setEtiquetaSec('resuelto')" class="text-[9px] font-black px-2 py-1 rounded-lg et-resuelto etiqueta-tag">Resuelto</button>
-                                </div>
-                            </div>
-                            <div id="msg-mensajes-cont" class="flex-1 overflow-y-auto p-5 flex flex-col gap-2 bg-slate-50" style="scroll-behavior:smooth;"></div>
-                            <div class="bg-white border-t p-4 flex gap-2 items-end">
-                                <textarea id="msg-sec-input" rows="1" placeholder="Escribí tu respuesta..." class="flex-1 border border-slate-200 rounded-xl p-3 font-sans text-xs resize-none outline-none bg-slate-50 focus:bg-white focus:border-slate-800 transition" style="max-height:100px;"
-                                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMsgSec();}"></textarea>
-                                <button onclick="enviarMsgSec()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0 hover:bg-black transition">
-                                    <i class="fas fa-paper-plane text-xs"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
         </main>
     </div>
-
-    <!-- Modal nueva conversación -->
-    <div id="modal-nueva-sec" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[500] hidden items-center justify-center p-6">
-        <div class="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl">
-            <h3 class="font-black text-xl mb-6">Nueva conversación</h3>
-            <div class="space-y-4">
-                <input type="email" id="nueva-sec-email" placeholder="Email de la familia o docente" class="input-pro">
-                <textarea id="nueva-sec-msg" placeholder="Primer mensaje..." class="input-pro h-24 resize-none"></textarea>
-                <div class="flex gap-3">
-                    <button onclick="cerrarModalNuevaSec()" class="flex-1 py-3 rounded-2xl border font-bold text-slate-500">Cancelar</button>
-                    <button onclick="crearConvSec()" class="flex-1 py-3 rounded-2xl bg-slate-900 text-white font-bold">Enviar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        (function(){ emailjs.init("hDKMmExBMzhAWF_KH"); })();
-
-        const firebaseConfig = { apiKey: "AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI", authDomain: "app-iosefcaro.firebaseapp.com", projectId: "app-iosefcaro", storageBucket: "app-iosefcaro.firebasestorage.app", messagingSenderId: "651320124248", appId: "1:651320124248:web:97c8ca00e29114e1983b2d" };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.firestore();
-
-        let staffEmail  = "";
-        let staffNombre = "";
-        let staffRol    = "";
-        let staffNiveles = [];
-
-        // ═══ MENSAJERÍA ═══
-        let secConvActiva  = null;
-        let secConvs       = [];
-        let secFiltro      = 'todas';
-        let secUnsubChat   = null;
-        let secUnsubConvs  = null;
 
         // ═══ LOGIN ═══
         async function loginComunicacion() {
@@ -304,10 +212,6 @@
             document.getElementById('app-content').classList.remove('hidden');
             document.getElementById('user-label').textContent = staffNombre;
             document.getElementById('user-label').classList.remove('hidden');
-
-            // Solo secretarías y admin ven tab mensajes
-            const esSecOAdmin = staffRol === 'admin' || staffRol.startsWith('secretaria_');
-            // Comunicaciones: acceso completo
 
             // Solo admin y comunicacion ven publicar noticias
             const puedePublicar = ['admin','comunicacion'].includes(staffRol);
@@ -478,6 +382,7 @@
             document.getElementById('cal-form-title').innerText = "Agendar al Calendario";
             document.getElementById('btn-cancel-cal').classList.add('hidden');
         }
+        })();
         </script>
 </body>
 </html>
