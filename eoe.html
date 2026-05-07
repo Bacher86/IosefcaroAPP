@@ -165,6 +165,65 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     </div>
   </section>
 
+  <!-- LLAMADAS -->
+  <section id="tab-llamadas" class="tab-content space-y-5">
+    <h3 class="font-black text-xl">Registro de Llamadas</h3>
+    <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-3">
+      <h4 class="font-black text-sm text-violet-700 flex items-center gap-2"><i class="fas fa-plus-circle"></i> Nueva llamada / contacto</h4>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+          <label class="text-[9px] font-black text-slate-400 uppercase">Familia / Apellido</label>
+          <input type="text" id="eoe-call-familia" placeholder="Nombre de la familia..." class="input-pro mt-1" oninput="buscarFamiliaEOE(this.value)">
+          <div id="eoe-call-sugerencias" class="mt-1 space-y-1"></div>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Alumno relacionado</label>
+          <input type="text" id="eoe-call-alumno" placeholder="Nombre del alumno" class="input-pro mt-1">
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Fecha</label>
+          <input type="datetime-local" id="eoe-call-fecha" class="input-pro mt-1">
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de contacto</label>
+          <select id="eoe-call-tipo" class="input-pro mt-1 text-sm">
+            <option value="llamada_saliente">📲 Llamada saliente</option>
+            <option value="llamada_entrante">📞 Llamada entrante</option>
+            <option value="presencial">🤝 Entrevista presencial</option>
+            <option value="whatsapp">💬 WhatsApp</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Resultado</label>
+          <select id="eoe-call-resultado" class="input-pro mt-1 text-sm">
+            <option value="comunicado">✅ Comunicado</option>
+            <option value="no_contesta">❌ No contesta</option>
+            <option value="pendiente">⏳ Pendiente seguimiento</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="text-[9px] font-black text-slate-400 uppercase">Motivo / detalle</label>
+          <textarea id="eoe-call-motivo" placeholder="Describí el motivo del contacto..." class="input-pro mt-1 h-16 resize-none"></textarea>
+        </div>
+      </div>
+      <button onclick="guardarLlamadaEOE()" class="w-full bg-violet-600 text-white p-4 rounded-2xl font-bold shadow-lg">
+        <i class="fas fa-save mr-2"></i>REGISTRAR CONTACTO
+      </button>
+    </div>
+    <div class="flex gap-2">
+      <input type="text" id="eoe-call-search" placeholder="Buscar..." class="input-pro text-sm" style="max-width:200px" oninput="filtrarLlamadasEOE()">
+      <select id="eoe-call-filtro" onchange="filtrarLlamadasEOE()" class="input-pro text-sm" style="max-width:160px">
+        <option value="">Todos</option>
+        <option value="comunicado">Comunicado</option>
+        <option value="no_contesta">No contesta</option>
+        <option value="pendiente">Pendiente</option>
+      </select>
+    </div>
+    <div id="eoe-lista-llamadas" class="space-y-3">
+      <p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+    </div>
+  </section>
+
 </main>
 
 <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-[1000] shadow-lg">
@@ -176,6 +235,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   </button>
   <button onclick="switchTab('alertas')" id="btn-alertas" class="nav-btn flex-1 flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400 text-rose-500">
     <div class="relative"><i class="fas fa-exclamation-triangle text-xl"></i><span id="badge-alertas" class="hidden absolute -top-1 -right-2 bg-rose-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div>ALERTAS
+  </button>
+  <button onclick="switchTab('llamadas')" id="btn-llamadas" class="nav-btn flex-1 flex flex-col items-center gap-1 font-bold text-[9px] text-slate-400">
+    <i class="fas fa-phone-alt text-xl"></i>LLAMADAS
   </button>
 </nav>
 
@@ -406,16 +468,77 @@ function abrirLegajoDirecto(id,nombre,curso,nivel){
   abrirLegajo(id,nombre,curso,nivel);
 }
 
+// ── LLAMADAS EOE ──
+let llamadasEOE=[];
+async function cargarLlamadasEOE(){
+  const snap=await db.collection('registro_llamadas').orderBy('fecha','desc').limit(100).get();
+  llamadasEOE=[];snap.forEach(doc=>llamadasEOE.push({id:doc.id,...doc.data()}));
+  filtrarLlamadasEOE();
+}
+function filtrarLlamadasEOE(){
+  const busq=(document.getElementById('eoe-call-search')?.value||'').toLowerCase();
+  const filtro=document.getElementById('eoe-call-filtro')?.value||'';
+  const lista=llamadasEOE.filter(l=>{
+    if(filtro&&l.resultado!==filtro) return false;
+    if(busq&&!((l.familia||'').toLowerCase().includes(busq)||(l.alumno||'').toLowerCase().includes(busq)||(l.motivo||'').toLowerCase().includes(busq))) return false;
+    return true;
+  });
+  const cont=document.getElementById('eoe-lista-llamadas');
+  if(!lista.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin registros.</p>';return;}
+  const iconos={llamada_entrante:'📞',llamada_saliente:'📲',whatsapp:'💬',presencial:'🤝'};
+  const colRes={comunicado:'bg-emerald-100 text-emerald-700',no_contesta:'bg-rose-100 text-rose-600',pendiente:'bg-amber-100 text-amber-700'};
+  cont.innerHTML=lista.map(l=>{
+    const d=l.fecha?new Date(l.fecha).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    return`<div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <div class="flex items-start justify-between flex-wrap gap-2 mb-2">
+        <div class="flex items-center gap-2"><span class="text-lg">${iconos[l.tipo]||'📞'}</span><div><p class="font-black text-sm">${l.familia||'Sin nombre'}</p>${l.alumno?`<p class="text-[10px] text-slate-400">${l.alumno}</p>`:''}</div></div>
+        <div class="flex items-center gap-2"><span class="text-[9px] font-black px-2 py-0.5 rounded-full ${colRes[l.resultado]||'bg-slate-100 text-slate-600'}">${(l.resultado||'').replace('_',' ')}</span><span class="text-[9px] text-slate-400 font-bold">${d}</span></div>
+      </div>
+      ${l.motivo?`<p class="text-sm text-slate-600">${l.motivo}</p>`:''}
+      <p class="text-[9px] text-slate-400 mt-1">Registrado por: ${l.staffNombre||l.staffEmail||'—'}</p>
+    </div>`;
+  }).join('');
+}
+async function guardarLlamadaEOE(){
+  const familia=document.getElementById('eoe-call-familia').value.trim();
+  const fecha=document.getElementById('eoe-call-fecha').value;
+  const tipo=document.getElementById('eoe-call-tipo').value;
+  const resultado=document.getElementById('eoe-call-resultado').value;
+  const motivo=document.getElementById('eoe-call-motivo').value.trim();
+  const alumno=document.getElementById('eoe-call-alumno').value.trim();
+  if(!familia) return alert('Ingresá el nombre de la familia.');
+  if(!fecha) return alert('Ingresá la fecha.');
+  await db.collection('registro_llamadas').add({familia,fecha,tipo,resultado,motivo,alumno:alumno||null,staffEmail:eoeEmail,staffNombre:eoeData?.nombre||'EOE',staffRol:'eoe',creadoEn:new Date().toISOString()});
+  alert('✅ Contacto registrado.');
+  document.getElementById('eoe-call-familia').value='';
+  document.getElementById('eoe-call-motivo').value='';
+  document.getElementById('eoe-call-alumno').value='';
+  await cargarLlamadasEOE();
+}
+async function buscarFamiliaEOE(q){
+  const cont=document.getElementById('eoe-call-sugerencias');
+  if(q.length<2){cont.innerHTML='';return;}
+  const snap=await db.collection('usuarios').where('rol','==','familia').get();
+  const res=[];
+  snap.forEach(doc=>{if(doc.data().nombre.toLowerCase().includes(q.toLowerCase()))res.push(doc.data().nombre);});
+  cont.innerHTML=res.slice(0,4).map(n=>`<div onclick="document.getElementById('eoe-call-familia').value='${n}';document.getElementById('eoe-call-sugerencias').innerHTML=''" class="bg-white border p-2 rounded-xl text-sm font-bold cursor-pointer hover:bg-slate-50">${n}</div>`).join('');
+}
+
 // ── UTILS ──
 function switchTab(tab){
   document.querySelectorAll('.tab-content,.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+tab)?.classList.add('active');
   if(document.getElementById('btn-'+tab))document.getElementById('btn-'+tab).classList.add('active');
   if(tab==='alertas') ejecutarScanAlertas();
+  if(tab==='llamadas') cargarLlamadasEOE();
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 // Auto-login
 window.addEventListener('load',()=>{
+  // Datetime default for llamadas
+  const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  const dtl=document.getElementById('eoe-call-fecha');
+  if(dtl) dtl.value=now.toISOString().slice(0,16);
   const em=sessionStorage.getItem('iosef_email');
   const rol=sessionStorage.getItem('iosef_rol');
   if(em&&['eoe','admin','docente'].includes(rol)){document.getElementById('login-email').value=em;login(em);}
