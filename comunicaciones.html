@@ -174,7 +174,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 
       <!-- Formulario nuevo evento -->
       <div class="card p-5 space-y-4">
-        <h2 class="font-black text-base">Nuevo evento</h2>
+        <input type="hidden" id="cal-id-editando">
+        <div class="flex items-center justify-between">
+          <h2 class="font-black text-base" id="cal-form-titulo">Nuevo evento</h2>
+          <button id="btn-cancelar-cal" onclick="cancelarEditarEvento()" class="hidden text-[9px] font-black text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">✕ Cancelar</button>
+        </div>
         <div>
           <label class="text-[9px] font-black text-slate-400 uppercase">Título *</label>
           <input type="text" id="cal-titulo" class="input-pro mt-1" placeholder="Ej: Reunión de padres">
@@ -206,8 +210,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
             </label>
           </div>
         </div>
-        <button onclick="guardarCalendario()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700 transition">
-          <i class="fas fa-calendar-plus mr-2"></i>PUBLICAR EVENTO
+        <button onclick="guardarCalendario()" id="btn-guardar-cal" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700 transition">
+          <i class="fas fa-calendar-plus mr-2"></i><span id="btn-guardar-cal-txt">PUBLICAR EVENTO</span>
         </button>
       </div>
 
@@ -355,8 +359,19 @@ async function guardarNoticia(){
   }else{
     datos.creadoEn=firebase.firestore.FieldValue.serverTimestamp();
     datos.vistas=0; datos.totalLikes=0;
-    await db.collection('comunicados').add(datos);
-    alert('✅ Comunicado publicado.');
+    const docRef=await db.collection('comunicados').add(datos);
+    // Crear registro de notificación para que las familias sean notificadas en tiempo real
+    await db.collection('notificaciones_push').add({
+      tipo:'comunicado',
+      refId:docRef.id,
+      titulo:datos.titulo,
+      texto:(datos.texto||'').slice(0,120),
+      tag:datos.tag||'info',
+      cursos:datos.cursos||['TODOS'],
+      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+      leidos:[]
+    });
+    alert('✅ Comunicado publicado. Las familias serán notificadas.');
   }
   resetForm();
   cargarNoticias();
@@ -454,13 +469,45 @@ async function guardarCalendario(){
   if(!titulo||!fecha){alert('Título y fecha son obligatorios.');return;}
   const todosMarcados=document.getElementById('cal-todos')?.checked;
   const tag=todosMarcados?['TODOS']:Array.from(document.querySelectorAll('.check-cal:checked')).map(c=>c.value);
-  await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo,tag,creadoPor:staffEmail,creadoPorNombre:staffNombre,creadoEn:new Date().toISOString()});
-  alert('✅ Evento publicado.');
+  const idEditando=document.getElementById('cal-id-editando').value;
+  if(idEditando){
+    await db.collection('eventos').doc(idEditando).update({titulo,descripcion:desc,fecha,tipo,tag,editadoEn:new Date().toISOString()});
+    alert('✅ Evento actualizado.');
+  }else{
+    await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo,tag,creadoPor:staffEmail,creadoPorNombre:staffNombre,creadoEn:new Date().toISOString()});
+    alert('✅ Evento publicado.');
+  }
+  cancelarEditarEvento();
+  cargarEventosCalendario();
+}
+
+async function editarEvento(id){
+  const doc=await db.collection('eventos').doc(id).get();
+  if(!doc.exists)return;
+  const ev=doc.data();
+  document.getElementById('cal-id-editando').value=id;
+  document.getElementById('cal-titulo').value=ev.titulo||'';
+  document.getElementById('cal-fecha').value=ev.fecha||'';
+  document.getElementById('cal-tipo').value=ev.tipo||'institucional';
+  document.getElementById('cal-desc').value=ev.descripcion||'';
+  document.querySelectorAll('.check-cal').forEach(c=>c.checked=false);
+  if((ev.tag||[]).includes('TODOS')){document.getElementById('cal-todos').checked=true;toggleTodosCal(document.getElementById('cal-todos'));}
+  else{(ev.tag||[]).forEach(t=>{const el=document.querySelector('.check-cal[value="'+t+'"]');if(el)el.checked=true;});}
+  document.getElementById('cal-form-titulo').textContent='Editar evento';
+  document.getElementById('btn-guardar-cal-txt').textContent='GUARDAR CAMBIOS';
+  document.getElementById('btn-cancelar-cal').classList.remove('hidden');
+  document.getElementById('cal-form-titulo').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelarEditarEvento(){
+  document.getElementById('cal-id-editando').value='';
   ['cal-titulo','cal-fecha','cal-desc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cal-tipo').value='institucional';
   document.querySelectorAll('.check-cal').forEach(c=>c.checked=false);
   document.getElementById('cal-todos').checked=false;
-  cargarEventosCalendario();
+  document.getElementById('cal-form-titulo').textContent='Nuevo evento';
+  document.getElementById('btn-guardar-cal-txt').textContent='PUBLICAR EVENTO';
+  document.getElementById('btn-cancelar-cal').classList.add('hidden');
 }
 
 async function cargarEventosCalendario(){
@@ -489,12 +536,49 @@ async function cargarEventosCalendario(){
           ${ev.descripcion?`<p class="text-[10px] text-slate-400 truncate">${ev.descripcion}</p>`:''}
           <p class="text-[9px] text-slate-300 font-bold">${cursosStr}</p>
         </div>
-        <button onclick="eliminarEvento('${id}')" class="text-rose-200 hover:text-rose-500 flex-shrink-0"><i class="fas fa-trash text-sm"></i></button>
+        <div class="flex flex-col gap-1 flex-shrink-0">
+          <button onclick="editarEvento('${id}')" class="text-blue-300 hover:text-blue-500 p-1" title="Editar"><i class="fas fa-pencil-alt text-sm"></i></button>
+          <button onclick="eliminarEvento('${id}')" class="text-rose-300 hover:text-rose-500 p-1" title="Eliminar"><i class="fas fa-trash text-sm"></i></button>
+        </div>
       </div>`;
     });
   }catch(e){
-    cont.innerHTML='<p class="text-slate-400 text-center py-4 text-xs">Publicá el primer evento para activar el índice en Firebase.</p>';
-    console.warn('Error orderBy eventos:',e.message);
+    // Fallback sin orderBy si el índice no existe aún en Firestore
+    try{
+      const snap2=await db.collection('eventos').get();
+      if(snap2.empty){cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin eventos publicados.</p>';return;}
+      const hoy=new Date().toISOString().slice(0,10);
+      const docs=[...snap2.docs].sort((a,b)=>a.data().fecha?.localeCompare(b.data().fecha||'')||0);
+      cont.innerHTML='';
+      docs.forEach(doc=>{
+        const ev=doc.data();const id=doc.id;
+        const pts=(ev.fecha||'').split('-');
+        const pasado=ev.fecha<hoy;
+        const cursosStr=(ev.tag||[]).join(', ')||'Todos';
+        const tipoEmoji={institucional:'📅',examen:'📝',feriado:'🏖️',entrega:'📋'};
+        cont.innerHTML+=`<div class="card p-4 flex items-center gap-3 ${pasado?'opacity-50':''}">
+          <div class="text-center min-w-[48px] bg-slate-100 p-2 rounded-xl flex-shrink-0">
+            <p class="text-[8px] font-black text-blue-600">${pts[1]||''}</p>
+            <p class="text-xl font-black">${pts[2]||''}</p>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span>${tipoEmoji[ev.tipo]||'📅'}</span>
+              <p class="font-bold text-sm truncate">${ev.titulo||''}</p>
+            </div>
+            ${ev.descripcion?`<p class="text-[10px] text-slate-400 truncate">${ev.descripcion}</p>`:''}
+            <p class="text-[9px] text-slate-300 font-bold">${cursosStr}</p>
+          </div>
+          <div class="flex flex-col gap-1 flex-shrink-0">
+          <button onclick="editarEvento('${id}')" class="text-blue-300 hover:text-blue-500 p-1" title="Editar"><i class="fas fa-pencil-alt text-sm"></i></button>
+          <button onclick="eliminarEvento('${id}')" class="text-rose-300 hover:text-rose-500 p-1" title="Eliminar"><i class="fas fa-trash text-sm"></i></button>
+        </div>
+        </div>`;
+      });
+    }catch(e2){
+      cont.innerHTML='<p class="text-slate-400 text-center py-4 text-xs">Error al cargar eventos.</p>';
+      console.warn('Error cargando eventos:',e2.message);
+    }
   }
 }
 
