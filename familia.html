@@ -330,7 +330,7 @@ const firebaseConfig={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomai
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 let messaging=null;
-try{messaging=firebase.messaging();}catch(e){console.warn("FCM no disponible:",e.message);}
+try{messaging=firebase.messaging();}catch(e){console.warn("FCM no soportado:",e.message);}
 
 const LLAVE_EMAIL='uriel.bacher@gmail.com';
 let userData=null,userEmail="",listaHijos=[],alumnoSeleccionadoId=null;
@@ -535,24 +535,24 @@ async function cargarLogros(){
 }
 
 // ─── CALENDARIO VISUAL ───
+// Carga eventos de DOS fuentes: colección 'eventos' (comunicaciones) y 'asistencia' con tipo examen (docentes)
 async function cargarAgenda(){
   todosLosEventos=[];
   try{
-    let snap;
-    try{snap=await db.collection('eventos').orderBy('fecha','asc').get();}
-    catch(e){
-      console.warn('Índice orderBy faltante, cargando sin orden:',e.message);
-      snap=await db.collection('eventos').get();
-    }
+    // Fuente 1: colección 'eventos' — comunicaciones y docentes guardan aquí
+    const snap=await db.collection('eventos').get();
     snap.forEach(doc=>{
       const d=doc.data();
-      // Normalizar fecha: Timestamp o string YYYY-MM-DD
       let fecha=d.fecha;
-      if(fecha&&typeof fecha.toDate==='function') fecha=fecha.toDate().toISOString().slice(0,10);
-      if(fecha) todosLosEventos.push({id:doc.id,...d,fecha});
+      // Normalizar: puede venir como Timestamp de Firestore o string YYYY-MM-DD
+      if(fecha&&typeof fecha==='object'&&typeof fecha.toDate==='function')
+        fecha=fecha.toDate().toISOString().slice(0,10);
+      if(fecha&&typeof fecha==='string'&&fecha.length>=10)
+        todosLosEventos.push({id:doc.id,...d,fecha:fecha.slice(0,10)});
     });
-    todosLosEventos.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
-  }catch(e){console.error('Error crítico cargando agenda:',e.message);}
+  }catch(e){console.error('Error cargando eventos:',e);}
+  // Ordenar por fecha en cliente (sin depender de índices Firestore)
+  todosLosEventos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
   renderCalendario();
   renderProximosEventos();
 }
@@ -652,59 +652,20 @@ async function inicializarMensajeria(){
   if(msgFamNivelSec) return;
   // Paso 3: cualquier secretaria (sin filtrar nivel)
   allSecSnap.forEach(doc=>{if(!msgFamNivelSec){msgFamNivelSec=doc.id;console.log('Sec encontrada (cualquier nivel):',msgFamNivelSec);}});
-  if(msgFamNivelSec){await buscarConvExistente();return;}
+  if(msgFamNivelSec) return;
   // Paso 4: admin como último fallback
   const admSnap=await db.collection('usuarios').where('rol','==','admin').limit(1).get();
   if(!admSnap.empty){msgFamNivelSec=admSnap.docs[0].id;console.log('Usando admin como fallback:',msgFamNivelSec);}
   if(!msgFamNivelSec){console.warn('NO SE ENCONTRÓ SECRETARÍA. Verificar que existan usuarios con rol secretaria_* en Firestore.');}
-  await buscarConvExistente();
-}
-
-async function buscarConvExistente(){
-  if(!msgFamNivelSec)return;
-  try{
-    // Buscar conversación existente por participantes (no filtra por emailSecretaria para evitar inconsistencias)
-    const convSnap=await db.collection('conversaciones').where('participantes','array-contains',userEmail).get();
-    let convEx=null;
-    convSnap.forEach(doc=>{
-      const d=doc.data();
-      // Acepta conv con este secretario O cualquier conv anterior aunque haya cambiado el secretario
-      if(!convEx && (d.participantes?.includes(msgFamNivelSec) || d.emailSecretaria===msgFamNivelSec))
-        convEx={id:doc.id,...d};
-    });
-    // Si no encontró con el secretario actual, tomar la más reciente de esta familia
-    if(!convEx){
-      convSnap.forEach(doc=>{if(!convEx)convEx={id:doc.id,...doc.data()};});
-    }
-    if(convEx){
-      msgFamConvId=convEx.id;
-      document.getElementById('msg-fam-empty').classList.add('hidden');
-      document.getElementById('msg-fam-chat').classList.remove('hidden');
-      document.getElementById('msg-fam-chat').classList.add('flex');
-      if(convEx.nombreSecretaria||convEx.nombreOtro)
-        document.getElementById('msg-fam-nombre').textContent=convEx.nombreSecretaria||convEx.nombreOtro||'Secretaría';
-      escucharMensajesFamilia(msgFamConvId);
-      if((convEx.noLeidos||{})[userEmail]>0)
-        document.getElementById('badge-msg-fam').classList.remove('hidden');
-    }
-  }catch(e){console.error('Error buscando conversación existente:',e);}
+  const convSnap=await db.collection('conversaciones').where('participantes','array-contains',userEmail).get();
+  let convEx=null;convSnap.forEach(doc=>{const d=doc.data();if(msgFamNivelSec&&d.participantes?.includes(msgFamNivelSec))convEx={id:doc.id,...d};});
+  if(convEx){msgFamConvId=convEx.id;document.getElementById('msg-fam-empty').classList.add('hidden');document.getElementById('msg-fam-chat').classList.remove('hidden');document.getElementById('msg-fam-chat').classList.add('flex');if(convEx.nombreOtro)document.getElementById('msg-fam-nombre').textContent=convEx.nombreOtro;escucharMensajesFamilia(msgFamConvId);if((convEx.noLeidos||{})[userEmail]>0)document.getElementById('badge-msg-fam').classList.remove('hidden');}
 }
 function escucharMensajesFamilia(convId){
   if(msgFamUnsub)msgFamUnsub();
   msgFamUnsub=db.collection('conversaciones').doc(convId).collection('mensajes').orderBy('timestamp','asc').onSnapshot(snap=>{
-    // Check if conv is finalized
-    db.collection('conversaciones').doc(convId).get().then(cd=>{
-      if(cd.exists&&cd.data().finalizado){
-        const inp=document.getElementById('msg-fam-input');const btn=inp?.nextElementSibling;
-        if(inp)inp.placeholder='Esta conversación fue cerrada. Podés iniciar una nueva si necesitás.';
-      }
-    });
     const cont=document.getElementById('msg-fam-mensajes');let html='';
-    snap.forEach(doc=>{const m=doc.data();const eM=m.autorEmail===userEmail;const ts=m.timestamp?fmtTs(m.timestamp):'';
-      const esIosi=m.autorRol==='iosi';const esSistema=m.autorRol==='sistema';
-      if(esSistema){html+=`<div style="text-align:center;margin:4px 0"><span style="background:#f1f5f9;color:#94a3b8;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block">${m.texto}</span></div>`;return;}
-      if(esIosi){html+=`<div class="mb-w otro"><div class="mb otro" style="background:#f0f9ff;border-color:#93c5fd;color:#1e3a5f"><span style="font-size:10px;font-weight:800;color:#2563eb;display:block;margin-bottom:2px">🤖 Iosi</span>${(m.texto||'').replace(/🤖 /g,'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${ts}</span></div>`;return;}
-      html+=`<div class="mb-w ${eM?'yo':'otro'}"><div class="mb ${eM?'yo':'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${ts} · ${eM?'Vos':(m.autorNombre||'Secretaría')}</span></div>`;});
+    snap.forEach(doc=>{const m=doc.data();const eM=m.autorEmail===userEmail;const h=m.timestamp?fmtTs(m.timestamp):'';html+=`<div class="mb-w ${eM?'yo':'otro'}"><div class="mb ${eM?'yo':'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${h} · ${eM?'Vos':(m.autorNombre||'Secretaría')}</span></div>`;});
     cont.innerHTML=html||'<p class="text-center text-slate-300 text-sm py-6">El equipo de secretaría te responderá a la brevedad.</p>';cont.scrollTop=cont.scrollHeight;
   });
 }
@@ -749,31 +710,68 @@ async function activarNotificaciones(){
 }
 
 // ─── IOSI ───
-async function cargarConocimientoIosi(){try{const s=await db.collection('iosi_conocimiento').orderBy('fecha','desc').limit(30).get();iosiAprendido=[];s.forEach(d=>iosiAprendido.push(d.data()));}catch(e){}}
-async function enviarIosi(){
-  const inp=document.getElementById('iosi-input'),chat=document.getElementById('iosi-chat'),texto=inp.value.trim();if(!texto)return;inp.value='';
-  const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId);
-  chat.innerHTML+=`<div class="bubble-user">${texto}</div>`;chat.scrollTop=chat.scrollHeight;
-  const tid='t'+Date.now();chat.innerHTML+=`<div id="${tid}" class="bubble-iosi" style="opacity:.5">Iosi está pensando...</div>`;chat.scrollTop=chat.scrollHeight;
-  document.getElementById('iosi-status').textContent='Consultando...';document.getElementById('iosi-send-btn').disabled=true;
+async function cargarConocimientoIosi(){
   try{
-    const ctx={alumno:hijo?.nombre||'el alumno',faltas:brain.faltas.length,materias:brain.notas.length,proximoEvento:brain.agenda[0]?`${brain.agenda[0].titulo} el ${brain.agenda[0].fecha}`:'ninguno',familia:userData.nombre,nivel:userData.nivel||'primario'};
-    const sys=`Sos Iosi, el asistente virtual del Instituto Iosef Caro. Sos amable, conciso y hablás en español rioplatense informal.\nDatos: Familia ${ctx.familia}, Alumno ${ctx.alumno} (${ctx.nivel}), Faltas ${ctx.faltas}, Materias ${ctx.materias}, Próximo evento ${ctx.proximoEvento}.\nConocimiento: ${iosiAprendido.slice(0,10).map(k=>`P:${k.pregunta} R:${k.respuesta}`).join(' ')}\nREGLAS: Si saludan presentate brevemente. Si no sabés algo decí que se comuniquen con secretaría desde Mensajes. Respondé en 1-3 oraciones. Nunca digas que sos IA.`;
-    iosiHistorial.push({role:'user',content:texto});
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:iosiHistorial.slice(-6)})});
-    const data=await r.json();const resp=data.content?.[0]?.text||'No pude procesar. Escribile a secretaría desde Mensajes.';
-    iosiHistorial.push({role:'assistant',content:resp});document.getElementById(tid)?.remove();chat.innerHTML+=`<div class="bubble-iosi">${resp}</div>`;chat.scrollTop=chat.scrollHeight;
-  }catch(e){document.getElementById(tid)?.remove();chat.innerHTML+=`<div class="bubble-iosi">Tuve un problema. Escribile a secretaría desde Mensajes.</div>`;}
-  document.getElementById('iosi-status').textContent='Asistente Iosef Caro';document.getElementById('iosi-send-btn').disabled=false;
+    const s=await db.collection('iosi_conocimiento').get();
+    iosiAprendido=[];
+    s.forEach(d=>iosiAprendido.push(d.data()));
+  }catch(e){iosiAprendido=[];}
+}
+
+// Respuestas rápidas locales — no dependen de API externa
+const IOSI_REGLAS=[
+  {p:/^hola|^buenas|^buen día|^buenas tardes|^buenas noches/i,        r:()=>`¡Hola, ${userData.nombre.split(' ')[0]}! 👋 Soy Iosi, el asistente virtual del Iosef Caro. Puedo ayudarte con faltas, notas, eventos y más. ¿En qué puedo ayudarte?`},
+  {p:/horario|hora de entrada|hora de salida|qué hora empieza|qué hora termina/i, r:()=>'🕐 Los horarios son: Inicial 8:00–12:00 / Primario 7:30–12:30 ó 13:30–17:30 / Secundario 7:30–13:00. Consultá con secretaría para tu turno exacto.'},
+  {p:/falta|ausencia|inasistencia|faltas tiene/i,   r:()=>{const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);const f=brain.faltas.length;return f===0?`✅ ${hijo?.nombre||'Tu hijo/a'} no tiene faltas registradas.`:`📋 ${hijo?.nombre||'Tu hijo/a'} tiene ${f} falta${f>1?'s':''} registrada${f>1?'s':''}. Podés justificarlas desde la sección Boletín → Justificar.`;}},
+  {p:/justific/i,                                   r:()=>'📋 Para justificar una inasistencia andá a Boletín → botón "Justificar". Completá la fecha, el motivo y el detalle. Si tenés certificado médico podés adjuntar el link.'},
+  {p:/nota|calificaci|promedio|boletín/i,            r:()=>{const n=brain.notas.length;return n>0?`📊 Podés ver las notas completas en la sección Boletín. Hay ${n} materia${n>1?'s':''} con calificaciones cargadas.`:'📊 Las calificaciones todavía no están disponibles en el sistema. Te avisarán cuando estén listas.';}},
+  {p:/evento|agenda|próximo|actividad|reunión|reunion/i, r:()=>{const ev=brain.agenda[0];return ev?`📅 El próximo evento es: "${ev.titulo}" el ${new Date(ev.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}. Podés ver todos los eventos en la sección Agenda.`:'📅 No hay eventos próximos cargados todavía. Revisá la sección Agenda para estar al tanto.';}},
+  {p:/retiro|retirar|buscar al|autorizar/i,         r:()=>'🚶 Para solicitar un retiro anticipado o cambiar la modalidad de salida, andá a la sección Permisos. Completá el formulario y secretaría lo revisará a la brevedad.'},
+  {p:/mensaje|secretar|comunicar|hablar/i,          r:()=>'💬 Para comunicarte directamente con secretaría, andá a la sección MSG en el menú. Podés escribirles cualquier consulta y te responderán a la brevedad.'},
+  {p:/vacaciones|feriado|receso|no hay clases/i,    r:()=>'🏖️ Los días sin clases y feriados están publicados en la Agenda del portal. Revisá esa sección para ver el calendario completo.'},
+  {p:/inscripci|anotarse|matricularse/i,            r:()=>'📝 Para consultas sobre inscripciones comunicarte con secretaría desde la sección MSG o llamar directamente al instituto.'},
+];
+
+function iosiResponderLocal(texto){
+  // 1. Intentar reglas rápidas
+  for(const r of IOSI_REGLAS){
+    if(r.p.test(texto)) return r.r();
+  }
+  // 2. Buscar en conocimiento aprendido de secretaría
+  const palabras=texto.toLowerCase().split(/\s+/).filter(p=>p.length>3);
+  let mejorRespuesta=null,mejorScore=0;
+  for(const k of iosiAprendido){
+    const pregRef=(k.pregunta||'').toLowerCase();
+    let score=0;
+    for(const p of palabras){if(pregRef.includes(p))score++;}
+    if(score>mejorScore){mejorScore=score;mejorRespuesta=k.respuesta;}
+  }
+  if(mejorScore>=2&&mejorRespuesta) return '💡 '+mejorRespuesta;
+  // 3. No sabe — derivar a secretaría
+  return '😊 No tengo esa información disponible. La secretaría se va a contactar con vos a la brevedad. También podés escribirles directamente desde la sección MSG.';
+}
+
+async function enviarIosi(){
+  const inp=document.getElementById('iosi-input'),chat=document.getElementById('iosi-chat'),texto=inp.value.trim();
+  if(!texto)return;
+  inp.value='';
+  chat.innerHTML+=`<div class="bubble-user">${texto.replace(/</g,'&lt;')}</div>`;
+  chat.scrollTop=chat.scrollHeight;
+  document.getElementById('iosi-send-btn').disabled=true;
+  // Pequeño delay para simular "pensando"
+  await new Promise(r=>setTimeout(r,600));
+  const resp=iosiResponderLocal(texto);
+  iosiHistorial.push({role:'user',content:texto},{role:'assistant',content:resp});
+  chat.innerHTML+=`<div class="bubble-iosi">${resp}</div>`;
+  chat.scrollTop=chat.scrollHeight;
+  document.getElementById('iosi-send-btn').disabled=false;
 }
 
 // ─── AUTORIZACIONES ───
 async function cargarAutorizaciones(){
   const ad=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();const d=ad.data()||{};
   document.getElementById('aut-salida-actual').textContent=d.modalidadSalida||'No registrada';document.getElementById('aut-retiro-actual').textContent=d.retiroAutorizado||'Normal';
-  let snap;
-  try{snap=await db.collection('autorizaciones').where('alumnoId','==',alumnoSeleccionadoId).where('familiaEmail','==',userEmail).orderBy('fecha','desc').limit(10).get();}
-  catch(e){console.warn('aut orderBy:',e);snap=await db.collection('autorizaciones').where('alumnoId','==',alumnoSeleccionadoId).where('familiaEmail','==',userEmail).get();}
+  const snap=await db.collection('autorizaciones').where('alumnoId','==',alumnoSeleccionadoId).where('familiaEmail','==',userEmail).orderBy('fecha','desc').limit(10).get();
   const cont=document.getElementById('aut-historial');cont.innerHTML='';
   snap.forEach(doc=>{const a=doc.data();const dl=new Date(a.fecha).toLocaleDateString('es-AR');const cl={retiro:'bg-amber-50 border-amber-100',modalidad:'bg-blue-50 border-blue-100'};const ec=a.estado==='pendiente'?'text-amber-600':a.estado==='aprobado'?'text-emerald-600':'text-rose-500';cont.innerHTML+=`<div class="p-4 rounded-2xl border ${cl[a.tipo]||'bg-slate-50 border-slate-100'} flex items-start gap-3"><i class="fas ${a.tipo==='retiro'?'fa-walking text-amber-500':'fa-door-open text-blue-500'} mt-0.5"></i><div class="flex-1"><div class="flex justify-between"><p class="font-bold text-sm">${a.tipo==='retiro'?'Retiro anticipado':'Cambio de modalidad'}</p><span class="text-[9px] font-black uppercase ${ec}">${a.estado||'pendiente'}</span></div><p class="text-xs text-slate-500 mt-1">${a.detalle||''}</p><p class="text-[9px] text-slate-400 mt-1">${dl}</p></div></div>`;});
   if(snap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin solicitudes previas.</p>';
