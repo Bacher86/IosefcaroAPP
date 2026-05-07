@@ -756,12 +756,30 @@ document.getElementById('modal-alumno').addEventListener('click',function(e){if(
 // ESTADÍSTICAS
 // ══════════════════════
 async function cargarEstadisticas(){
-  await cargarCiclos();
-  const[alS,dS,fS,cS]=await Promise.all([db.collection('alumnos').get(),db.collection('usuarios').where('rol','==','docente').get(),db.collection('usuarios').where('rol','==','familia').get(),db.collection('comunicados').get()]);
-  document.getElementById('st-alumnos').innerText=alS.size;document.getElementById('st-docentes').innerText=dS.size;document.getElementById('st-familias').innerText=fS.size;document.getElementById('st-comunicados').innerText=cS.size;
+  try { await cargarCiclos(); } catch(e){ console.warn('ciclos:',e); }
+  let alS,dS,fS,cS;
+  try{
+    [alS,dS,fS,cS]=await Promise.all([
+      db.collection('alumnos').get(),
+      db.collection('usuarios').where('rol','==','docente').get(),
+      db.collection('usuarios').where('rol','==','familia').get(),
+      db.collection('comunicados').get()
+    ]);
+  }catch(e){
+    console.warn('Error stats básicas:',e);
+    try{ alS=await db.collection('alumnos').get(); }catch(_){ alS={size:0,forEach:()=>{}}; }
+    try{ dS=await db.collection('usuarios').where('rol','==','docente').get(); }catch(_){ dS={size:0,docs:[]}; }
+    try{ fS=await db.collection('usuarios').where('rol','==','familia').get(); }catch(_){ fS={size:0}; }
+    try{ cS=await db.collection('comunicados').get(); }catch(_){ cS={size:0,forEach:()=>{}}; }
+  }
+  document.getElementById('st-alumnos').innerText=alS.size||0;
+  document.getElementById('st-docentes').innerText=dS.size||0;
+  document.getElementById('st-familias').innerText=fS.size||0;
+  document.getElementById('st-comunicados').innerText=cS.size||0;
   const nc={inicial:0,primario:0,secundario:0};alS.forEach(d=>{const n=d.data().nivel||'primario';nc[n]=(nc[n]||0)+1;});
+  const canvNiv=document.getElementById('chart-niveles');
   if(cNiv)cNiv.destroy();
-  cNiv=new Chart(document.getElementById('chart-niveles'),{type:'doughnut',data:{labels:['Inicial','Primario','Secundario'],datasets:[{data:[nc.inicial,nc.primario,nc.secundario],backgroundColor:['#db2777','#2563eb','#16a34a'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  if(canvNiv) cNiv=new Chart(canvNiv,{type:'doughnut',data:{labels:['Inicial','Primario','Secundario'],datasets:[{data:[nc.inicial,nc.primario,nc.secundario],backgroundColor:['#db2777','#2563eb','#16a34a'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   document.getElementById('leyenda-niveles').innerHTML=`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#db2777;display:inline-block"></span>Inicial ${nc.inicial}</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#2563eb;display:inline-block"></span>Primario ${nc.primario}</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a;display:inline-block"></span>Sec. ${nc.secundario}</span>`;
   const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
   const aS=await db.collection('asistencia').get();let p=0,a=0,t=0;
@@ -777,16 +795,18 @@ async function cargarEstadisticas(){
   if(cMsg)cMsg.destroy();
   cMsg=new Chart(document.getElementById('chart-mensajes'),{type:'bar',data:{labels:dias,datasets:[{label:'Convs.',data:cnt,backgroundColor:'#6366f1',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
   const cont=document.getElementById('tabla-doc-actividad');cont.innerHTML='';const rows=[];
-  for(const dDoc of dS.docs){const dd=dDoc.data();const asSn=await db.collection('asistencia').where('docenteEmail','==',dDoc.id).get();rows.push({nombre:dd.nombre,email:dDoc.id,nivel:dd.nivel,reg:asSn.size});}
+  for(const dDoc of (dS.docs||[])){const dd=dDoc.data();const asSn=await db.collection('asistencia').where('docenteEmail','==',dDoc.id).get();rows.push({nombre:dd.nombre,email:dDoc.id,nivel:dd.nivel,reg:asSn.size});}
   rows.sort((a,b)=>b.reg-a.reg);const maxR=rows[0]?.reg||1;
   rows.forEach(r=>{const pct=Math.round(r.reg/maxR*100);const nbc=r.nivel==='inicial'?'nb-i':r.nivel==='secundario'?'nb-s':'nb-p';cont.innerHTML+=`<div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl"><div class="w-32 flex-shrink-0"><p class="font-bold text-xs truncate">${r.nombre}</p><p class="text-[9px] text-slate-400">${r.email}</p></div><div class="flex-1 bg-slate-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full" style="width:${pct}%"></div></div><span class="text-xs font-black text-slate-600 w-16 text-right">${r.reg}</span>${r.nivel?`<span class="nb ${nbc}">${r.nivel}</span>`:''}</div>`;});
   if(!rows.length)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin docentes.</p>';
   const infCont=document.getElementById('lista-informes-rec');infCont.innerHTML='';const informes=[];
+  try{
   const alSnap=await db.collection('alumnos').limit(15).get();
   for(const al of alSnap.docs){const iS=await db.collection('alumnos').doc(al.id).collection('informes').orderBy('fecha','desc').limit(2).get();iS.forEach(inf=>informes.push({alumno:al.data().nombre,...inf.data()}));}
   informes.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   informes.slice(0,8).forEach(inf=>{const d=new Date(inf.fecha).toLocaleDateString('es-AR');infCont.innerHTML+=`<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl text-xs"><span class="font-black text-slate-700 w-28 truncate">${inf.alumno}</span><span class="bg-blue-100 text-blue-800 font-black px-2 py-0.5 rounded-full">${inf.periodo}</span><span class="text-slate-500 flex-1 truncate">${inf.materia}</span><span class="text-slate-400">${d}</span></div>`;});
   if(!informes.length)infCont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes.</p>';
+  }catch(e){infCont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Error cargando informes.</p>';}
 
 }
 
