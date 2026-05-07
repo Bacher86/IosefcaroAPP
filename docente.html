@@ -68,7 +68,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <a href="eoe.html" class="w-9 h-9 bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white rounded-lg flex items-center justify-center transition-all" title="Ir al panel EOE">
       <i class="fas fa-shield-alt text-sm"></i>
     </a>
-    <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none">
+    <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none" onchange="cargarAlumnos()">
   </div>
 </header>
 
@@ -166,8 +166,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <h3 class="font-black text-xl">Avisos de Pruebas</h3>
     <p class="text-slate-400 text-xs -mt-2">Publicá evaluaciones y entregas para que las familias las vean en su agenda.</p>
     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-      <div>
+      <input type="hidden" id="cal-id-editando-doc">
+      <div class="flex items-center justify-between">
         <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
+        <button id="btn-cancelar-cal-doc" onclick="cancelarEditarEventoDoc()" class="hidden text-[9px] font-black text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">✕ Cancelar</button>
+      </div>
+      <div>
         <input type="text" id="cal-titulo" placeholder="Ej: Parcial de Matemática" class="input-pro mt-1">
       </div>
       <div class="grid grid-cols-2 gap-3">
@@ -185,7 +189,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         <textarea id="cal-desc" class="input-pro mt-1 h-16 resize-none" placeholder="Temas a evaluar, materiales necesarios..."></textarea>
       </div>
       <button onclick="guardarEvento()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg">
-        <i class="fas fa-calendar-plus mr-2"></i>PUBLICAR EN AGENDA
+        <i class="fas fa-calendar-plus mr-2"></i><span id="btn-cal-doc-txt">PUBLICAR EN AGENDA</span>
       </button>
     </div>
     <h4 class="font-black text-sm text-slate-700">Mis eventos publicados</h4>
@@ -486,21 +490,34 @@ function selRITE(alumnoId,val,btn){
 // ══ ASISTENCIA ══
 async function renderAsistencia(fecha){
   const cont=document.getElementById('lista-asis'); cont.innerHTML='';
+  // Encabezado de columnas
+  cont.innerHTML=`<div class="grid items-center gap-2 px-4 pb-1" style="grid-template-columns:1fr auto auto">
+    <span class="text-[9px] font-black text-slate-400 uppercase">Alumno</span>
+    <span class="text-[9px] font-black text-slate-400 uppercase text-center w-32">Asistencia</span>
+    <span class="text-[9px] font-black text-slate-400 uppercase text-center w-16">Uniforme</span>
+  </div>`;
   for(const al of alumnosActuales){
     const snap=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-    const est=snap.empty?null:snap.docs[0].data().estado;
+    const docData=snap.empty?null:snap.docs[0].data();
+    const est=docData?.estado||null;
+    const uni=docData?.uniforme||null; // 'S' o 'N'
     const alerta=await getFaltaOtraMateria(al.id,fecha);
     const cls=e=>e==='P'?'bg-emerald-500 text-white shadow-lg':e==='A'?'bg-rose-500 text-white shadow-lg':'bg-amber-500 text-white shadow-lg';
     const def='bg-slate-50 text-slate-400';
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl flex justify-between items-center border shadow-sm">
+    const uniCls=u=>u==='S'?'bg-blue-500 text-white shadow-lg':u==='N'?'bg-slate-400 text-white shadow-lg':def;
+    cont.innerHTML+=`<div class="bg-white p-3 rounded-2xl border shadow-sm grid items-center gap-2" style="grid-template-columns:1fr auto auto">
       <div>
-        <p class="text-sm font-bold">${al.nombre}</p>
-        ${alerta?`<span class="alerta-falta mt-1">${alerta}</span>`:''}
+        <p class="text-sm font-bold leading-tight">${al.nombre}</p>
+        ${alerta?`<span class="alerta-falta">${alerta}</span>`:''}
       </div>
-      <div class="flex gap-1">
-        <button onclick="setAsis('${al.id}','P',this)" class="w-10 h-10 rounded-xl font-bold text-xs transition-all ${est==='P'?cls('P'):def}">P</button>
-        <button onclick="setAsis('${al.id}','A',this)" class="w-10 h-10 rounded-xl font-bold text-xs transition-all ${est==='A'?cls('A'):def}">A</button>
-        <button onclick="setAsis('${al.id}','T',this)" class="w-10 h-10 rounded-xl font-bold text-xs transition-all ${est==='T'?cls('T'):def}">T</button>
+      <div class="flex gap-1" id="asis-btns-${al.id}">
+        <button onclick="setAsis('${al.id}','P',this)" class="w-9 h-9 rounded-xl font-bold text-xs transition-all ${est==='P'?cls('P'):def}">P</button>
+        <button onclick="setAsis('${al.id}','A',this)" class="w-9 h-9 rounded-xl font-bold text-xs transition-all ${est==='A'?cls('A'):def}">A</button>
+        <button onclick="setAsis('${al.id}','T',this)" class="w-9 h-9 rounded-xl font-bold text-xs transition-all ${est==='T'?cls('T'):def}">T</button>
+      </div>
+      <div class="flex gap-1" id="uni-btns-${al.id}">
+        <button onclick="setUniforme('${al.id}','S',this)" class="w-8 h-9 rounded-xl font-bold text-[10px] transition-all ${uni==='S'?uniCls('S'):def}" title="Con uniforme">✓</button>
+        <button onclick="setUniforme('${al.id}','N',this)" class="w-8 h-9 rounded-xl font-bold text-[10px] transition-all ${uni==='N'?uniCls('N'):def}" title="Sin uniforme">✗</button>
       </div>
     </div>`;
   }
@@ -508,10 +525,20 @@ async function renderAsistencia(fecha){
 }
 
 function setAsis(id,tipo,btn){
-  cambiosAsis[id]=tipo;
+  if(!cambiosAsis[id])cambiosAsis[id]={};
+  cambiosAsis[id].estado=tipo;
   const cls=t=>t==='P'?'bg-emerald-500 text-white shadow-lg':t==='A'?'bg-rose-500 text-white shadow-lg':'bg-amber-500 text-white shadow-lg';
-  btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs transition-all');
-  btn.className=`w-10 h-10 rounded-xl font-bold text-xs transition-all ${cls(tipo)}`;
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-9 h-9 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs transition-all');
+  btn.className=`w-9 h-9 rounded-xl font-bold text-xs transition-all ${cls(tipo)}`;
+  document.getElementById('btn-guardar-asis').style.display='block';
+}
+
+function setUniforme(id,val,btn){
+  if(!cambiosAsis[id])cambiosAsis[id]={};
+  cambiosAsis[id].uniforme=val;
+  const cls=v=>v==='S'?'bg-blue-500 text-white shadow-lg':'bg-slate-400 text-white shadow-lg';
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-8 h-9 rounded-xl bg-slate-50 text-slate-400 font-bold text-[10px] transition-all');
+  btn.className=`w-8 h-9 rounded-xl font-bold text-[10px] transition-all ${cls(val)}`;
   document.getElementById('btn-guardar-asis').style.display='block';
 }
 
@@ -520,9 +547,22 @@ async function confirmarAsistencia(){
   const fecha=document.getElementById('fecha-hoy').value;
   const batch=db.batch();
   for(let id in cambiosAsis){
+    const cambio=cambiosAsis[id];
+    // cambio puede ser {estado, uniforme} (nuevo formato) o string (legacy)
+    const estado=typeof cambio==='object'?cambio.estado:cambio;
+    const uniforme=typeof cambio==='object'?cambio.uniforme:undefined;
+    const datos={alumnoId:id,fecha,materia:materiaActiva,docenteEmail,curso:document.getElementById('select-curso').value};
+    if(estado)datos.estado=estado;
+    if(uniforme)datos.uniforme=uniforme;
     const ex=await db.collection('asistencia').where('alumnoId','==',id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-    if(!ex.empty) batch.update(db.collection('asistencia').doc(ex.docs[0].id),{estado:cambiosAsis[id]});
-    else batch.set(db.collection('asistencia').doc(),{alumnoId:id,estado:cambiosAsis[id],fecha,materia:materiaActiva,docenteEmail,curso:document.getElementById('select-curso').value});
+    if(!ex.empty){
+      const upd={};
+      if(estado)upd.estado=estado;
+      if(uniforme)upd.uniforme=uniforme;
+      if(Object.keys(upd).length)batch.update(db.collection('asistencia').doc(ex.docs[0].id),upd);
+    }else{
+      batch.set(db.collection('asistencia').doc(),datos);
+    }
   }
   await batch.commit();
   alert("✅ Asistencia registrada.");
@@ -582,11 +622,45 @@ async function guardarEvento(){
   const curso=document.getElementById('cal-curso').value;
   const desc=document.getElementById('cal-desc').value.trim();
   if(!titulo||!fecha)return alert("Título y fecha obligatorios.");
-  await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp()});
-  alert("✅ Publicado en el calendario.");
+  const idEditando=document.getElementById('cal-id-editando-doc').value;
+  if(idEditando){
+    await db.collection('eventos').doc(idEditando).update({titulo,descripcion:desc,fecha,tag:[curso],editadoEn:new Date().toISOString()});
+    alert("✅ Evento actualizado.");
+  }else{
+    await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp()});
+    alert("✅ Publicado en el calendario.");
+  }
+  cancelarEditarEventoDoc();
+  cargarEventosDocente();
+}
+
+async function editarEventoDoc(id){
+  const doc=await db.collection('eventos').doc(id).get();
+  if(!doc.exists)return;
+  const ev=doc.data();
+  document.getElementById('cal-id-editando-doc').value=id;
+  document.getElementById('cal-titulo').value=ev.titulo||'';
+  document.getElementById('cal-fecha').value=ev.fecha||'';
+  document.getElementById('cal-desc').value=ev.descripcion||'';
+  const sel=document.getElementById('cal-curso');
+  if(ev.tag?.[0])sel.value=ev.tag[0];
+  document.getElementById('btn-cal-doc-txt').textContent='GUARDAR CAMBIOS';
+  document.getElementById('btn-cancelar-cal-doc').classList.remove('hidden');
+  document.getElementById('cal-titulo').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelarEditarEventoDoc(){
+  document.getElementById('cal-id-editando-doc').value='';
   document.getElementById('cal-titulo').value='';
   document.getElementById('cal-fecha').value='';
   document.getElementById('cal-desc').value='';
+  document.getElementById('btn-cal-doc-txt').textContent='PUBLICAR EN AGENDA';
+  document.getElementById('btn-cancelar-cal-doc').classList.add('hidden');
+}
+
+async function eliminarEventoDoc(id){
+  if(!confirm('¿Eliminar este evento?'))return;
+  await db.collection('eventos').doc(id).delete();
   cargarEventosDocente();
 }
 
@@ -595,12 +669,11 @@ async function cargarEventosDocente(){
   try{
     snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();
   }catch(e){
-    // Fallback sin ordenar si el índice no existe aún en Firestore
     snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).get();
   }
   const cont=document.getElementById('lista-cal-doc'); cont.innerHTML='';
   snap.forEach(doc=>{
-    const e=doc.data();const pts=e.fecha.split('-');
+    const e=doc.data();const id=doc.id;const pts=e.fecha.split('-');
     cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex items-center gap-3 shadow-sm">
       <div class="text-center min-w-[42px] bg-slate-100 p-2 rounded-xl">
         <p class="text-[8px] font-black text-blue-600">${pts[1]}</p>
@@ -610,10 +683,15 @@ async function cargarEventosDocente(){
         <p class="font-bold text-sm">📝 ${e.titulo}</p>
         <p class="text-[10px] text-slate-400">Curso: ${e.tag?.join(', ')||''}</p>
       </div>
+      <div class="flex gap-2 flex-shrink-0">
+        <button onclick="editarEventoDoc('${id}')" class="text-blue-400 hover:text-blue-600 p-1" title="Editar"><i class="fas fa-pencil-alt text-xs"></i></button>
+        <button onclick="eliminarEventoDoc('${id}')" class="text-rose-300 hover:text-rose-500 p-1" title="Eliminar"><i class="fas fa-trash text-xs"></i></button>
+      </div>
     </div>`;
   });
   if(snap.empty) cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Sin eventos publicados.</p>';
 }
+
 
 // ══ UTILS ══
 function switchTab(tab){
