@@ -582,7 +582,7 @@ async function guardarEvento(){
   const curso=document.getElementById('cal-curso').value;
   const desc=document.getElementById('cal-desc').value.trim();
   if(!titulo||!fecha)return alert("Título y fecha obligatorios.");
-  await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||''});
+  await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp()});
   alert("✅ Publicado en el calendario.");
   document.getElementById('cal-titulo').value='';
   document.getElementById('cal-fecha').value='';
@@ -591,7 +591,13 @@ async function guardarEvento(){
 }
 
 async function cargarEventosDocente(){
-  const snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();
+  let snap;
+  try{
+    snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();
+  }catch(e){
+    // Fallback sin ordenar si el índice no existe aún en Firestore
+    snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).get();
+  }
   const cont=document.getElementById('lista-cal-doc'); cont.innerHTML='';
   snap.forEach(doc=>{
     const e=doc.data();const pts=e.fecha.split('-');
