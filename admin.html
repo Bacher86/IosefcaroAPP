@@ -499,6 +499,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 <script>
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124288",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);const db=firebase.firestore();
+const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let matSel=[],curSel=[],allCursos=[],allMats=[];
 let cNiv=null,cAsis=null,cCom=null,cMsg=null;
 let adminEmail='',adminNombre='';
@@ -511,7 +512,7 @@ async function validarIngreso(){
   const em=document.getElementById('log-email').value.trim().toLowerCase();
   const ps=document.getElementById('log-pass').value.trim();
   if(!em||!ps)return alert("Ingresá tus datos.");
-  if(em==="uriel.bacher@gmail.com"&&ps==="Gallardo10"){adminEmail=em;adminNombre="Administrador";autorizar();return;}
+  if(em===LLAVE_EMAIL&&ps===LLAVE_PASS){adminEmail=em;adminNombre="Administrador";autorizar();return;}
   try{
     const d=await db.collection('usuarios').doc(em).get();
     if(!d.exists){alert("Usuario no registrado.");return;}
