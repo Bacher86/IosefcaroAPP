@@ -330,7 +330,7 @@ const firebaseConfig={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomai
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 let messaging=null;
-try{messaging=firebase.messaging();}catch(e){console.warn('FCM no disponible:',e.message);}
+try{messaging=firebase.messaging();}catch(e){console.warn("FCM no disponible:",e.message);}
 
 const LLAVE_EMAIL='uriel.bacher@gmail.com';
 let userData=null,userEmail="",listaHijos=[],alumnoSeleccionadoId=null;
@@ -537,26 +537,22 @@ async function cargarLogros(){
 // ─── CALENDARIO VISUAL ───
 async function cargarAgenda(){
   todosLosEventos=[];
-  try {
+  try{
     let snap;
-    try {
-      snap=await db.collection('eventos').orderBy('fecha','asc').get();
-    } catch(e) {
-      console.warn('Índice faltante en eventos, cargando sin orden:',e.message);
+    try{snap=await db.collection('eventos').orderBy('fecha','asc').get();}
+    catch(e){
+      console.warn('Índice orderBy faltante, cargando sin orden:',e.message);
       snap=await db.collection('eventos').get();
     }
     snap.forEach(doc=>{
       const d=doc.data();
-      // Normalizar campo fecha: puede venir como Timestamp o string YYYY-MM-DD
+      // Normalizar fecha: Timestamp o string YYYY-MM-DD
       let fecha=d.fecha;
       if(fecha&&typeof fecha.toDate==='function') fecha=fecha.toDate().toISOString().slice(0,10);
       if(fecha) todosLosEventos.push({id:doc.id,...d,fecha});
     });
-    // Ordenar en cliente por si vino sin orden
     todosLosEventos.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
-  } catch(e) {
-    console.error('Error crítico cargando agenda:',e.message);
-  }
+  }catch(e){console.error('Error crítico cargando agenda:',e.message);}
   renderCalendario();
   renderProximosEventos();
 }
@@ -656,20 +652,59 @@ async function inicializarMensajeria(){
   if(msgFamNivelSec) return;
   // Paso 3: cualquier secretaria (sin filtrar nivel)
   allSecSnap.forEach(doc=>{if(!msgFamNivelSec){msgFamNivelSec=doc.id;console.log('Sec encontrada (cualquier nivel):',msgFamNivelSec);}});
-  if(msgFamNivelSec) return;
+  if(msgFamNivelSec){await buscarConvExistente();return;}
   // Paso 4: admin como último fallback
   const admSnap=await db.collection('usuarios').where('rol','==','admin').limit(1).get();
   if(!admSnap.empty){msgFamNivelSec=admSnap.docs[0].id;console.log('Usando admin como fallback:',msgFamNivelSec);}
   if(!msgFamNivelSec){console.warn('NO SE ENCONTRÓ SECRETARÍA. Verificar que existan usuarios con rol secretaria_* en Firestore.');}
-  const convSnap=await db.collection('conversaciones').where('participantes','array-contains',userEmail).get();
-  let convEx=null;convSnap.forEach(doc=>{const d=doc.data();if(msgFamNivelSec&&d.participantes?.includes(msgFamNivelSec))convEx={id:doc.id,...d};});
-  if(convEx){msgFamConvId=convEx.id;document.getElementById('msg-fam-empty').classList.add('hidden');document.getElementById('msg-fam-chat').classList.remove('hidden');document.getElementById('msg-fam-chat').classList.add('flex');if(convEx.nombreOtro)document.getElementById('msg-fam-nombre').textContent=convEx.nombreOtro;escucharMensajesFamilia(msgFamConvId);if((convEx.noLeidos||{})[userEmail]>0)document.getElementById('badge-msg-fam').classList.remove('hidden');}
+  await buscarConvExistente();
+}
+
+async function buscarConvExistente(){
+  if(!msgFamNivelSec)return;
+  try{
+    // Buscar conversación existente por participantes (no filtra por emailSecretaria para evitar inconsistencias)
+    const convSnap=await db.collection('conversaciones').where('participantes','array-contains',userEmail).get();
+    let convEx=null;
+    convSnap.forEach(doc=>{
+      const d=doc.data();
+      // Acepta conv con este secretario O cualquier conv anterior aunque haya cambiado el secretario
+      if(!convEx && (d.participantes?.includes(msgFamNivelSec) || d.emailSecretaria===msgFamNivelSec))
+        convEx={id:doc.id,...d};
+    });
+    // Si no encontró con el secretario actual, tomar la más reciente de esta familia
+    if(!convEx){
+      convSnap.forEach(doc=>{if(!convEx)convEx={id:doc.id,...doc.data()};});
+    }
+    if(convEx){
+      msgFamConvId=convEx.id;
+      document.getElementById('msg-fam-empty').classList.add('hidden');
+      document.getElementById('msg-fam-chat').classList.remove('hidden');
+      document.getElementById('msg-fam-chat').classList.add('flex');
+      if(convEx.nombreSecretaria||convEx.nombreOtro)
+        document.getElementById('msg-fam-nombre').textContent=convEx.nombreSecretaria||convEx.nombreOtro||'Secretaría';
+      escucharMensajesFamilia(msgFamConvId);
+      if((convEx.noLeidos||{})[userEmail]>0)
+        document.getElementById('badge-msg-fam').classList.remove('hidden');
+    }
+  }catch(e){console.error('Error buscando conversación existente:',e);}
 }
 function escucharMensajesFamilia(convId){
   if(msgFamUnsub)msgFamUnsub();
   msgFamUnsub=db.collection('conversaciones').doc(convId).collection('mensajes').orderBy('timestamp','asc').onSnapshot(snap=>{
+    // Check if conv is finalized
+    db.collection('conversaciones').doc(convId).get().then(cd=>{
+      if(cd.exists&&cd.data().finalizado){
+        const inp=document.getElementById('msg-fam-input');const btn=inp?.nextElementSibling;
+        if(inp)inp.placeholder='Esta conversación fue cerrada. Podés iniciar una nueva si necesitás.';
+      }
+    });
     const cont=document.getElementById('msg-fam-mensajes');let html='';
-    snap.forEach(doc=>{const m=doc.data();const eM=m.autorEmail===userEmail;const h=m.timestamp?fmtTs(m.timestamp):'';html+=`<div class="mb-w ${eM?'yo':'otro'}"><div class="mb ${eM?'yo':'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${h} · ${eM?'Vos':(m.autorNombre||'Secretaría')}</span></div>`;});
+    snap.forEach(doc=>{const m=doc.data();const eM=m.autorEmail===userEmail;const ts=m.timestamp?fmtTs(m.timestamp):'';
+      const esIosi=m.autorRol==='iosi';const esSistema=m.autorRol==='sistema';
+      if(esSistema){html+=`<div style="text-align:center;margin:4px 0"><span style="background:#f1f5f9;color:#94a3b8;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block">${m.texto}</span></div>`;return;}
+      if(esIosi){html+=`<div class="mb-w otro"><div class="mb otro" style="background:#f0f9ff;border-color:#93c5fd;color:#1e3a5f"><span style="font-size:10px;font-weight:800;color:#2563eb;display:block;margin-bottom:2px">🤖 Iosi</span>${(m.texto||'').replace(/🤖 /g,'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${ts}</span></div>`;return;}
+      html+=`<div class="mb-w ${eM?'yo':'otro'}"><div class="mb ${eM?'yo':'otro'}">${(m.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div><span class="mb-meta">${ts} · ${eM?'Vos':(m.autorNombre||'Secretaría')}</span></div>`;});
     cont.innerHTML=html||'<p class="text-center text-slate-300 text-sm py-6">El equipo de secretaría te responderá a la brevedad.</p>';cont.scrollTop=cont.scrollHeight;
   });
 }
@@ -710,7 +745,7 @@ async function cargarFichaAlumno(){
 }
 async function activarNotificaciones(){
   const btn=document.getElementById('btn-push');if(!('serviceWorker' in navigator)){alert("Tu navegador no soporta notificaciones.");return;}
-  try{const p=await Notification.requestPermission();if(p==='granted'){const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');await navigator.serviceWorker.ready;if(!messaging)throw new Error("Notificaciones no disponibles en este navegador.");if(!messaging)throw new Error('Notificaciones no disponibles en este navegador.');const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});if(tk){await db.collection('usuarios').doc(userEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});btn.innerText="ACTIVADO";btn.classList.replace('bg-slate-900','bg-emerald-500');alert("¡Notificaciones activadas!");}}else alert("Permiso denegado.");}catch(err){alert("Error: "+err.message);}
+  try{const p=await Notification.requestPermission();if(p==='granted'){const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');await navigator.serviceWorker.ready;const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});if(tk){await db.collection('usuarios').doc(userEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});btn.innerText="ACTIVADO";btn.classList.replace('bg-slate-900','bg-emerald-500');alert("¡Notificaciones activadas!");}}else alert("Permiso denegado.");}catch(err){alert("Error: "+err.message);}
 }
 
 // ─── IOSI ───
@@ -736,7 +771,9 @@ async function enviarIosi(){
 async function cargarAutorizaciones(){
   const ad=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();const d=ad.data()||{};
   document.getElementById('aut-salida-actual').textContent=d.modalidadSalida||'No registrada';document.getElementById('aut-retiro-actual').textContent=d.retiroAutorizado||'Normal';
-  const snap=await db.collection('autorizaciones').where('alumnoId','==',alumnoSeleccionadoId).where('familiaEmail','==',userEmail).orderBy('fecha','desc').limit(10).get();
+  let snap;
+  try{snap=await db.collection('autorizaciones').where('alumnoId','==',alumnoSeleccionadoId).where('familiaEmail','==',userEmail).orderBy('fecha','desc').limit(10).get();}
+  catch(e){console.warn('aut orderBy:',e);snap=await db.collection('autorizaciones').where('alumnoId','==',alumnoSeleccionadoId).where('familiaEmail','==',userEmail).get();}
   const cont=document.getElementById('aut-historial');cont.innerHTML='';
   snap.forEach(doc=>{const a=doc.data();const dl=new Date(a.fecha).toLocaleDateString('es-AR');const cl={retiro:'bg-amber-50 border-amber-100',modalidad:'bg-blue-50 border-blue-100'};const ec=a.estado==='pendiente'?'text-amber-600':a.estado==='aprobado'?'text-emerald-600':'text-rose-500';cont.innerHTML+=`<div class="p-4 rounded-2xl border ${cl[a.tipo]||'bg-slate-50 border-slate-100'} flex items-start gap-3"><i class="fas ${a.tipo==='retiro'?'fa-walking text-amber-500':'fa-door-open text-blue-500'} mt-0.5"></i><div class="flex-1"><div class="flex justify-between"><p class="font-bold text-sm">${a.tipo==='retiro'?'Retiro anticipado':'Cambio de modalidad'}</p><span class="text-[9px] font-black uppercase ${ec}">${a.estado||'pendiente'}</span></div><p class="text-xs text-slate-500 mt-1">${a.detalle||''}</p><p class="text-[9px] text-slate-400 mt-1">${dl}</p></div></div>`;});
   if(snap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin solicitudes previas.</p>';
