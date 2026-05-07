@@ -102,6 +102,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
   <button onclick="switchTab('perfil')" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><i class="fas fa-cog"></i></button>
 </header>
 
+<!-- Banner de nueva novedad -->
+<div id="notif-banner" class="hidden sticky top-[73px] z-40 mx-4 mt-2">
+  <div class="bg-blue-600 text-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-lg">
+    <span class="text-lg flex-shrink-0">🔔</span>
+    <div class="flex-1 min-w-0">
+      <p class="font-black text-xs" id="notif-banner-titulo">Nueva novedad</p>
+      <p class="text-[10px] opacity-80 truncate" id="notif-banner-texto"></p>
+    </div>
+    <button onclick="verNovedad()" class="bg-white text-blue-700 font-black text-[10px] px-3 py-1.5 rounded-xl flex-shrink-0">VER</button>
+    <button onclick="cerrarBanner()" class="opacity-60 hover:opacity-100 text-white ml-1 flex-shrink-0 text-lg leading-none">&times;</button>
+  </div>
+</div>
+
 <main class="p-4 max-w-lg mx-auto">
 
   <!-- MURO -->
@@ -280,7 +293,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 
 <!-- NAV -->
 <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-[1000]">
-  <button onclick="switchTab('muro')"           id="nav-muro"           class="nav-btn active flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-home text-xl"></i><span>MURO</span></button>
+  <button onclick="switchTab('muro')"           id="nav-muro"           class="nav-btn active flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-home text-xl"></i><span id="badge-muro" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>MURO</span></button>
   <button onclick="switchTab('agenda')"         id="nav-agenda"         class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-calendar-check text-xl"></i><span>AGENDA</span></button>
   <button onclick="switchTab('academico')"      id="nav-academico"      class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-star text-xl"></i><span>BOLETÍN</span></button>
   <button onclick="switchTab('mensajes')"       id="nav-mensajes"       class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-comments text-xl"></i><span id="badge-msg-fam" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>MSG</span></button>
@@ -382,6 +395,74 @@ async function login(emailOverride){
     await inicializarApp();
   }
   await inicializarMensajeria();
+  escucharNoticias(); // listener en tiempo real para novedades nuevas
+}
+
+// ─── NOTIFICACIONES EN TIEMPO REAL ───
+let notifUnsub=null;
+let ultimaNotifVista=null; // timestamp de la última notif ya vista
+
+function escucharNoticias(){
+  if(notifUnsub)notifUnsub(); // limpiar listener anterior
+  // Leer cuándo fue la última vez que el usuario entró
+  const ahora=new Date();
+  notifUnsub=db.collection('notificaciones_push')
+    .orderBy('creadoEn','desc')
+    .limit(20)
+    .onSnapshot(snap=>{
+      snap.docChanges().forEach(change=>{
+        if(change.type!=='added')return;
+        const d=change.doc.data();
+        // Verificar que sea reciente (menos de 24hs) y no la haya visto
+        const ts=d.creadoEn?.toDate?.();
+        if(!ts)return;
+        const antiguedad=(Date.now()-ts.getTime())/1000/60; // minutos
+        if(antiguedad>1440)return; // ignorar si tiene más de 24hs
+        // Verificar si ya fue leída por este usuario
+        const yaLeida=(d.leidos||[]).includes(userEmail);
+        if(yaLeida)return;
+        // Filtrar por curso si aplica
+        const cursos=d.cursos||['TODOS'];
+        const miCurso=listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.curso||'';
+        const aplica=cursos.includes('TODOS')||cursos.some(c=>c===miCurso||miCurso.toLowerCase().includes(c.toLowerCase()));
+        if(!aplica&&cursos.length>0&&!cursos.includes('TODOS'))return;
+        // Mostrar banner
+        mostrarBanner(d.titulo||'Nueva novedad',d.texto||'',change.doc.id);
+        // Badge en tab muro
+        document.getElementById('badge-muro')?.classList.remove('hidden');
+      });
+    },err=>{console.warn('Listener notificaciones:',err.message);});
+}
+
+let bannerNotifId=null;
+function mostrarBanner(titulo,texto,notifId){
+  bannerNotifId=notifId;
+  document.getElementById('notif-banner-titulo').textContent=titulo;
+  document.getElementById('notif-banner-texto').textContent=texto;
+  document.getElementById('notif-banner').classList.remove('hidden');
+  // Auto-ocultar después de 8 segundos
+  setTimeout(()=>cerrarBanner(),8000);
+  // Notificación nativa del navegador si está activada
+  if(Notification.permission==='granted'){
+    new Notification('Iosef Caro — '+titulo,{body:texto,icon:'logo.png.png'});
+  }
+}
+
+function cerrarBanner(){
+  document.getElementById('notif-banner').classList.add('hidden');
+  // Marcar como leída en Firestore
+  if(bannerNotifId){
+    db.collection('notificaciones_push').doc(bannerNotifId)
+      .update({leidos:firebase.firestore.FieldValue.arrayUnion(userEmail)})
+      .catch(()=>{});
+    bannerNotifId=null;
+  }
+}
+
+function verNovedad(){
+  cerrarBanner();
+  switchTab('muro');
+  cargarMuro('todos');
 }
 
 let iosiInicializado=false; // Bandera para no reinicializar el chat de Iosi en cada cambio de hijo
@@ -442,7 +523,8 @@ async function cargarMuro(filtro='todos'){
     if(filtro==='noleidos'&&isRead)continue;
     if(filtro==='urgente'&&cat!=='urgente')continue;
     if(filtro==='logro'&&cat!=='logro')continue;
-    // Nota: eventos van a la Agenda (colección 'eventos'), no al Muro (comunicados)
+    // Eventos van SOLO a la Agenda — no aparecen en el Muro
+    if(cat==='evento')continue;
     brain.noticias.push({id,...p});
     const likesSnap=await db.collection('comunicados').doc(id).collection('likes').get();const totalLikes=likesSnap.size;const yaDioLike=likesSnap.docs.some(d=>d.id===userEmail);
     const catMap={urgente:{cls:'cat-urgente',emoji:'🔴',label:'Urgente'},evento:{cls:'cat-evento',emoji:'📅',label:'Evento'},logro:{cls:'cat-logro',emoji:'🏆',label:'Logro'},tramite:{cls:'cat-tramite',emoji:'📋',label:'Trámite'},info:{cls:'cat-info',emoji:'📣',label:'Info'}};
@@ -884,6 +966,7 @@ function switchTab(tab){
   if(tab==='autorizaciones')cargarAutorizaciones();
   if(tab==='justificaciones')cargarJustificaciones();
   if(tab==='agenda')cargarAgenda();
+  if(tab==='muro'){document.getElementById('badge-muro')?.classList.add('hidden');}
   if(tab==='perfil')cargarFichaAlumno();
 }
 function setModalidad(m){modalidadFiltro=m;document.getElementById('switch-selector').style.left=m==='num'?'4px':'calc(50%)';cargarAcademico();}
