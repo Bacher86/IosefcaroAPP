@@ -42,6 +42,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   <h2 class="text-2xl font-black mb-1">Panel Docente</h2>
   <p class="text-slate-400 text-sm mb-6">Ingresá con tu email registrado</p>
   <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu email">
+  <div id="pass-wrap" class="hidden w-full max-w-xs mb-4">
+    <input type="password" id="login-pass" class="w-full p-4 bg-slate-100 rounded-2xl font-bold outline-none" placeholder="Contraseña (si tenés)">
+  </div>
   <p id="login-error" class="text-red-500 text-xs font-bold mb-3 hidden"></p>
   <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">Entrar</button>
 </div>
@@ -223,17 +226,21 @@ document.getElementById('fecha-hoy').valueAsDate=new Date();
 // ══ LOGIN ══
 async function login(emailOverride){
   const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
+  const pass=(document.getElementById('login-pass')?.value||'').trim();
   const errEl=document.getElementById('login-error');
   errEl.classList.add('hidden');
   if(!email){errEl.textContent="Ingresá tu email.";errEl.classList.remove('hidden');return;}
-  // Llave maestra — acceso completo como docente
-  if(email===LLAVE_EMAIL){docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};docenteEmail=email;document.getElementById('login-screen').style.display='none';document.getElementById('doc-nom').innerText='Administrador';await cargarPeriodos();return;}
+  // Llave maestra — acceso completo
+  if(email===LLAVE_EMAIL&&pass===LLAVE_PASS){docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};docenteEmail=email;document.getElementById('login-screen').style.display='none';document.getElementById('doc-nom').innerText='Administrador';await cargarPeriodos();return;}
+  // Si ingresaron llave maestra sin contraseña, pedir contraseña
+  if(email===LLAVE_EMAIL&&!pass){document.getElementById('pass-wrap').classList.remove('hidden');errEl.textContent="Ingresá la contraseña maestra.";errEl.classList.remove('hidden');return;}
   try{
     const snap=await db.collection('usuarios').doc(email).get();
     if(!snap.exists){errEl.textContent="Email no registrado.";errEl.classList.remove('hidden');return;}
     const data=snap.data();
     if(data.rol==='eoe'){window.location.href='eoe.html';return;}
     if(data.rol!=='docente'){errEl.textContent="Sin permisos para este panel.";errEl.classList.remove('hidden');return;}
+    // Docentes NO necesitan contraseña — solo verificar email y rol
     docenteData=data; docenteEmail=email;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('doc-nom').innerText=data.nombre;
@@ -620,8 +627,11 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
 window.addEventListener('load',()=>{
   const em=sessionStorage.getItem('iosef_email');
   const rol=sessionStorage.getItem('iosef_rol');
-  if(em&&rol==='docente') login(em);
-  else if(em&&rol==='eoe') window.location.href='eoe.html';
+  if(em&&rol==='eoe'){window.location.href='eoe.html';return;}
+  if(em&&(rol==='docente'||rol==='admin'||rol==='director')){
+    document.getElementById('login-email').value=em;
+    login(em);
+  }
 });
 </script>
 </body>
