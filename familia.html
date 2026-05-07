@@ -384,18 +384,27 @@ async function login(emailOverride){
   await inicializarMensajeria();
 }
 
+let iosiInicializado=false; // Bandera para no reinicializar el chat de Iosi en cada cambio de hijo
+
 async function inicializarApp(){
-  await cargarConocimientoIosi();
+  // Iosi: cargar conocimiento solo una vez, sin sobreescribir el chat si ya se inicializó
+  if(!iosiInicializado){
+    await cargarConocimientoIosi();
+    // Calcular saludo inicial con comunicados sin leer
+    try{
+      const snap=await db.collection('comunicados').get();let sinLeer=0;
+      const lSnap=await db.collection('usuarios').doc(userEmail).collection('leidos_comunicados').get();const lSet=new Set();lSnap.forEach(d=>lSet.add(d.id));
+      snap.forEach(doc=>{if(!lSet.has(doc.id))sinLeer++;});
+      const saludo=`¡Hola! Soy Iosi, el asistente de Iosef Caro. ${sinLeer>0?`Tenés <b>${sinLeer} comunicado/s sin leer</b>.`:'¡Estás al día con todos los comunicados!'} Puedo ayudarte con faltas, notas, eventos y más.`;
+      document.getElementById('iosi-chat').innerHTML=`<div class="bubble-iosi">${saludo}</div>`;
+    }catch(e){document.getElementById('iosi-chat').innerHTML=`<div class="bubble-iosi">¡Hola! Soy Iosi, el asistente de Iosef Caro. Puedo ayudarte con faltas, notas, eventos y más.</div>`;}
+    iosiInicializado=true;
+  }
 
   await cargarMuro('todos');
   // Load all in parallel with individual error handling
   await Promise.allSettled([cargarAcademico(), cargarAgenda()]);
   await cargarWidgetHoy();
-  const snap=await db.collection('comunicados').get();let sinLeer=0;
-  const lSnap=await db.collection('usuarios').doc(userEmail).collection('leidos_comunicados').get();const lSet=new Set();lSnap.forEach(d=>lSet.add(d.id));
-  snap.forEach(doc=>{if(!lSet.has(doc.id))sinLeer++;});
-  const saludo=`¡Hola! Soy Iosi, el asistente de Iosef Caro. ${sinLeer>0?`Tenés <b>${sinLeer} comunicado/s sin leer</b>.`:'¡Estás al día con todos los comunicados!'} Puedo ayudarte con faltas, notas, eventos y más.`;
-  document.getElementById('iosi-chat').innerHTML=`<div class="bubble-iosi">${saludo}</div>`;
 }
 
 // ─── WIDGET HOY ───
@@ -535,20 +544,37 @@ async function cargarLogros(){
 }
 
 // ─── CALENDARIO VISUAL ───
-// Carga eventos de DOS fuentes: colección 'eventos' (comunicaciones) y 'asistencia' con tipo examen (docentes)
+// Carga eventos de DOS fuentes: colección 'eventos' (comunicaciones y docentes)
 async function cargarAgenda(){
   todosLosEventos=[];
   try{
-    // Fuente 1: colección 'eventos' — comunicaciones y docentes guardan aquí
+    // Fuente única: colección 'eventos' — tanto comunicaciones como docentes publican aquí
     const snap=await db.collection('eventos').get();
     snap.forEach(doc=>{
       const d=doc.data();
       let fecha=d.fecha;
-      // Normalizar: puede venir como Timestamp de Firestore o string YYYY-MM-DD
-      if(fecha&&typeof fecha==='object'&&typeof fecha.toDate==='function')
+      // Normalizar fecha: puede venir como Timestamp de Firestore, objeto Date, o string YYYY-MM-DD
+      if(fecha&&typeof fecha==='object'&&typeof fecha.toDate==='function'){
         fecha=fecha.toDate().toISOString().slice(0,10);
-      if(fecha&&typeof fecha==='string'&&fecha.length>=10)
-        todosLosEventos.push({id:doc.id,...d,fecha:fecha.slice(0,10)});
+      } else if(fecha&&fecha instanceof Date){
+        fecha=fecha.toISOString().slice(0,10);
+      } else if(fecha&&typeof fecha==='string'){
+        // Puede venir como "2024-05-10T00:00:00" o "2024-05-10" o "10/05/2024"
+        if(fecha.includes('/')){
+          const pts=fecha.split('/');
+          if(pts.length===3){
+            // Formato DD/MM/YYYY → YYYY-MM-DD
+            fecha=`${pts[2]}-${pts[1].padStart(2,'0')}-${pts[0].padStart(2,'0')}`;
+          }
+        } else if(fecha.includes('T')){
+          fecha=fecha.slice(0,10);
+        }
+      }
+      if(fecha&&typeof fecha==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(fecha)){
+        todosLosEventos.push({id:doc.id,...d,fecha});
+      } else {
+        console.warn('Evento con fecha inválida omitido:',doc.id,d.fecha);
+      }
     });
   }catch(e){console.error('Error cargando eventos:',e);}
   // Ordenar por fecha en cliente (sin depender de índices Firestore)
@@ -645,21 +671,54 @@ async function inicializarMensajeria(){
   const niv=(userData.nivel||'primario').toLowerCase();
   // Paso 1: rol exacto secretaria_{nivel}
   let secSnap=await db.collection('usuarios').where('rol','==',`secretaria_${niv}`).limit(1).get();
-  if(!secSnap.empty){msgFamNivelSec=secSnap.docs[0].id;console.log('Sec encontrada por rol exacto:',msgFamNivelSec);return;}
+  if(!secSnap.empty){msgFamNivelSec=secSnap.docs[0].id;console.log('Sec encontrada por rol exacto:',msgFamNivelSec);}
   // Paso 2: cualquier secretaria con ese nivel en array 'niveles'
-  const allSecSnap=await db.collection('usuarios').where('rol','in',['secretaria_inicial','secretaria_primario','secretaria_secundario']).get();
-  allSecSnap.forEach(doc=>{if(!msgFamNivelSec&&(doc.data().niveles||[]).includes(niv)){msgFamNivelSec=doc.id;console.log('Sec encontrada por nivel array:',msgFamNivelSec);}});
-  if(msgFamNivelSec) return;
-  // Paso 3: cualquier secretaria (sin filtrar nivel)
-  allSecSnap.forEach(doc=>{if(!msgFamNivelSec){msgFamNivelSec=doc.id;console.log('Sec encontrada (cualquier nivel):',msgFamNivelSec);}});
-  if(msgFamNivelSec) return;
+  if(!msgFamNivelSec){
+    const allSecSnap=await db.collection('usuarios').where('rol','in',['secretaria_inicial','secretaria_primario','secretaria_secundario']).get();
+    allSecSnap.forEach(doc=>{if(!msgFamNivelSec&&(doc.data().niveles||[]).includes(niv)){msgFamNivelSec=doc.id;console.log('Sec encontrada por nivel array:',msgFamNivelSec);}});
+    // Paso 3: cualquier secretaria (sin filtrar nivel)
+    if(!msgFamNivelSec) allSecSnap.forEach(doc=>{if(!msgFamNivelSec){msgFamNivelSec=doc.id;console.log('Sec encontrada (cualquier nivel):',msgFamNivelSec);}});
+  }
   // Paso 4: admin como último fallback
-  const admSnap=await db.collection('usuarios').where('rol','==','admin').limit(1).get();
-  if(!admSnap.empty){msgFamNivelSec=admSnap.docs[0].id;console.log('Usando admin como fallback:',msgFamNivelSec);}
-  if(!msgFamNivelSec){console.warn('NO SE ENCONTRÓ SECRETARÍA. Verificar que existan usuarios con rol secretaria_* en Firestore.');}
+  if(!msgFamNivelSec){
+    const admSnap=await db.collection('usuarios').where('rol','==','admin').limit(1).get();
+    if(!admSnap.empty){msgFamNivelSec=admSnap.docs[0].id;console.log('Usando admin como fallback:',msgFamNivelSec);}
+  }
+  if(!msgFamNivelSec){console.warn('NO SE ENCONTRÓ SECRETARÍA. Verificar que existan usuarios con rol secretaria_* en Firestore.');return;}
+  // Buscar conversación existente: primero con la secretaría actual, luego cualquier conversación previa de la familia
   const convSnap=await db.collection('conversaciones').where('participantes','array-contains',userEmail).get();
-  let convEx=null;convSnap.forEach(doc=>{const d=doc.data();if(msgFamNivelSec&&d.participantes?.includes(msgFamNivelSec))convEx={id:doc.id,...d};});
-  if(convEx){msgFamConvId=convEx.id;document.getElementById('msg-fam-empty').classList.add('hidden');document.getElementById('msg-fam-chat').classList.remove('hidden');document.getElementById('msg-fam-chat').classList.add('flex');if(convEx.nombreOtro)document.getElementById('msg-fam-nombre').textContent=convEx.nombreOtro;escucharMensajesFamilia(msgFamConvId);if((convEx.noLeidos||{})[userEmail]>0)document.getElementById('badge-msg-fam').classList.remove('hidden');}
+  let convEx=null;
+  // Prioridad 1: conversación con la secretaría encontrada ahora
+  convSnap.forEach(doc=>{const d=doc.data();if(!convEx&&msgFamNivelSec&&d.participantes?.includes(msgFamNivelSec))convEx={id:doc.id,...d};});
+  // Prioridad 2: cualquier conversación previa con secretaría (aunque el ID haya cambiado)
+  if(!convEx){
+    convSnap.forEach(doc=>{
+      const d=doc.data();
+      if(!convEx&&d.participantes&&d.participantes.length>=2){
+        const otroEmail=d.participantes.find(p=>p!==userEmail);
+        if(otroEmail&&(d.emailSecretaria||d.emailOtro)){
+          convEx={id:doc.id,...d};
+          msgFamNivelSec=otroEmail; // actualizar al participante real
+        }
+      }
+    });
+  }
+  // Prioridad 3: cualquier conversación del usuario (fallback total)
+  if(!convEx&&!convSnap.empty){
+    const doc=convSnap.docs[convSnap.docs.length-1];
+    convEx={id:doc.id,...doc.data()};
+    const otroEmail=convEx.participantes?.find(p=>p!==userEmail);
+    if(otroEmail)msgFamNivelSec=otroEmail;
+  }
+  if(convEx){
+    msgFamConvId=convEx.id;
+    document.getElementById('msg-fam-empty').classList.add('hidden');
+    document.getElementById('msg-fam-chat').classList.remove('hidden');
+    document.getElementById('msg-fam-chat').classList.add('flex');
+    if(convEx.nombreOtro)document.getElementById('msg-fam-nombre').textContent=convEx.nombreOtro;
+    escucharMensajesFamilia(msgFamConvId);
+    if((convEx.noLeidos||{})[userEmail]>0)document.getElementById('badge-msg-fam').classList.remove('hidden');
+  }
 }
 function escucharMensajesFamilia(convId){
   if(msgFamUnsub)msgFamUnsub();
@@ -751,20 +810,25 @@ function iosiResponderLocal(texto){
   return '😊 No tengo esa información disponible. La secretaría se va a contactar con vos a la brevedad. También podés escribirles directamente desde la sección MSG.';
 }
 
+let iosiProcessing=false;
 async function enviarIosi(){
   const inp=document.getElementById('iosi-input'),chat=document.getElementById('iosi-chat'),texto=inp.value.trim();
-  if(!texto)return;
+  if(!texto||iosiProcessing)return;
+  iosiProcessing=true;
   inp.value='';
+  inp.blur();
   chat.innerHTML+=`<div class="bubble-user">${texto.replace(/</g,'&lt;')}</div>`;
   chat.scrollTop=chat.scrollHeight;
-  document.getElementById('iosi-send-btn').disabled=true;
+  const btn=document.getElementById('iosi-send-btn');
+  btn.disabled=true;
   // Pequeño delay para simular "pensando"
   await new Promise(r=>setTimeout(r,600));
   const resp=iosiResponderLocal(texto);
   iosiHistorial.push({role:'user',content:texto},{role:'assistant',content:resp});
   chat.innerHTML+=`<div class="bubble-iosi">${resp}</div>`;
   chat.scrollTop=chat.scrollHeight;
-  document.getElementById('iosi-send-btn').disabled=false;
+  btn.disabled=false;
+  iosiProcessing=false;
 }
 
 // ─── AUTORIZACIONES ───
@@ -819,7 +883,7 @@ function switchTab(tab){
   if(tab==='mensajes'&&msgFamConvId){db.collection('conversaciones').doc(msgFamConvId).update({[`noLeidos.${userEmail}`]:0});document.getElementById('badge-msg-fam').classList.add('hidden');}
   if(tab==='autorizaciones')cargarAutorizaciones();
   if(tab==='justificaciones')cargarJustificaciones();
-
+  if(tab==='agenda')cargarAgenda();
   if(tab==='perfil')cargarFichaAlumno();
 }
 function setModalidad(m){modalidadFiltro=m;document.getElementById('switch-selector').style.left=m==='num'?'4px':'calc(50%)';cargarAcademico();}
@@ -910,3 +974,4 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
 </script>
 </body>
 </html>
+
