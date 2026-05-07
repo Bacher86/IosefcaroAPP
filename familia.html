@@ -328,7 +328,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 <script>
 const firebaseConfig={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore(),messaging=firebase.messaging();
+const db=firebase.firestore();
+let messaging=null;
+try{messaging=firebase.messaging();}catch(e){console.warn('FCM no disponible:',e.message);}
 
 const LLAVE_EMAIL='uriel.bacher@gmail.com';
 let userData=null,userEmail="",listaHijos=[],alumnoSeleccionadoId=null;
@@ -534,15 +536,29 @@ async function cargarLogros(){
 
 // ─── CALENDARIO VISUAL ───
 async function cargarAgenda(){
-  let snap;
+  todosLosEventos=[];
   try {
-    snap=await db.collection('eventos').orderBy('fecha','asc').get();
+    let snap;
+    try {
+      snap=await db.collection('eventos').orderBy('fecha','asc').get();
+    } catch(e) {
+      console.warn('Índice faltante en eventos, cargando sin orden:',e.message);
+      snap=await db.collection('eventos').get();
+    }
+    snap.forEach(doc=>{
+      const d=doc.data();
+      // Normalizar campo fecha: puede venir como Timestamp o string YYYY-MM-DD
+      let fecha=d.fecha;
+      if(fecha&&typeof fecha.toDate==='function') fecha=fecha.toDate().toISOString().slice(0,10);
+      if(fecha) todosLosEventos.push({id:doc.id,...d,fecha});
+    });
+    // Ordenar en cliente por si vino sin orden
+    todosLosEventos.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
   } catch(e) {
-    console.warn('Error cargando eventos:',e.message);
-    snap=await db.collection('eventos').get();
+    console.error('Error crítico cargando agenda:',e.message);
   }
-  todosLosEventos=[];snap.forEach(doc=>todosLosEventos.push({id:doc.id,...doc.data()}));
-  renderCalendario();renderProximosEventos();
+  renderCalendario();
+  renderProximosEventos();
 }
 
 function renderCalendario(){
@@ -694,7 +710,7 @@ async function cargarFichaAlumno(){
 }
 async function activarNotificaciones(){
   const btn=document.getElementById('btn-push');if(!('serviceWorker' in navigator)){alert("Tu navegador no soporta notificaciones.");return;}
-  try{const p=await Notification.requestPermission();if(p==='granted'){const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');await navigator.serviceWorker.ready;const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});if(tk){await db.collection('usuarios').doc(userEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});btn.innerText="ACTIVADO";btn.classList.replace('bg-slate-900','bg-emerald-500');alert("¡Notificaciones activadas!");}}else alert("Permiso denegado.");}catch(err){alert("Error: "+err.message);}
+  try{const p=await Notification.requestPermission();if(p==='granted'){const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');await navigator.serviceWorker.ready;if(!messaging)throw new Error("Notificaciones no disponibles en este navegador.");if(!messaging)throw new Error('Notificaciones no disponibles en este navegador.');const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});if(tk){await db.collection('usuarios').doc(userEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});btn.innerText="ACTIVADO";btn.classList.replace('bg-slate-900','bg-emerald-500');alert("¡Notificaciones activadas!");}}else alert("Permiso denegado.");}catch(err){alert("Error: "+err.message);}
 }
 
 // ─── IOSI ───
