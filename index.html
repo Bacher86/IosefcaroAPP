@@ -68,17 +68,55 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
     </div>
 
     <!-- Portal Escuela -->
-    <div class="portal-card escuela" onclick="abrirLogin('escuela')">
+    <div class="portal-card escuela" onclick="mostrarPanelesEscuela()">
       <div class="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">🏫</div>
       <h2 class="text-xl font-black text-slate-900 mb-2">Portal Escuela</h2>
-      <p class="text-slate-400 text-sm leading-relaxed">Docentes, secretaría, EOE, comunicaciones y administración. El sistema te lleva a donde corresponde.</p>
+      <p class="text-slate-400 text-sm leading-relaxed">Docentes, secretaría, EOE, comunicaciones y administración.</p>
       <div class="mt-5 flex items-center justify-center gap-2 text-sky-600 font-black text-xs uppercase tracking-wide">
-        <span>Ingresar</span><i class="fas fa-arrow-right text-[10px]"></i>
+        <span>Ver paneles</span><i class="fas fa-arrow-right text-[10px]"></i>
       </div>
     </div>
   </div>
 
   <p class="text-slate-600 text-xs font-bold mt-10 uppercase tracking-widest">© 2026 Instituto Iosef Caro</p>
+</div>
+
+<!-- ══ MODAL PANELES ESCUELA ══ -->
+<div id="modal-paneles" style="position:fixed;inset:0;background:rgba(15,23,42,.95);backdrop-filter:blur(8px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px">
+  <div class="bg-white rounded-[2.5rem] w-full max-w-md p-7 shadow-2xl">
+    <div class="text-center mb-6">
+      <h2 class="text-2xl font-black text-slate-900">Seleccioná tu panel</h2>
+      <p class="text-slate-400 text-sm mt-1">¿A cuál panel necesitás acceder?</p>
+    </div>
+    <div class="space-y-3">
+      <a href="admin.html" class="flex items-center gap-4 p-4 bg-red-50 border-2 border-red-100 hover:border-red-300 rounded-2xl transition-all cursor-pointer no-underline">
+        <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-hammer text-red-600"></i></div>
+        <div><p class="font-black text-slate-900 text-sm">Administración</p><p class="text-[10px] text-slate-400">Admin y Director — requiere contraseña</p></div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </a>
+      <a href="comunicaciones.html" class="flex items-center gap-4 p-4 bg-blue-50 border-2 border-blue-100 hover:border-blue-300 rounded-2xl transition-all cursor-pointer no-underline">
+        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-bullhorn text-blue-600"></i></div>
+        <div><p class="font-black text-slate-900 text-sm">Comunicaciones</p><p class="text-[10px] text-slate-400">Publicar noticias y eventos — requiere contraseña</p></div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </a>
+      <a href="docente.html" class="flex items-center gap-4 p-4 bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-300 rounded-2xl transition-all cursor-pointer no-underline">
+        <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-chalkboard-teacher text-emerald-600"></i></div>
+        <div><p class="font-black text-slate-900 text-sm">Docentes</p><p class="text-[10px] text-slate-400">Notas, asistencia e informes — solo email</p></div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </a>
+      <a href="eoe.html" class="flex items-center gap-4 p-4 bg-violet-50 border-2 border-violet-100 hover:border-violet-300 rounded-2xl transition-all cursor-pointer no-underline">
+        <div class="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-shield-alt text-violet-600"></i></div>
+        <div><p class="font-black text-slate-900 text-sm">EOE</p><p class="text-[10px] text-slate-400">Orientación escolar y legajos — solo email</p></div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </a>
+      <a href="secretaria.html" class="flex items-center gap-4 p-4 bg-amber-50 border-2 border-amber-100 hover:border-amber-300 rounded-2xl transition-all cursor-pointer no-underline">
+        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-headset text-amber-600"></i></div>
+        <div><p class="font-black text-slate-900 text-sm">Secretaría</p><p class="text-[10px] text-slate-400">Mensajes, justificaciones y llamadas — solo email</p></div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </a>
+    </div>
+    <button onclick="cerrarPaneles()" class="w-full text-slate-400 text-xs font-bold py-4 mt-2">← Volver</button>
+  </div>
 </div>
 
 <!-- ══ MODAL LOGIN ══ -->
@@ -125,6 +163,12 @@ const db=firebase.firestore();
 
 let modoActual='familia'; // 'familia' | 'escuela'
 
+function mostrarPanelesEscuela(){
+  document.getElementById('modal-paneles').style.display='flex';
+}
+function cerrarPaneles(){
+  document.getElementById('modal-paneles').style.display='none';
+}
 function abrirLogin(modo){
   modoActual=modo;
   const modal=document.getElementById('login-modal');
@@ -219,7 +263,7 @@ async function realizarLogin(){
     else if(rol==='docente') destino='docente.html';
     else if(['secretaria_inicial','secretaria_primario','secretaria_secundario'].includes(rol)) destino='secretaria.html';
     else if(rol==='comunicacion') destino='comunicaciones.html';
-    else destino='admin.html';  // admin, director
+    else destino='admin.html';
 
     // Guardar sesión para que el panel no pida login de nuevo
     sessionStorage.setItem('iosef_email',email);
@@ -244,4 +288,3 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('firebase-mess
 </script>
 </body>
 </html>
-
