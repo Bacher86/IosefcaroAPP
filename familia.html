@@ -328,6 +328,7 @@ const firebaseConfig={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomai
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore(),messaging=firebase.messaging();
 
+const LLAVE_EMAIL='uriel.bacher@gmail.com';
 let userData=null,userEmail="",listaHijos=[],alumnoSeleccionadoId=null;
 let brain={noticias:[],faltas:[],notas:[],agenda:[]};
 let modalidadFiltro='num';
@@ -853,4 +854,3 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
 </script>
 </body>
 </html>
-
