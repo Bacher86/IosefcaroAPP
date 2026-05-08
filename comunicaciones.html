@@ -8,7 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -67,9 +66,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
         </button>
         <button onclick="switchTab('calendario')" id="nav-calendario" class="nav-btn px-4 py-2 font-bold text-xs text-slate-500 transition-all">
           <i class="fas fa-calendar mr-1"></i>Calendario
-        </button>
-        <button onclick="switchTab('config')" id="nav-config" class="nav-btn px-4 py-2 font-bold text-xs text-slate-500 transition-all">
-          <i class="fas fa-cog mr-1"></i>Config
         </button>
       </nav>
       <button onclick="cerrarSesion()" class="text-slate-300 hover:text-rose-500 p-2 transition-colors" title="Cerrar sesión">
@@ -226,49 +222,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
       </div>
     </section>
 
-    <!-- ═══ CONFIG ═══ -->
-    <section id="tab-config" class="tab-content space-y-5">
-      <div class="card p-5 space-y-4">
-        <h2 class="font-black text-base flex items-center gap-2"><i class="fas fa-envelope text-blue-500"></i>Configuración de Emails</h2>
-        <p class="text-xs text-slate-500">Para enviar emails automáticos a las familias cuando publicás un comunicado, necesitás una cuenta gratuita en <a href="https://emailjs.com" target="_blank" class="text-blue-600 font-bold underline">emailjs.com</a> (hasta 200 emails/mes gratis).</p>
-
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Public Key <span class="text-slate-300">(Account → API Keys)</span></label>
-          <input type="text" id="ejs-public-key" class="input-pro mt-1 font-mono text-xs" placeholder="Ej: abc123xyz...">
-        </div>
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Service ID <span class="text-slate-300">(Email Services)</span></label>
-          <input type="text" id="ejs-service-id" class="input-pro mt-1 font-mono text-xs" placeholder="Ej: service_xxxxxxx">
-        </div>
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Template ID <span class="text-slate-300">(Email Templates)</span></label>
-          <input type="text" id="ejs-template-id" class="input-pro mt-1 font-mono text-xs" placeholder="Ej: template_xxxxxxx">
-        </div>
-        <button onclick="guardarConfigEmail()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">
-          <i class="fas fa-save mr-2"></i>GUARDAR CONFIGURACIÓN
-        </button>
-        <div id="email-config-status" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs font-bold text-emerald-700"></div>
-      </div>
-
-      <div class="card p-5 space-y-3">
-        <h3 class="font-black text-sm">📋 Instrucciones para el Template de EmailJS</h3>
-        <p class="text-xs text-slate-600">En tu template de EmailJS usá estas variables:</p>
-        <div class="bg-slate-50 rounded-xl p-3 font-mono text-[10px] space-y-1 text-slate-700">
-          <p><span class="text-blue-600 font-bold">To Email:</span> {{to_email}}</p>
-          <p><span class="text-blue-600 font-bold">Subject:</span> {{subject}}</p>
-          <p class="mt-2 font-sans text-slate-400">En el body del email:</p>
-          <p>Hola {{to_name}},</p>
-          <p>{{titulo}}</p>
-          <p>{{message}}</p>
-          <p>Ver en el portal: {{link_app}}</p>
-        </div>
-        <button onclick="enviarEmailPrueba()" class="w-full bg-slate-100 text-slate-700 p-3 rounded-xl font-bold text-sm hover:bg-slate-200 transition">
-          <i class="fas fa-paper-plane mr-2"></i>Enviar email de prueba a mi cuenta
-        </button>
-        <div id="email-test-status" class="hidden text-xs font-bold p-2 rounded-xl text-center"></div>
-      </div>
-    </section>
-
   </main>
 </div>
 
@@ -279,107 +232,11 @@ firebase.initializeApp(FB);
 const db=firebase.firestore();
 const storage=firebase.storage();
 
-// ═══ EMAILJS CONFIG ═══
-const EMAILJS_PUBLIC_KEY  = 'hDKMmExBMzhAWF_KH';   // Tu Clave Pública integrada
-const EMAILJS_SERVICE_ID  = 'service_5lf6k9v';     // Tu Service ID integrado
-const EMAILJS_TEMPLATE_ID = 'template_noticias';   // Tu Template ID integrado
-emailjs.init({publicKey: EMAILJS_PUBLIC_KEY});
-
-// Función de envío adaptada a tu nuevo template de diseño
-async function enviarEmailsFamilias(titulo, texto, cursos){
-  try{
-    const famSnap = await db.collection('usuarios').where('rol','==','familia').get();
-    if(famSnap.empty) return;
-
-    const destinatarios = [];
-    famSnap.forEach(doc => {
-      const d = doc.data();
-      const emailFam = d.email || doc.id;
-      if(!emailFam.includes('@')) return;
-
-      if(cursos.includes('TODOS')){
-        destinatarios.push({email: emailFam, nombre: d.nombre||'Familia'});
-      } else {
-        const hijos = d.hijos||[];
-        if(hijos.some(h => cursos.includes(h.curso))) {
-            destinatarios.push({email: emailFam, nombre: d.nombre||'Familia'});
-        }
-      }
-    });
-
-    for(const dest of destinatarios){
-      try{
-        // Se utilizan las variables exactas de tu código HTML: school_name, subject, message, to_email
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          school_name: 'Iosef Caro',
-          subject:     titulo,
-          message:     texto,
-          to_email:    dest.email,
-          to_name:     dest.nombre // Variable adicional por si decides usarla
-        });
-        await new Promise(r => setTimeout(r, 400)); // Pausa de seguridad
-      } catch(err) {
-        console.error('Error enviando a', dest.email, err);
-      }
-    }
-  } catch(e) {
-    console.error('Error general en envío:', e);
-  }
-}
-
 const LLAVE_EMAIL='uriel.bacher@gmail.com';
 const LLAVE_PASS='Gallardo10';
 const ROLES_VALIDOS=['admin','comunicacion','director'];
 
 let staffEmail='', staffNombre='', staffRol='';
-
-// ═══ CONFIG EMAIL ═══
-function cargarConfigEmailGuardada(){
-  // Los valores se guardan en Firestore en config_app/emailjs para que persistan entre sesiones
-}
-
-async function inicializarConfigEmail(){
-  try{
-    const doc=await db.collection('config_app').doc('emailjs').get();
-    if(doc.exists){
-      const c=doc.data();
-      if(c.publicKey&&c.publicKey!=='TU_PUBLIC_KEY'){
-        // Sobreescribir las constantes con los valores guardados
-        window._EMAILJS_PUBLIC_KEY=c.publicKey;
-        window._EMAILJS_SERVICE_ID=c.serviceId;
-        window._EMAILJS_TEMPLATE_ID=c.templateId;
-        emailjs.init({publicKey:c.publicKey});
-        console.log('✅ EmailJS configurado desde Firestore');
-      }
-    }
-  }catch(e){console.warn('Sin config EmailJS guardada:',e.message);}
-}
-
-async function guardarConfigEmail(){
-  const pub=document.getElementById('ejs-public-key').value.trim();
-  const svc=document.getElementById('ejs-service-id').value.trim();
-  const tpl=document.getElementById('ejs-template-id').value.trim();
-  if(!pub||!svc||!tpl){alert('Completá los 3 campos.');return;}
-  await db.collection('config_app').doc('emailjs').set({publicKey:pub,serviceId:svc,templateId:tpl,updatedAt:new Date().toISOString()});
-  window._EMAILJS_PUBLIC_KEY=pub;window._EMAILJS_SERVICE_ID=svc;window._EMAILJS_TEMPLATE_ID=tpl;
-  emailjs.init({publicKey:pub});
-  const st=document.getElementById('email-config-status');
-  st.textContent='✅ Configuración guardada correctamente.';st.classList.remove('hidden');
-  setTimeout(()=>st.classList.add('hidden'),4000);
-}
-
-async function enviarEmailPrueba(){
-  const pub=window._EMAILJS_PUBLIC_KEY||document.getElementById('ejs-public-key').value.trim();
-  const svc=window._EMAILJS_SERVICE_ID||document.getElementById('ejs-service-id').value.trim();
-  const tpl=window._EMAILJS_TEMPLATE_ID||document.getElementById('ejs-template-id').value.trim();
-  const st=document.getElementById('email-test-status');
-  if(!pub||pub==='TU_PUBLIC_KEY'||!svc||!tpl){st.textContent='⚠️ Guardá la configuración primero.';st.className='text-xs font-bold p-2 rounded-xl text-center bg-amber-50 text-amber-700';st.classList.remove('hidden');return;}
-  st.textContent='Enviando...';st.className='text-xs font-bold p-2 rounded-xl text-center bg-slate-100 text-slate-600';st.classList.remove('hidden');
-  try{
-    await emailjs.send(svc,tpl,{to_email:staffEmail,to_name:staffNombre||'Administrador',from_name:'Colegio Iosef Caro',subject:'🔧 Email de prueba — Iosef Caro',message:'Este es un email de prueba desde el panel de comunicaciones.',titulo:'Email de prueba',link_app:window.location.origin+'/familia.html'});
-    st.textContent='✅ Email enviado a '+staffEmail;st.className='text-xs font-bold p-2 rounded-xl text-center bg-emerald-50 text-emerald-700';
-  }catch(err){st.textContent='❌ Error: '+err.text;st.className='text-xs font-bold p-2 rounded-xl text-center bg-rose-50 text-rose-700';}
-}
 
 // ═══ LOGIN ═══
 async function loginComunicacion(){
@@ -420,21 +277,10 @@ function abrirPanel(){
 function cerrarSesion(){sessionStorage.clear();location.reload();}
 
 // ═══ INIT ═══
-async function inicializarApp(){
-  await inicializarConfigEmail();
+function inicializarApp(){
   cargarCursos();
   cargarNoticias();
   cargarEventosCalendario();
-  // Rellenar inputs de config con valores guardados
-  try{
-    const doc=await db.collection('config_app').doc('emailjs').get();
-    if(doc.exists){
-      const c=doc.data();
-      if(c.publicKey)document.getElementById('ejs-public-key').value=c.publicKey;
-      if(c.serviceId)document.getElementById('ejs-service-id').value=c.serviceId;
-      if(c.templateId)document.getElementById('ejs-template-id').value=c.templateId;
-    }
-  }catch(e){}
 }
 
 // ═══ CURSOS ═══
@@ -514,7 +360,7 @@ async function guardarNoticia(){
     datos.creadoEn=firebase.firestore.FieldValue.serverTimestamp();
     datos.vistas=0; datos.totalLikes=0;
     const docRef=await db.collection('comunicados').add(datos);
-    // Registro de notificación en tiempo real (banner en la app)
+    // Crear registro de notificación para que las familias sean notificadas en tiempo real
     await db.collection('notificaciones_push').add({
       tipo:'comunicado',
       refId:docRef.id,
@@ -525,19 +371,7 @@ async function guardarNoticia(){
       creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
       leidos:[]
     });
-    // Envío de emails (en background, sin bloquear UI)
-    if((window._EMAILJS_PUBLIC_KEY||EMAILJS_PUBLIC_KEY)!=='hDKMmExBMzhAWF_KH'){
-      enviarEmailsFamilias(datos.titulo, datos.texto, datos.cursos||['TODOS'])
-        .catch(e=>console.warn('Email batch error:',e));
-      alert('✅ Comunicado publicado. Se enviarán emails a las familias.');
-    }else{
-      alert('✅ Comunicado publicado. (Configurá EmailJS para envío de emails — ver consola para instrucciones)');
-      console.info('%c📧 Para activar emails:
-1. Creá cuenta gratuita en emailjs.com
-2. Configurá un servicio Gmail/SMTP
-3. Creá un template con variables: {{to_email}}, {{to_name}}, {{titulo}}, {{message}}, {{link_app}}
-4. Reemplazá EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID y EMAILJS_TEMPLATE_ID en comunicaciones.html','color:#2563eb;font-size:14px');
-    }
+    alert('✅ Comunicado publicado. Las familias serán notificadas.');
   }
   resetForm();
   cargarNoticias();
@@ -761,9 +595,6 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   const nb=document.getElementById('nav-'+tab);
   nb.classList.add('active','text-white');nb.classList.remove('text-slate-500');
-  // Recargar datos al cambiar de tab para asegurar que estén frescos
-  if(tab==='calendario')cargarEventosCalendario();
-  if(tab==='comunicados')cargarNoticias();
 }
 
 // ═══ AUTO-LOGIN ═══
