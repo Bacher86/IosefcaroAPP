@@ -169,9 +169,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
       <button onclick="setModalidad('num')"  id="txt-num"  class="relative flex-1 py-3 text-[10px] font-black uppercase z-10">Numérico</button>
       <button onclick="setModalidad('rite')" id="txt-rite" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">RITE</button>
     </div>
-    <div class="grid grid-cols-2 gap-3">
-      <div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-[9px] font-black text-slate-400 uppercase">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
-      <div class="bg-white p-5 rounded-3xl border shadow-sm"><p class="text-[9px] font-black text-slate-400 uppercase">Tardanzas</p><p id="count-tardes" class="text-3xl font-black">0</p></div>
+    <div class="grid grid-cols-3 gap-2">
+      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
+      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Tardes</p><p id="count-tardes" class="text-3xl font-black">0</p></div>
+      <div class="bg-amber-50 p-4 rounded-3xl border border-amber-100 shadow-sm text-center"><p class="text-[8px] font-black text-amber-500 uppercase leading-tight mb-1">Sin uniforme</p><p id="count-uniforme" class="text-3xl font-black text-amber-600">0</p></div>
+    </div>
+    <!-- Detalle días sin uniforme (expandible) -->
+    <div id="detalle-uniforme" class="hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 -mt-1">
+      <p class="text-[9px] font-black text-amber-600 uppercase mb-2">Días sin uniforme</p>
+      <div id="lista-uniforme" class="space-y-1"></div>
     </div>
     <div id="container-notas" class="space-y-4"></div>
     <div class="mt-2">
@@ -604,9 +610,33 @@ async function cargarAcademico(){
     });
   }
   if(!brain.notas.length)container.innerHTML=`<div class="bg-white p-8 rounded-3xl border shadow-sm text-center"><i class="fas fa-lock text-3xl text-slate-200 mb-3 block"></i><p class="font-bold text-slate-400">Las calificaciones no están disponibles todavía.</p></div>`;
-  const aSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();let f=0,t=0;brain.faltas=[];
-  aSnap.forEach(d=>{if(d.data().estado==='A'){f++;brain.faltas.push(d.data().fecha);}if(d.data().estado==='T')t++;});
-  document.getElementById('count-faltas').innerText=f;document.getElementById('count-tardes').innerText=t;
+  const aSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
+  let f=0,t=0,sinUni=[];brain.faltas=[];
+  aSnap.forEach(d=>{
+    const dd=d.data();
+    if(dd.estado==='A'){f++;brain.faltas.push(dd.fecha);}
+    if(dd.estado==='T')t++;
+    if(dd.uniforme==='N')sinUni.push(dd.fecha);
+  });
+  document.getElementById('count-faltas').innerText=f;
+  document.getElementById('count-tardes').innerText=t;
+  document.getElementById('count-uniforme').innerText=sinUni.length;
+  // Detalle días sin uniforme
+  const detalleEl=document.getElementById('detalle-uniforme');
+  const listaEl=document.getElementById('lista-uniforme');
+  if(sinUni.length>0){
+    sinUni.sort((a,b)=>b.localeCompare(a)); // más reciente primero
+    listaEl.innerHTML=sinUni.map(f=>{
+      const d=new Date(f+'T12:00');
+      return `<p class="text-xs text-amber-700 font-bold">• ${d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'long'})}</p>`;
+    }).join('');
+    detalleEl.classList.remove('hidden');
+    // Hacer la tarjeta clickeable para expandir/colapsar
+    const card=document.getElementById('count-uniforme').closest('.bg-amber-50');
+    if(card&&!card.dataset.clickBound){card.dataset.clickBound='1';card.style.cursor='pointer';card.onclick=()=>detalleEl.classList.toggle('hidden');}
+  }else{
+    detalleEl.classList.add('hidden');
+  }
   await cargarInformesFamilia();await cargarLogros();
 }
 
@@ -830,7 +860,7 @@ async function msgFamEnviar(){
   b.update(cr,{ultimoMensaje:texto,ultimoTimestamp:firebase.firestore.FieldValue.serverTimestamp(),[`noLeidos.${msgFamNivelSec}`]:firebase.firestore.FieldValue.increment(1)});
   await b.commit();
 }
-function fmtTs(ts){if(!ts)return'';const d=ts.toDate?ts.toDate():new Date(ts.seconds*1000);const hoy=new Date();return d.toDateString()===hoy.toDateString()?d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});}
+function fmtTs(ts){if(!ts)return'';const d=ts.toDate?ts.toDate():new Date(ts.seconds*1000);const AR='America/Argentina/Buenos_Aires';const hoyStr=new Date().toLocaleDateString('es-AR',{timeZone:AR,day:'2-digit',month:'2-digit',year:'numeric'});const dStr=d.toLocaleDateString('es-AR',{timeZone:AR,day:'2-digit',month:'2-digit',year:'numeric'});return hoyStr===dStr?d.toLocaleTimeString('es-AR',{timeZone:AR,hour:'2-digit',minute:'2-digit',hour12:false}):d.toLocaleDateString('es-AR',{timeZone:AR,day:'2-digit',month:'2-digit'});}
 
 // ─── PERFIL ───
 async function guardarPerfil(){const n=document.getElementById('perfil-nombre').value;const t=document.getElementById('perfil-tel').value;await db.collection('usuarios').doc(userEmail).update({nombre:n,telefono:t});document.getElementById('user-display-name').innerText="Familia "+n.split(' ')[0];alert("Perfil actualizado");}
