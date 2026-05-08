@@ -280,62 +280,50 @@ const db=firebase.firestore();
 const storage=firebase.storage();
 
 // ═══ EMAILJS CONFIG ═══
-// IMPORTANTE: Reemplazá estos valores con los de tu cuenta en emailjs.com
-const EMAILJS_PUBLIC_KEY  = 'hDKMmExBMzhAWF_KH';   // Account > API Keys
-const EMAILJS_SERVICE_ID  = 'service_5lf6k9v';   // Email Services > Service ID
-const EMAILJS_TEMPLATE_ID = 'template_noticias';  // Email Templates > Template ID
+const EMAILJS_PUBLIC_KEY  = 'hDKMmExBMzhAWF_KH';   // Tu Clave Pública integrada
+const EMAILJS_SERVICE_ID  = 'service_5lf6k9v';     // Tu Service ID integrado
+const EMAILJS_TEMPLATE_ID = 'template_noticias';   // Tu Template ID integrado
 emailjs.init({publicKey: EMAILJS_PUBLIC_KEY});
 
-// Envía emails a las familias correspondientes al comunicado publicado
+// Función de envío adaptada a tu nuevo template de diseño
 async function enviarEmailsFamilias(titulo, texto, cursos){
   try{
-    // Obtener todas las familias de Firestore
     const famSnap = await db.collection('usuarios').where('rol','==','familia').get();
-    if(famSnap.empty){console.log('Sin familias registradas para notificar.');return;}
+    if(famSnap.empty) return;
 
     const destinatarios = [];
-    famSnap.forEach(doc=>{
+    famSnap.forEach(doc => {
       const d = doc.data();
-      if(!d.email && !doc.id.includes('@'))return;
       const emailFam = d.email || doc.id;
-      // Filtrar por curso si el comunicado no es para TODOS
+      if(!emailFam.includes('@')) return;
+
       if(cursos.includes('TODOS')){
         destinatarios.push({email: emailFam, nombre: d.nombre||'Familia'});
       } else {
-        // Verificar si algún hijo del usuario está en alguno de los cursos destinatarios
         const hijos = d.hijos||[];
-        const aplica = hijos.some(h=>cursos.some(c=>c===h.curso||h.curso?.toLowerCase().includes(c.toLowerCase())));
-        if(aplica) destinatarios.push({email: emailFam, nombre: d.nombre||'Familia'});
+        if(hijos.some(h => cursos.includes(h.curso))) {
+            destinatarios.push({email: emailFam, nombre: d.nombre||'Familia'});
+        }
       }
     });
 
-    if(destinatarios.length===0){console.log('Sin destinatarios para los cursos seleccionados.');return;}
-
-    // Enviar de a uno (EmailJS free tier: hasta 200/mes)
-    const textoPlano = texto.replace(/<[^>]*>/g,'').slice(0,300);
-    let enviados=0, errores=0;
     for(const dest of destinatarios){
       try{
-        await emailjs.send(window._EMAILJS_SERVICE_ID||EMAILJS_SERVICE_ID, window._EMAILJS_TEMPLATE_ID||EMAILJS_TEMPLATE_ID, {
-          to_email:   dest.email,
-          to_name:    dest.nombre,
-          from_name:  'Colegio Iosef Caro',
-          subject:    '📣 Nuevo comunicado: ' + titulo,
-          message:    textoPlano,
-          titulo:     titulo,
-          link_app:   window.location.origin + '/familia.html'
+        // Se utilizan las variables exactas de tu código HTML: school_name, subject, message, to_email
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          school_name: 'Iosef Caro',
+          subject:     titulo,
+          message:     texto,
+          to_email:    dest.email,
+          to_name:     dest.nombre // Variable adicional por si decides usarla
         });
-        enviados++;
-        // Pequeña pausa para no saturar la API
-        await new Promise(r=>setTimeout(r,300));
-      }catch(err){
-        errores++;
-        console.warn('Error enviando a',dest.email,':',err);
+        await new Promise(r => setTimeout(r, 400)); // Pausa de seguridad
+      } catch(err) {
+        console.error('Error enviando a', dest.email, err);
       }
     }
-    console.log(`Emails enviados: ${enviados} OK, ${errores} errores de ${destinatarios.length} destinatarios.`);
-  }catch(e){
-    console.error('Error en enviarEmailsFamilias:',e);
+  } catch(e) {
+    console.error('Error general en envío:', e);
   }
 }
 
