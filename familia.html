@@ -576,8 +576,66 @@ async function abrirNoticia(id){
   let mediaHtml='';
   if(p.adjuntos?.img)   mediaHtml+=`<img src="${p.adjuntos.img}" class="w-full h-auto rounded-2xl mb-4" alt="${p.titulo}">`;
   else if(p.link)        mediaHtml+=`<img src="${p.link}" class="w-full h-auto rounded-2xl mb-4" alt="${p.titulo}">`;
-  if(p.adjuntos?.video){ const yt=p.adjuntos.video.includes('youtu')?p.adjuntos.video.replace('watch?v=','embed/').replace('youtu.be/','youtube.com/embed/'):null; mediaHtml+=yt?`<iframe src="${yt}" class="w-full rounded-2xl mb-4" style="height:200px" allowfullscreen frameborder="0"></iframe>`:`<video src="${p.adjuntos.video}" controls class="w-full rounded-2xl mb-4"></video>`;}
-  if(p.adjuntos?.pdf)   mediaHtml+=`<a href="${p.adjuntos.pdf}" target="_blank" class="flex items-center gap-3 bg-red-50 border border-red-100 p-4 rounded-2xl mb-4 font-bold text-red-600"><i class="fas fa-file-pdf text-xl"></i>Ver PDF adjunto</a>`;
+  if(p.adjuntos?.video){
+    const vUrl=p.adjuntos.video;
+    const isYT=vUrl.includes('youtu');
+    const isVimeo=vUrl.includes('vimeo.com');
+    const isFirebaseVid=vUrl.includes('firebasestorage')||vUrl.includes('googleapis.com/v0/b/');
+    if(isYT){
+      // Extraer ID correctamente de todos los formatos de YouTube
+      let ytId='';
+      if(vUrl.includes('watch?v='))ytId=vUrl.split('watch?v=')[1].split('&')[0];
+      else if(vUrl.includes('youtu.be/'))ytId=vUrl.split('youtu.be/')[1].split('?')[0];
+      else if(vUrl.includes('embed/'))ytId=vUrl.split('embed/')[1].split('?')[0];
+      else ytId=vUrl.split('/').pop().split('?')[0];
+      mediaHtml+=`<div class="mb-4 rounded-2xl overflow-hidden bg-black" style="position:relative;padding-top:56.25%"><iframe src="https://www.youtube.com/embed/${ytId}?rel=0" style="position:absolute;top:0;left:0;width:100%;height:100%" allowfullscreen frameborder="0"></iframe></div>`;
+    } else if(isVimeo){
+      const vmId=vUrl.split('vimeo.com/')[1]?.split('/')[0]||vUrl.split('/').pop().split('?')[0];
+      mediaHtml+=`<div class="mb-4 rounded-2xl overflow-hidden bg-black" style="position:relative;padding-top:56.25%"><iframe src="https://player.vimeo.com/video/${vmId}" style="position:absolute;top:0;left:0;width:100%;height:100%" allowfullscreen frameborder="0"></iframe></div>`;
+    } else if(isFirebaseVid){
+      // Firebase Storage: no se puede embeber por CORS — mostrar botón de descarga
+      mediaHtml+=`<a href="${vUrl}" target="_blank" class="flex items-center gap-3 bg-purple-50 border border-purple-100 p-4 rounded-2xl mb-4 font-bold text-purple-700 active:scale-95 transition-transform"><div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-play-circle text-2xl text-purple-600"></i></div><div><p class="text-sm">Ver video</p><p class="text-[10px] font-normal text-purple-400">Se abrirá en una nueva pestaña</p></div></a>`;
+    } else {
+      // Otros videos directos — intentar reproducir inline con fallback a botón
+      mediaHtml+=`<div class="mb-4"><video src="${vUrl}" controls class="w-full rounded-2xl" style="max-height:280px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"></video><a href="${vUrl}" target="_blank" style="display:none" class="items-center gap-3 bg-purple-50 border border-purple-100 p-4 rounded-2xl font-bold text-purple-700"><i class="fas fa-play-circle text-xl"></i><span>Ver/descargar video</span></a></div>`;
+    }
+  }
+  if(p.adjuntos?.pdf){
+    const pUrl=p.adjuntos.pdf;
+    const isGDrive=pUrl.includes('drive.google.com');
+    const isFirebase=pUrl.includes('firebasestorage')||pUrl.includes('googleapis.com/v0/b/');
+    if(isGDrive){
+      // Google Drive — embed directo
+      const driveId=pUrl.match(/[-\w]{25,}/)?.[0];
+      const embedUrl=driveId?`https://drive.google.com/file/d/${driveId}/preview`:pUrl;
+      mediaHtml+=`<div class="mb-4 rounded-2xl overflow-hidden border bg-slate-50" style="height:360px">
+        <iframe src="${embedUrl}" style="width:100%;height:100%;border:none" title="PDF adjunto"></iframe>
+      </div>
+      <a href="${pUrl}" target="_blank" class="flex items-center gap-2 text-[10px] font-bold text-red-600 bg-red-50 p-2 rounded-xl mb-4"><i class="fas fa-download"></i>Descargar PDF</a>`;
+    } else if(isFirebase){
+      // Firebase Storage — usar Google Docs Viewer para embeber, + botón de descarga directo
+      const gdocsUrl=`https://docs.google.com/viewer?url=${encodeURIComponent(pUrl)}&embedded=true`;
+      mediaHtml+=`<div class="mb-4 space-y-2">
+        <div class="rounded-2xl overflow-hidden border bg-slate-50" style="height:360px">
+          <iframe src="${gdocsUrl}" style="width:100%;height:100%;border:none" title="PDF adjunto"></iframe>
+        </div>
+        <a href="${pUrl}" target="_blank" class="flex items-center gap-3 bg-red-50 border border-red-100 p-3 rounded-xl font-bold text-red-600 text-sm active:scale-95 transition-transform">
+          <i class="fas fa-download"></i><span>Descargar PDF</span>
+        </a>
+      </div>`;
+    } else {
+      // PDF público genérico — Google Docs Viewer con fallback a botón
+      const gdocsUrl=`https://docs.google.com/viewer?url=${encodeURIComponent(pUrl)}&embedded=true`;
+      mediaHtml+=`<div class="mb-4 space-y-2">
+        <div class="rounded-2xl overflow-hidden border bg-slate-50" style="height:360px">
+          <iframe src="${gdocsUrl}" style="width:100%;height:100%;border:none" title="PDF adjunto"></iframe>
+        </div>
+        <a href="${pUrl}" target="_blank" class="flex items-center gap-3 bg-red-50 border border-red-100 p-3 rounded-xl font-bold text-red-600 text-sm active:scale-95 transition-transform">
+          <i class="fas fa-download"></i><span>Descargar PDF</span>
+        </a>
+      </div>`;
+    }
+  }
   if(p.adjuntos?.link)  mediaHtml+=`<a href="${p.adjuntos.link}" target="_blank" class="flex items-center gap-3 bg-blue-50 border border-blue-100 p-4 rounded-2xl mb-4 font-bold text-blue-600"><i class="fas fa-external-link-alt"></i>Ver enlace externo</a>`;
   document.getElementById('modal-contenido').innerHTML=`${mediaHtml}<h2 class="text-2xl font-black">${p.titulo}</h2><hr class="my-4"><p class="text-slate-600 whitespace-pre-wrap leading-relaxed">${p.texto}</p><button onclick="confirmarLectura('${id}')" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold mt-8">Confirmar Lectura ✓</button>`;
   document.getElementById('modal-noticia').style.display='flex';document.body.style.overflow='hidden';
@@ -1087,4 +1145,3 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
 </script>
 </body>
 </html>
-
