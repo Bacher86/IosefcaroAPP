@@ -524,8 +524,6 @@ function subirArchivo(tipo,input){
     }
   );
 }
-  );
-}
 
 // ═══ NOTICIAS ═══
 async function guardarNoticia(){
@@ -577,11 +575,7 @@ async function guardarNoticia(){
       alert('✅ Comunicado publicado. Se enviarán emails a las familias.');
     }else{
       alert('✅ Comunicado publicado. (Configurá EmailJS para envío de emails — ver consola para instrucciones)');
-      console.info('%c📧 Para activar emails:
-1. Creá cuenta gratuita en emailjs.com
-2. Configurá un servicio Gmail/SMTP
-3. Creá un template con variables: {{to_email}}, {{to_name}}, {{titulo}}, {{message}}, {{link_app}}
-4. Reemplazá EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID y EMAILJS_TEMPLATE_ID en comunicaciones.html','color:#2563eb;font-size:14px');
+      console.info('EmailJS: configurá las claves en el tab Config.');
     }
   }
   resetForm();
