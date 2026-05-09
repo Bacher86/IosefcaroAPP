@@ -402,8 +402,8 @@ async function login(emailOverride){
     document.getElementById('select-hijo').innerHTML='<option>Sin alumnos</option>';
     await inicializarApp();
   }
-  await inicializarMensajeria();
-  escucharNoticias(); // listener en tiempo real para novedades nuevas
+  try{await inicializarMensajeria();}catch(e){console.warn('mensajeria:',e.message);}
+  try{escucharNoticias();}catch(e){console.warn('noticias:',e.message);}
 }
 
 // ─── NOTIFICACIONES EN TIEMPO REAL ───
@@ -411,35 +411,29 @@ let notifUnsub=null;
 let ultimaNotifVista=null; // timestamp de la última notif ya vista
 
 function escucharNoticias(){
-  if(notifUnsub)notifUnsub(); // limpiar listener anterior
-  // Leer cuándo fue la última vez que el usuario entró
-  const ahora=new Date();
-  notifUnsub=db.collection('notificaciones_push')
-    .orderBy('creadoEn','desc')
-    .limit(20)
-    .onSnapshot(snap=>{
-      snap.docChanges().forEach(change=>{
-        if(change.type!=='added')return;
-        const d=change.doc.data();
-        // Verificar que sea reciente (menos de 24hs) y no la haya visto
-        const ts=d.creadoEn?.toDate?.();
-        if(!ts)return;
-        const antiguedad=(Date.now()-ts.getTime())/1000/60; // minutos
-        if(antiguedad>1440)return; // ignorar si tiene más de 24hs
-        // Verificar si ya fue leída por este usuario
-        const yaLeida=(d.leidos||[]).includes(userEmail);
-        if(yaLeida)return;
-        // Filtrar por curso si aplica
-        const cursos=d.cursos||['TODOS'];
-        const miCurso=listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.curso||'';
-        const aplica=cursos.includes('TODOS')||cursos.some(c=>c===miCurso||miCurso.toLowerCase().includes(c.toLowerCase()));
-        if(!aplica&&cursos.length>0&&!cursos.includes('TODOS'))return;
-        // Mostrar banner
-        mostrarBanner(d.titulo||'Nueva novedad',d.texto||'',change.doc.id);
-        // Badge en tab muro
-        document.getElementById('badge-muro')?.classList.remove('hidden');
-      });
-    },err=>{console.warn('Listener notificaciones:',err.message);});
+  try{
+    if(notifUnsub)notifUnsub();
+    notifUnsub=db.collection('notificaciones_push')
+      .orderBy('creadoEn','desc').limit(20)
+      .onSnapshot(snap=>{
+        try{
+          snap.docChanges().forEach(change=>{
+            if(change.type!=='added')return;
+            const d=change.doc.data();
+            const ts=d.creadoEn?.toDate?.();
+            if(!ts)return;
+            if((Date.now()-ts.getTime())/60000>1440)return;
+            if((d.leidos||[]).includes(userEmail))return;
+            const cursos=d.cursos||['TODOS'];
+            const miCurso=listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.curso||'';
+            const aplica=cursos.includes('TODOS')||cursos.some(c=>c===miCurso||miCurso.toLowerCase().includes(c.toLowerCase()));
+            if(!aplica&&!cursos.includes('TODOS'))return;
+            mostrarBanner(d.titulo||'Nueva novedad',d.texto||'',change.doc.id);
+            document.getElementById('badge-muro')?.classList.remove('hidden');
+          });
+        }catch(e){console.warn('notif handler:',e.message);}
+      },err=>{console.warn('notif listener:',err.message);});
+  }catch(e){console.warn('escucharNoticias:',e.message);}
 }
 
 let bannerNotifId=null;
@@ -1345,4 +1339,8 @@ function switchTab(tab){
   document.querySelectorAll('.tab-content,.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+tab)?.classList.add('active');
   if(document.getElementById('nav-'+tab))document.getElementById('nav-'+tab).classList.add('active');
-  if(tab==='mensajes'&&msgFamConvId){db.collection('conversaciones').doc(msgFamConvId).update({[`noLeidos.${userEmail}`]:0});document.getElementById('badge-msg-fam').classList.add('hidden')
+  if(tab==='mensajes'&&msgFamConvId){db.collection('conversaciones').doc(msgFamConvId).update({[`noLeidos.${userEmail}`]:0});document.getElementById('badge-msg-fam').classList.add('hidden');}
+  if(tab==='autorizaciones')cargarAutorizaciones();
+  if(tab==='justificaciones')cargarJustificaciones();
+  if(tab==='agenda')cargarAgenda();
+  if(tab==='muro'){document.getElementById('badge-muro')?.classList.add
