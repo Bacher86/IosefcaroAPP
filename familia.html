@@ -17,8 +17,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 .tab-content{display:none}.tab-content.active{display:block}
 
 /* Iosi */
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-.typing-dots{display:inline-block;animation:blink 1.2s steps(1) infinite}
 #iosi-modal{position:fixed;bottom:170px;right:16px;width:340px;max-width:calc(100% - 32px);height:500px;background:#0f172a;border-radius:28px;box-shadow:0 25px 50px -12px rgba(0,0,0,.5);display:none;flex-direction:column;z-index:6000;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
 #iosi-chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
 .bubble-iosi{background:#1e293b;color:#f1f5f9;padding:12px 16px;border-radius:20px;border-bottom-left-radius:4px;align-self:flex-start;font-size:13px;line-height:1.5;border:1px solid #334155;max-width:85%}
@@ -355,7 +353,7 @@ try{messaging=firebase.messaging();}catch(e){console.warn("FCM no soportado:",e.
 
 const LLAVE_EMAIL='uriel.bacher@gmail.com';
 let userData=null,userEmail="",listaHijos=[],alumnoSeleccionadoId=null;
-let brain={noticias:[],faltas:[],notas:[],agenda:[],faltas_uniforme:0,tardanzas:0,dias_sin_uniforme:[]};
+let brain={noticias:[],faltas:[],notas:[],agenda:[]};
 let modalidadFiltro='num';
 let msgFamConvId=null,msgFamUnsub=null,msgFamNivelSec=null;
 let calMesActual=new Date();
@@ -402,8 +400,8 @@ async function login(emailOverride){
     document.getElementById('select-hijo').innerHTML='<option>Sin alumnos</option>';
     await inicializarApp();
   }
-  try{await inicializarMensajeria();}catch(e){console.warn('mensajeria:',e.message);}
-  try{escucharNoticias();}catch(e){console.warn('noticias:',e.message);}
+  await inicializarMensajeria();
+  escucharNoticias(); // listener en tiempo real para novedades nuevas
 }
 
 // ─── NOTIFICACIONES EN TIEMPO REAL ───
@@ -411,29 +409,35 @@ let notifUnsub=null;
 let ultimaNotifVista=null; // timestamp de la última notif ya vista
 
 function escucharNoticias(){
-  try{
-    if(notifUnsub)notifUnsub();
-    notifUnsub=db.collection('notificaciones_push')
-      .orderBy('creadoEn','desc').limit(20)
-      .onSnapshot(snap=>{
-        try{
-          snap.docChanges().forEach(change=>{
-            if(change.type!=='added')return;
-            const d=change.doc.data();
-            const ts=d.creadoEn?.toDate?.();
-            if(!ts)return;
-            if((Date.now()-ts.getTime())/60000>1440)return;
-            if((d.leidos||[]).includes(userEmail))return;
-            const cursos=d.cursos||['TODOS'];
-            const miCurso=listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.curso||'';
-            const aplica=cursos.includes('TODOS')||cursos.some(c=>c===miCurso||miCurso.toLowerCase().includes(c.toLowerCase()));
-            if(!aplica&&!cursos.includes('TODOS'))return;
-            mostrarBanner(d.titulo||'Nueva novedad',d.texto||'',change.doc.id);
-            document.getElementById('badge-muro')?.classList.remove('hidden');
-          });
-        }catch(e){console.warn('notif handler:',e.message);}
-      },err=>{console.warn('notif listener:',err.message);});
-  }catch(e){console.warn('escucharNoticias:',e.message);}
+  if(notifUnsub)notifUnsub(); // limpiar listener anterior
+  // Leer cuándo fue la última vez que el usuario entró
+  const ahora=new Date();
+  notifUnsub=db.collection('notificaciones_push')
+    .orderBy('creadoEn','desc')
+    .limit(20)
+    .onSnapshot(snap=>{
+      snap.docChanges().forEach(change=>{
+        if(change.type!=='added')return;
+        const d=change.doc.data();
+        // Verificar que sea reciente (menos de 24hs) y no la haya visto
+        const ts=d.creadoEn?.toDate?.();
+        if(!ts)return;
+        const antiguedad=(Date.now()-ts.getTime())/1000/60; // minutos
+        if(antiguedad>1440)return; // ignorar si tiene más de 24hs
+        // Verificar si ya fue leída por este usuario
+        const yaLeida=(d.leidos||[]).includes(userEmail);
+        if(yaLeida)return;
+        // Filtrar por curso si aplica
+        const cursos=d.cursos||['TODOS'];
+        const miCurso=listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.curso||'';
+        const aplica=cursos.includes('TODOS')||cursos.some(c=>c===miCurso||miCurso.toLowerCase().includes(c.toLowerCase()));
+        if(!aplica&&cursos.length>0&&!cursos.includes('TODOS'))return;
+        // Mostrar banner
+        mostrarBanner(d.titulo||'Nueva novedad',d.texto||'',change.doc.id);
+        // Badge en tab muro
+        document.getElementById('badge-muro')?.classList.remove('hidden');
+      });
+    },err=>{console.warn('Listener notificaciones:',err.message);});
 }
 
 let bannerNotifId=null;
@@ -669,12 +673,9 @@ async function cargarAcademico(){
   aSnap.forEach(d=>{
     const dd=d.data();
     if(dd.estado==='A'){f++;brain.faltas.push(dd.fecha);}
-    if(dd.estado==='T'){t++;brain.faltas.push(dd.fecha+':tarde');}
+    if(dd.estado==='T')t++;
     if(dd.uniforme==='N')sinUni.push(dd.fecha);
   });
-  brain.faltas_uniforme=sinUni.length;
-  brain.dias_sin_uniforme=sinUni;
-  brain.tardanzas=t;
   document.getElementById('count-faltas').innerText=f;
   document.getElementById('count-tardes').innerText=t;
   document.getElementById('count-uniforme').innerText=sinUni.length;
@@ -937,331 +938,46 @@ async function activarNotificaciones(){
   try{const p=await Notification.requestPermission();if(p==='granted'){const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');await navigator.serviceWorker.ready;const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});if(tk){await db.collection('usuarios').doc(userEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});btn.innerText="ACTIVADO";btn.classList.replace('bg-slate-900','bg-emerald-500');alert("¡Notificaciones activadas!");}}else alert("Permiso denegado.");}catch(err){alert("Error: "+err.message);}
 }
 
-// ════════════════════════════════════════════
-// ─── IOSI — MOTOR DE CONOCIMIENTO v2 ────────
-// ════════════════════════════════════════════
-
+// ─── IOSI ───
 async function cargarConocimientoIosi(){
   try{
     const s=await db.collection('iosi_conocimiento').get();
     iosiAprendido=[];
-    s.forEach(d=>iosiAprendido.push({id:d.id,...d.data()}));
-    console.log(`Iosi: ${iosiAprendido.length} entradas cargadas de KB`);
-  }catch(e){iosiAprendido=[];console.warn('iosi_conocimiento:',e.message);}
+    s.forEach(d=>iosiAprendido.push(d.data()));
+  }catch(e){iosiAprendido=[];}
 }
 
-// ═══════════════════════════════════════════════════
-//  IOSI — MOTOR SEMÁNTICO COMPLETO (sin IA externa)
-// ═══════════════════════════════════════════════════
-
-// ── Diccionario de sinónimos ──
-const SINONIMOS={
-  ausencia:'falta',ausente:'falta',inasistencia:'falta',falto:'falta',faltas:'falta',
-  inasistencias:'falta',falte:'falta',
-  calificacion:'nota',calificaciones:'nota',promedio:'nota',boletin:'nota',
-  boletín:'nota',notas:'nota',rendimiento:'nota',
-  profe:'docente',profesor:'docente',profesora:'docente',maestra:'docente',maestro:'docente',
-  reunion:'reunion',reuniones:'reunion',junta:'reunion',reunión:'reunion',
-  horario:'hora',horarios:'hora',entrada:'hora',salida:'hora',turno:'hora',
-  evento:'agenda',actividad:'agenda',acto:'agenda',excursion:'agenda',excursión:'agenda',
-  actividades:'agenda',eventos:'agenda',
-  inscripcion:'inscripcion',inscripción:'inscripcion',matricula:'inscripcion',
-  anotarse:'inscripcion',matricularse:'inscripcion',
-  certificado:'justificacion',justificar:'justificacion',justificacion:'justificacion',
-  justificación:'justificacion',excusar:'justificacion',
-  retiro:'autorizacion',permiso:'autorizacion',autorizar:'autorizacion',
-  autorizacion:'autorizacion',autorización:'autorizacion',retirar:'autorizacion',
-  secretaria:'secretaria',secretario:'secretaria',
-  mensaje:'msg',contactar:'msg',comunicar:'msg',hablar:'msg',escribir:'msg',
-  uniforme:'uniforme',guardapolvo:'uniforme',ropa:'uniforme',
-  feriado:'vacacion',receso:'vacacion',vacacion:'vacacion',vacaciones:'vacacion',
-  asueto:'vacacion',
-  pago:'cuota',arancel:'cuota',deuda:'cuota',cuotas:'cuota',
-  comunicado:'novedad',novedad:'novedad',noticias:'novedad',noticia:'novedad',
-  comunicados:'novedad',circular:'novedad',
-  autorizaciones:'autorizacion',permisos:'autorizacion',
-};
-
-function normalizar(t=''){
-  return t.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
-}
-
-function tokenizar(texto){
-  const stop=new Set(['que','con','una','unos','unas','los','las','del','por','para',
-    'como','cuando','donde','pero','mas','muy','hay','son','fue','ser','esta','esto',
-    'este','eso','ese','sin','bien','mal','hola','buenas','buen','buena','dia','dias',
-    'tiene','tiene','cuantas','cuantos','cual','cuales','sus','sus','hay','hay']);
-  return normalizar(texto).split(' ')
-    .map(t=>SINONIMOS[t]||t)
-    .filter(t=>t.length>2&&!stop.has(t));
-}
-
-// ── Scoring semántico contra la KB de Firestore ──
-function calcularScore(tokens, entrada){
-  if(entrada.activo===false) return 0;
-  let score=0;
-  const pregNorm = normalizar(entrada.pregunta||'');
-  const pregTok  = pregNorm.split(' ');
-  const respTok  = normalizar(entrada.respuesta||'').split(' ');
-  const tagTok   = (entrada.etiquetas||[]).flatMap(e=>normalizar(e).split(' '));
-  const sinTok   = (entrada.sinonimos||[]).flatMap(e=>normalizar(e).split(' '));
-  for(const tok of tokens){
-    if(pregTok.includes(tok)||sinTok.includes(tok)) score+=3;
-    else if(pregTok.some(p=>p.includes(tok)||tok.includes(p))) score+=1.5;
-    if(tagTok.some(e=>e.includes(tok)||tok.includes(e))) score+=2;
-    if(respTok.includes(tok)) score+=0.3;
-  }
-  score += Math.min((entrada.usos||0)*0.15, 1.5);
-  return score;
-}
-
-// ── Helpers de formato ──
-function fmtFecha(f){
-  if(!f) return '';
-  const d=new Date(f+'T12:00');
-  return d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Argentina/Buenos_Aires'});
-}
-function fmtFechaCorta(f){
-  if(!f) return '';
-  const d=new Date(f+'T12:00');
-  return d.toLocaleDateString('es-AR',{day:'numeric',month:'short',timeZone:'America/Argentina/Buenos_Aires'});
-}
-
-// ── Reglas dinámicas — usan datos REALES del alumno ──
+// Respuestas rápidas locales — no dependen de API externa
 const IOSI_REGLAS=[
-  // SALUDO
-  {
-    p:/^(hola|buenas|buen|buenos|que tal|como estas|como estan|buenas tardes|buenas noches|buenos dias)/,
-    r(){
-      const nom=userData.nombre.split(' ')[0];
-      const h=new Date().getHours();
-      const sal=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
-      const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-      const nomH=hijo?.nombre?.split(' ')[0]||'tu hijo/a';
-      const f=brain.faltas.length;
-      const hoy=new Date().toISOString().slice(0,10);
-      const ev=brain.agenda.filter(e=>e.fecha>=hoy)[0];
-      const sinU=brain.faltas_uniforme||0;
-      let resumen=[];
-      if(f>0) resumen.push(`⚠️ ${nomH} tiene <b>${f} falta${f>1?'s':''}</b>`);
-      if(sinU>0) resumen.push(`👕 <b>${sinU} día${sinU>1?'s':''}</b> sin uniforme`);
-      if(ev) resumen.push(`📅 Próximo: <b>${ev.titulo}</b> el ${fmtFechaCorta(ev.fecha)}`);
-      return `${sal}, <b>${nom}</b>! 👋 Soy Iosi.${resumen.length?'<br>'+resumen.join(' · '):'<br>¿En qué te puedo ayudar?'}`;
-    }
-  },
-  // FALTAS — detalladas con fechas
-  {
-    p:/falta|ausencia|inasistencia|falto|faltas/,
-    r(){
-      const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-      const nom=hijo?.nombre||'Tu hijo/a';
-      const f=brain.faltas.length;
-      if(f===0) return `✅ <b>${nom}</b> no tiene faltas registradas este período. ¡Excelente asistencia!`;
-      const lista=brain.faltas.slice().sort().reverse().slice(0,5)
-        .map(fecha=>`• ${fmtFecha(fecha)}`).join('<br>');
-      return `📋 <b>${nom}</b> tiene <b>${f} falta${f>1?'s':''}</b> este período.<br><br>Últimas registradas:<br>${lista}${f>5?`<br>• y ${f-5} más...`:''}<br><br>Para justificar: <b>Boletín → Justificar</b>.`;
-    }
-  },
-  // NOTAS — con detalle por materia
-  {
-    p:/nota|calificacion|promedio|materia|boletin|rendimiento/,
-    r(){
-      const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-      const nom=hijo?.nombre||'Tu hijo/a';
-      const notas=brain.notas;
-      if(!notas.length) return '📊 Las calificaciones todavía no están disponibles en el sistema.';
-      const lista=notas.slice(0,6).map(n=>{
-        const nota=n.nota??n.valor??'—';
-        return `• <b>${n.materia}</b>: ${nota}`;
-      }).join('<br>');
-      const conNota=notas.filter(n=>(n.nota||n.valor)!=null);
-      const prom=conNota.length?
-        (conNota.reduce((a,n)=>a+parseFloat(n.nota||n.valor||0),0)/conNota.length).toFixed(1)
-        :null;
-      return `📊 <b>${nom}</b> — calificaciones:<br><br>${lista}${notas.length>6?`<br>• y ${notas.length-6} más...`:''}${prom?`<br><br>Promedio general: <b>${prom}</b>`:''}.<br><br>Ver detalle completo en <b>Boletín</b>.`;
-    }
-  },
-  // UNIFORME — con fechas exactas
-  {
-    p:/uniforme|guardapolvo|ropa|sin uniforme/,
-    r(){
-      const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-      const nom=hijo?.nombre||'Tu hijo/a';
-      const sinU=brain.faltas_uniforme||0;
-      const fechas=brain.dias_sin_uniforme||[];
-      if(sinU===0) return `✅ <b>${nom}</b> no tiene días sin uniforme registrados. ¡Muy bien!`;
-      const lista=fechas.slice().sort().reverse().slice(0,5)
-        .map(f=>`• ${fmtFecha(f)}`).join('<br>');
-      return `👕 <b>${nom}</b> fue sin uniforme <b>${sinU} día${sinU>1?'s':''}</b> este período.<br><br>Fechas:<br>${lista}${sinU>5?`<br>• y ${sinU-5} más...`:''}<br><br>Ver detalle en <b>Boletín</b>.`;
-    }
-  },
-  // ASISTENCIA general (tardanzas + faltas)
-  {
-    p:/asistencia|tardanza|tarde|llego tarde|llegar tarde/,
-    r(){
-      const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-      const nom=hijo?.nombre||'Tu hijo/a';
-      const f=brain.faltas.length;
-      const t=brain.tardanzas||0;
-      const sinU=brain.faltas_uniforme||0;
-      return `📋 Resumen de asistencia de <b>${nom}</b>:<br><br>• Faltas: <b>${f}</b>${f>0?' — Justificá en Boletín':''}<br>• Tardanzas: <b>${t}</b><br>• Días sin uniforme: <b>${sinU}</b><br><br>Ver detalle completo en la sección <b>Boletín</b>.`;
-    }
-  },
-  // EVENTOS / AGENDA — con fechas completas
-  {
-    p:/evento|agenda|actividad|acto|excursion|proximo|que hay|hay algo|cuando es/,
-    r(){
-      const hoy=new Date().toISOString().slice(0,10);
-      const prox=brain.agenda.filter(e=>e.fecha>=hoy).slice(0,5);
-      if(!prox.length) return '📅 No hay eventos próximos cargados. Revisá la sección <b>Agenda</b> para el calendario completo.';
-      const lista=prox.map(ev=>`📌 <b>${ev.titulo}</b><br>&nbsp;&nbsp;${fmtFecha(ev.fecha)}${ev.descripcion?`<br>&nbsp;&nbsp;<span style="font-size:11px;opacity:.8">${ev.descripcion.slice(0,60)}${ev.descripcion.length>60?'...':''}</span>`:''}`).join('<br><br>');
-      return `Próximos eventos:<br><br>${lista}<br><br>Ver todos en la sección <b>Agenda</b>.`;
-    }
-  },
-  // CALENDARIO — preguntar por fecha específica
-  {
-    p:/cuando hay|que fecha|que dia es|el proximo/,
-    r(){
-      const hoy=new Date().toISOString().slice(0,10);
-      const prox=brain.agenda.filter(e=>e.fecha>=hoy)[0];
-      if(!prox) return '📅 No hay eventos próximos registrados todavía.';
-      return `📅 El próximo evento es <b>${prox.titulo}</b> el <b>${fmtFecha(prox.fecha)}</b>.${prox.descripcion?`<br>${prox.descripcion}`:''}`;
-    }
-  },
-  // AUTORIZACIONES / RETIROS
-  {
-    p:/retiro|retirar|autorizar|autorizacion|permiso|salida anticipada|buscar/,
-    r(){
-      const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-      const nom=hijo?.nombre||'tu hijo/a';
-      return `🚶 Para solicitar retiro anticipado o autorizar a alguien a buscar a <b>${nom}</b>, andá a la sección <b>Permisos</b>.<br><br>Completá el formulario con:<br>• Nombre del autorizado<br>• Relación con el alumno<br>• Fecha y motivo<br><br>Secretaría lo aprueba en el mismo día.`;
-    }
-  },
-  // JUSTIFICACIONES
-  {
-    p:/justific|certificado|excusa|avisar falta|justificar/,
-    r:()=>'📋 Para justificar una inasistencia andá a <b>Boletín → Justificar</b>.<br><br>Completá:<br>• Fecha de la falta<br>• Motivo (enfermedad, trámite, etc.)<br>• Detalle o certificado médico (link o descripción)<br><br>Secretaría la revisa a la brevedad.'
-  },
-  // COMUNICADOS / NOVEDADES
-  {
-    p:/comunicado|novedad|noticia|circular|hay novedades|hubo algo/,
-    r(){
-      const noticias=brain.noticias||[];
-      if(!noticias.length) return '📣 No hay comunicados recientes. Revisá el <b>Muro</b> para ver todas las novedades.';
-      const recientes=noticias.slice(0,3).map(n=>`📌 <b>${n.titulo||'Sin título'}</b>`).join('<br>');
-      return `📣 Últimas novedades:<br><br>${recientes}<br><br>Ver todos en el <b>Muro</b>.`;
-    }
-  },
-  // HORARIOS — según nivel del alumno
-  {
-    p:/horario|hora de entrada|hora de salida|empieza|termina|turno|que hora/,
-    r(){
-      const niv=normalizar(userData.nivel||'');
-      if(niv.includes('inic')||niv.includes('jard')||niv.includes('infan'))
-        return '🕐 <b>Nivel Inicial:</b><br>• Entrada: 8:00<br>• Salida: 12:00<br><br>Consultá con secretaría si hay turno tarde disponible.';
-      if(niv.includes('sec')||niv.includes('polimod'))
-        return '🕐 <b>Nivel Secundario:</b><br>• Entrada: 7:30<br>• Salida: 13:00<br><br>Consultá con secretaría para tu turno exacto.';
-      return '🕐 <b>Nivel Primario:</b><br>• Turno mañana: 7:30 – 12:30<br>• Turno tarde: 13:30 – 17:30<br><br>Consultá con secretaría el turno de tu hijo/a.';
-    }
-  },
-  // VACACIONES / FERIADOS
-  {
-    p:/vacacion|feriado|receso|no hay clases|asueto|cuando vuelven|cuando empiezan/,
-    r:()=>'🏖️ Los feriados y días sin clases están publicados en la sección <b>Agenda</b>. Los comunicados también se anuncian con anticipación en el <b>Muro</b>.'
-  },
-  // SECRETARÍA / CONTACTO
-  {
-    p:/secretar|contactar|hablar|mensaje|comunicar|escribir|consulta/,
-    r:()=>'💬 Podés escribirle directamente a secretaría desde la sección <b>MSG</b> en el menú inferior.<br><br>Responden generalmente el mismo día hábil.'
-  },
-  // INSCRIPCIONES / MATRÍCULA
-  {
-    p:/inscripci|matricul|anotarse|cupo|vacante|rematricularse/,
-    r:()=>'📝 Para consultas sobre inscripciones o vacantes, escribile a secretaría desde <b>MSG</b> o acercate al instituto.<br><br>El período de inscripción se comunica por el Muro.'
-  },
-  // PAGOS / CUOTAS
-  {
-    p:/pago|cuota|arancel|deuda|debe|factura|recibo/,
-    r:()=>'💳 Para consultas sobre pagos, cuotas o deudas, escribile directamente a secretaría desde la sección <b>MSG</b>.'
-  },
-  // TRANSPORTE / COMEDOR
-  {
-    p:/transport|colectivo|bus|comedor|vianda|almuerzo|merienda/,
-    r:()=>'🚌 Para consultas sobre transporte escolar o comedor, escribile a secretaría desde la sección <b>MSG</b>.'
-  },
-  // REGLAMENTO / NORMAS
-  {
-    p:/reglamento|normas|reglas|disciplina|sancion|amonestacion/,
-    r:()=>'📖 Para consultas sobre el reglamento escolar o normas de convivencia, podés escribirle a secretaría desde <b>MSG</b> o consultar los comunicados publicados en el <b>Muro</b>.'
-  },
+  {p:/^hola|^buenas|^buen día|^buenas tardes|^buenas noches/i,        r:()=>`¡Hola, ${userData.nombre.split(' ')[0]}! 👋 Soy Iosi, el asistente virtual del Iosef Caro. Puedo ayudarte con faltas, notas, eventos y más. ¿En qué puedo ayudarte?`},
+  {p:/horario|hora de entrada|hora de salida|qué hora empieza|qué hora termina/i, r:()=>'🕐 Los horarios son: Inicial 8:00–12:00 / Primario 7:30–12:30 ó 13:30–17:30 / Secundario 7:30–13:00. Consultá con secretaría para tu turno exacto.'},
+  {p:/falta|ausencia|inasistencia|faltas tiene/i,   r:()=>{const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);const f=brain.faltas.length;return f===0?`✅ ${hijo?.nombre||'Tu hijo/a'} no tiene faltas registradas.`:`📋 ${hijo?.nombre||'Tu hijo/a'} tiene ${f} falta${f>1?'s':''} registrada${f>1?'s':''}. Podés justificarlas desde la sección Boletín → Justificar.`;}},
+  {p:/justific/i,                                   r:()=>'📋 Para justificar una inasistencia andá a Boletín → botón "Justificar". Completá la fecha, el motivo y el detalle. Si tenés certificado médico podés adjuntar el link.'},
+  {p:/nota|calificaci|promedio|boletín/i,            r:()=>{const n=brain.notas.length;return n>0?`📊 Podés ver las notas completas en la sección Boletín. Hay ${n} materia${n>1?'s':''} con calificaciones cargadas.`:'📊 Las calificaciones todavía no están disponibles en el sistema. Te avisarán cuando estén listas.';}},
+  {p:/evento|agenda|próximo|actividad|reunión|reunion/i, r:()=>{const ev=brain.agenda[0];return ev?`📅 El próximo evento es: "${ev.titulo}" el ${new Date(ev.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}. Podés ver todos los eventos en la sección Agenda.`:'📅 No hay eventos próximos cargados todavía. Revisá la sección Agenda para estar al tanto.';}},
+  {p:/retiro|retirar|buscar al|autorizar/i,         r:()=>'🚶 Para solicitar un retiro anticipado o cambiar la modalidad de salida, andá a la sección Permisos. Completá el formulario y secretaría lo revisará a la brevedad.'},
+  {p:/mensaje|secretar|comunicar|hablar/i,          r:()=>'💬 Para comunicarte directamente con secretaría, andá a la sección MSG en el menú. Podés escribirles cualquier consulta y te responderán a la brevedad.'},
+  {p:/vacaciones|feriado|receso|no hay clases/i,    r:()=>'🏖️ Los días sin clases y feriados están publicados en la Agenda del portal. Revisá esa sección para ver el calendario completo.'},
+  {p:/inscripci|anotarse|matricularse/i,            r:()=>'📝 Para consultas sobre inscripciones comunicarte con secretaría desde la sección MSG o llamar directamente al instituto.'},
 ];
 
-// ── Motor principal ──
-function iosiResponderLocal(textoOriginal){
-  const norm=normalizar(textoOriginal);
-  const tokens=tokenizar(textoOriginal);
-
-  // Sin tokens útiles
-  if(!tokens.length&&norm.length<3)
-    return '¿Podés contarme un poco más? No entendí bien la consulta 😊';
-
-  // 1. Reglas dinámicas con datos reales del alumno
+function iosiResponderLocal(texto){
+  // 1. Intentar reglas rápidas
   for(const r of IOSI_REGLAS){
-    if(r.p.test(norm)) return r.r();
+    if(r.p.test(texto)) return r.r();
   }
-
-  // 2. Búsqueda semántica en KB de Firestore
-  let mejorScore=0, mejorEntrada=null;
-  for(const entrada of iosiAprendido){
-    const sc=calcularScore(tokens.length?tokens:[norm], entrada);
-    if(sc>mejorScore){mejorScore=sc; mejorEntrada=entrada;}
+  // 2. Buscar en conocimiento aprendido de secretaría
+  const palabras=texto.toLowerCase().split(/\s+/).filter(p=>p.length>3);
+  let mejorRespuesta=null,mejorScore=0;
+  for(const k of iosiAprendido){
+    const pregRef=(k.pregunta||'').toLowerCase();
+    let score=0;
+    for(const p of palabras){if(pregRef.includes(p))score++;}
+    if(score>mejorScore){mejorScore=score;mejorRespuesta=k.respuesta;}
   }
-  const umbral=Math.max(1.5, Math.min(tokens.length*0.9, 4));
-  if(mejorScore>=umbral && mejorEntrada){
-    db.collection('iosi_conocimiento').doc(mejorEntrada.id)
-      .update({usos:firebase.firestore.FieldValue.increment(1)}).catch(()=>{});
-    return '💡 ' + mejorEntrada.respuesta;
-  }
-
-  // 3. Match parcial suave (1 token fuerte)
-  if(tokens.length<=2 && mejorScore>=1.5 && mejorEntrada)
-    return '💡 ' + mejorEntrada.respuesta;
-
-  // 4. Sin resultado
-  return '😊 No tengo esa información todavía.<br>Podés escribirle directamente a secretaría desde la sección <b>MSG</b> del menú, o intentá reformular la pregunta.';
-}
-
-// ── Sugerencias al abrir / después del primer mensaje ──
-function mostrarSugerencias(){
-  const chat=document.getElementById('iosi-chat');
-  const hijo=listaHijos.find(x=>x.id===alumnoSeleccionadoId);
-  const nom=hijo?.nombre?.split(' ')[0]||'mi hijo/a';
-  const sugs=[
-    `¿Cuántas faltas tiene ${nom}?`,
-    '¿Cuáles son las notas?',
-    '¿Cuándo es el próximo evento?',
-    '¿Cómo justifico una falta?',
-    '¿Cuál es el horario?',
-    '¿Cómo contacto a secretaría?',
-    '¿Hay novedades nuevas?',
-  ];
-  const html=`<div class="mt-2">
-    <p class="text-slate-400 text-[9px] font-bold uppercase mb-2">Preguntas frecuentes:</p>
-    <div class="flex flex-wrap gap-1">
-      ${sugs.map(s=>`<button onclick="usarSugerencia(this)" data-txt="${s.replace(/"/g,'&quot;')}" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold px-3 py-1.5 rounded-xl transition-colors">${s}</button>`).join('')}
-    </div>
-  </div>`;
-  chat.innerHTML+=html;
-  chat.scrollTop=chat.scrollHeight;
-}
-
-function usarSugerencia(btn){
-  document.getElementById('iosi-input').value=btn.dataset.txt;
-  // Eliminar el bloque de sugerencias
-  btn.closest('div.mt-2')?.remove();
-  enviarIosi();
+  if(mejorScore>=2&&mejorRespuesta) return '💡 '+mejorRespuesta;
+  // 3. No sabe — derivar a secretaría
+  return '😊 No tengo esa información disponible. La secretaría se va a contactar con vos a la brevedad. También podés escribirles directamente desde la sección MSG.';
 }
 
 let iosiProcessing=false;
@@ -1269,25 +985,20 @@ async function enviarIosi(){
   const inp=document.getElementById('iosi-input'),chat=document.getElementById('iosi-chat'),texto=inp.value.trim();
   if(!texto||iosiProcessing)return;
   iosiProcessing=true;
-  inp.value=''; inp.blur();
-  chat.innerHTML+=`<div class="bubble-user">${texto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  inp.value='';
+  inp.blur();
+  chat.innerHTML+=`<div class="bubble-user">${texto.replace(/</g,'&lt;')}</div>`;
   chat.scrollTop=chat.scrollHeight;
   const btn=document.getElementById('iosi-send-btn');
   btn.disabled=true;
-  // Typing indicator
-  const tid='ty-'+Date.now();
-  chat.innerHTML+=`<div id="${tid}" class="bubble-iosi" style="opacity:.6">✍️ Iosi está escribiendo<span class="typing-dots">…</span></div>`;
-  chat.scrollTop=chat.scrollHeight;
-  await new Promise(r=>setTimeout(r,600+Math.random()*500));
+  // Pequeño delay para simular "pensando"
+  await new Promise(r=>setTimeout(r,600));
   const resp=iosiResponderLocal(texto);
   iosiHistorial.push({role:'user',content:texto},{role:'assistant',content:resp});
-  const tel=document.getElementById(tid);
-  if(tel) tel.outerHTML=`<div class="bubble-iosi">${resp}</div>`;
-  else chat.innerHTML+=`<div class="bubble-iosi">${resp}</div>`;
+  chat.innerHTML+=`<div class="bubble-iosi">${resp}</div>`;
   chat.scrollTop=chat.scrollHeight;
   btn.disabled=false;
   iosiProcessing=false;
-  if(iosiHistorial.length===2) mostrarSugerencias();
 }
 
 // ─── AUTORIZACIONES ───
@@ -1343,4 +1054,94 @@ function switchTab(tab){
   if(tab==='autorizaciones')cargarAutorizaciones();
   if(tab==='justificaciones')cargarJustificaciones();
   if(tab==='agenda')cargarAgenda();
-  if(tab==='muro'){document.getElementById('badge-muro')?.classList.add
+  if(tab==='muro'){document.getElementById('badge-muro')?.classList.add('hidden');}
+  if(tab==='perfil')cargarFichaAlumno();
+}
+function setModalidad(m){modalidadFiltro=m;document.getElementById('switch-selector').style.left=m==='num'?'4px':'calc(50%)';cargarAcademico();}
+function cambiarHijo(id){alumnoSeleccionadoId=id;inicializarApp();}
+function toggleIosi(){const m=document.getElementById('iosi-modal');m.style.display=m.style.display==='flex'?'none':'flex';}
+async function generarBoletinPDF(){
+  const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId);
+  if(!hijo)return;
+  // Recopilar notas agrupadas por período
+  const periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();
+  const periodos=[]; periodosSnap.forEach(doc=>periodos.push({id:doc.id,...doc.data()}));
+  const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
+  const cursoAlu=alumnoDoc.data()?.curso||'';
+  // Obtener todas las materias con notas
+  const todasNotasSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').get();
+  const materias=new Set(); const notasPorMateriaPeriodo={};
+  todasNotasSnap.forEach(doc=>{
+    const n=doc.data();if(!n.materia)return;materias.add(n.materia);
+    if(!notasPorMateriaPeriodo[n.materia])notasPorMateriaPeriodo[n.materia]={};
+    const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_')&&n[k]!=='');
+    if(n.rite) notasPorMateriaPeriodo[n.materia][n.periodo]=n.rite;
+    else if(cols.length) notasPorMateriaPeriodo[n.materia][n.periodo]=cols.map(([,v])=>parseFloat(v)).filter(Boolean).reduce((a,b,_,arr)=>a+b/arr.length,0).toFixed(1);
+    else notasPorMateriaPeriodo[n.materia][n.periodo]='';
+  });
+  const materiasArr=[...materias].sort();
+  const periodosArr=periodos.filter(p=>materias.size>0);
+  // Asistencia
+  const asisSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
+  let faltas=0,tardes=0; asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
+  // Construir HTML del boletín
+  const colores={'TEA':'#16a34a','TEP':'#2563eb','TED':'#d97706'};
+  const getColor=v=>{if(v==='TEA'||v==='TEP'||v==='TED')return colores[v];const n=parseFloat(v);if(isNaN(n))return '#64748b';return n>=7?'#16a34a':n>=6?'#d97706':'#ef4444';};
+  let thead=`<tr style="background:#0f172a;color:white"><th style="padding:8px 10px;text-align:left;font-size:11px">ASIGNATURA</th>`;
+  periodosArr.forEach(p=>thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">${p.slug||p.nombre.slice(0,4)}</th>`);
+  thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">PROM.</th></tr>`;
+  let tbody='';
+  materiasArr.forEach((mat,idx)=>{
+    const bg=idx%2===0?'#f8fafc':'white';tbody+=`<tr style="background:${bg}"><td style="padding:7px 10px;font-size:11px;font-weight:600;border-bottom:1px solid #f1f5f9">${mat}</td>`;
+    let suma=0,cnt=0;
+    periodosArr.forEach(p=>{const v=notasPorMateriaPeriodo[mat]?.[p.slug]||notasPorMateriaPeriodo[mat]?.[p.nombre]||'';const color=getColor(v);if(parseFloat(v)){suma+=parseFloat(v);cnt++;}tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${color};border-bottom:1px solid #f1f5f9">${v||'—'}</td>`;});
+    const prom=cnt>0?(suma/cnt).toFixed(1):'—';const promColor=getColor(prom);
+    tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${promColor};border-bottom:1px solid #f1f5f9;background:#f0fdf4">${prom}</td></tr>`;
+  });
+  const htmlBoletín=`
+  <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#1e293b;padding:32px;max-width:700px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0f172a;padding-bottom:16px;margin-bottom:20px">
+      <div>
+        <p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#64748b">Instituto Iosef Caro</p>
+        <h1 style="font-size:22px;font-weight:800;margin:4px 0;color:#0f172a">Boletín de Calificaciones</h1>
+        <p style="font-size:13px;color:#64748b">Año lectivo ${new Date().getFullYear()}</p>
+      </div>
+      <div style="text-align:right">
+        <div style="width:52px;height:52px;background:#0f172a;border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px">🏫</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Alumno/a</p><p style="font-size:15px;font-weight:800;color:#0f172a">${hijo.nombre}</p></div>
+      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Curso</p><p style="font-size:15px;font-weight:800;color:#0f172a">${cursoAlu}</p></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+      <thead>${thead}</thead><tbody>${tbody}</tbody>
+    </table>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px">
+      <div style="background:#fff5f5;border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f87171;margin-bottom:4px">Inasistencias</p><p style="font-size:24px;font-weight:800;color:#ef4444">${faltas}</p></div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f59e0b;margin-bottom:4px">Tardanzas</p><p style="font-size:24px;font-weight:800;color:#d97706">${tardes}</p></div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#4ade80;margin-bottom:4px">Generado</p><p style="font-size:11px;font-weight:800;color:#16a34a">${new Date().toLocaleDateString('es-AR')}</p></div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
+      <div><p style="font-size:9px;color:#94a3b8;font-weight:700">TEA = Trayectoria Avanzada · TEP = En Proceso · TED = En Desarrollo</p><p style="font-size:9px;color:#94a3b8;font-weight:700;margin-top:2px">Verde ≥ 7 · Naranja = 6 · Rojo &lt; 6</p></div>
+      <p style="font-size:9px;color:#94a3b8;font-weight:700">Iosef Caro © ${new Date().getFullYear()}</p>
+    </div>
+  </div>`;
+  const container=document.createElement('div');container.innerHTML=htmlBoletín;document.body.appendChild(container);
+  html2pdf().from(container).set({margin:0,filename:`Boletín_${hijo.nombre}_${new Date().getFullYear()}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).save().then(()=>container.remove());
+}
+document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+// Auto-login desde index.html (URL param o sessionStorage)
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  const emailUrl=params.get('email');
+  const emailSess=sessionStorage.getItem('iosef_email');
+  const email=emailUrl||emailSess;
+  if(email){
+    document.getElementById('login-email').value=email;
+    login(email);
+  }
+})();
+</script>
+</body>
+</html>
