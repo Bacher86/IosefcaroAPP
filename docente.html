@@ -196,6 +196,45 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <div id="lista-cal-doc" class="space-y-2"></div>
   </section>
 
+  <!-- COMUNICADOS DOCENTE ══════════════════ -->
+  <section id="tab-comunicados" class="tab-content space-y-4 pb-24">
+    <div>
+      <h3 class="font-black text-xl">Avisos a Familias</h3>
+      <p class="text-slate-400 text-xs -mt-1">Publicá avisos para los cursos que tenés asignados. Las familias los ven en el Muro.</p>
+    </div>
+
+    <div class="bg-white rounded-3xl border shadow-sm p-5 space-y-4">
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Título del aviso</label>
+        <input type="text" id="com-titulo" class="input-pro mt-1" placeholder="Ej: Parcial la próxima semana">
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Mensaje</label>
+        <textarea id="com-texto" rows="4" class="input-pro mt-1 resize-none" placeholder="Escribí el mensaje para las familias..."></textarea>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Curso destinatario</label>
+        <select id="com-curso" class="input-pro mt-1 text-xs"></select>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo</label>
+        <select id="com-tag" class="input-pro mt-1 text-xs">
+          <option value="info">📣 Información</option>
+          <option value="urgente">🔴 Urgente</option>
+          <option value="tramite">📋 Trámite</option>
+        </select>
+      </div>
+      <button onclick="publicarComunicadoDocente()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
+        <i class="fas fa-paper-plane mr-2"></i>PUBLICAR AVISO
+      </button>
+    </div>
+
+    <h4 class="font-black text-sm text-slate-700">Mis avisos publicados</h4>
+    <div id="lista-com-doc" class="space-y-2">
+      <p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+    </div>
+  </section>
+
 </main>
 
 <!-- NAV -->
@@ -211,6 +250,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   </button>
   <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
     <i class="fas fa-calendar text-lg"></i>CAL.
+  </button>
+  <button onclick="switchTab('comunicados')" id="btn-comunicados" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
+    <i class="fas fa-bullhorn text-lg"></i>AVISOS
   </button>
 </nav>
 
@@ -264,6 +306,7 @@ async function login(emailOverride){
     await cargarPeriodos();
     await cargarAlumnos();
     await cargarEventosDocente();
+    poblarCursosEnComunicados();
   }catch(e){errEl.textContent="Error de conexión: "+e.message;errEl.classList.remove('hidden');}
 }
 
@@ -693,10 +736,98 @@ async function cargarEventosDocente(){
 }
 
 
+// ══ COMUNICADOS DOCENTE ══
+async function publicarComunicadoDocente(){
+  const titulo=document.getElementById('com-titulo').value.trim();
+  const texto=document.getElementById('com-texto').value.trim();
+  const curso=document.getElementById('com-curso').value;
+  const tag=document.getElementById('com-tag').value;
+  if(!titulo||!texto){alert('Completá el título y el mensaje.');return;}
+  if(!curso){alert('Seleccioná un curso destinatario.');return;}
+  // Solo puede publicar para cursos que tiene asignados
+  const cursosAsignados=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  if(!cursosAsignados.includes(curso)){alert('Solo podés publicar para tus cursos asignados.');return;}
+  const btn=event.currentTarget;btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
+  try{
+    await db.collection('comunicados').add({
+      titulo,
+      texto,
+      tag,
+      cursos:[curso],
+      creadoPor:docenteEmail,
+      creadoPorNombre:docenteData?.nombre||'',
+      creadoPorRol:'docente',
+      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+      vistas:0,totalLikes:0
+    });
+    // Notificación push para familias
+    await db.collection('notificaciones_push').add({
+      tipo:'comunicado',
+      titulo,
+      texto:texto.slice(0,120),
+      tag,
+      cursos:[curso],
+      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+      leidos:[]
+    });
+    document.getElementById('com-titulo').value='';
+    document.getElementById('com-texto').value='';
+    alert('✅ Aviso publicado para el curso '+curso+'.');
+    cargarComunicadosDocente();
+  }catch(e){alert('Error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane mr-2"></i>PUBLICAR AVISO';
+}
+
+async function cargarComunicadosDocente(){
+  const cont=document.getElementById('lista-com-doc');
+  if(!cont)return;
+  cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  try{
+    let snap;
+    try{snap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).orderBy('creadoEn','desc').limit(20).get();}
+    catch(e){snap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).get();}
+    cont.innerHTML='';
+    if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste avisos.</p>';return;}
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const fecha=d.creadoEn?.toDate?.();
+      const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+      const tagCls={urgente:'bg-red-100 text-red-700',info:'bg-blue-100 text-blue-700',tramite:'bg-slate-100 text-slate-600'};
+      cont.innerHTML+=`<div class="bg-white rounded-2xl border p-4 space-y-2 shadow-sm">
+        <div class="flex items-start justify-between gap-2">
+          <p class="font-bold text-sm flex-1">${d.titulo||'Sin título'}</p>
+          <span class="text-[9px] font-black px-2 py-1 rounded-lg flex-shrink-0 ${tagCls[d.tag]||'bg-slate-100 text-slate-600'}">${d.tag||'info'}</span>
+        </div>
+        <p class="text-xs text-slate-500 line-clamp-2">${d.texto||''}</p>
+        <div class="flex items-center justify-between">
+          <p class="text-[10px] text-slate-400">📅 ${fechaStr} · Curso: <b>${(d.cursos||[]).join(', ')}</b></p>
+          <button onclick="eliminarComunicadoDocente('${doc.id}')" class="text-rose-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button>
+        </div>
+      </div>`;
+    });
+  }catch(e){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Error al cargar avisos.</p>';}
+}
+
+async function eliminarComunicadoDocente(id){
+  if(!confirm('¿Eliminar este aviso?'))return;
+  await db.collection('comunicados').doc(id).delete();
+  cargarComunicadosDocente();
+}
+
+function poblarCursosEnComunicados(){
+  const sel=document.getElementById('com-curso');
+  if(!sel)return;
+  sel.innerHTML='';
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  if(!curs.length){sel.innerHTML='<option value="">Sin cursos asignados</option>';return;}
+  curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+}
+
 // ══ UTILS ══
 function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
   document.getElementById('tab-'+tab)?.classList.add('active');
   document.getElementById('btn-'+tab)?.classList.add('active');
   document.getElementById('btn-guardar-notas').style.display='none';
