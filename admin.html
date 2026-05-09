@@ -59,7 +59,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
     <div class="space-y-4">
       <input type="email" id="log-email" placeholder="Email" class="input-pro">
       <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
-      <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">ACCEDER</button>
+      <button id="btn-ingresar" onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">ACCEDER</button>
     </div>
   </div>
 </div>
@@ -716,17 +716,30 @@ let alumnoEditandoId=null;
 async function validarIngreso(){
   const em=document.getElementById('log-email').value.trim().toLowerCase();
   const ps=document.getElementById('log-pass').value.trim();
-  if(!em||!ps)return alert("Ingresá tus datos.");
-  if(em===LLAVE_EMAIL&&ps===LLAVE_PASS){adminEmail=em;adminNombre="Administrador";autorizar();return;}
+  const errEl=document.getElementById('login-error-msg');
+  if(errEl)errEl.classList.add('hidden');
+  if(!em||!ps){showLoginErr('Ingresá email y contraseña.');return;}
+  if(em===LLAVE_EMAIL&&ps===LLAVE_PASS){adminEmail=em;adminNombre='Administrador';autorizar();return;}
+  const btn=document.getElementById('btn-ingresar');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Conectando...';}
   try{
-    const d=await db.collection('usuarios').doc(em).get();
-    if(!d.exists){alert("Usuario no registrado.");return;}
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+    const d=await Promise.race([db.collection('usuarios').doc(em).get(), timeout]);
+    if(!d.exists){showLoginErr('Email no registrado.');if(btn){btn.disabled=false;btn.innerHTML='ACCEDER';}return;}
     const u=d.data();
-    if(u.pass!==ps){alert("Contraseña incorrecta.");return;}
-    if(u.rol!=='admin'){alert("Sin permisos de administrador.");return;}
+    if(u.pass!==ps){showLoginErr('Contraseña incorrecta.');if(btn){btn.disabled=false;btn.innerHTML='ACCEDER';}return;}
+    if(u.rol!=='admin'){showLoginErr('Sin permisos de administrador. Tu rol: '+(u.rol||'?'));if(btn){btn.disabled=false;btn.innerHTML='ACCEDER';}return;}
     adminEmail=em;adminNombre=u.nombre;
     autorizar();
-  }catch(e){alert("Error de conexión.");}
+  }catch(e){
+    if(btn){btn.disabled=false;btn.innerHTML='ACCEDER';}
+    showLoginErr(e.message==='timeout'?'No se pudo conectar (timeout). Verificá las reglas de Firestore o tu conexión.':'Error: '+e.message);
+  }
+}
+function showLoginErr(msg){
+  let el=document.getElementById('login-error-msg');
+  if(!el){el=document.createElement('p');el.id='login-error-msg';el.className='text-rose-400 text-xs font-bold mt-3 p-3 bg-rose-900/30 rounded-xl';const form=document.querySelector('#login-overlay form')||document.querySelector('#login-overlay .space-y-4')||document.getElementById('login-overlay');if(form)form.appendChild(el);}
+  el.textContent=msg;el.classList.remove('hidden');
 }
 function autorizar(){
   sessionStorage.setItem('iosef_admin_session','admin');
@@ -1491,19 +1504,4 @@ function construirIdAlumno(fila){
 function analizarFilas(){
   migFilas=migFilas.map(fila=>{
     const id=construirIdAlumno(fila);
-    const e1=(getCampo(fila,'emailFam1')||getCampo(fila,'email')||'').toLowerCase();
-    const tieneNom=!!(getCampo(fila,'nombre')||getCampo(fila,'apellido'));
-    const esError=!tieneNom||(migTipo==='alumnos'&&!e1.includes('@'));
-    const esDup=migExistentes.alumnos.has(id)||(e1&&migExistentes.usuarios.has(e1));
-    return {...fila,_id:id,_nuevo:!esDup&&!esError,_dup:esDup&&!esError,_error:esError,_email1:e1};
-  });
-}
-
-function renderPreviewMig(){
-  const filtro=document.getElementById('mig-preview-filtro').value;
-  const ff=migFilas.filter(f=>filtro==='todos'||(filtro==='nuevos'&&f._nuevo)||(filtro==='duplicados'&&f._dup)||(filtro==='errores'&&f._error)).slice(0,50);
-  const colsMap={alumnos:['nombre','apellido','dni','curso','division','nivel','emailFam1'],notas:['nombre','apellido','curso','materia','periodo','nota'],asistencia:['nombre','apellido','fecha','estado','materia'],docentes:['nombre','apellido','email','nivel','materias','cursos']};
-  const cols=(colsMap[migTipo]||[]).filter(c=>migMapeo[c]);
-  document.getElementById('mig-table-head').innerHTML=`<tr>${['#','Estado',...cols].map(c=>`<th class="px-3 py-2 text-left font-black text-[9px] uppercase text-slate-400">${c}</th>`).join('')}</tr>`;
-  document.getElementById('mig-table-body').innerHTML=ff.map((f,i)=>{
-  
+    const e1=(getCampo(fila,'emailFam1')||getCampo(fi
