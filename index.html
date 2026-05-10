@@ -78,19 +78,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
     </div>
   </div>
 
-  <!-- Botón importar desde otra app -->
-  <div class="w-full max-w-lg mt-4">
-    <button onclick="abrirImportar()" class="w-full flex items-center gap-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-[2rem] px-6 py-4 transition-all active:scale-95 shadow-xl">
-      <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0">📥</div>
-      <div class="text-left flex-1">
-        <p class="font-black text-base">Importar alumnos desde otra app</p>
-        <p class="text-white/70 text-xs mt-0.5">Xhendra, Acadeu, Handing y otros sistemas</p>
-      </div>
-      <i class="fas fa-arrow-right text-white/70"></i>
-    </button>
-  </div>
-
-  <p class="text-slate-600 text-xs font-bold mt-8 uppercase tracking-widest">© 2026 Instituto Iosef Caro</p>
+  <p class="text-slate-600 text-xs font-bold mt-10 uppercase tracking-widest">© 2026 Instituto Iosef Caro</p>
 </div>
 
 <!-- ══ MODAL PANELES ESCUELA ══ -->
@@ -126,6 +114,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
         <div><p class="font-black text-slate-900 text-sm">Secretaría</p><p class="text-[10px] text-slate-400">Mensajes, justificaciones y llamadas — solo email</p></div>
         <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
       </a>
+      <!-- Importar desde otra app -->
+      <button onclick="cerrarPaneles();abrirImportar()" class="flex items-center gap-4 p-4 bg-gradient-to-r from-indigo-50 to-violet-50 border-2 border-indigo-200 hover:border-indigo-400 rounded-2xl transition-all w-full text-left">
+        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-file-import text-indigo-600"></i></div>
+        <div><p class="font-black text-slate-900 text-sm">Importar alumnos</p><p class="text-[10px] text-slate-400">Xhendra, Acadeu, Handing y otros sistemas</p></div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </button>
     </div>
     <button onclick="cerrarPaneles()" class="w-full text-slate-400 text-xs font-bold py-4 mt-2">← Volver</button>
   </div>
