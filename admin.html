@@ -192,8 +192,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
     <button onclick="switchTab('docentes')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
     <button onclick="switchTab('alumnos')"    class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
     <button onclick="switchTab('familias')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
-    <button onclick="switchTab('lecturas')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Lecturas</button>
-    <button onclick="switchTab('iosi')"       class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🤖 Iosi IA</button>
     <button onclick="switchTab('notas-vis')"  class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
     <button onclick="switchTab('log')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
     <button onclick="exportarExcel()"         class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
@@ -495,156 +493,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       </div>
     </section>
 
-    <!-- ════ LECTURAS DE COMUNICADOS ════ -->
-    <section id="tab-lecturas" class="tab-content space-y-6">
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 class="text-2xl font-black tracking-tight">Estadísticas de Lectura</h2>
-          <p class="text-slate-400 text-xs mt-1">Quién leyó cada comunicado y cuándo.</p>
-        </div>
-        <button onclick="cargarLecturas()" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-200 transition"><i class="fas fa-sync-alt mr-2"></i>Actualizar</button>
-      </div>
-
-      <!-- Resumen global -->
-      <div class="grid grid-cols-3 gap-4">
-        <div class="stat-card text-center"><div class="stat-n text-indigo-600" id="lec-total-com">—</div><div class="stat-l">Comunicados</div></div>
-        <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="lec-total-vistas">—</div><div class="stat-l">Total lecturas</div></div>
-        <div class="stat-card text-center"><div class="stat-n text-amber-600" id="lec-pct-medio">—%</div><div class="stat-l">Apertura promedio</div></div>
-      </div>
-
-      <!-- Selector comunicado -->
-      <div class="bg-white p-6 rounded-3xl border shadow-sm">
-        <div class="flex flex-wrap gap-3 items-center mb-5">
-          <label class="text-[10px] font-black text-slate-400 uppercase">Seleccioná un comunicado</label>
-          <select id="lec-sel-com" class="input-pro" style="max-width:340px" onchange="cargarDetalleLectura()">
-            <option value="">Seleccioná...</option>
-          </select>
-        </div>
-        <!-- Barra de progreso lectura -->
-        <div id="lec-barra-sect" class="hidden mb-5">
-          <div class="flex items-center justify-between mb-2">
-            <p class="font-black text-sm" id="lec-titulo-com">—</p>
-            <span class="text-xs font-black text-indigo-600" id="lec-pct-com">0%</span>
-          </div>
-          <div class="bg-slate-100 rounded-full h-3 overflow-hidden">
-            <div id="lec-barra-fill" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-3 rounded-full transition-all duration-500" style="width:0%"></div>
-          </div>
-          <div class="flex justify-between text-[9px] font-black text-slate-400 mt-1">
-            <span id="lec-leido-count">0 leyeron</span>
-            <span id="lec-no-leido-count">0 sin leer</span>
-          </div>
-        </div>
-        <!-- Tabs quién leyó / no leyó -->
-        <div id="lec-tabs-sect" class="hidden">
-          <div class="flex gap-2 mb-4">
-            <button onclick="mostrarTabLectura('leyo')" id="tab-btn-leyo" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-xs">✅ Leyeron</button>
-            <button onclick="mostrarTabLectura('no_leyo')" id="tab-btn-no" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-xs">❌ Sin leer</button>
-          </div>
-          <div id="lec-lista-leyo" class="space-y-2"></div>
-          <div id="lec-lista-no" class="space-y-2 hidden"></div>
-        </div>
-        <div id="lec-empty" class="text-slate-400 text-sm text-center py-8">Seleccioná un comunicado para ver quién lo leyó.</div>
-      </div>
-
-      <!-- Ranking familias que más leen -->
-      <div class="bg-white p-6 rounded-3xl border shadow-sm">
-        <h3 class="font-black text-sm mb-4">🏆 Familias más activas (más lecturas totales)</h3>
-        <div id="lec-ranking-familias" class="space-y-2">
-          <p class="text-slate-400 text-sm text-center py-4">Cargando...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ════ IOSI IA ════ -->
-    <section id="tab-iosi" class="tab-content space-y-6">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-[1.5rem] flex items-center justify-center text-3xl shadow-lg">🤖</div>
-        <div>
-          <h2 class="text-2xl font-black tracking-tight">Iosi — Asistente IA</h2>
-          <p class="text-slate-400 text-xs mt-1">Cargá materiales para que Iosi aprenda y pueda responder mejor a las familias.</p>
-        </div>
-      </div>
-
-      <!-- Área de chat -->
-      <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
-        <div class="bg-gradient-to-r from-violet-50 to-indigo-50 border-b px-5 py-3 flex items-center gap-3">
-          <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center text-lg">🤖</div>
-          <div><p class="font-black text-sm">Iosi IA</p><p class="text-[9px] text-slate-400 font-bold uppercase">Asistente del Instituto Iosef Caro</p></div>
-          <div class="ml-auto flex items-center gap-1.5"><div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div><span class="text-[9px] font-black text-emerald-600 uppercase">Activo</span></div>
-        </div>
-        <div id="iosi-chat" class="p-4 space-y-3 overflow-y-auto" style="height:280px">
-          <div class="flex gap-3">
-            <div class="w-8 h-8 bg-indigo-100 rounded-2xl flex items-center justify-center text-base flex-shrink-0">🤖</div>
-            <div class="bg-slate-50 rounded-2xl rounded-tl-none p-3 max-w-xs"><p class="text-sm font-medium text-slate-700">¡Hola! Soy Iosi, el asistente del instituto. Podés preguntarme sobre reglamentos, procedimientos o cualquier material que me hayan cargado. También podés subir documentos para que aprenda de ellos.</p></div>
-          </div>
-        </div>
-        <div class="border-t p-3 flex gap-2">
-          <input type="text" id="iosi-input" placeholder="Preguntale algo a Iosi..." class="input-pro flex-1 text-sm" onkeydown="if(event.key==='Enter')enviarMensajeIosi()">
-          <button onclick="enviarMensajeIosi()" class="bg-indigo-600 text-white px-5 py-2 rounded-2xl font-black text-sm hover:bg-indigo-700 transition"><i class="fas fa-paper-plane"></i></button>
-        </div>
-      </div>
-
-      <!-- Cargar materiales -->
-      <div class="bg-white p-6 rounded-3xl border shadow-sm">
-        <h3 class="font-black text-lg mb-1">📚 Cargar materiales para que Iosi aprenda</h3>
-        <p class="text-slate-400 text-xs mb-5">Subí reglamentos, circulares, procedimientos o cualquier texto institucional. Iosi los incorporará a su base de conocimiento.</p>
-
-        <div class="space-y-4">
-          <!-- Texto libre -->
-          <div>
-            <label class="text-[10px] font-black text-slate-400 uppercase block mb-2">Agregar texto o documento institucional</label>
-            <div class="flex gap-2 mb-2">
-              <input type="text" id="iosi-doc-titulo" placeholder="Título (ej: Reglamento interno 2026)" class="input-pro flex-1">
-              <select id="iosi-doc-cat" class="input-pro" style="max-width:160px">
-                <option value="reglamento">Reglamento</option>
-                <option value="circular">Circular</option>
-                <option value="procedimiento">Procedimiento</option>
-                <option value="calendario">Calendario</option>
-                <option value="otro">Otro</option>
-              </select>
-            </div>
-            <textarea id="iosi-doc-texto" placeholder="Pegá o escribí el contenido aquí..." class="input-pro h-28 resize-none"></textarea>
-            <button onclick="guardarDocIosi()" class="mt-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 transition flex items-center gap-2"><i class="fas fa-brain"></i> GUARDAR Y ENTRENAR A IOSI</button>
-          </div>
-
-          <!-- Estado del cargado -->
-          <div id="iosi-carga-status" class="hidden bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs font-bold text-emerald-700"></div>
-        </div>
-      </div>
-
-      <!-- Base de conocimiento cargada -->
-      <div class="bg-white p-6 rounded-3xl border shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-black text-sm">📖 Base de conocimiento de Iosi</h3>
-          <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full" id="iosi-doc-count">0 documentos</span>
-        </div>
-        <div id="iosi-docs-lista" class="space-y-2">
-          <p class="text-slate-400 text-sm text-center py-4">Cargando documentos...</p>
-        </div>
-      </div>
-
-      <!-- Configuración Iosi -->
-      <div class="bg-white p-6 rounded-3xl border shadow-sm">
-        <h3 class="font-black text-sm mb-4">⚙️ Configuración de Iosi</h3>
-        <div class="space-y-3">
-          <div>
-            <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Personalidad / Presentación</label>
-            <textarea id="iosi-personalidad" class="input-pro h-20 resize-none text-sm" placeholder="Ej: Soy Iosi, el asistente del Instituto Iosef Caro. Soy amigable, claro y siempre intento ayudar a las familias..."></textarea>
-          </div>
-          <div>
-            <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Respuesta cuando no sabe algo</label>
-            <input type="text" id="iosi-fallback" class="input-pro text-sm" placeholder="Ej: No tengo esa información, te recomiendo contactar a secretaría.">
-          </div>
-          <button onclick="guardarConfigIosi()" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition"><i class="fas fa-save mr-2"></i>GUARDAR CONFIGURACIÓN</button>
-        </div>
-      </div>
-    </section>
-
   </main>
 </div>
 
 <script>
-const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124288",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);const db=firebase.firestore();
 const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let matSel=[],curSel=[],allCursos=[],allMats=[];
@@ -1228,8 +1081,7 @@ function switchTab(t){
   event.currentTarget?.classList.add('bg-slate-900','text-white');
   if(t==='stats')cargarEstadisticas();
   if(t==='periodos')cargarPeriodosAdmin();
-  if(t==='lecturas')cargarLecturas();
-  if(t==='iosi')cargarIosi();
+  
 
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
@@ -1300,142 +1152,7 @@ Sus fichas serán eliminadas. Las notas históricas se conservan.`))return;
 }
 function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
 function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
-
-// ══════════════════════
-// LECTURAS DE COMUNICADOS
-// ══════════════════════
-async function cargarLecturas(){
-  const snap=await db.collection('comunicados').orderBy('fecha','desc').get();
-  const sel=document.getElementById('lec-sel-com');
-  sel.innerHTML='<option value="">Seleccioná...</option>';
-  let totalVistas=0;let totalFamilias=0;
-  try{const fs=await db.collection('usuarios').where('rol','==','familia').get();totalFamilias=fs.size;}catch(_){}
-  let sumPct=0,cnt=0;
-  snap.forEach(doc=>{
-    const d=doc.data();
-    const v=d.vistas||0;totalVistas+=v;
-    const pct=totalFamilias>0?Math.round(v/totalFamilias*100):0;
-    sumPct+=pct;cnt++;
-    sel.innerHTML+=`<option value="${doc.id}" data-titulo="${(d.titulo||'Sin título').replace(/"/g,'')}" data-vistas="${v}" data-familias="${totalFamilias}">${d.titulo||'Sin título'} (${v} lecturas)</option>`;
-  });
-  document.getElementById('lec-total-com').textContent=snap.size;
-  document.getElementById('lec-total-vistas').textContent=totalVistas;
-  document.getElementById('lec-pct-medio').textContent=cnt>0?Math.round(sumPct/cnt):0;
-  // Ranking familias
-  await cargarRankingFamilias();
-}
-async function cargarDetalleLectura(){
-  const sel=document.getElementById('lec-sel-com');
-  const cid=sel.value;
-  if(!cid){document.getElementById('lec-barra-sect').classList.add('hidden');document.getElementById('lec-tabs-sect').classList.add('hidden');document.getElementById('lec-empty').style.display='block';return;}
-  document.getElementById('lec-empty').style.display='none';
-  const opt=sel.options[sel.selectedIndex];
-  const titulo=opt.dataset.titulo||'Comunicado';
-  const totalFam=parseInt(opt.dataset.familias||0);
-  // Leer quién leyó desde subcolección lecturas o campo leido_por
-  let leyeron=[],noLeyeron=[];
-  try{
-    const lSnap=await db.collection('comunicados').doc(cid).collection('lecturas').get();
-    lSnap.forEach(d=>{leyeron.push({email:d.id,...d.data()});});
-  }catch(_){}
-  // Intentar también campo leido_por en el doc
-  try{
-    const comDoc=await db.collection('comunicados').doc(cid).get();
-    const arr=comDoc.data()?.leido_por||[];
-    arr.forEach(email=>{if(!leyeron.find(l=>l.email===email))leyeron.push({email,fecha:null});});
-  }catch(_){}
-  const pct=totalFam>0?Math.round(leyeron.length/totalFam*100):leyeron.length>0?100:0;
-  document.getElementById('lec-titulo-com').textContent=titulo;
-  document.getElementById('lec-pct-com').textContent=pct+'%';
-  document.getElementById('lec-barra-fill').style.width=pct+'%';
-  document.getElementById('lec-leido-count').textContent=leyeron.length+' leyeron';
-  const sinLeer=Math.max(0,totalFam-leyeron.length);
-  document.getElementById('lec-no-leido-count').textContent=sinLeer+' sin leer';
-  document.getElementById('lec-barra-sect').classList.remove('hidden');
-  // Familias que no leyeron
-  try{
-    const fSnap=await db.collection('usuarios').where('rol','==','familia').get();
-    const emailsLey=new Set(leyeron.map(l=>l.email));
-    noLeyeron=[];fSnap.forEach(d=>{if(!emailsLey.has(d.id))noLeyeron.push({email:d.id,nombre:d.data().nombre||d.id});});
-  }catch(_){}
-  // Renderizar quién leyó
-  const listaL=document.getElementById('lec-lista-leyo');
-  if(leyeron.length){
-    listaL.innerHTML=leyeron.map(l=>{
-      const f=l.fecha?new Date(l.fecha.seconds?l.fecha.seconds*1000:l.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
-      return `<div class="flex items-center gap-3 p-3 bg-emerald-50 rounded-2xl"><div class="w-8 h-8 bg-emerald-200 rounded-xl flex items-center justify-center text-xs">✅</div><div class="flex-1"><p class="font-bold text-xs text-slate-800">${l.nombre||l.email}</p><p class="text-[9px] text-slate-400">${l.email}</p></div><span class="text-[9px] text-slate-400 font-bold">${f}</span></div>`;
-    }).join('');
-  }else{listaL.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Nadie leyó este comunicado aún.</p>';}
-  const listaN=document.getElementById('lec-lista-no');
-  if(noLeyeron.length){
-    listaN.innerHTML=noLeyeron.slice(0,30).map(l=>`<div class="flex items-center gap-3 p-3 bg-rose-50 rounded-2xl"><div class="w-8 h-8 bg-rose-200 rounded-xl flex items-center justify-center text-xs">❌</div><div class="flex-1"><p class="font-bold text-xs text-slate-800">${l.nombre||l.email}</p><p class="text-[9px] text-slate-400">${l.email}</p></div></div>`).join('');
-    if(noLeyeron.length>30)listaN.innerHTML+=`<p class="text-[9px] text-slate-400 text-center mt-2">...y ${noLeyeron.length-30} más</p>`;
-  }else{listaN.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Todas las familias leyeron este comunicado. 🎉</p>';}
-  document.getElementById('lec-tabs-sect').classList.remove('hidden');
-  mostrarTabLectura('leyo');
-}
-function mostrarTabLectura(tab){
-  document.getElementById('lec-lista-leyo').classList.toggle('hidden',tab!=='leyo');
-  document.getElementById('lec-lista-no').classList.toggle('hidden',tab!=='no_leyo');
-  document.getElementById('tab-btn-leyo').className=`px-4 py-2 rounded-xl font-black text-xs ${tab==='leyo'?'bg-emerald-600 text-white':'bg-slate-100 text-slate-600'}`;
-  document.getElementById('tab-btn-no').className=`px-4 py-2 rounded-xl font-black text-xs ${tab==='no_leyo'?'bg-rose-600 text-white':'bg-slate-100 text-slate-600'}`;
-}
-async function cargarRankingFamilias(){
-  try{
-    const comSnap=await db.collection('comunicados').limit(20).get();
-    const conteo={};
-    for(const cDoc of comSnap.docs){
-      try{
-        const lSnap=await db.collection('comunicados').doc(cDoc.id).collection('lecturas').get();
-        lSnap.forEach(l=>{conteo[l.id]=(conteo[l.id]||0)+1;});
-        const leido_por=cDoc.data().leido_por||[];
-        leido_por.forEach(email=>{conteo[email]=(conteo[email]||0)+1;});
-      }catch(_){}
-    }
-    const sorted=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const cont=document.getElementById('lec-ranking-familias');
-    if(!sorted.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Aún no hay datos de lectura.</p>';return;}
-    const max=sorted[0][1];
-    cont.innerHTML=sorted.map(([email,n],i)=>{
-      const pct=Math.round(n/max*100);
-      return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl"><span class="text-xs font-black text-slate-400 w-5">${i+1}</span><div class="flex-1"><p class="font-bold text-xs truncate">${email}</p><div class="bg-slate-200 rounded-full h-1.5 mt-1"><div class="bg-indigo-500 h-1.5 rounded-full" style="width:${pct}%"></div></div></div><span class="text-xs font-black text-indigo-600 ml-2">${n}</span></div>`;
-    }).join('');
-  }catch(e){document.getElementById('lec-ranking-familias').innerHTML='<p class="text-slate-400 text-sm text-center py-4">Error cargando ranking.</p>';}
-}
-
-// ══════════════════════
-// IOSI IA
-// ══════════════════════
-let iosiContexto='';
-
-async function cargarIosi(){
-  // Cargar docs de base de conocimiento
-  try{
-    const snap=await db.collection('iosi_conocimiento').orderBy('fecha','desc').get();
-    const cont=document.getElementById('iosi-docs-lista');
-    document.getElementById('iosi-doc-count').textContent=snap.size+' documentos';
-    if(!snap.size){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">No hay documentos cargados aún.</p>';return;}
-    cont.innerHTML='';
-    snap.forEach(doc=>{
-      const d=doc.data();
-      const fecha=d.fecha?new Date(d.fecha.seconds?d.fecha.seconds*1000:d.fecha).toLocaleDateString('es-AR'):'—';
-      cont.innerHTML+=`<div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100"><div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-lg flex-shrink-0">${d.categoria==='reglamento'?'📋':d.categoria==='circular'?'📢':d.categoria==='procedimiento'?'⚙️':d.categoria==='calendario'?'📅':'📄'}</div><div class="flex-1"><p class="font-black text-sm">${d.titulo||'Sin título'}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[8px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">${d.categoria||'otro'}</span><span class="text-[8px] text-slate-400 font-bold">${fecha}</span><span class="text-[8px] text-slate-400">${(d.texto||'').length} caracteres</span></div></div><button onclick="eliminarDocIosi('${doc.id}')" class="text-rose-300 hover:text-rose-600 text-sm"><i class="fas fa-trash-alt"></i></button></div>`;
-    });
-    // Armar contexto para el chat
-    let ctx='';snap.forEach(doc=>{const d=doc.data();ctx+=`\n## ${d.titulo}\n${d.texto}\n`;});
-    iosiContexto=ctx;
-  }catch(e){document.getElementById('iosi-docs-lista').innerHTML='<p class="text-slate-400 text-sm text-center py-4">Error cargando documentos.</p>';}
-  // Cargar config
-  try{
-    const cfg=await db.collection('iosi_config').doc('principal').get();
-    if(cfg.exists){
-      document.getElementById('iosi-personalidad').value=cfg.data().personalidad||'';
-      document.getElementById('iosi-fallback').value=cfg.data().fallback||'';
-    }
-  }catch(_){}
-}
-
-async function guardarDocIosi(){
-  const titulo=document.getElementById('iosi-doc-titulo').value.trim();
-  const texto=document.getElementById('iosi-doc-texto').value.trim();
-  const categoria=document.getElementById('iosi-doc-cat').va
+document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
+</script>
+</body>
+</html>
