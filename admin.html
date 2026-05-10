@@ -1,1 +1,1441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gestión Maestro - Iosef Caro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .3s ease}
+.input-pro{border:1px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;transition:all .2s;font-size:14px;font-family:inherit;background:white}
+.input-pro:focus{border-color:#0f172a;box-shadow:0 0 0 3px rgba(15,23,42,.1)}
+#login-overlay{position:fixed;inset:0;background:#0f172a;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.nb{font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:6px}
+.nb-i{background:#fce7f3;color:#9d174d}.nb-p{background:#dbeafe;color:#1e40af}.nb-s{background:#d1fae5;color:#065f46}
+.stat-card{background:white;border:1px solid #f1f5f9;border-radius:1.5rem;padding:1.5rem}
+.stat-n{font-size:2.5rem;font-weight:800;line-height:1;color:#0f172a}
+.stat-l{font-size:10px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-top:4px}
+.toggle-vis{position:relative;width:44px;height:24px;display:inline-block}
+.toggle-vis input{opacity:0;width:0;height:0}
+.toggle-vis .slider{position:absolute;inset:0;background:#e2e8f0;border-radius:24px;cursor:pointer;transition:.3s}
+.toggle-vis .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+.toggle-vis input:checked+.slider{background:#16a34a}
+.toggle-vis input:checked+.slider:before{transform:translateX(20px)}
+.tag-doc{background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;border:1px solid #e2e8f0}
+/* Alertas */
+.alerta-roja{border-left:4px solid #ef4444;background:#fff5f5;border-radius:1rem;padding:1rem}
+.alerta-ambar{border-left:4px solid #f59e0b;background:#fffbeb;border-radius:1rem;padding:1rem}
+/* Roles */
+.rol-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:800;text-transform:uppercase}
+.rol-admin{background:#fee2e2;color:#991b1b}
+.rol-dir{background:#ede9fe;color:#5b21b6}
+.rol-sec{background:#dbeafe;color:#1e40af}
+.rol-com{background:#d1fae5;color:#065f46}
+.rol-eoe{background:#fef3c7;color:#92400e}
+/* Alumno modal */
+#modal-alumno{position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px}
+#modal-alumno.open{display:flex}
+.modal-box{background:white;border-radius:2rem;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:2rem}
+/* Log */
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+</style>
+</head>
+<body>
 
+<div id="login-overlay">
+  <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl text-center">
+    <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center text-3xl mx-auto mb-6"><i class="fas fa-hammer"></i></div>
+    <h1 class="text-3xl font-black tracking-tighter">Panel Maestro</h1>
+    <p class="text-slate-400 font-bold mt-1 uppercase text-[10px] tracking-[0.3em] mb-8">Administración General</p>
+    <div class="space-y-4">
+      <input type="email" id="log-email" placeholder="Email" class="input-pro">
+      <input type="password" id="log-pass" placeholder="Contraseña" class="input-pro">
+      <button onclick="validarIngreso()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-black transition">ACCEDER</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar staff -->
+<div id="modal-staff" style="position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px">
+  <div class="bg-white rounded-[2rem] w-full max-w-md p-7 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-black text-xl" id="modal-staff-titulo">Editar usuario</h3>
+      <button onclick="cerrarModalStaff()" class="text-slate-400 text-2xl">&times;</button>
+    </div>
+    <div class="space-y-3">
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Email</label><p id="staff-edit-email" class="font-bold text-slate-600 text-sm mt-1 bg-slate-50 p-2 rounded-xl"></p></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Nombre</label><input type="text" id="staff-edit-nombre" class="input-pro mt-1"></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Nueva contraseña (dejar vacío para no cambiar)</label><input type="password" id="staff-edit-pass" class="input-pro mt-1" placeholder="••••••••"></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Rol</label>
+        <select id="staff-edit-rol" class="input-pro mt-1">
+          <option value="admin">Admin Total</option>
+          <option value="director">Director — solo lectura</option>
+          <option value="comunicacion">Comunicación</option>
+          <option value="secretaria_inicial">Secretaría — Inicial</option>
+          <option value="secretaria_primario">Secretaría — Primario</option>
+          <option value="secretaria_secundario">Secretaría — Secundario</option>
+          <option value="eoe">EOE</option>
+        </select>
+      </div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Niveles asignados</label>
+        <div class="flex gap-3 flex-wrap">
+          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="inicial"> Inicial</label>
+          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="primario"> Primario</label>
+          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-edit-nivel-check" value="secundario"> Secundario</label>
+        </div>
+      </div>
+
+      <button onclick="guardarEdicionStaff()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-2"><i class="fas fa-save mr-2"></i>GUARDAR CAMBIOS</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal perfil alumno -->
+<div id="modal-alumno">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="font-black text-2xl" id="modal-alu-nombre">Alumno</h2>
+      <button onclick="cerrarModalAlumno()" class="text-slate-400 text-2xl hover:text-slate-700">&times;</button>
+    </div>
+    <div class="space-y-4">
+      <!-- Datos básicos -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Fecha de nacimiento</label>
+          <input type="date" id="alu-fnac" class="input-pro mt-1">
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">DNI</label>
+          <input type="text" id="alu-dni" placeholder="Ej: 45.123.456" class="input-pro mt-1">
+        </div>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Obra social / Cobertura médica</label>
+        <input type="text" id="alu-obra" placeholder="Ej: OSDE 210" class="input-pro mt-1">
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Grupo sanguíneo</label>
+        <select id="alu-sangre" class="input-pro mt-1">
+          <option value="">Seleccionar...</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Alergias / condiciones médicas relevantes</label>
+        <textarea id="alu-alergias" placeholder="Ej: Alérgico a la penicilina, asma leve..." class="input-pro mt-1 h-16 resize-none"></textarea>
+      </div>
+
+      <!-- Contactos de emergencia -->
+      <div class="border-t pt-4">
+        <h3 class="font-black text-sm mb-3 flex items-center gap-2"><i class="fas fa-phone-alt text-rose-500"></i> Contactos de emergencia</h3>
+        <div class="space-y-3" id="contactos-emergencia-cont">
+          <div class="contacto-emergencia grid grid-cols-3 gap-2">
+            <input type="text"  class="ce-nombre input-pro text-xs" placeholder="Nombre">
+            <input type="text"  class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
+            <input type="tel"   class="ce-tel input-pro text-xs" placeholder="Teléfono">
+          </div>
+          <div class="contacto-emergencia grid grid-cols-3 gap-2">
+            <input type="text"  class="ce-nombre input-pro text-xs" placeholder="Nombre">
+            <input type="text"  class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
+            <input type="tel"   class="ce-tel input-pro text-xs" placeholder="Teléfono">
+          </div>
+        </div>
+        <button onclick="agregarContactoEmergencia()" class="text-[10px] font-black text-blue-600 mt-2 flex items-center gap-1"><i class="fas fa-plus-circle"></i> Agregar contacto</button>
+      </div>
+
+      <!-- Autorización de imagen -->
+      <div class="border-t pt-4">
+        <h3 class="font-black text-sm mb-3 flex items-center gap-2"><i class="fas fa-camera text-blue-500"></i> Autorización de imagen</h3>
+        <div class="space-y-2">
+          <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer">
+            <input type="radio" name="aut-imagen" value="autoriza" id="img-si" class="accent-emerald-600">
+            <div><p class="font-bold text-sm">Autoriza el uso de imagen</p><p class="text-[10px] text-slate-400">Fotos/videos del alumno pueden usarse en comunicaciones institucionales</p></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer">
+            <input type="radio" name="aut-imagen" value="no_autoriza" id="img-no" class="accent-rose-600">
+            <div><p class="font-bold text-sm">No autoriza el uso de imagen</p><p class="text-[10px] text-slate-400">El alumno no puede aparecer en publicaciones ni redes sociales</p></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer">
+            <input type="radio" name="aut-imagen" value="pendiente" id="img-pend" class="accent-amber-600">
+            <div><p class="font-bold text-sm">Pendiente de firma</p><p class="text-[10px] text-slate-400">Todavía no se recibió la autorización</p></div>
+          </label>
+        </div>
+      </div>
+
+      <button onclick="guardarPerfilAlumno()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg mt-2">
+        <i class="fas fa-save mr-2"></i> GUARDAR PERFIL DEL ALUMNO
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-content" class="hidden">
+  <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
+    <button onclick="switchTab('stats')"      class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
+
+
+    <button onclick="switchTab('importar')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
+    <button onclick="switchTab('staff')"      class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
+    <button onclick="switchTab('materias')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
+    <button onclick="switchTab('periodos')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
+    <button onclick="switchTab('ciclo')"      class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
+    <button onclick="switchTab('docentes')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
+    <button onclick="switchTab('alumnos')"    class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
+    <button onclick="switchTab('familias')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
+    <button onclick="switchTab('lecturas')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Lecturas</button>
+    <button onclick="switchTab('iosi')"       class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🤖 Iosi IA</button>
+    <button onclick="switchTab('notas-vis')"  class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
+    <button onclick="switchTab('log')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
+    <button onclick="exportarExcel()"         class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
+    <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
+  </nav>
+
+  <main class="p-4 max-w-6xl mx-auto space-y-6">
+
+    <!-- ════ STATS ════ -->
+    <section id="tab-stats" class="tab-content active space-y-6">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <h2 class="text-2xl font-black tracking-tight">Dashboard</h2>
+        <div class="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-2xl">
+          <i class="fas fa-calendar text-blue-500"></i>
+          <span class="font-black text-blue-700 text-sm" id="ciclo-activo-label">Cargando ciclo...</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="stat-card text-center"><div class="stat-n text-blue-600" id="st-alumnos">—</div><div class="stat-l">Alumnos</div></div>
+        <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="st-docentes">—</div><div class="stat-l">Docentes</div></div>
+        <div class="stat-card text-center"><div class="stat-n text-pink-600" id="st-familias">—</div><div class="stat-l">Familias</div></div>
+        <div class="stat-card text-center"><div class="stat-n text-amber-600" id="st-comunicados">—</div><div class="stat-l">Comunicados</div></div>
+      </div>
+        <div class="bg-white p-6 rounded-3xl border shadow-sm">
+          <h3 class="font-black text-sm mb-3">Asistencia del mes</h3>
+          <div style="position:relative;height:200px"><canvas id="chart-asistencia"></canvas></div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border shadow-sm">
+          <h3 class="font-black text-sm mb-3">Comunicados — lecturas</h3>
+          <div style="position:relative;height:200px"><canvas id="chart-comunicados"></canvas></div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border shadow-sm">
+          <h3 class="font-black text-sm mb-3">Mensajes últimos 7 días</h3>
+          <div style="position:relative;height:200px"><canvas id="chart-mensajes"></canvas></div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-sm mb-4">Actividad docentes</h3>
+        <div id="tabla-doc-actividad" class="space-y-2"></div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-sm mb-4">Últimos informes pedagógicos</h3>
+        <div id="lista-informes-rec" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- ════ IMPORTAR ════ -->
+    <section id="tab-importar" class="tab-content space-y-6">
+      <div class="bg-white p-10 rounded-[2.5rem] border-4 border-dashed border-slate-100 text-center">
+        <i class="fas fa-file-upload text-5xl text-blue-500 mb-4"></i>
+        <h2 class="text-2xl font-black">Importador de Alumnos</h2>
+        <p class="text-slate-400 mb-2">CSV: <b>alumno, nivel, curso, familia, mail1, mail2, mail3</b></p>
+        <input type="file" id="csv-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-info').innerText=this.files[0].name">
+        <label for="csv-file" class="bg-slate-100 px-8 py-4 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-4 transition">Seleccionar CSV</label>
+        <p id="csv-info" class="text-xs font-black text-blue-600 mb-6 uppercase"></p>
+        <button onclick="procesarCSV()" class="block mx-auto bg-blue-600 text-white px-12 py-4 rounded-2xl font-black shadow-xl">IMPORTAR</button>
+        <div id="csv-status" class="mt-6 text-sm font-bold text-slate-400"></div>
+      </div>
+      <div class="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-chalkboard-teacher"></i></div>
+          <div><h2 class="text-xl font-black">Importador de Docentes</h2><p class="text-slate-400 text-xs mt-1">CSV: nombre, email, nivel, mat1|mat2, cur1|cur2</p></div>
+        </div>
+        <input type="file" id="csv-doc-file" accept=".csv" class="hidden" onchange="document.getElementById('csv-doc-info').innerText=this.files[0].name">
+        <label for="csv-doc-file" class="bg-slate-100 px-6 py-3 rounded-2xl font-bold cursor-pointer hover:bg-slate-200 inline-block mb-3 transition">Seleccionar CSV</label>
+        <p id="csv-doc-info" class="text-xs font-black text-emerald-600 mb-4 uppercase"></p>
+        <button onclick="procesarCSVDocentes()" class="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl">IMPORTAR DOCENTES</button>
+        <div id="csv-doc-status" class="mt-4 text-sm font-bold text-slate-400"></div>
+      </div>
+      <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-4 mb-6"><div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-user-plus"></i></div><h2 class="text-xl font-black">Carga Manual — Alumno</h2></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input type="text"  id="manual-alu"   placeholder="Nombre del Alumno"    class="input-pro">
+          <select id="manual-nivel" class="input-pro"><option value="">Nivel...</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+          <input type="text"  id="manual-cur"   placeholder="Curso (Ej: 1A)"       class="input-pro">
+          <input type="text"  id="manual-fam"   placeholder="Nombre de la Familia" class="input-pro">
+          <input type="email" id="manual-mail1" placeholder="Email Principal"       class="input-pro">
+          <input type="email" id="manual-mail2" placeholder="Email 2 (Opcional)"   class="input-pro">
+          <input type="email" id="manual-mail3" placeholder="Email 3 (Opcional)"   class="input-pro">
+          <button onclick="cargaManualAlumno()" class="md:col-span-3 bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg">GUARDAR ALUMNO</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ STAFF ════ -->
+    <section id="tab-staff" class="tab-content space-y-6">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h2 class="font-black text-xl mb-1">Nuevo Usuario con Acceso</h2>
+        <p class="text-slate-400 text-xs mb-5">El rol define exactamente qué puede ver y hacer.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text"     id="staff-nombre" placeholder="Nombre completo" class="input-pro">
+          <input type="email"    id="staff-email"  placeholder="Email de login"  class="input-pro">
+          <input type="password" id="staff-pass"   placeholder="Contraseña"      class="input-pro">
+          <select id="staff-rol" class="input-pro">
+            <optgroup label="Administración">
+              <option value="admin">Admin Total</option>
+              <option value="director">Director — solo lectura</option>
+            </optgroup>
+            <optgroup label="Comunicación">
+              <option value="comunicacion">Comunicación — muro + calendario</option>
+            </optgroup>
+            <optgroup label="Secretaría">
+              <option value="secretaria_inicial">Secretaría — Inicial</option>
+              <option value="secretaria_primario">Secretaría — Primario</option>
+              <option value="secretaria_secundario">Secretaría — Secundario</option>
+            </optgroup>
+            <optgroup label="Pedagógico">
+              <option value="eoe">EOE — Orientación Escolar</option>
+              <option value="docente">Docente</option>
+            </optgroup>
+          </select>
+          <div class="md:col-span-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1 block mb-2">Nivel asignado (secretarías)</label>
+            <div class="flex gap-3 flex-wrap">
+              <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="inicial"> Inicial</label>
+              <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="primario"> Primario</label>
+              <label class="flex items-center gap-2 text-sm font-bold cursor-pointer"><input type="checkbox" class="staff-nivel-check" value="secundario"> Secundario</label>
+            </div>
+          </div>
+
+          <button onclick="crearStaff()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Guardar Usuario</button>
+        </div>
+      </div>
+      <div id="lista-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- ════ MATERIAS/CURSOS ════ -->
+    <section id="tab-materias" class="tab-content space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-3xl border">
+          <h3 class="font-black mb-4">Materias</h3>
+          <div class="flex gap-2 mb-4"><input type="text" id="new-materia" placeholder="Nueva materia" class="input-pro"><button onclick="crearMaestro('materias','new-materia')" class="bg-blue-600 text-white px-4 rounded-xl font-bold">+</button></div>
+          <div id="lista-materias" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border">
+          <h3 class="font-black mb-4">Cursos</h3>
+          <div class="flex gap-2 mb-4">
+            <input type="text" id="new-curso" placeholder="Ej: 1A" class="input-pro">
+            <select id="new-curso-nivel" class="input-pro" style="max-width:110px"><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+            <button onclick="crearCurso()" class="bg-emerald-600 text-white px-4 rounded-xl font-bold">+</button>
+          </div>
+          <div id="lista-cursos" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border">
+          <h3 class="font-black mb-4">Niveles</h3>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 p-3 bg-pink-50 rounded-xl"><span class="nb nb-i">Inicial</span><span class="text-sm font-bold">Nivel Inicial</span></div>
+            <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-xl"><span class="nb nb-p">Primario</span><span class="text-sm font-bold">Nivel Primario</span></div>
+            <div class="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl"><span class="nb nb-s">Secundario</span><span class="text-sm font-bold">Nivel Secundario</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ PERÍODOS ════ -->
+    <section id="tab-periodos" class="tab-content space-y-6">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h2 class="font-black text-xl mb-2">Períodos Académicos</h2>
+        <p class="text-slate-400 text-xs mb-6">El período activo es donde los docentes cargan notas.</p>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6" id="lista-periodos-admin"></div>
+        <div class="border-t pt-6">
+          <h3 class="font-black text-base mb-4">Crear nuevo período</h3>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <input type="text" id="per-nombre" placeholder="Ej: 1er Bimestre" class="input-pro">
+            <input type="text" id="per-slug"   placeholder="Clave: 1B"        class="input-pro">
+            <input type="date" id="per-inicio" class="input-pro">
+            <input type="date" id="per-fin"    class="input-pro">
+            <button onclick="crearPeriodo()" class="md:col-span-4 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Período</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ CICLO LECTIVO ════ -->
+    <section id="tab-ciclo" class="tab-content space-y-6">
+      <h2 class="text-2xl font-black tracking-tight">Ciclo Lectivo</h2>
+      <p class="text-slate-400 text-xs -mt-3">El ciclo activo se usa para separar datos entre años. Cambiar de ciclo no borra datos anteriores.</p>
+
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-base mb-4 flex items-center gap-2"><i class="fas fa-calendar-check text-blue-500"></i> Ciclo actual</h3>
+        <div id="ciclo-actual-display" class="bg-blue-50 border border-blue-100 p-5 rounded-2xl mb-4">
+          <p class="text-[10px] font-black text-blue-400 uppercase">Ciclo activo</p>
+          <p id="ciclo-nombre-actual" class="text-3xl font-black text-blue-700 mt-1">—</p>
+          <p id="ciclo-fechas-actual" class="text-xs text-blue-500 font-bold mt-1">—</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-base mb-4">Crear nuevo ciclo lectivo</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Año / Nombre</label>
+            <input type="text" id="ciclo-nombre" placeholder="Ej: 2026" class="input-pro mt-1">
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Inicio del ciclo</label>
+            <input type="date" id="ciclo-inicio" class="input-pro mt-1">
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Fin del ciclo</label>
+            <input type="date" id="ciclo-fin" class="input-pro mt-1">
+          </div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4">
+          <p class="text-xs font-bold text-amber-700"><i class="fas fa-exclamation-triangle mr-2"></i>Al activar un ciclo nuevo, los docentes empezarán a cargar notas y asistencia en él. Los datos del ciclo anterior quedan guardados y pueden consultarse filtrando por ciclo.</p>
+        </div>
+        <button onclick="crearCiclo()" class="mt-4 bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg">Crear Ciclo Lectivo</button>
+      </div>
+
+      <div>
+        <h3 class="font-black text-sm text-slate-700 mb-3">Historial de ciclos</h3>
+        <div id="lista-ciclos" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- ════ DOCENTES ════ -->
+    <section id="tab-docentes" class="tab-content space-y-4">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h2 class="font-black text-xl mb-4">Registrar Docente</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text"  id="doc-nombre" placeholder="Nombre y Apellido"   class="input-pro">
+          <input type="email" id="doc-email"  placeholder="Email institucional" class="input-pro">
+          <select id="doc-nivel" class="input-pro" onchange="cargarSelectsDocente()"><option value="">Nivel...</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+          <div></div>
+          <div class="space-y-2"><div class="flex gap-2"><select id="doc-materia" class="input-pro"><option value="">Seleccionar Materia</option></select><button onclick="agregarTag('materia')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button></div><div id="tags-materias" class="flex flex-wrap gap-1"></div></div>
+          <div class="space-y-2"><div class="flex gap-2"><select id="doc-curso" class="input-pro"><option value="">Seleccionar Curso</option></select><button onclick="agregarTag('curso')" class="bg-slate-200 px-4 rounded-xl font-bold">+</button></div><div id="tags-cursos" class="flex flex-wrap gap-1"></div></div>
+          <button onclick="crearDocente()" class="md:col-span-2 bg-slate-900 text-white p-4 rounded-2xl font-bold">Crear Docente</button>
+        </div>
+      </div>
+      <div id="lista-docentes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ════ ALUMNOS ════ -->
+    <section id="tab-alumnos" class="tab-content space-y-4">
+      <div class="bg-white p-4 rounded-2xl border flex flex-wrap items-center gap-3 shadow-sm">
+        <input type="text" onkeyup="buscar('search-alu','lista-alumnos')" id="search-alu" placeholder="Filtrar..." class="input-pro max-w-xs">
+        <select id="filter-alu-nivel" onchange="cargarAlumnosFiltrados()" class="input-pro" style="max-width:160px">
+          <option value="">Todos los niveles</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option>
+        </select>
+        <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase ml-auto">Cargando...</span>
+      </div>
+      <p class="text-xs text-slate-400 px-1"><i class="fas fa-info-circle mr-1"></i>Tocá el nombre para editar el perfil. Seleccioná con la casilla para eliminar múltiples a la vez.</p>
+      <div class="flex items-center gap-3 px-1">
+        <input type="checkbox" id="select-all-alu" onclick="toggleSeleccionarTodoAlumnos(this)" class="w-4 h-4 accent-rose-600">
+        <label for="select-all-alu" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos</label>
+        <button id="btn-eliminar-masivo-alu" onclick="eliminarAlumnosSeleccionados()" class="hidden bg-rose-600 text-white px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1"><i class="fas fa-trash-alt"></i> Eliminar (<span id="count-alu-sel">0</span>)</button>
+      </div>
+      <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- ════ FAMILIAS ════ -->
+    <section id="tab-familias" class="tab-content space-y-4">
+      <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+        <input type="text" onkeyup="buscar('search-fam','lista-familias')" id="search-fam" placeholder="Buscar familia..." class="input-pro">
+        <button id="btn-eliminar-masivo" onclick="eliminarFamiliasSeleccionadas()" class="hidden bg-rose-600 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg flex items-center gap-2"><i class="fas fa-trash-alt"></i> ELIMINAR (<span id="count-seleccion">0</span>)</button>
+      </div>
+      <div class="flex items-center gap-2 px-2"><input type="checkbox" id="select-all-fam" onclick="toggleSeleccionarTodo(this)" class="w-4 h-4"><label for="select-all-fam" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos</label></div>
+      <div id="lista-familias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ════ VISIBILIDAD NOTAS ════ -->
+    <section id="tab-notas-vis" class="tab-content space-y-6">
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h2 class="font-black text-xl mb-2">Visibilidad del boletín</h2>
+        <p class="text-slate-400 text-xs mb-6">Las familias solo ven notas de los períodos que habilitás.</p>
+        <div class="flex flex-wrap gap-3 items-center mb-6">
+          <select id="vis-periodo-sel" class="input-pro" style="max-width:220px" onchange="cargarVisibilidadNotas()"><option value="">Seleccionar período...</option></select>
+          <button onclick="publicarTodoElPeriodo()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs">✓ Publicar TODO</button>
+          <button onclick="ocultarTodoElPeriodo()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs">✕ Ocultar TODO</button>
+        </div>
+        <div id="tabla-visibilidad" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- ════ LOG DE ACTIVIDAD ════ -->
+    <section id="tab-log" class="tab-content space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div><h2 class="text-2xl font-black tracking-tight">Log de Actividad</h2><p class="text-slate-400 text-xs mt-1">Registro de acciones críticas del sistema.</p></div>
+        <div class="flex gap-2">
+          <select id="log-filtro-tipo" onchange="cargarLog()" class="input-pro text-sm" style="max-width:180px">
+            <option value="">Todos los tipos</option>
+            <option value="crear">Crear</option>
+            <option value="eliminar">Eliminar</option>
+            <option value="login">Login</option>
+            <option value="editar">Editar</option>
+            <option value="exportar">Exportar</option>
+          </select>
+          <select id="log-filtro-dias" onchange="cargarLog()" class="input-pro text-sm" style="max-width:140px">
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+          </select>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <div id="log-container" class="space-y-0">
+          <p class="text-slate-400 text-sm text-center py-8">Cargando log de actividad...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ LECTURAS DE COMUNICADOS ════ -->
+    <section id="tab-lecturas" class="tab-content space-y-6">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-2xl font-black tracking-tight">Estadísticas de Lectura</h2>
+          <p class="text-slate-400 text-xs mt-1">Quién leyó cada comunicado y cuándo.</p>
+        </div>
+        <button onclick="cargarLecturas()" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-200 transition"><i class="fas fa-sync-alt mr-2"></i>Actualizar</button>
+      </div>
+
+      <!-- Resumen global -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="stat-card text-center"><div class="stat-n text-indigo-600" id="lec-total-com">—</div><div class="stat-l">Comunicados</div></div>
+        <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="lec-total-vistas">—</div><div class="stat-l">Total lecturas</div></div>
+        <div class="stat-card text-center"><div class="stat-n text-amber-600" id="lec-pct-medio">—%</div><div class="stat-l">Apertura promedio</div></div>
+      </div>
+
+      <!-- Selector comunicado -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <div class="flex flex-wrap gap-3 items-center mb-5">
+          <label class="text-[10px] font-black text-slate-400 uppercase">Seleccioná un comunicado</label>
+          <select id="lec-sel-com" class="input-pro" style="max-width:340px" onchange="cargarDetalleLectura()">
+            <option value="">Seleccioná...</option>
+          </select>
+        </div>
+        <!-- Barra de progreso lectura -->
+        <div id="lec-barra-sect" class="hidden mb-5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-black text-sm" id="lec-titulo-com">—</p>
+            <span class="text-xs font-black text-indigo-600" id="lec-pct-com">0%</span>
+          </div>
+          <div class="bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div id="lec-barra-fill" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-3 rounded-full transition-all duration-500" style="width:0%"></div>
+          </div>
+          <div class="flex justify-between text-[9px] font-black text-slate-400 mt-1">
+            <span id="lec-leido-count">0 leyeron</span>
+            <span id="lec-no-leido-count">0 sin leer</span>
+          </div>
+        </div>
+        <!-- Tabs quién leyó / no leyó -->
+        <div id="lec-tabs-sect" class="hidden">
+          <div class="flex gap-2 mb-4">
+            <button onclick="mostrarTabLectura('leyo')" id="tab-btn-leyo" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-xs">✅ Leyeron</button>
+            <button onclick="mostrarTabLectura('no_leyo')" id="tab-btn-no" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-xs">❌ Sin leer</button>
+          </div>
+          <div id="lec-lista-leyo" class="space-y-2"></div>
+          <div id="lec-lista-no" class="space-y-2 hidden"></div>
+        </div>
+        <div id="lec-empty" class="text-slate-400 text-sm text-center py-8">Seleccioná un comunicado para ver quién lo leyó.</div>
+      </div>
+
+      <!-- Ranking familias que más leen -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-sm mb-4">🏆 Familias más activas (más lecturas totales)</h3>
+        <div id="lec-ranking-familias" class="space-y-2">
+          <p class="text-slate-400 text-sm text-center py-4">Cargando...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ IOSI IA ════ -->
+    <section id="tab-iosi" class="tab-content space-y-6">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-[1.5rem] flex items-center justify-center text-3xl shadow-lg">🤖</div>
+        <div>
+          <h2 class="text-2xl font-black tracking-tight">Iosi — Asistente IA</h2>
+          <p class="text-slate-400 text-xs mt-1">Cargá materiales para que Iosi aprenda y pueda responder mejor a las familias.</p>
+        </div>
+      </div>
+
+      <!-- Área de chat -->
+      <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-violet-50 to-indigo-50 border-b px-5 py-3 flex items-center gap-3">
+          <div class="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center text-lg">🤖</div>
+          <div><p class="font-black text-sm">Iosi IA</p><p class="text-[9px] text-slate-400 font-bold uppercase">Asistente del Instituto Iosef Caro</p></div>
+          <div class="ml-auto flex items-center gap-1.5"><div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div><span class="text-[9px] font-black text-emerald-600 uppercase">Activo</span></div>
+        </div>
+        <div id="iosi-chat" class="p-4 space-y-3 overflow-y-auto" style="height:280px">
+          <div class="flex gap-3">
+            <div class="w-8 h-8 bg-indigo-100 rounded-2xl flex items-center justify-center text-base flex-shrink-0">🤖</div>
+            <div class="bg-slate-50 rounded-2xl rounded-tl-none p-3 max-w-xs"><p class="text-sm font-medium text-slate-700">¡Hola! Soy Iosi, el asistente del instituto. Podés preguntarme sobre reglamentos, procedimientos o cualquier material que me hayan cargado. También podés subir documentos para que aprenda de ellos.</p></div>
+          </div>
+        </div>
+        <div class="border-t p-3 flex gap-2">
+          <input type="text" id="iosi-input" placeholder="Preguntale algo a Iosi..." class="input-pro flex-1 text-sm" onkeydown="if(event.key==='Enter')enviarMensajeIosi()">
+          <button onclick="enviarMensajeIosi()" class="bg-indigo-600 text-white px-5 py-2 rounded-2xl font-black text-sm hover:bg-indigo-700 transition"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+
+      <!-- Cargar materiales -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-lg mb-1">📚 Cargar materiales para que Iosi aprenda</h3>
+        <p class="text-slate-400 text-xs mb-5">Subí reglamentos, circulares, procedimientos o cualquier texto institucional. Iosi los incorporará a su base de conocimiento.</p>
+
+        <div class="space-y-4">
+          <!-- Texto libre -->
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase block mb-2">Agregar texto o documento institucional</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="iosi-doc-titulo" placeholder="Título (ej: Reglamento interno 2026)" class="input-pro flex-1">
+              <select id="iosi-doc-cat" class="input-pro" style="max-width:160px">
+                <option value="reglamento">Reglamento</option>
+                <option value="circular">Circular</option>
+                <option value="procedimiento">Procedimiento</option>
+                <option value="calendario">Calendario</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <textarea id="iosi-doc-texto" placeholder="Pegá o escribí el contenido aquí..." class="input-pro h-28 resize-none"></textarea>
+            <button onclick="guardarDocIosi()" class="mt-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-indigo-700 transition flex items-center gap-2"><i class="fas fa-brain"></i> GUARDAR Y ENTRENAR A IOSI</button>
+          </div>
+
+          <!-- Estado del cargado -->
+          <div id="iosi-carga-status" class="hidden bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs font-bold text-emerald-700"></div>
+        </div>
+      </div>
+
+      <!-- Base de conocimiento cargada -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-sm">📖 Base de conocimiento de Iosi</h3>
+          <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full" id="iosi-doc-count">0 documentos</span>
+        </div>
+        <div id="iosi-docs-lista" class="space-y-2">
+          <p class="text-slate-400 text-sm text-center py-4">Cargando documentos...</p>
+        </div>
+      </div>
+
+      <!-- Configuración Iosi -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-sm mb-4">⚙️ Configuración de Iosi</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Personalidad / Presentación</label>
+            <textarea id="iosi-personalidad" class="input-pro h-20 resize-none text-sm" placeholder="Ej: Soy Iosi, el asistente del Instituto Iosef Caro. Soy amigable, claro y siempre intento ayudar a las familias..."></textarea>
+          </div>
+          <div>
+            <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Respuesta cuando no sabe algo</label>
+            <input type="text" id="iosi-fallback" class="input-pro text-sm" placeholder="Ej: No tengo esa información, te recomiendo contactar a secretaría.">
+          </div>
+          <button onclick="guardarConfigIosi()" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-sm hover:bg-black transition"><i class="fas fa-save mr-2"></i>GUARDAR CONFIGURACIÓN</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+firebase.initializeApp(FB);const db=firebase.firestore();
+const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
+let matSel=[],curSel=[],allCursos=[],allMats=[];
+let cNiv=null,cAsis=null,cCom=null,cMsg=null;
+let adminEmail='',adminNombre='';
+let alumnoEditandoId=null;
+
+// ══════════════════════
+// LOGIN
+// ══════════════════════
+async function validarIngreso(){
+  const em=document.getElementById('log-email').value.trim().toLowerCase();
+  const ps=document.getElementById('log-pass').value.trim();
+  if(!em||!ps)return alert("Ingresá tus datos.");
+  if(em===LLAVE_EMAIL&&ps===LLAVE_PASS){adminEmail=em;adminNombre="Administrador";autorizar();return;}
+  try{
+    const d=await db.collection('usuarios').doc(em).get();
+    if(!d.exists){alert("Usuario no registrado.");return;}
+    const u=d.data();
+    if(u.pass!==ps){alert("Contraseña incorrecta.");return;}
+    if(u.rol!=='admin'){alert("Sin permisos de administrador.");return;}
+    adminEmail=em;adminNombre=u.nombre;
+    autorizar();
+  }catch(e){alert("Error de conexión.");}
+}
+function autorizar(){
+  sessionStorage.setItem('iosef_admin_session','admin');
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('admin-content').classList.remove('hidden');
+  registrarLog('login',`Ingreso al panel admin`,'login');
+  refrescarTodo();
+}
+window.onload=()=>{
+  // Sesión propia del admin
+  if(sessionStorage.getItem('iosef_admin_session')){
+    adminEmail=sessionStorage.getItem('iosef_admin_email')||sessionStorage.getItem('iosef_email')||'admin';
+    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+    return;
+  }
+  // Sesión desde index.html
+  const em=sessionStorage.getItem('iosef_email');
+  const rol=sessionStorage.getItem('iosef_rol');
+  const nm=sessionStorage.getItem('iosef_nombre');
+  if(em&&(rol==='admin'||rol==='director')){
+    adminEmail=em;adminNombre=nm||em;
+    sessionStorage.setItem('iosef_admin_session','admin');
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+  }
+};
+function cerrarSesion(){sessionStorage.clear();location.reload();}
+
+// ══════════════════════
+// LOG DE ACTIVIDAD
+// ══════════════════════
+async function registrarLog(tipo,descripcion,categoria='general'){
+  try{
+    await db.collection('log_actividad').add({
+      tipo,descripcion,categoria,
+      usuario:adminEmail,usuarioNombre:adminNombre,
+      fecha:new Date().toISOString(),
+      timestamp:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){console.warn('Error log:',e);}
+}
+
+async function cargarLog(){
+  const filtroTipo=document.getElementById('log-filtro-tipo').value;
+  const filtroDias=parseInt(document.getElementById('log-filtro-dias').value||30);
+  const cont=document.getElementById('log-container');
+  cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  const desde=new Date();desde.setDate(desde.getDate()-filtroDias);
+  let query=db.collection('log_actividad').orderBy('timestamp','desc').limit(200);
+  const snap=await query.get();
+  const colores={crear:'#16a34a',eliminar:'#ef4444',login:'#2563eb',editar:'#f59e0b',exportar:'#8b5cf6',general:'#94a3b8'};
+  const items=[];
+  snap.forEach(doc=>{
+    const l=doc.data();
+    if(filtroTipo&&l.tipo!==filtroTipo) return;
+    const fecha=l.fecha?new Date(l.fecha):new Date();
+    if(fecha<desde) return;
+    items.push(l);
+  });
+  if(!items.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-8">Sin actividad en este período.</p>';return;}
+  cont.innerHTML=items.map(l=>{
+    const d=l.fecha?new Date(l.fecha).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const color=colores[l.tipo]||colores.general;
+    return `<div class="log-item">
+      <div class="log-dot" style="background:${color}"></div>
+      <div class="flex-1">
+        <p class="text-sm font-bold text-slate-800">${l.descripcion}</p>
+        <p class="text-[10px] text-slate-400 font-bold">${l.usuarioNombre||l.usuario} · ${d}</p>
+      </div>
+      <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full" style="background:${color}20;color:${color}">${l.tipo}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════
+// CICLO LECTIVO
+// ══════════════════════
+async function cargarCiclos(){
+  const snap=await db.collection('ciclos_lectivos').orderBy('nombre','desc').get();
+  const cont=document.getElementById('lista-ciclos');
+  const labelActivo=document.getElementById('ciclo-activo-label');
+  const nombreActual=document.getElementById('ciclo-nombre-actual');
+  const fechasActual=document.getElementById('ciclo-fechas-actual');
+  cont.innerHTML='';
+  let hayActivo=false;
+  snap.forEach(doc=>{
+    const c=doc.data(),act=c.activo===true;
+    if(act){
+      hayActivo=true;
+      labelActivo.textContent=`Ciclo ${c.nombre}`;
+      nombreActual.textContent=c.nombre;
+      fechasActual.textContent=`${c.inicio||'—'} → ${c.fin||'—'}`;
+      sessionStorage.setItem('cicloActivo',c.nombre);
+    }
+    cont.innerHTML+=`<div class="bg-white border-2 ${act?'border-blue-400':'border-slate-100'} rounded-2xl p-4 flex items-center gap-4">
+      <div class="flex-1">
+        <p class="font-black text-lg text-slate-900">${c.nombre}</p>
+        <p class="text-xs text-slate-400 font-bold">${c.inicio||''} → ${c.fin||''}</p>
+      </div>
+      ${act?'<span class="text-[9px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase">Activo</span>':
+      `<button onclick="activarCiclo('${doc.id}')" class="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl hover:bg-slate-200">Activar</button>`}
+      <button onclick="eliminarDoc('ciclos_lectivos','${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash text-sm"></i></button>
+    </div>`;
+  });
+  if(!hayActivo){labelActivo.textContent='Sin ciclo activo';nombreActual.textContent='—';fechasActual.textContent='Creá y activá un ciclo lectivo';}
+}
+
+async function crearCiclo(){
+  const nombre=document.getElementById('ciclo-nombre').value.trim();
+  const inicio=document.getElementById('ciclo-inicio').value;
+  const fin=document.getElementById('ciclo-fin').value;
+  if(!nombre)return alert("El año/nombre del ciclo es obligatorio.");
+  await db.collection('ciclos_lectivos').add({nombre,inicio,fin,activo:false,creadoEn:new Date().toISOString()});
+  alert(`Ciclo ${nombre} creado. Activalo cuando estés listo.`);
+  registrarLog('crear',`Ciclo lectivo ${nombre} creado`,'ciclo');
+  document.getElementById('ciclo-nombre').value='';document.getElementById('ciclo-inicio').value='';document.getElementById('ciclo-fin').value='';
+  cargarCiclos();
+}
+
+async function activarCiclo(id){
+  if(!confirm("¿Activar este ciclo? El ciclo actualmente activo quedará como histórico. Los docentes comenzarán a cargar en el nuevo ciclo."))return;
+  const batch=db.batch();
+  const snap=await db.collection('ciclos_lectivos').get();
+  snap.forEach(d=>batch.update(d.ref,{activo:false}));
+  batch.update(db.collection('ciclos_lectivos').doc(id),{activo:true});
+  await batch.commit();
+  const doc=await db.collection('ciclos_lectivos').doc(id).get();
+  registrarLog('editar',`Ciclo ${doc.data().nombre} activado`,'ciclo');
+  cargarCiclos();
+}
+
+// ══════════════════════
+// PERFIL ALUMNO
+// ══════════════════════
+async function abrirModalAlumno(alumnoId,nombre){
+  alumnoEditandoId=alumnoId;
+  document.getElementById('modal-alu-nombre').textContent=nombre;
+  // Limpiar
+  document.getElementById('alu-fnac').value='';document.getElementById('alu-dni').value='';
+  document.getElementById('alu-obra').value='';document.getElementById('alu-sangre').value='';
+  document.getElementById('alu-alergias').value='';
+  document.querySelectorAll('input[name="aut-imagen"]').forEach(r=>r.checked=false);
+  document.getElementById('img-pend').checked=true;
+  // Limpiar contactos
+  const contCE=document.getElementById('contactos-emergencia-cont');
+  contCE.innerHTML=`
+    <div class="contacto-emergencia grid grid-cols-3 gap-2">
+      <input type="text" class="ce-nombre input-pro text-xs" placeholder="Nombre">
+      <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
+      <input type="tel"  class="ce-tel input-pro text-xs" placeholder="Teléfono">
+    </div>
+    <div class="contacto-emergencia grid grid-cols-3 gap-2">
+      <input type="text" class="ce-nombre input-pro text-xs" placeholder="Nombre">
+      <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
+      <input type="tel"  class="ce-tel input-pro text-xs" placeholder="Teléfono">
+    </div>`;
+
+  // Cargar datos existentes
+  try{
+    const doc=await db.collection('alumnos').doc(alumnoId).get();
+    if(doc.exists){
+      const d=doc.data();
+      if(d.fechaNacimiento) document.getElementById('alu-fnac').value=d.fechaNacimiento;
+      if(d.dni)             document.getElementById('alu-dni').value=d.dni;
+      if(d.obraSocial)      document.getElementById('alu-obra').value=d.obraSocial;
+      if(d.grupoSanguineo)  document.getElementById('alu-sangre').value=d.grupoSanguineo;
+      if(d.alergias)        document.getElementById('alu-alergias').value=d.alergias;
+      if(d.autorizacionImagen){
+        const r=document.querySelector(`input[name="aut-imagen"][value="${d.autorizacionImagen}"]`);
+        if(r) r.checked=true;
+      }
+      // Contactos de emergencia
+      if(d.contactosEmergencia?.length){
+        contCE.innerHTML='';
+        d.contactosEmergencia.forEach(ce=>{
+          const div=document.createElement('div');div.className='contacto-emergencia grid grid-cols-3 gap-2';
+          div.innerHTML=`<input type="text" class="ce-nombre input-pro text-xs" placeholder="Nombre" value="${ce.nombre||''}">
+            <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo" value="${ce.vinculo||''}">
+            <input type="tel" class="ce-tel input-pro text-xs" placeholder="Teléfono" value="${ce.tel||''}">`;
+          contCE.appendChild(div);
+        });
+      }
+    }
+  }catch(e){console.warn(e);}
+  document.getElementById('modal-alumno').classList.add('open');
+}
+
+function agregarContactoEmergencia(){
+  const div=document.createElement('div');div.className='contacto-emergencia grid grid-cols-3 gap-2';
+  div.innerHTML=`<input type="text" class="ce-nombre input-pro text-xs" placeholder="Nombre">
+    <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
+    <input type="tel" class="ce-tel input-pro text-xs" placeholder="Teléfono">`;
+  document.getElementById('contactos-emergencia-cont').appendChild(div);
+}
+
+async function guardarPerfilAlumno(){
+  if(!alumnoEditandoId)return;
+  const contactos=[];
+  document.querySelectorAll('.contacto-emergencia').forEach(row=>{
+    const n=row.querySelector('.ce-nombre')?.value.trim();
+    const v=row.querySelector('.ce-vinculo')?.value.trim();
+    const t=row.querySelector('.ce-tel')?.value.trim();
+    if(n||t) contactos.push({nombre:n||'',vinculo:v||'',tel:t||''});
+  });
+  const autImagen=document.querySelector('input[name="aut-imagen"]:checked')?.value||'pendiente';
+  const datos={
+    fechaNacimiento:document.getElementById('alu-fnac').value||null,
+    dni:document.getElementById('alu-dni').value.trim()||null,
+    obraSocial:document.getElementById('alu-obra').value.trim()||null,
+    grupoSanguineo:document.getElementById('alu-sangre').value||null,
+    alergias:document.getElementById('alu-alergias').value.trim()||null,
+    autorizacionImagen:autImagen,
+    contactosEmergencia:contactos,
+    perfilActualizadoEn:new Date().toISOString(),
+    perfilActualizadoPor:adminEmail
+  };
+  await db.collection('alumnos').doc(alumnoEditandoId).update(datos);
+  registrarLog('editar',`Perfil de alumno actualizado (${alumnoEditandoId})`,'alumno');
+  alert("✅ Perfil del alumno guardado.");
+  cerrarModalAlumno();
+  cargarAlumnosFiltrados();
+}
+
+function cerrarModalAlumno(){document.getElementById('modal-alumno').classList.remove('open');alumnoEditandoId=null;}
+document.getElementById('modal-alumno').addEventListener('click',function(e){if(e.target===this)cerrarModalAlumno();});
+
+// ══════════════════════
+// ESTADÍSTICAS
+// ══════════════════════
+async function cargarEstadisticas(){
+  try { await cargarCiclos(); } catch(e){ console.warn('ciclos:',e); }
+  let alS,dS,fS,cS;
+  try{
+    [alS,dS,fS,cS]=await Promise.all([
+      db.collection('alumnos').get(),
+      db.collection('usuarios').where('rol','==','docente').get(),
+      db.collection('usuarios').where('rol','==','familia').get(),
+      db.collection('comunicados').get()
+    ]);
+  }catch(e){
+    console.warn('Error stats básicas:',e);
+    try{ alS=await db.collection('alumnos').get(); }catch(_){ alS={size:0,forEach:()=>{}}; }
+    try{ dS=await db.collection('usuarios').where('rol','==','docente').get(); }catch(_){ dS={size:0,docs:[]}; }
+    try{ fS=await db.collection('usuarios').where('rol','==','familia').get(); }catch(_){ fS={size:0}; }
+    try{ cS=await db.collection('comunicados').get(); }catch(_){ cS={size:0,forEach:()=>{}}; }
+  }
+  document.getElementById('st-alumnos').innerText=alS.size||0;
+  document.getElementById('st-docentes').innerText=dS.size||0;
+  document.getElementById('st-familias').innerText=fS.size||0;
+  document.getElementById('st-comunicados').innerText=cS.size||0;
+  const nc={inicial:0,primario:0,secundario:0};alS.forEach(d=>{const n=d.data().nivel||'primario';nc[n]=(nc[n]||0)+1;});
+  const canvNiv=document.getElementById('chart-niveles');
+  if(cNiv)cNiv.destroy();
+  if(canvNiv) cNiv=new Chart(canvNiv,{type:'doughnut',data:{labels:['Inicial','Primario','Secundario'],datasets:[{data:[nc.inicial,nc.primario,nc.secundario],backgroundColor:['#db2777','#2563eb','#16a34a'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  document.getElementById('leyenda-niveles').innerHTML=`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#db2777;display:inline-block"></span>Inicial ${nc.inicial}</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#2563eb;display:inline-block"></span>Primario ${nc.primario}</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a;display:inline-block"></span>Sec. ${nc.secundario}</span>`;
+  const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  const aS=await db.collection('asistencia').get();let p=0,a=0,t=0;
+  aS.forEach(d=>{const ad=d.data();if(!ad.fecha?.startsWith(mes))return;if(ad.estado==='P')p++;else if(ad.estado==='A')a++;else if(ad.estado==='T')t++;});
+  if(cAsis)cAsis.destroy();
+  cAsis=new Chart(document.getElementById('chart-asistencia'),{type:'doughnut',data:{labels:[`Presentes ${p}`,`Ausentes ${a}`,`Tardanzas ${t}`],datasets:[{data:[p,a,t],backgroundColor:['#16a34a','#ef4444','#f59e0b'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+  const comL=[],comV=[];cS.forEach(d=>{comL.push((d.data().titulo||'Sin título').slice(0,18));comV.push(d.data().vistas||0);});
+  if(cCom)cCom.destroy();
+  cCom=new Chart(document.getElementById('chart-comunicados'),{type:'bar',data:{labels:comL.slice(0,6),datasets:[{label:'Lecturas',data:comV.slice(0,6),backgroundColor:'#f59e0b',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+  const mS=await db.collection('conversaciones').get();const dias=[],cnt=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);dias.push(d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric'}));cnt.push(0);}
+  mS.forEach(d=>{const ts=d.data().creadoEn;if(!ts)return;const fd=ts.toDate?ts.toDate():new Date(ts.seconds*1000);const diff=Math.floor((Date.now()-fd.getTime())/86400000);if(diff>=0&&diff<7)cnt[6-diff]++;});
+  if(cMsg)cMsg.destroy();
+  cMsg=new Chart(document.getElementById('chart-mensajes'),{type:'bar',data:{labels:dias,datasets:[{label:'Convs.',data:cnt,backgroundColor:'#6366f1',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+  const cont=document.getElementById('tabla-doc-actividad');cont.innerHTML='';const rows=[];
+  for(const dDoc of (dS.docs||[])){const dd=dDoc.data();const asSn=await db.collection('asistencia').where('docenteEmail','==',dDoc.id).get();rows.push({nombre:dd.nombre,email:dDoc.id,nivel:dd.nivel,reg:asSn.size});}
+  rows.sort((a,b)=>b.reg-a.reg);const maxR=rows[0]?.reg||1;
+  rows.forEach(r=>{const pct=Math.round(r.reg/maxR*100);const nbc=r.nivel==='inicial'?'nb-i':r.nivel==='secundario'?'nb-s':'nb-p';cont.innerHTML+=`<div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl"><div class="w-32 flex-shrink-0"><p class="font-bold text-xs truncate">${r.nombre}</p><p class="text-[9px] text-slate-400">${r.email}</p></div><div class="flex-1 bg-slate-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full" style="width:${pct}%"></div></div><span class="text-xs font-black text-slate-600 w-16 text-right">${r.reg}</span>${r.nivel?`<span class="nb ${nbc}">${r.nivel}</span>`:''}</div>`;});
+  if(!rows.length)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin docentes.</p>';
+  const infCont=document.getElementById('lista-informes-rec');infCont.innerHTML='';const informes=[];
+  try{
+  const alSnap=await db.collection('alumnos').limit(15).get();
+  for(const al of alSnap.docs){const iS=await db.collection('alumnos').doc(al.id).collection('informes').orderBy('fecha','desc').limit(2).get();iS.forEach(inf=>informes.push({alumno:al.data().nombre,...inf.data()}));}
+  informes.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  informes.slice(0,8).forEach(inf=>{const d=new Date(inf.fecha).toLocaleDateString('es-AR');infCont.innerHTML+=`<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl text-xs"><span class="font-black text-slate-700 w-28 truncate">${inf.alumno}</span><span class="bg-blue-100 text-blue-800 font-black px-2 py-0.5 rounded-full">${inf.periodo}</span><span class="text-slate-500 flex-1 truncate">${inf.materia}</span><span class="text-slate-400">${d}</span></div>`;});
+  if(!informes.length)infCont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes.</p>';
+  }catch(e){infCont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Error cargando informes.</p>';}
+
+}
+
+// ══════════════════════
+// ALERTAS TEMPRANAS
+// ══════════════════════
+
+
+
+
+// ══════════════════════
+// EXCEL
+// ══════════════════════
+async function exportarExcel(){
+  const opcion=await elegirExportacion();if(!opcion)return;
+  const wb=XLSX.utils.book_new();
+  if(opcion==='padron'||opcion==='todo') await exportarPadron(wb);
+  if(opcion==='asistencia'||opcion==='todo') await exportarAsistencia(wb);
+  if(opcion==='notas'||opcion==='todo') await exportarNotas(wb);
+  if(opcion==='eoe'||opcion==='todo') await exportarEOE(wb);
+  const fname=`IosefCaro_${opcion}_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
+  XLSX.writeFile(wb,fname);
+  registrarLog('exportar',`Exportación Excel: ${opcion}`,'exportar');
+}
+function elegirExportacion(){
+  return new Promise(r=>{const c=prompt("¿Qué exportar?\n1. Padrón de alumnos\n2. Asistencias del mes\n3. Notas\n4. Informes EOE\n5. TODO\n\nIngresá el número:");const ops=['padron','asistencia','notas','eoe','todo'];r(ops[parseInt(c)-1]||null);});
+}
+async function exportarPadron(wb){
+  const snap=await db.collection('alumnos').get();
+  const rows=[['Nombre','Curso','Nivel','Familia','Grupo Sanguíneo','Obra Social','Autorización Imagen','Contacto Emergencia 1','Tel. Emergencia 1']];
+  snap.forEach(doc=>{const d=doc.data();const ce=d.contactosEmergencia?.[0];rows.push([d.nombre||'',d.curso||'',d.nivel||'',d.familiaNombre||'',d.grupoSanguineo||'',d.obraSocial||'',d.autorizacionImagen||'pendiente',ce?.nombre||'',ce?.tel||'']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Padrón');
+}
+async function exportarAsistencia(wb){
+  const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+  const snap=await db.collection('asistencia').get();
+  const rows=[['AlumnoID','Fecha','Estado','Materia','Docente']];
+  snap.forEach(doc=>{const d=doc.data();if(d.fecha?.startsWith(mes))rows.push([d.alumnoId||'',d.fecha||'',d.estado||'',d.materia||'',d.docenteEmail||'']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Asistencia');
+}
+async function exportarNotas(wb){
+  const alSnap=await db.collection('alumnos').get();
+  const rows=[['Alumno','Curso','Nivel','Materia','Período','Calificación']];
+  for(const al of alSnap.docs){const nS=await db.collection('alumnos').doc(al.id).collection('notas_v2').get();nS.forEach(doc=>{const n=doc.data();const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_'));const c=n.rite||(cols.length?cols.map(([,v])=>v).join(' / '):'');rows.push([al.data().nombre||'',al.data().curso||'',al.data().nivel||'',n.materia||'',n.periodo||'',c]);});}
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Notas');
+}
+async function exportarEOE(wb){
+  const snap=await db.collection('informes_eoe').orderBy('fecha','desc').get();
+  const rows=[['Alumno','Curso','Profesional','Tipo','Seguimiento','Adulto','Texto','Fecha']];
+  snap.forEach(doc=>{const d=doc.data();rows.push([d.alumnoNombre||'',d.curso||'',d.profesional||'',d.tipo||'',d.seguimiento||'',d.adulto||'',d.texto||'',new Date(d.fecha).toLocaleDateString('es-AR')]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'EOE');
+}
+
+// ══════════════════════
+// PERÍODOS
+// ══════════════════════
+async function cargarPeriodosAdmin(){
+  const snap=await db.collection('periodos').orderBy('orden','asc').get();
+  const cont=document.getElementById('lista-periodos-admin'),sel=document.getElementById('vis-periodo-sel');
+  cont.innerHTML='';sel.innerHTML='<option value="">Seleccionar período...</option>';
+  snap.forEach(doc=>{const p=doc.data(),act=p.activo===true;
+    cont.innerHTML+=`<div class="bg-white border-2 ${act?'border-emerald-400':'border-slate-100'} rounded-2xl p-4 text-center"><p class="font-black text-sm">${p.nombre}</p><p class="text-[9px] font-black text-slate-400 uppercase mb-2">${p.slug}</p><div class="mt-3 flex gap-2 justify-center"><button onclick="togglePeriodoActivo('${doc.id}',${!act})" class="text-[9px] font-black px-3 py-1.5 rounded-xl ${act?'bg-emerald-100 text-emerald-700':'bg-slate-100 text-slate-500'}">${act?'✓ ACTIVO':'Activar'}</button><button onclick="eliminarDoc('periodos','${doc.id}')" class="text-[9px] font-black px-2 py-1.5 rounded-xl bg-rose-50 text-rose-400">✕</button></div></div>`;
+    sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug}">${p.nombre}</option>`;
+  });
+}
+async function crearPeriodo(){
+  const nombre=document.getElementById('per-nombre').value.trim(),slug=document.getElementById('per-slug').value.trim().toUpperCase();
+  if(!nombre||!slug)return alert("Nombre y clave obligatorios.");
+  const snap=await db.collection('periodos').get();
+  await db.collection('periodos').add({nombre,slug,inicio:document.getElementById('per-inicio').value,fin:document.getElementById('per-fin').value,activo:false,orden:snap.size+1});
+  registrarLog('crear',`Período académico creado: ${nombre}`,'periodo');
+  alert("Período creado.");cargarPeriodosAdmin();
+}
+async function togglePeriodoActivo(id,nuevoEstado){
+  if(nuevoEstado){const s=await db.collection('periodos').get();const b=db.batch();s.forEach(d=>b.update(d.ref,{activo:false}));await b.commit();}
+  await db.collection('periodos').doc(id).update({activo:nuevoEstado});
+  registrarLog('editar',`Período ${nuevoEstado?'activado':'desactivado'}`,'periodo');
+  cargarPeriodosAdmin();
+}
+
+// ══════════════════════
+// VISIBILIDAD NOTAS
+// ══════════════════════
+async function cargarVisibilidadNotas(){
+  const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';
+  if(!pid)return;const cont=document.getElementById('tabla-visibilidad');cont.innerHTML='<p class="text-slate-400 text-sm">Cargando...</p>';
+  const visDoc=await db.collection('config_visibilidad').doc(pid).get();const visData=visDoc.exists?visDoc.data():{};
+  const cursosSnap=await db.collection('cursos').get();cont.innerHTML='';
+  cursosSnap.forEach(cDoc=>{const curso=cDoc.data().nombre,clave=`${slug}_${curso}`,esV=visData[clave]===true;
+    cont.innerHTML+=`<div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl"><div><p class="font-bold text-sm">${curso}</p><p class="text-[9px] text-slate-400 uppercase font-bold">Período: ${slug}</p></div><label class="toggle-vis"><input type="checkbox" ${esV?'checked':''} onchange="toggleVisCurso('${pid}','${clave}',this.checked)"><span class="slider"></span></label></div>`;
+  });
+  if(cursosSnap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin cursos.</p>';
+}
+async function toggleVisCurso(pid,clave,val){await db.collection('config_visibilidad').doc(pid).set({[clave]:val},{merge:true});}
+async function publicarTodoElPeriodo(){
+  const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';if(!pid)return alert("Seleccioná un período.");
+  const snap=await db.collection('cursos').get();const data={};snap.forEach(d=>{data[`${slug}_${d.data().nombre}`]=true;});
+  await db.collection('config_visibilidad').doc(pid).set(data,{merge:true});
+  registrarLog('editar',`Notas publicadas para período ${slug}`,'visibilidad');
+  alert("Publicado.");cargarVisibilidadNotas();
+}
+async function ocultarTodoElPeriodo(){
+  const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';if(!pid)return alert("Seleccioná un período.");
+  const snap=await db.collection('cursos').get();const data={};snap.forEach(d=>{data[`${slug}_${d.data().nombre}`]=false;});
+  await db.collection('config_visibilidad').doc(pid).set(data,{merge:true});alert("Ocultado.");cargarVisibilidadNotas();
+}
+
+// ══════════════════════
+// CSV
+// ══════════════════════
+async function procesarCSV(){
+  const file=document.getElementById('csv-file').files[0];if(!file)return alert("Carga un csv.");
+  const r=new FileReader();r.onload=async(e)=>{const lines=e.target.result.split(/\r?\n/);let logs=0;
+    for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[alu,nivel,cur,fam]=cols;const emails=cols.slice(4).filter(em=>em&&em.includes('@'));if(alu&&emails.length>0){await guardarAlumnoData(alu,nivel||'primario',cur,fam,emails);logs++;document.getElementById('csv-status').innerText=`Procesando: ${logs}...`;}}
+    registrarLog('crear',`CSV importado: ${logs} alumnos`,'importar');alert(`${logs} alumnos importados.`);refrescarTodo();};r.readAsText(file);
+}
+async function procesarCSVDocentes(){
+  const file=document.getElementById('csv-doc-file').files[0];if(!file)return alert("Carga un csv.");
+  const r=new FileReader();r.onload=async(e)=>{const lines=e.target.result.split(/\r?\n/);let logs=0;
+    for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[nombre,email,nivel,matsR,cursR]=cols;if(!nombre||!email||!email.includes('@'))continue;const materias=(matsR||'').split('|').map(m=>m.trim()).filter(Boolean);const cursos=(cursR||'').split('|').map(c=>c.trim()).filter(Boolean);await db.collection('usuarios').doc(email.toLowerCase()).set({nombre,rol:'docente',nivel:nivel||'primario',materias,cursos},{merge:true});logs++;}
+    registrarLog('crear',`CSV importado: ${logs} docentes`,'importar');alert(`${logs} docentes importados.`);cargarDocentes();};r.readAsText(file);
+}
+async function guardarAlumnoData(alu,nivel,cur,fam,emails){
+  const cn=(cur||'').toUpperCase(),nn=(nivel||'primario').toLowerCase();
+  for(const mail of emails){const m=mail.toLowerCase().trim();await db.collection('usuarios').doc(m).set({nombre:fam,rol:'familia',nivel:nn,hijos:firebase.firestore.FieldValue.arrayUnion({nombre:alu,curso:cn,nivel:nn})},{merge:true});}
+  const aId=`${alu}_${cn}`.replace(/\s+/g,'_');await db.collection('alumnos').doc(aId).set({nombre:alu,curso:cn,nivel:nn,familiaNombre:fam},{merge:true});
+}
+async function cargaManualAlumno(){
+  const alu=document.getElementById('manual-alu').value.trim(),nivel=document.getElementById('manual-nivel').value,cur=document.getElementById('manual-cur').value.trim(),fam=document.getElementById('manual-fam').value.trim();
+  const m1=document.getElementById('manual-mail1').value.trim(),m2=document.getElementById('manual-mail2').value.trim(),m3=document.getElementById('manual-mail3').value.trim();
+  if(!alu||!nivel||!cur||!fam||!m1)return alert("Faltan datos obligatorios.");
+  try{await guardarAlumnoData(alu,nivel,cur,fam,[m1,m2,m3].filter(e=>e&&e.includes('@')));registrarLog('crear',`Alumno cargado manualmente: ${alu}`,'alumno');alert("Alumno cargado.");['manual-alu','manual-cur','manual-fam','manual-mail1','manual-mail2','manual-mail3'].forEach(id=>document.getElementById(id).value='');document.getElementById('manual-nivel').value='';refrescarTodo();}catch(e){alert("Error: "+e.message);}
+}
+
+// ══════════════════════
+// STAFF
+// ══════════════════════
+async function crearStaff(){
+  const n=document.getElementById('staff-nombre').value,m=document.getElementById('staff-email').value.toLowerCase().trim(),p=document.getElementById('staff-pass').value,r=document.getElementById('staff-rol').value;
+  const niveles=Array.from(document.querySelectorAll('.staff-nivel-check:checked')).map(c=>c.value);
+  if(!n||!m||!p)return alert("Completa todos los campos.");
+  await db.collection('usuarios').doc(m).set({nombre:n,pass:p,rol:r,niveles,permisos:[]});
+  registrarLog('crear',`Usuario ${r} creado: ${n} (${m})`,'staff');
+  alert("Usuario guardado.");cargarStaff();
+}
+
+// ══════════════════════
+// MATERIAS/CURSOS
+// ══════════════════════
+async function crearMaestro(col,inpId){const val=document.getElementById(inpId).value.trim();if(!val)return;await db.collection(col).add({nombre:val});document.getElementById(inpId).value='';registrarLog('crear',`${col} creado: ${val}`,col);refrescarTodo();}
+async function crearCurso(){const nombre=document.getElementById('new-curso').value.trim(),nivel=document.getElementById('new-curso-nivel').value;if(!nombre)return;await db.collection('cursos').add({nombre:nombre.toUpperCase(),nivel});document.getElementById('new-curso').value='';registrarLog('crear',`Curso creado: ${nombre} (${nivel})`,'curso');refrescarTodo();}
+
+// ══════════════════════
+// DOCENTES
+// ══════════════════════
+async function cargarSelectsDocente(){
+  const nivel=document.getElementById('doc-nivel').value,sM=document.getElementById('doc-materia'),sC=document.getElementById('doc-curso');
+  sM.innerHTML='<option value="">Seleccionar Materia</option>';sC.innerHTML='<option value="">Seleccionar Curso</option>';
+  allMats.forEach(m=>sM.innerHTML+=`<option value="${m.nombre}">${m.nombre}</option>`);
+  allCursos.filter(c=>!nivel||c.nivel===nivel).forEach(c=>sC.innerHTML+=`<option value="${c.nombre}">${c.nombre}</option>`);
+}
+function agregarTag(tipo){const sel=document.getElementById('doc-'+tipo),val=sel.value;if(!val)return;if(tipo==='materia'){if(!matSel.includes(val))matSel.push(val);}else{if(!curSel.includes(val))curSel.push(val);}renderTags();}
+function quitarTag(tipo,val){if(tipo==='materia')matSel=matSel.filter(m=>m!==val);else curSel=curSel.filter(c=>c!==val);renderTags();}
+function renderTags(){
+  document.getElementById('tags-materias').innerHTML=matSel.map(m=>`<span class="tag-doc">${m} <i onclick="quitarTag('materia','${m}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`).join('');
+  document.getElementById('tags-cursos').innerHTML=curSel.map(c=>`<span class="tag-doc">${c} <i onclick="quitarTag('curso','${c}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`).join('');
+}
+async function crearDocente(){
+  const n=document.getElementById('doc-nombre').value,e=document.getElementById('doc-email').value.toLowerCase().trim(),nivel=document.getElementById('doc-nivel').value;
+  if(!n||!e||!nivel||!matSel.length||!curSel.length)return alert("Completá todos los campos.");
+  await db.collection('usuarios').doc(e).set({nombre:n,rol:'docente',nivel,materias:matSel,cursos:curSel});
+  registrarLog('crear',`Docente creado: ${n} (${e})`,'docente');
+  alert("Docente registrado.");document.getElementById('doc-nombre').value='';document.getElementById('doc-email').value='';document.getElementById('doc-nivel').value='';matSel=[];curSel=[];renderTags();cargarDocentes();
+}
+
+// ══════════════════════
+// CARGAR LISTAS
+// ══════════════════════
+async function cargarMaestros(col,contId){
+  const snap=await db.collection(col).orderBy('nombre','asc').get(),cont=document.getElementById(contId);cont.innerHTML='';
+  if(col==='materias')allMats=[];if(col==='cursos')allCursos=[];
+  snap.forEach(doc=>{const d=doc.data(),name=d.nombre;if(col==='materias')allMats.push({id:doc.id,nombre:name});if(col==='cursos')allCursos.push({id:doc.id,nombre:name,nivel:d.nivel});
+    const nbc=d.nivel==='inicial'?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';const nb=d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:'';
+    cont.innerHTML+=`<span class="bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border">${name}${nb} <i onclick="eliminarDoc('${col}','${doc.id}')" class="fas fa-times text-slate-300 hover:text-red-500 cursor-pointer"></i></span>`;
+  });cargarSelectsDocente();
+}
+
+async function cargarStaff(){
+  const rolesQuery=['admin','director','comunicacion','secretaria_inicial','secretaria_primario','secretaria_secundario','eoe'];
+  const snap=await db.collection('usuarios').where('rol','in',rolesQuery).get();
+  const cont=document.getElementById('lista-staff');cont.innerHTML='';
+  const rolColor={admin:'rol-admin',director:'rol-dir',comunicacion:'rol-com',secretaria_inicial:'rol-sec',secretaria_primario:'rol-sec',secretaria_secundario:'rol-sec',eoe:'rol-eoe'};
+  snap.forEach(doc=>{
+    const u=doc.data(),ns=u.niveles?u.niveles.join(', '):'',perms=u.permisos?u.permisos.join(', '):'';
+    const rc=rolColor[u.rol]||'rol-sec';
+    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
+      <span>
+        <b>${u.nombre}</b>
+        <span class="rol-chip ${rc} ml-1">${u.rol}</span>
+        ${ns?`<br><small class="text-slate-400 text-[9px]">Niveles: ${ns}</small>`:''}
+        ${perms?`<br><small class="text-violet-500 text-[9px]">Permisos: ${perms}</small>`:''}
+        <br><small class="text-slate-300 text-[9px]">${doc.id}</small>
+      </span>
+      <button onclick="eliminarStaff('${doc.id}','${u.nombre}')" class="text-rose-200 hover:text-rose-600"><i class="fas fa-trash"></i></button>
+    </div>`;
+  });
+}
+
+async function cargarDocentes(){
+  const snap=await db.collection('usuarios').where('rol','==','docente').get(),cont=document.getElementById('lista-docentes');cont.innerHTML='';
+  snap.forEach(doc=>{const d=doc.data(),mats=d.materias?d.materias.join(', '):(d.materia||'---'),curs=d.cursos?d.cursos.join(', '):(d.curso||'---');const nbc=d.nivel==='inicial'?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';
+    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm"><span><b>${d.nombre}</b>${d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:''}<br><small class="text-blue-600 font-bold uppercase text-[9px]">MATS: ${mats}</small><br><small class="text-emerald-600 font-bold uppercase text-[9px]">CURSOS: ${curs}</small><br><small class="text-slate-400 text-[9px]">${doc.id}</small></span><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-user-minus"></i></button></div>`;
+  });
+}
+
+async function cargarAlumnosFiltrados(){
+  const nivel=document.getElementById('filter-alu-nivel').value;let q=db.collection('alumnos');if(nivel)q=q.where('nivel','==',nivel);
+  const snap=await q.get(),cont=document.getElementById('lista-alumnos');cont.innerHTML='';
+  document.getElementById('count-alumnos').innerText=snap.size+' Alumnos';
+  snap.forEach(doc=>{
+    const a=doc.data();const nbc=a.nivel==='inicial'?'nb-i':a.nivel==='secundario'?'nb-s':'nb-p';
+    const autImg=a.autorizacionImagen;
+    const imgBadge=autImg==='autoriza'?'<span class="text-[8px] font-black text-emerald-600">📷 Autoriza</span>':autImg==='no_autoriza'?'<span class="text-[8px] font-black text-rose-500">📵 No autoriza</span>':'<span class="text-[8px] font-black text-amber-500">⏳ Pendiente</span>';
+    const tieneCE=a.contactosEmergencia?.length>0;
+    const aluId = doc.id;
+    const aluNom = a.nombre.replace(/'/g, "\'");
+    cont.innerHTML += `
+      <div class="bg-white p-3 rounded-2xl border shadow-sm hover:border-blue-300 hover:shadow-md transition-all" data-search="${a.nombre} ${a.curso}">
+        <div class="flex items-center justify-between mb-2">
+          <input type="checkbox" class="alu-checkbox w-4 h-4 accent-rose-600 cursor-pointer flex-shrink-0"
+            value="${aluId}" onclick="event.stopPropagation();actualizarContAlu()">
+          <button onclick="event.stopPropagation();eliminarAlumnoConf('${aluId}','${aluNom}')"
+            class="text-rose-200 hover:text-rose-500 transition-colors text-xs" title="Eliminar">
+            <i class="fas fa-times-circle"></i>
+          </button>
+        </div>
+        <div onclick="abrirModalAlumno('${aluId}','${aluNom}')" class="cursor-pointer text-center">
+          <p class="font-bold text-sm">${a.nombre}</p>
+          <p class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full inline-block mt-1 font-black">${a.curso}</p>
+          ${a.nivel ? `<p class="nb ${nbc} inline-block mt-1">${a.nivel}</p>` : ''}
+          <div class="mt-2 flex justify-center gap-1 flex-wrap">
+            ${imgBadge}
+            ${tieneCE ? '<span class="text-[8px] font-black text-blue-500">📞</span>' : ''}
+          </div>
+          <p class="text-[8px] text-blue-400 font-bold mt-1">Editar</p>
+        </div>
+      </div>`;
+  });
+}
+
+async function cargarFamilias(){
+  const snap=await db.collection('usuarios').where('rol','==','familia').get(),cont=document.getElementById('lista-familias');cont.innerHTML='';
+  snap.forEach(doc=>{const data=doc.data();const nbc=data.nivel==='inicial'?'nb-i':data.nivel==='secundario'?'nb-s':'nb-p';
+    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm relative" data-search="${data.nombre} ${doc.id}"><div class="absolute top-4 right-4"><input type="checkbox" value="${doc.id}" class="fam-checkbox w-5 h-5 cursor-pointer accent-rose-600" onchange="actualizarContadorSeleccion()"></div><p class="font-bold text-sm pr-8">${data.nombre}</p><p class="text-[10px] text-slate-400 truncate mb-1">${doc.id}</p>${data.nivel?`<span class="nb ${nbc}">${data.nivel}</span>`:''}<div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-50"><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar</button></div></div>`;
+  });
+}
+
+function actualizarContadorSeleccion(){const sel=document.querySelectorAll('.fam-checkbox:checked').length;document.getElementById('count-seleccion').innerText=sel;document.getElementById('btn-eliminar-masivo').classList.toggle('hidden',sel===0);}
+function toggleSeleccionarTodo(master){document.querySelectorAll('#lista-familias div:not([style*="display: none"]) .fam-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContadorSeleccion();}
+async function eliminarFamiliasSeleccionadas(){
+  const sel=Array.from(document.querySelectorAll('.fam-checkbox:checked')).map(cb=>cb.value);if(!sel.length)return;
+  if(confirm(`¿Eliminar ${sel.length} familias?`)){const b=db.batch();sel.forEach(id=>b.delete(db.collection('usuarios').doc(id)));await b.commit();registrarLog('eliminar',`${sel.length} familias eliminadas`,'eliminar');alert(`${sel.length} eliminadas.`);refrescarTodo();}
+}
+
+// ══════════════════════
+// UTILS
+// ══════════════════════
+function switchTab(t){
+  document.querySelectorAll('.tab-content').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+t)?.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-slate-900','text-white');b.classList.add('text-slate-500');});
+  event.currentTarget?.classList.add('bg-slate-900','text-white');
+  if(t==='stats')cargarEstadisticas();
+  if(t==='periodos')cargarPeriodosAdmin();
+  if(t==='lecturas')cargarLecturas();
+  if(t==='iosi')cargarIosi();
+
+  if(t==='log')cargarLog();
+  if(t==='ciclo')cargarCiclos();
+}
+async function eliminarAlumnoConf(id,nombre){
+  if(!confirm(`¿Eliminar al alumno "${nombre}"?
+
+Esto eliminará su ficha. Las notas y asistencias históricas se conservan.`))return;
+  await db.collection('alumnos').doc(id).delete();
+  registrarLog('eliminar',`Alumno eliminado: ${nombre}`,'alumno');
+  cargarAlumnosFiltrados();
+}
+async function eliminarDoc(col,id){
+  if(confirm("¿Seguro?")){
+    const docRef=db.collection(col).doc(id);
+    await docRef.delete();
+    registrarLog('eliminar',`Documento eliminado de ${col}: ${id}`,'eliminar');
+    refrescarTodo();
+  }
+}
+let staffEditandoId=null;
+async function abrirEditarStaff(id){
+  staffEditandoId=id;
+  const doc=await db.collection('usuarios').doc(id).get();if(!doc.exists)return;
+  const u=doc.data();
+  document.getElementById('staff-edit-email').textContent=id;
+  document.getElementById('staff-edit-nombre').value=u.nombre||'';
+  document.getElementById('staff-edit-pass').value='';
+  document.getElementById('staff-edit-rol').value=u.rol||'';
+  document.querySelectorAll('.staff-edit-nivel-check').forEach(cb=>cb.checked=(u.niveles||[]).includes(cb.value));
+  document.querySelectorAll('.perm-edit-check').forEach(cb=>cb.checked=(u.permisos||[]).includes(cb.value));
+  document.getElementById('modal-staff').style.display='flex';
+}
+async function guardarEdicionStaff(){
+  if(!staffEditandoId)return;
+  const nombre=document.getElementById('staff-edit-nombre').value.trim();
+  const pass=document.getElementById('staff-edit-pass').value.trim();
+  const rol=document.getElementById('staff-edit-rol').value;
+  const niveles=Array.from(document.querySelectorAll('.staff-edit-nivel-check:checked')).map(c=>c.value);
+  const permisos=[];  // permisos simplificados — acceso por rol
+  const data={nombre,rol,niveles,permisos};if(pass)data.pass=pass;
+  await db.collection('usuarios').doc(staffEditandoId).update(data);
+  registrarLog('editar',`Staff editado: ${nombre} (${staffEditandoId})`,'staff');
+  alert('✅ Usuario actualizado.');cerrarModalStaff();cargarStaff();
+}
+function cerrarModalStaff(){document.getElementById('modal-staff').style.display='none';staffEditandoId=null;}
+document.getElementById('modal-staff').addEventListener('click',function(e){if(e.target===this)cerrarModalStaff();});
+
+async function eliminarStaff(id,nombre){
+  if(confirm(`¿Eliminar usuario ${nombre}?`)){
+    await db.collection('usuarios').doc(id).delete();
+    registrarLog('eliminar',`Usuario staff eliminado: ${nombre} (${id})`,'eliminar');
+    cargarStaff();
+  }
+}
+function actualizarContAlu(){const sel=document.querySelectorAll('.alu-checkbox:checked').length;document.getElementById('count-alu-sel').textContent=sel;document.getElementById('btn-eliminar-masivo-alu').classList.toggle('hidden',sel===0);}
+function toggleSeleccionarTodoAlumnos(master){document.querySelectorAll('.alu-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContAlu();}
+async function eliminarAlumnosSeleccionados(){
+  const sel=Array.from(document.querySelectorAll('.alu-checkbox:checked')).map(cb=>cb.value);if(!sel.length)return;
+  if(!confirm(`¿Eliminar ${sel.length} alumno/s seleccionado/s?
+
+Sus fichas serán eliminadas. Las notas históricas se conservan.`))return;
+  const batch=db.batch();sel.forEach(id=>batch.delete(db.collection('alumnos').doc(id)));
+  await batch.commit();
+  registrarLog('eliminar',`${sel.length} alumnos eliminados en bloque`,'alumno');
+  document.getElementById('btn-eliminar-masivo-alu').classList.add('hidden');
+  cargarAlumnosFiltrados();
+}
+function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
+function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
+
+// ══════════════════════
+// LECTURAS DE COMUNICADOS
+// ══════════════════════
+async function cargarLecturas(){
+  const snap=await db.collection('comunicados').orderBy('fecha','desc').get();
+  const sel=document.getElementById('lec-sel-com');
+  sel.innerHTML='<option value="">Seleccioná...</option>';
+  let totalVistas=0;let totalFamilias=0;
+  try{const fs=await db.collection('usuarios').where('rol','==','familia').get();totalFamilias=fs.size;}catch(_){}
+  let sumPct=0,cnt=0;
+  snap.forEach(doc=>{
+    const d=doc.data();
+    const v=d.vistas||0;totalVistas+=v;
+    const pct=totalFamilias>0?Math.round(v/totalFamilias*100):0;
+    sumPct+=pct;cnt++;
+    sel.innerHTML+=`<option value="${doc.id}" data-titulo="${(d.titulo||'Sin título').replace(/"/g,'')}" data-vistas="${v}" data-familias="${totalFamilias}">${d.titulo||'Sin título'} (${v} lecturas)</option>`;
+  });
+  document.getElementById('lec-total-com').textContent=snap.size;
+  document.getElementById('lec-total-vistas').textContent=totalVistas;
+  document.getElementById('lec-pct-medio').textContent=cnt>0?Math.round(sumPct/cnt):0;
+  // Ranking familias
+  await cargarRankingFamilias();
+}
+async function cargarDetalleLectura(){
+  const sel=document.getElementById('lec-sel-com');
+  const cid=sel.value;
+  if(!cid){document.getElementById('lec-barra-sect').classList.add('hidden');document.getElementById('lec-tabs-sect').classList.add('hidden');document.getElementById('lec-empty').style.display='block';return;}
+  document.getElementById('lec-empty').style.display='none';
+  const opt=sel.options[sel.selectedIndex];
+  const titulo=opt.dataset.titulo||'Comunicado';
+  const totalFam=parseInt(opt.dataset.familias||0);
+  // Leer quién leyó desde subcolección lecturas o campo leido_por
+  let leyeron=[],noLeyeron=[];
+  try{
+    const lSnap=await db.collection('comunicados').doc(cid).collection('lecturas').get();
+    lSnap.forEach(d=>{leyeron.push({email:d.id,...d.data()});});
+  }catch(_){}
+  // Intentar también campo leido_por en el doc
+  try{
+    const comDoc=await db.collection('comunicados').doc(cid).get();
+    const arr=comDoc.data()?.leido_por||[];
+    arr.forEach(email=>{if(!leyeron.find(l=>l.email===email))leyeron.push({email,fecha:null});});
+  }catch(_){}
+  const pct=totalFam>0?Math.round(leyeron.length/totalFam*100):leyeron.length>0?100:0;
+  document.getElementById('lec-titulo-com').textContent=titulo;
+  document.getElementById('lec-pct-com').textContent=pct+'%';
+  document.getElementById('lec-barra-fill').style.width=pct+'%';
+  document.getElementById('lec-leido-count').textContent=leyeron.length+' leyeron';
+  const sinLeer=Math.max(0,totalFam-leyeron.length);
+  document.getElementById('lec-no-leido-count').textContent=sinLeer+' sin leer';
+  document.getElementById('lec-barra-sect').classList.remove('hidden');
+  // Familias que no leyeron
+  try{
+    const fSnap=await db.collection('usuarios').where('rol','==','familia').get();
+    const emailsLey=new Set(leyeron.map(l=>l.email));
+    noLeyeron=[];fSnap.forEach(d=>{if(!emailsLey.has(d.id))noLeyeron.push({email:d.id,nombre:d.data().nombre||d.id});});
+  }catch(_){}
+  // Renderizar quién leyó
+  const listaL=document.getElementById('lec-lista-leyo');
+  if(leyeron.length){
+    listaL.innerHTML=leyeron.map(l=>{
+      const f=l.fecha?new Date(l.fecha.seconds?l.fecha.seconds*1000:l.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+      return `<div class="flex items-center gap-3 p-3 bg-emerald-50 rounded-2xl"><div class="w-8 h-8 bg-emerald-200 rounded-xl flex items-center justify-center text-xs">✅</div><div class="flex-1"><p class="font-bold text-xs text-slate-800">${l.nombre||l.email}</p><p class="text-[9px] text-slate-400">${l.email}</p></div><span class="text-[9px] text-slate-400 font-bold">${f}</span></div>`;
+    }).join('');
+  }else{listaL.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Nadie leyó este comunicado aún.</p>';}
+  const listaN=document.getElementById('lec-lista-no');
+  if(noLeyeron.length){
+    listaN.innerHTML=noLeyeron.slice(0,30).map(l=>`<div class="flex items-center gap-3 p-3 bg-rose-50 rounded-2xl"><div class="w-8 h-8 bg-rose-200 rounded-xl flex items-center justify-center text-xs">❌</div><div class="flex-1"><p class="font-bold text-xs text-slate-800">${l.nombre||l.email}</p><p class="text-[9px] text-slate-400">${l.email}</p></div></div>`).join('');
+    if(noLeyeron.length>30)listaN.innerHTML+=`<p class="text-[9px] text-slate-400 text-center mt-2">...y ${noLeyeron.length-30} más</p>`;
+  }else{listaN.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Todas las familias leyeron este comunicado. 🎉</p>';}
+  document.getElementById('lec-tabs-sect').classList.remove('hidden');
+  mostrarTabLectura('leyo');
+}
+function mostrarTabLectura(tab){
+  document.getElementById('lec-lista-leyo').classList.toggle('hidden',tab!=='leyo');
+  document.getElementById('lec-lista-no').classList.toggle('hidden',tab!=='no_leyo');
+  document.getElementById('tab-btn-leyo').className=`px-4 py-2 rounded-xl font-black text-xs ${tab==='leyo'?'bg-emerald-600 text-white':'bg-slate-100 text-slate-600'}`;
+  document.getElementById('tab-btn-no').className=`px-4 py-2 rounded-xl font-black text-xs ${tab==='no_leyo'?'bg-rose-600 text-white':'bg-slate-100 text-slate-600'}`;
+}
+async function cargarRankingFamilias(){
+  try{
+    const comSnap=await db.collection('comunicados').limit(20).get();
+    const conteo={};
+    for(const cDoc of comSnap.docs){
+      try{
+        const lSnap=await db.collection('comunicados').doc(cDoc.id).collection('lecturas').get();
+        lSnap.forEach(l=>{conteo[l.id]=(conteo[l.id]||0)+1;});
+        const leido_por=cDoc.data().leido_por||[];
+        leido_por.forEach(email=>{conteo[email]=(conteo[email]||0)+1;});
+      }catch(_){}
+    }
+    const sorted=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const cont=document.getElementById('lec-ranking-familias');
+    if(!sorted.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Aún no hay datos de lectura.</p>';return;}
+    const max=sorted[0][1];
+    cont.innerHTML=sorted.map(([email,n],i)=>{
+      const pct=Math.round(n/max*100);
+      return `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl"><span class="text-xs font-black text-slate-400 w-5">${i+1}</span><div class="flex-1"><p class="font-bold text-xs truncate">${email}</p><div class="bg-slate-200 rounded-full h-1.5 mt-1"><div class="bg-indigo-500 h-1.5 rounded-full" style="width:${pct}%"></div></div></div><span class="text-xs font-black text-indigo-600 ml-2">${n}</span></div>`;
+    }).join('');
+  }catch(e){document.getElementById('lec-ranking-familias').innerHTML='<p class="text-slate-400 text-sm text-center py-4">Error cargando ranking.</p>';}
+}
+
+// ══════════════════════
+// IOSI IA
+// ══════════════════════
+let iosiContexto='';
+
+async function cargarIosi(){
+  // Cargar docs de base de conocimiento
+  try{
+    const snap=await db.collection('iosi_conocimiento').orderBy('fecha','desc').get();
+    const cont=document.getElementById('iosi-docs-lista');
+    document.getElementById('iosi-doc-count').textContent=snap.size+' documentos';
+    if(!snap.size){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">No hay documentos cargados aún.</p>';return;}
+    cont.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const fecha=d.fecha?new Date(d.fecha.seconds?d.fecha.seconds*1000:d.fecha).toLocaleDateString('es-AR'):'—';
+      cont.innerHTML+=`<div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100"><div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-lg flex-shrink-0">${d.categoria==='reglamento'?'📋':d.categoria==='circular'?'📢':d.categoria==='procedimiento'?'⚙️':d.categoria==='calendario'?'📅':'📄'}</div><div class="flex-1"><p class="font-black text-sm">${d.titulo||'Sin título'}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[8px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">${d.categoria||'otro'}</span><span class="text-[8px] text-slate-400 font-bold">${fecha}</span><span class="text-[8px] text-slate-400">${(d.texto||'').length} caracteres</span></div></div><button onclick="eliminarDocIosi('${doc.id}')" class="text-rose-300 hover:text-rose-600 text-sm"><i class="fas fa-trash-alt"></i></button></div>`;
+    });
+    // Armar contexto para el chat
+    let ctx='';snap.forEach(doc=>{const d=doc.data();ctx+=`\n## ${d.titulo}\n${d.texto}\n`;});
+    iosiContexto=ctx;
+  }catch(e){document.getElementById('iosi-docs-lista').innerHTML='<p class="text-slate-400 text-sm text-center py-4">Error cargando documentos.</p>';}
+  // Cargar config
+  try{
+    const cfg=await db.collection('iosi_config').doc('principal').get();
+    if(cfg.exists){
+      document.getElementById('iosi-personalidad').value=cfg.data().personalidad||'';
+      document.getElementById('iosi-fallback').value=cfg.data().fallback||'';
+    }
+  }catch(_){}
+}
+
+async function guardarDocIosi(){
+  const titulo=document.getElementById('iosi-doc-titulo').value.trim();
+  const texto=document.getElementById('iosi-doc-texto').value.trim();
+  const categoria=document.getElementById('iosi-doc-cat').va
