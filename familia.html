@@ -595,7 +595,7 @@ async function cargarMuro(filtro='todos'){
     let imgs=[];
     if(Array.isArray(p.fotos)&&p.fotos.length>0) imgs=p.fotos;
     else if(p.adjuntos?.img) imgs=[p.adjuntos.img];
-    else if(p.link) imgs=[p.link];
+    else if(p.link&&(p.link.match(/\.(jpg|jpeg|png|gif|webp)/i)||p.link.includes('firebasestorage')||p.link.includes('cloudinary')||p.link.includes('googleusercontent'))) imgs=[p.link];
     const mediaHtml=buildCarrousel(imgs,id);
     container.innerHTML+=`<div class="post-card ${isRead?'leida':''} ${borde}">
       ${mediaHtml}
@@ -607,7 +607,7 @@ async function cargarMuro(filtro='todos'){
         <h2 class="text-lg font-black text-slate-900 leading-tight mb-2" onclick="abrirNoticia('${id}')">${p.titulo}</h2>
         <p class="text-slate-500 text-sm line-clamp-2 mb-4" onclick="abrirNoticia('${id}')">${p.texto}</p>
         <div class="flex items-center justify-between">
-          <button onclick="toggleLike('${id}',${yaDioLike})" class="like-btn ${yaDioLike?'liked':''}" id="like-btn-${id}">
+          <button onclick="toggleLike('${id}')" class="like-btn ${yaDioLike?'liked':''}" id="like-btn-${id}">
             <i class="${yaDioLike?'fas':'far'} fa-heart"></i>
             <span id="like-count-${id}">${totalLikes}</span>
           </button>
@@ -619,12 +619,22 @@ async function cargarMuro(filtro='todos'){
   if(!container.innerHTML.trim())container.innerHTML='<p class="text-slate-400 text-sm text-center py-8">Sin publicaciones.</p>';
 }
 
-async function toggleLike(id,yaDioLike){
+async function toggleLike(id){
   event.stopPropagation();
-  const btn=document.getElementById('like-btn-'+id),cntEl=document.getElementById('like-count-'+id);
+  const btn=document.getElementById('like-btn-'+id);
+  if(!btn) return;
+  const yaDioLike=btn.classList.contains('liked'); // leer estado real del DOM
+  const cntEl=document.getElementById('like-count-'+id);
   const ref=db.collection('comunicados').doc(id).collection('likes').doc(userEmail);
-  if(yaDioLike){await ref.delete();btn.classList.remove('liked');btn.querySelector('i').className='far fa-heart';cntEl.textContent=Math.max(0,parseInt(cntEl.textContent)-1);}
-  else{await ref.set({nombre:userData.nombre,fecha:new Date().toISOString()});btn.classList.add('liked');btn.querySelector('i').className='fas fa-heart';cntEl.textContent=parseInt(cntEl.textContent)+1;}
+  if(yaDioLike){
+    await ref.delete();
+    btn.classList.remove('liked');btn.querySelector('i').className='far fa-heart';
+    cntEl.textContent=Math.max(0,parseInt(cntEl.textContent)-1);
+  }else{
+    await ref.set({nombre:userData.nombre,fecha:new Date().toISOString()});
+    btn.classList.add('liked');btn.querySelector('i').className='fas fa-heart';
+    cntEl.textContent=parseInt(cntEl.textContent)+1;
+  }
   await db.collection('comunicados').doc(id).update({totalLikes:firebase.firestore.FieldValue.increment(yaDioLike?-1:1)});
 }
 
@@ -635,7 +645,7 @@ async function abrirNoticia(id){
   let imgs=[];
   if(Array.isArray(p.fotos)&&p.fotos.length>0) imgs=p.fotos;
   else if(p.adjuntos?.img) imgs=[p.adjuntos.img];
-  else if(p.link) imgs=[p.link];
+  else if(p.link&&(p.link.match(/\.(jpg|jpeg|png|gif|webp)/i)||p.link.includes('firebasestorage')||p.link.includes('cloudinary')||p.link.includes('googleusercontent'))) imgs=[p.link];
   if(imgs.length>0) mediaHtml+=buildCarrousel(imgs,'modal')+'<div style="height:8px"></div>';
   if(p.adjuntos?.video){
     const vUrl=p.adjuntos.video;
@@ -1348,3 +1358,4 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
 </script>
 </body>
 </html>
+
