@@ -41,11 +41,42 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 .post-card{background:white;border-radius:1.75rem;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .15s}
 .post-card:active{transform:scale(.985)}
 .post-card.leida{opacity:.6}
-.post-img{width:100%;height:180px;object-fit:cover;display:block}
+.post-img{width:100%;max-height:320px;object-fit:contain;display:block;background:#f8fafc}
 .like-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:800;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all .2s;color:#64748b}
 .like-btn.liked{background:#fce7f3;border-color:#f9a8d4;color:#be185d}
 @keyframes heartPop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
 .like-btn.liked i{animation:heartPop .3s ease}
+
+/* Carrousel */
+.carrousel-wrap{position:relative;overflow:hidden;background:#0f172a}
+.carrousel-track{display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.carrousel-slide{flex:0 0 100%;display:flex;align-items:center;justify-content:center;min-height:180px;max-height:340px}
+.carrousel-slide img{width:100%;max-height:340px;object-fit:contain;display:block;cursor:pointer}
+.carr-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85);border:none;width:36px;height:36px;border-radius:50%;font-size:14px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.carr-btn-l{left:8px}.carr-btn-r{right:8px}
+.carr-dots{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.carr-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:background .2s}
+.carr-dot.active{background:white}
+
+/* Modal imagen ampliada */
+#img-zoom-modal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;padding:16px}
+#img-zoom-modal.open{display:flex}
+#img-zoom-el{max-width:100%;max-height:88vh;object-fit:contain;border-radius:8px}
+
+/* Boletín bimestral */
+.bim-tab-btn{flex:1;padding:8px 4px;font-size:10px;font-weight:800;text-transform:uppercase;border-radius:12px;border:none;background:transparent;color:#94a3b8;cursor:pointer;transition:all .2s}
+.bim-tab-btn.active{background:#0f172a;color:white}
+.bim-materia-row{background:white;border:1px solid #f1f5f9;border-radius:1rem;padding:.9rem 1.1rem;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.bim-ind-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc}
+.bim-ind-row:last-child{border-bottom:none}
+.bim-x{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}
+.bim-x.si{background:#d1fae5;color:#065f46}
+.bim-x.no{background:#f1f5f9;color:#cbd5e1}
+.bim-calif{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-weight:800;font-size:13px}
+.bim-calif.alto{background:#d1fae5;color:#065f46}
+.bim-calif.medio{background:#fef3c7;color:#92400e}
+.bim-calif.bajo{background:#fee2e2;color:#991b1b}
+.bim-calif.def{background:#f1f5f9;color:#64748b}
 
 /* Widget Hoy */
 .hoy-card{border-radius:1.5rem;padding:1rem 1.2rem;margin-bottom:.6rem;display:flex;align-items:center;gap:12px;cursor:default}
@@ -151,40 +182,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
     <div id="container-agenda" class="space-y-3"></div>
   </section>
 
-  <!-- ACADÉMICO -->
-  <section id="tab-academico" class="tab-content space-y-5">
-    <div class="flex justify-between items-end">
-      <h3 class="font-black text-2xl tracking-tight">Desempeño</h3>
-      <div class="flex gap-2">
-        <button onclick="switchTab('justificaciones')" class="bg-amber-500 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase"><i class="fas fa-file-medical mr-1"></i>Justificar</button>
-        <button onclick="generarBoletinPDF()" class="bg-blue-600 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
-      </div>
-    </div>
-    <div id="logros-container" class="space-y-2 hidden">
-      <h4 class="font-black text-sm text-slate-700 flex items-center gap-2"><i class="fas fa-trophy text-amber-500"></i> Reconocimientos</h4>
-      <div id="lista-logros" class="space-y-2"></div>
-    </div>
-    <div class="relative bg-slate-200 p-1 rounded-2xl flex items-center">
-      <div id="switch-selector" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1"></div>
-      <button onclick="setModalidad('num')"  id="txt-num"  class="relative flex-1 py-3 text-[10px] font-black uppercase z-10">Numérico</button>
-      <button onclick="setModalidad('rite')" id="txt-rite" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">RITE</button>
-    </div>
-    <div class="grid grid-cols-3 gap-2">
-      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
-      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Tardes</p><p id="count-tardes" class="text-3xl font-black">0</p></div>
-      <div class="bg-amber-50 p-4 rounded-3xl border border-amber-100 shadow-sm text-center"><p class="text-[8px] font-black text-amber-500 uppercase leading-tight mb-1">Sin uniforme</p><p id="count-uniforme" class="text-3xl font-black text-amber-600">0</p></div>
-    </div>
-    <!-- Detalle días sin uniforme (expandible) -->
-    <div id="detalle-uniforme" class="hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 -mt-1">
-      <p class="text-[9px] font-black text-amber-600 uppercase mb-2">Días sin uniforme</p>
-      <div id="lista-uniforme" class="space-y-1"></div>
-    </div>
-    <div id="container-notas" class="space-y-4"></div>
-    <div class="mt-2">
-      <h4 class="font-black text-lg text-slate-800 mb-3">Informes de los Docentes</h4>
-      <div id="container-informes" class="space-y-3"></div>
-    </div>
-  </section>
+  <!-- ACADÉMICO / BOLETÍN -->\n  <section id=\"tab-academico\" class=\"tab-content space-y-5\">\n    <div class=\"flex justify-between items-end\">\n      <h3 class=\"font-black text-2xl tracking-tight\">Desempeño</h3>\n      <div class=\"flex gap-2\">\n        <button onclick=\"switchTab('justificaciones')\" class=\"bg-amber-500 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase\"><i class=\"fas fa-file-medical mr-1\"></i>Justificar</button>\n        <button onclick=\"generarBoletinPDF()\" class=\"bg-blue-600 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase\"><i class=\"fas fa-file-pdf mr-1\"></i>PDF</button>\n      </div>\n    </div>\n\n    <!-- Logros -->\n    <div id=\"logros-container\" class=\"space-y-2 hidden\">\n      <h4 class=\"font-black text-sm text-slate-700 flex items-center gap-2\"><i class=\"fas fa-trophy text-amber-500\"></i> Reconocimientos</h4>\n      <div id=\"lista-logros\" class=\"space-y-2\"></div>\n    </div>\n\n    <!-- Switch Numérico / Bimestral -->\n    <div class=\"relative bg-slate-200 p-1 rounded-2xl flex items-center\">\n      <div id=\"switch-selector\" class=\"absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1\"></div>\n      <button onclick=\"setModalidad('num')\"  id=\"txt-num\"  class=\"relative flex-1 py-3 text-[10px] font-black uppercase z-10\">Numérico</button>\n      <button onclick=\"setModalidad('bim')\" id=\"txt-bim\" class=\"relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500\">Bimestral</button>\n    </div>\n\n    <!-- Asistencia -->\n    <div class=\"grid grid-cols-3 gap-2\">\n      <div class=\"bg-white p-4 rounded-3xl border shadow-sm text-center\"><p class=\"text-[8px] font-black text-slate-400 uppercase leading-tight mb-1\">Faltas</p><p id=\"count-faltas\" class=\"text-3xl font-black\">0</p></div>\n      <div class=\"bg-white p-4 rounded-3xl border shadow-sm text-center\"><p class=\"text-[8px] font-black text-slate-400 uppercase leading-tight mb-1\">Tardes</p><p id=\"count-tardes\" class=\"text-3xl font-black\">0</p></div>\n      <div class=\"bg-amber-50 p-4 rounded-3xl border border-amber-100 shadow-sm text-center\"><p class=\"text-[8px] font-black text-amber-500 uppercase leading-tight mb-1\">Sin uniforme</p><p id=\"count-uniforme\" class=\"text-3xl font-black text-amber-600\">0</p></div>\n    </div>\n    <div id=\"detalle-uniforme\" class=\"hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 -mt-1\">\n      <p class=\"text-[9px] font-black text-amber-600 uppercase mb-2\">Días sin uniforme</p>\n      <div id=\"lista-uniforme\" class=\"space-y-1\"></div>\n    </div>\n\n    <!-- Vista NUMÉRICA -->\n    <div id=\"vista-num\">\n      <div id=\"container-notas\" class=\"space-y-4\"></div>\n    </div>\n\n    <!-- Vista BIMESTRAL -->\n    <div id=\"vista-bim\" class=\"hidden\">\n      <div class=\"bg-white rounded-[2rem] p-5 shadow-sm border space-y-4\">\n        <h4 class=\"font-black text-base flex items-center gap-2\"><i class=\"fas fa-graduation-cap text-blue-500\"></i> Calificaciones Bimestrales</h4>\n        <div id=\"bim-loading\" class=\"text-center py-6 text-slate-400 text-sm\"><i class=\"fas fa-spinner fa-spin mr-2\"></i>Cargando períodos...</div>\n        <div id=\"bim-tabs-wrap\" class=\"hidden\">\n          <div id=\"bim-tabs\" class=\"flex bg-slate-100 p-1 rounded-2xl gap-1 mb-4\"></div>\n          <div id=\"bim-content\" class=\"space-y-3\"></div>\n        </div>\n        <div id=\"bim-empty\" class=\"hidden text-center py-6\">\n          <i class=\"fas fa-lock text-3xl text-slate-200 mb-3 block\"></i>\n          <p class=\"font-bold text-slate-400 text-sm\">Las calificaciones no están disponibles todavía.</p>\n        </div>\n      </div>\n    </div>\n\n    <!-- Informes docentes -->\n    <div class=\"mt-2\">\n      <h4 class=\"font-black text-lg text-slate-800 mb-3\">Informes de los Docentes</h4>\n      <div id=\"container-informes\" class=\"space-y-3\"></div>\n    </div>\n  </section>
 
   <!-- MENSAJES -->
   <section id="tab-mensajes" class="tab-content" style="padding-bottom:0">
@@ -306,6 +304,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
   <button onclick="switchTab('autorizaciones')" id="nav-autorizaciones" class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-clipboard-check text-xl"></i><span id="badge-aut" class="hidden absolute -top-1 -right-2 bg-amber-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>PERMISOS</span></button>
 
 </nav>
+
+<!-- Modal imagen zoom -->
+<div id="img-zoom-modal" onclick="cerrarZoom()">
+  <button onclick="cerrarZoom()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:white;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>
+  <img id="img-zoom-el" src="" alt="">
+  <div id="img-zoom-dots" style="display:flex;gap:8px;margin-top:12px"></div>
+  <div style="display:flex;gap:16px;margin-top:8px">
+    <button id="zoom-prev" onclick="event.stopPropagation();moverZoom(-1)" style="background:rgba(255,255,255,.15);border:none;color:white;padding:8px 20px;border-radius:20px;font-weight:bold;cursor:pointer;display:none"><i class="fas fa-chevron-left"></i></button>
+    <button id="zoom-next" onclick="event.stopPropagation();moverZoom(1)" style="background:rgba(255,255,255,.15);border:none;color:white;padding:8px 20px;border-radius:20px;font-weight:bold;cursor:pointer;display:none"><i class="fas fa-chevron-right"></i></button>
+  </div>
+</div>
 
 <!-- Modal noticia -->
 <div id="modal-noticia" class="fixed inset-0 bg-slate-900/90 z-[8000] hidden flex-col p-4 backdrop-blur-sm">
@@ -508,6 +517,53 @@ async function cargarWidgetHoy(){
   cont.innerHTML=`<p class="text-[10px] font-black text-slate-400 uppercase mb-2">📌 Resumen de hoy</p>`+items.map(it=>`<div class="hoy-card ${it.cls}" ${it.accion?`onclick="${it.accion}" style="cursor:pointer"`:''} role="${it.accion?'button':''}">`+`<span class="text-2xl flex-shrink-0">${it.icon}</span><div><p class="font-black text-sm text-slate-900">${it.titulo}</p><p class="text-[10px] text-slate-600 font-bold mt-0.5">${it.desc}</p></div></div>`).join('');
 }
 
+// ─── CARROUSEL UTILS ───
+function buildCarrousel(imgs, cardId){
+  if(!imgs||imgs.length===0)return'';
+  if(imgs.length===1) return `<div class="carrousel-wrap"><img src="${imgs[0]}" class="post-img" onclick="abrirZoom(${JSON.stringify(imgs)},0)" style="cursor:pointer" loading="lazy" alt=""></div>`;
+  const slides=imgs.map((u,i)=>`<div class="carrousel-slide"><img src="${u}" loading="lazy" onclick="abrirZoom(${JSON.stringify(imgs)},${i})" alt=""></div>`).join('');
+  const dots=imgs.map((_,i)=>`<div class="carr-dot${i===0?' active':''}" onclick="irSlide('carr-${cardId}',${i})"></div>`).join('');
+  return`<div class="carrousel-wrap" id="carr-wrap-${cardId}">
+    <div class="carrousel-track" id="carr-${cardId}">${slides}</div>
+    ${imgs.length>1?`<button class="carr-btn carr-btn-l" onclick="moverCarr('carr-${cardId}',-1)"><i class="fas fa-chevron-left"></i></button><button class="carr-btn carr-btn-r" onclick="moverCarr('carr-${cardId}',1)"><i class="fas fa-chevron-right"></i></button>`:''}
+    <div class="carr-dots" id="carr-dots-${cardId}">${dots}</div>
+  </div>`;
+}
+function moverCarr(trackId,dir){
+  const track=document.getElementById(trackId);if(!track)return;
+  const slides=track.querySelectorAll('.carrousel-slide');const n=slides.length;
+  let cur=parseInt(track.dataset.cur||0);cur=(cur+dir+n)%n;
+  track.dataset.cur=cur;track.style.transform=`translateX(-${cur*100}%)`;
+  const dotsId=trackId.replace('carr-','carr-dots-');
+  document.querySelectorAll(`#${dotsId} .carr-dot`).forEach((d,i)=>d.classList.toggle('active',i===cur));
+}
+function irSlide(trackId,idx){
+  const track=document.getElementById(trackId);if(!track)return;
+  const n=track.querySelectorAll('.carrousel-slide').length;
+  track.dataset.cur=idx;track.style.transform=`translateX(-${idx*100}%)`;
+  const dotsId=trackId.replace('carr-','carr-dots-');
+  document.querySelectorAll(`#${dotsId} .carr-dot`).forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+
+// ─── ZOOM IMAGE ───
+let zoomImgs=[],zoomIdx=0;
+function abrirZoom(imgs,idx){
+  zoomImgs=imgs;zoomIdx=idx;
+  document.getElementById('img-zoom-el').src=imgs[idx];
+  const dotsEl=document.getElementById('img-zoom-dots');
+  dotsEl.innerHTML=imgs.length>1?imgs.map((_,i)=>`<div style="width:8px;height:8px;border-radius:50%;background:${i===idx?'white':'rgba(255,255,255,.4)'};cursor:pointer" onclick="event.stopPropagation();irZoom(${i})"></div>`).join(''):'';
+  document.getElementById('zoom-prev').style.display=imgs.length>1?'block':'none';
+  document.getElementById('zoom-next').style.display=imgs.length>1?'block':'none';
+  document.getElementById('img-zoom-modal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function irZoom(idx){
+  zoomIdx=idx;document.getElementById('img-zoom-el').src=zoomImgs[idx];
+  document.querySelectorAll('#img-zoom-dots div').forEach((d,i)=>d.style.background=i===idx?'white':'rgba(255,255,255,.4)');
+}
+function moverZoom(dir){irZoom((zoomIdx+dir+zoomImgs.length)%zoomImgs.length);}
+function cerrarZoom(){document.getElementById('img-zoom-modal').classList.remove('open');document.body.style.overflow='auto';}
+
 // ─── MURO ───
 async function cargarMuro(filtro='todos'){
   const container=document.getElementById('muro-posts');
@@ -529,19 +585,20 @@ async function cargarMuro(filtro='todos'){
     if(filtro==='noleidos'&&isRead)continue;
     if(filtro==='urgente'&&cat!=='urgente')continue;
     if(filtro==='logro'&&cat!=='logro')continue;
-    // Eventos van SOLO a la Agenda — no aparecen en el Muro
     if(cat==='evento')continue;
     brain.noticias.push({id,...p});
     const likesSnap=await db.collection('comunicados').doc(id).collection('likes').get();const totalLikes=likesSnap.size;const yaDioLike=likesSnap.docs.some(d=>d.id===userEmail);
     const catMap={urgente:{cls:'cat-urgente',emoji:'🔴',label:'Urgente'},evento:{cls:'cat-evento',emoji:'📅',label:'Evento'},logro:{cls:'cat-logro',emoji:'🏆',label:'Logro'},tramite:{cls:'cat-tramite',emoji:'📋',label:'Trámite'},info:{cls:'cat-info',emoji:'📣',label:'Info'}};
     const catObj=catMap[cat]||catMap.info;
     const borde=cat==='urgente'?'border-l-4 border-l-red-400':cat==='logro'?'border-l-4 border-l-amber-400':'';
-    // Soporte para adjuntos cargados desde comunicaciones
-    let imgHtml='';
-    if(p.adjuntos?.img) imgHtml=`<img src="${p.adjuntos.img}" class="post-img" alt="${p.titulo}" loading="lazy">`;
-    else if(p.link)      imgHtml=`<img src="${p.link}" class="post-img" alt="${p.titulo}" loading="lazy">`;;
+    // Soportar múltiples imágenes (campo fotos=[]) o imagen única
+    let imgs=[];
+    if(Array.isArray(p.fotos)&&p.fotos.length>0) imgs=p.fotos;
+    else if(p.adjuntos?.img) imgs=[p.adjuntos.img];
+    else if(p.link) imgs=[p.link];
+    const mediaHtml=buildCarrousel(imgs,id);
     container.innerHTML+=`<div class="post-card ${isRead?'leida':''} ${borde}">
-      ${imgHtml}
+      ${mediaHtml}
       <div class="p-5">
         <div class="flex items-start justify-between gap-2 mb-3">
           <span class="cat-badge ${catObj.cls}">${catObj.emoji} ${catObj.label}</span>
@@ -574,9 +631,44 @@ async function toggleLike(id,yaDioLike){
 async function abrirNoticia(id){
   const doc=await db.collection('comunicados').doc(id).get();const p=doc.data();
   let mediaHtml='';
-  if(p.adjuntos?.img)   mediaHtml+=`<img src="${p.adjuntos.img}" class="w-full h-auto rounded-2xl mb-4" alt="${p.titulo}">`;
-  else if(p.link)        mediaHtml+=`<img src="${p.link}" class="w-full h-auto rounded-2xl mb-4" alt="${p.titulo}">`;
+  // Múltiples imágenes o imagen única
+  let imgs=[];
+  if(Array.isArray(p.fotos)&&p.fotos.length>0) imgs=p.fotos;
+  else if(p.adjuntos?.img) imgs=[p.adjuntos.img];
+  else if(p.link) imgs=[p.link];
+  if(imgs.length>0) mediaHtml+=buildCarrousel(imgs,'modal')+'<div style="height:8px"></div>';
   if(p.adjuntos?.video){
+    const vUrl=p.adjuntos.video;
+    const isYT=vUrl.includes('youtu');
+    const isVimeo=vUrl.includes('vimeo.com');
+    const isFirebaseVid=vUrl.includes('firebasestorage')||vUrl.includes('googleapis.com/v0/b/');
+    if(isYT){
+      let ytId='';
+      if(vUrl.includes('watch?v='))ytId=vUrl.split('watch?v=')[1].split('&')[0];
+      else if(vUrl.includes('youtu.be/'))ytId=vUrl.split('youtu.be/')[1].split('?')[0];
+      else if(vUrl.includes('embed/'))ytId=vUrl.split('embed/')[1].split('?')[0];
+      else ytId=vUrl.split('/').pop().split('?')[0];
+      mediaHtml+=`<div class="mb-4 rounded-2xl overflow-hidden bg-black" style="position:relative;padding-top:56.25%"><iframe src="https://www.youtube.com/embed/${ytId}?rel=0" style="position:absolute;top:0;left:0;width:100%;height:100%" allowfullscreen frameborder="0"></iframe></div>`;
+    } else if(isVimeo){
+      const vmId=vUrl.split('vimeo.com/')[1]?.split('/')[0]||vUrl.split('/').pop().split('?')[0];
+      mediaHtml+=`<div class="mb-4 rounded-2xl overflow-hidden bg-black" style="position:relative;padding-top:56.25%"><iframe src="https://player.vimeo.com/video/${vmId}" style="position:absolute;top:0;left:0;width:100%;height:100%" allowfullscreen frameborder="0"></iframe></div>`;
+    } else if(isFirebaseVid){
+      mediaHtml+=`<a href="${vUrl}" target="_blank" class="flex items-center gap-3 bg-purple-50 border border-purple-100 p-4 rounded-2xl mb-4 font-bold text-purple-700"><div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-play-circle text-2xl text-purple-600"></i></div><div><p class="text-sm">Ver video</p><p class="text-[10px] font-normal text-purple-400">Se abrirá en una nueva pestaña</p></div></a>`;
+    } else {
+      mediaHtml+=`<div class="mb-4"><video src="${vUrl}" controls class="w-full rounded-2xl" style="max-height:280px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"></video><a href="${vUrl}" target="_blank" style="display:none" class="items-center gap-3 bg-purple-50 border border-purple-100 p-4 rounded-2xl font-bold text-purple-700"><i class="fas fa-play-circle text-xl"></i><span>Ver/descargar video</span></a></div>`;
+    }
+  }
+  if(p.adjuntos?.pdf){
+    const pUrl=p.adjuntos.pdf;
+    const isGDrive=pUrl.includes('drive.google.com');
+    const gdocsUrl=`https://docs.google.com/viewer?url=${encodeURIComponent(pUrl)}&embedded=true`;
+    if(isGDrive){const driveId=pUrl.match(/[-\w]{25,}/)?.[0];const embedUrl=driveId?`https://drive.google.com/file/d/${driveId}/preview`:pUrl;mediaHtml+=`<div class="mb-4 rounded-2xl overflow-hidden border bg-slate-50" style="height:360px"><iframe src="${embedUrl}" style="width:100%;height:100%;border:none" title="PDF adjunto"></iframe></div><a href="${pUrl}" target="_blank" class="flex items-center gap-2 text-[10px] font-bold text-red-600 bg-red-50 p-2 rounded-xl mb-4"><i class="fas fa-download"></i>Descargar PDF</a>`;}
+    else{mediaHtml+=`<div class="mb-4 space-y-2"><div class="rounded-2xl overflow-hidden border bg-slate-50" style="height:360px"><iframe src="${gdocsUrl}" style="width:100%;height:100%;border:none" title="PDF adjunto"></iframe></div><a href="${pUrl}" target="_blank" class="flex items-center gap-3 bg-red-50 border border-red-100 p-3 rounded-xl font-bold text-red-600 text-sm"><i class="fas fa-download"></i><span>Descargar PDF</span></a></div>`;}
+  }
+  if(p.adjuntos?.link) mediaHtml+=`<a href="${p.adjuntos.link}" target="_blank" class="flex items-center gap-3 bg-blue-50 border border-blue-100 p-4 rounded-2xl mb-4 font-bold text-blue-600"><i class="fas fa-external-link-alt"></i>Ver enlace externo</a>`;
+  document.getElementById('modal-contenido').innerHTML=`${mediaHtml}<h2 class="text-2xl font-black">${p.titulo}</h2><hr class="my-4"><p class="text-slate-600 whitespace-pre-wrap leading-relaxed">${p.texto}</p><button onclick="confirmarLectura('${id}')" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold mt-8">Confirmar Lectura ✓</button>`;
+  document.getElementById('modal-noticia').style.display='flex';document.body.style.overflow='hidden';
+}
     const vUrl=p.adjuntos.video;
     const isYT=vUrl.includes('youtu');
     const isVimeo=vUrl.includes('vimeo.com');
@@ -652,22 +744,40 @@ function cerrarNoticia(){document.getElementById('modal-noticia').style.display=
 // ─── ACADÉMICO ───
 async function cargarAcademico(){
   const container=document.getElementById('container-notas');
-  const periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();
+  let periodosSnap;
+  try{periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();}
+  catch(e){periodosSnap=await db.collection('periodos').get();}
   const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
   const cursoAlu=alumnoDoc.data()?.curso||'';
-  container.innerHTML="";brain.notas=[];
+  container.innerHTML='';brain.notas=[];
+
   for(const perDoc of periodosSnap.docs){
-    const p=perDoc.data();const visDoc=await db.collection('config_visibilidad').doc(perDoc.id).get();const visData=visDoc.exists?visDoc.data():{};
-    if(!visData[`${p.slug}_${cursoAlu}`])continue;
-    const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();if(nSnap.empty)continue;
+    const p=perDoc.data();
+    const visDoc=await db.collection('config_visibilidad').doc(perDoc.id).get();
+    const visData=visDoc.exists?visDoc.data():{};
+    if(!visData[`${p.slug}_${cursoAlu}`]&&!visData[p.slug]&&!visData['todos'])continue;
+    const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();
+    if(nSnap.empty)continue;
     container.innerHTML+=`<div class="bg-slate-100 px-4 py-2 rounded-xl mb-2"><p class="text-[10px] font-black text-slate-500 uppercase">${p.nombre}</p></div>`;
-    nSnap.forEach(doc=>{const n=doc.data();brain.notas.push(n);let nh='';
-      if(n.rite){const rc=n.rite==='TEA'?'bg-emerald-600':n.rite==='TEP'?'bg-blue-600':'bg-amber-600';const rd=n.rite==='TEA'?'Avanzada':n.rite==='TEP'?'En Proceso':'En Desarrollo';nh=`<div class="${rc} text-white p-3 rounded-xl text-center font-black text-sm">${n.rite} <span class="font-normal text-xs opacity-80">— ${rd}</span></div>`;}
-      else{const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');if(cols.length){nh=`<div class="flex flex-wrap gap-2">${cols.map(([,v])=>{const nota=parseFloat(v);return`<div class="${nota>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700'} px-3 py-1.5 rounded-xl text-center"><p class="font-black text-sm">${nota}</p></div>`;}).join('')}</div>`;}else nh=`<p class="text-slate-300 text-xs italic">Sin notas</p>`;}
+    nSnap.forEach(doc=>{
+      const n=doc.data();brain.notas.push(n);let nh='';
+      const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
+      if(cols.length){
+        nh=`<div class="flex flex-wrap gap-2">${cols.map(([,v])=>{const nota=parseFloat(v);return`<div class="${nota>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700'} px-3 py-1.5 rounded-xl text-center"><p class="font-black text-sm">${nota}</p></div>`;}).join('')}</div>`;
+      } else if(n.calificacion_final||n.nota_final){
+        const val=n.calificacion_final||n.nota_final;
+        const nf=parseFloat(val);
+        const cls=isNaN(nf)?'bg-blue-50 text-blue-700':(nf>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700');
+        nh=`<div class="${cls} px-3 py-1.5 rounded-xl inline-block"><p class="font-black text-sm">${val}</p></div>`;
+      } else {
+        nh=`<p class="text-slate-300 text-xs italic">Sin notas</p>`;
+      }
       container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${nh}</div>`;
     });
   }
   if(!brain.notas.length)container.innerHTML=`<div class="bg-white p-8 rounded-3xl border shadow-sm text-center"><i class="fas fa-lock text-3xl text-slate-200 mb-3 block"></i><p class="font-bold text-slate-400">Las calificaciones no están disponibles todavía.</p></div>`;
+
+  // Asistencia
   const aSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
   let f=0,t=0,sinUni=[];brain.faltas=[];
   aSnap.forEach(d=>{
@@ -679,32 +789,110 @@ async function cargarAcademico(){
   document.getElementById('count-faltas').innerText=f;
   document.getElementById('count-tardes').innerText=t;
   document.getElementById('count-uniforme').innerText=sinUni.length;
-  // Detalle días sin uniforme
   const detalleEl=document.getElementById('detalle-uniforme');
   const listaEl=document.getElementById('lista-uniforme');
   if(sinUni.length>0){
-    sinUni.sort((a,b)=>b.localeCompare(a)); // más reciente primero
-    listaEl.innerHTML=sinUni.map(f=>{
-      const d=new Date(f+'T12:00');
-      return `<p class="text-xs text-amber-700 font-bold">• ${d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'long'})}</p>`;
-    }).join('');
+    sinUni.sort((a,b)=>b.localeCompare(a));
+    listaEl.innerHTML=sinUni.map(f=>{const d=new Date(f+'T12:00');return`<p class="text-xs text-amber-700 font-bold">• ${d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'long'})}</p>`;}).join('');
     detalleEl.classList.remove('hidden');
-    // Hacer la tarjeta clickeable para expandir/colapsar
     const card=document.getElementById('count-uniforme').closest('.bg-amber-50');
     if(card&&!card.dataset.clickBound){card.dataset.clickBound='1';card.style.cursor='pointer';card.onclick=()=>detalleEl.classList.toggle('hidden');}
-  }else{
-    detalleEl.classList.add('hidden');
-  }
+  }else{detalleEl.classList.add('hidden');}
   await cargarInformesFamilia();await cargarLogros();
+}
+
+// ─── BOLETÍN BIMESTRAL ───
+async function cargarBimestral(){
+  const loadingEl=document.getElementById('bim-loading');
+  const tabsWrap=document.getElementById('bim-tabs-wrap');
+  const tabsEl=document.getElementById('bim-tabs');
+  const emptyEl=document.getElementById('bim-empty');
+  loadingEl.classList.remove('hidden');tabsWrap.classList.add('hidden');emptyEl.classList.add('hidden');
+
+  const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
+  const cursoAlu=alumnoDoc.data()?.curso||'';
+  let periodosSnap;
+  try{periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();}
+  catch(e){periodosSnap=await db.collection('periodos').get();}
+
+  const bimestresVisibles=[];
+  for(const perDoc of periodosSnap.docs){
+    const p=perDoc.data();
+    const visDoc=await db.collection('config_visibilidad').doc(perDoc.id).get();
+    const visData=visDoc.exists?visDoc.data():{};
+    const key=`${p.slug}_${cursoAlu}`;
+    if(visData[key]||visData[p.slug]||visData['todos']){
+      const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();
+      if(!nSnap.empty){
+        const notas=[];nSnap.forEach(d=>notas.push(d.data()));
+        bimestresVisibles.push({id:perDoc.id,per:p,notas});
+      }
+    }
+  }
+  loadingEl.classList.add('hidden');
+  if(bimestresVisibles.length===0){emptyEl.classList.remove('hidden');return;}
+  tabsEl.innerHTML=bimestresVisibles.map((b,i)=>`<button class="bim-tab-btn${i===0?' active':''}" onclick="mostrarBimestre(${i})">${b.per.nombre||b.per.slug}</button>`).join('');
+  tabsWrap.classList.remove('hidden');
+  window._bimestres=bimestresVisibles;
+  mostrarBimestre(0);
+}
+
+function mostrarBimestre(idx){
+  document.querySelectorAll('.bim-tab-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const bim=window._bimestres[idx];
+  if(!bim){document.getElementById('bim-content').innerHTML='';return;}
+  const contentEl=document.getElementById('bim-content');
+  contentEl.innerHTML='';
+  const porMateria={};
+  bim.notas.forEach(n=>{if(!porMateria[n.materia])porMateria[n.materia]=[];porMateria[n.materia].push(n);});
+  for(const [materia,notas] of Object.entries(porMateria)){
+    let indicadoresHtml='';
+    for(const n of notas){
+      const indCols=Object.entries(n).filter(([k])=>k.startsWith('ind_')||k.startsWith('indicador_'));
+      if(indCols.length>0){
+        indCols.forEach(([k,v])=>{
+          const label=k.replace(/^ind_|^indicador_/,'').replace(/_/g,' ');
+          const cumple=v===true||v==='si'||v==='X'||v==='x'||v===1;
+          indicadoresHtml+=`<div class="bim-ind-row"><div class="bim-x ${cumple?'si':'no'}">${cumple?'✓':'—'}</div><span class="text-xs text-slate-700 font-semibold">${label}</span></div>`;
+        });
+      }
+      const calFinal=n.calificacion_final||n.calif_final||n.nota_final||n.calificacion||'';
+      const notaNums=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
+      let calHtml='';
+      if(calFinal){
+        const nf=parseFloat(calFinal);
+        const cls=isNaN(nf)?'def':(nf>=7?'alto':nf>=6?'medio':'bajo');
+        calHtml=`<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100"><span class="text-[9px] font-black text-slate-400 uppercase">Calificación final</span><span class="bim-calif ${cls}">${calFinal}</span></div>`;
+      } else if(notaNums.length>0){
+        const notasHtml=notaNums.map(([,v])=>{const nota=parseFloat(v);const cls=nota>=7?'alto':nota>=6?'medio':'bajo';return`<span class="bim-calif ${cls}">${nota}</span>`;}).join('');
+        calHtml=`<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-100"><span class="text-[9px] font-black text-slate-400 uppercase">Notas</span>${notasHtml}</div>`;
+      }
+      if(indicadoresHtml||calHtml){
+        contentEl.innerHTML+=`<div class="bim-materia-row"><p class="text-[10px] font-black uppercase text-slate-800 mb-1">${materia}</p>${indicadoresHtml}${calHtml}</div>`;
+      }
+    }
+    // Fallback: materia sin indicadores especiales
+    if(!indicadoresHtml&&notas.length>0){
+      const n=notas[0];
+      let calHtml='';
+      const notaNums=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
+      if(notaNums.length){calHtml=notaNums.map(([,v])=>{const nota=parseFloat(v);const cls=nota>=7?'alto':nota>=6?'medio':'bajo';return`<span class="bim-calif ${cls}">${nota}</span>`;}).join('');}
+      else if(n.calificacion_final||n.nota_final){const val=n.calificacion_final||n.nota_final;const nf=parseFloat(val);const cls=isNaN(nf)?'def':(nf>=7?'alto':nf>=6?'medio':'bajo');calHtml=`<span class="bim-calif ${cls}">${val}</span>`;}
+      contentEl.innerHTML+=`<div class="bim-materia-row"><div class="flex items-center justify-between flex-wrap gap-2"><p class="text-[10px] font-black uppercase text-slate-800">${materia}</p><div class="flex flex-wrap gap-2">${calHtml||'<span class="text-xs text-slate-300">Sin calificación</span>'}</div></div></div>`;
+    }
+  }
+  if(!contentEl.innerHTML.trim())contentEl.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin datos para este período.</p>';
 }
 
 async function cargarInformesFamilia(){
   const cont=document.getElementById('container-informes');
-  const snap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('informes').where('visibleFamilia','==',true).orderBy('fecha','desc').limit(10).get();
+  let snap;
+  try{snap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('informes').where('visibleFamilia','==',true).orderBy('fecha','desc').limit(10).get();}
+  catch(e){snap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('informes').where('visibleFamilia','==',true).get();}
   if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes cargados aún.</p>';return;}
-  cont.innerHTML="";
-  snap.forEach(doc=>{const inf=doc.data();const d=new Date(inf.fecha).toLocaleDateString('es-AR');const ind=[];if(inf.indicadores?.participacion)ind.push('Participación');if(inf.indicadores?.entregas)ind.push('Entregas');if(inf.indicadores?.conducta)ind.push('Conducta');if(inf.indicadores?.progreso)ind.push('Progreso');
-    cont.innerHTML+=`<div class="informe-card"><div class="flex items-start justify-between mb-2"><div><span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span><span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span></div><span class="text-[9px] text-slate-400 font-bold">${d}</span></div><p class="text-sm text-slate-700 mt-2">${inf.texto}</p>${ind.length>0?`<div class="flex flex-wrap gap-1 mt-3">${ind.map(i=>`<span class="text-[9px] bg-emerald-50 text-emerald-700 font-black px-2 py-0.5 rounded-full">${i}</span>`).join('')}</div>`:''}${inf.docenteNombre?`<p class="text-[10px] text-slate-400 mt-2 font-bold">Prof. ${inf.docenteNombre}</p>`:''}</div>`;
+  cont.innerHTML='';
+  snap.forEach(doc=>{const inf=doc.data();const d=new Date(inf.fecha).toLocaleDateString('es-AR');
+    cont.innerHTML+=`<div class="informe-card"><div class="flex items-start justify-between mb-2"><div><span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span><span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span></div><span class="text-[9px] text-slate-400 font-bold">${d}</span></div><p class="text-sm text-slate-700 mt-2">${inf.texto}</p>${inf.docenteNombre?`<p class="text-[10px] text-slate-400 mt-2 font-bold">Prof. ${inf.docenteNombre}</p>`:''}</div>`;
   });
 }
 
@@ -1057,8 +1245,23 @@ function switchTab(tab){
   if(tab==='muro'){document.getElementById('badge-muro')?.classList.add('hidden');}
   if(tab==='perfil')cargarFichaAlumno();
 }
-function setModalidad(m){modalidadFiltro=m;document.getElementById('switch-selector').style.left=m==='num'?'4px':'calc(50%)';cargarAcademico();}
-function cambiarHijo(id){alumnoSeleccionadoId=id;inicializarApp();}
+function setModalidad(m){
+  modalidadFiltro=m;
+  // Mover el selector deslizante
+  document.getElementById('switch-selector').style.left=m==='num'?'4px':'calc(50%)';
+  // Alternar vistas
+  document.getElementById('vista-num').classList.toggle('hidden', m!=='num');
+  document.getElementById('vista-bim').classList.toggle('hidden', m!=='bim');
+  // Estilo de los botones
+  document.getElementById('txt-num').classList.toggle('text-slate-500', m!=='num');
+  document.getElementById('txt-bim').classList.toggle('text-slate-500', m!=='bim');
+  // Si cambia a bimestral y todavía no se cargó, cargar
+  if(m==='bim' && !window._bimestresLoaded){
+    window._bimestresLoaded=true;
+    cargarBimestral();
+  }
+}
+function cambiarHijo(id){alumnoSeleccionadoId=id;window._bimestresLoaded=false;inicializarApp();}
 function toggleIosi(){const m=document.getElementById('iosi-modal');m.style.display=m.style.display==='flex'?'none':'flex';}
 async function generarBoletinPDF(){
   const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId);
