@@ -610,6 +610,8 @@ async function guardarNoticia(){
 
   // Fotos múltiples (carrousel)
   const fotosArr = fotosSubidas.length > 0 ? [...fotosSubidas] : (img ? [img] : []);
+  // Siempre poner la primera foto también en adjuntos.img para compatibilidad
+  if(fotosArr.length > 0) adjuntos.img = fotosArr[0];
 
   const datos={titulo,texto,tag,cursos,adjuntos,fotos:fotosArr,creadoPor:staffEmail,creadoPorNombre:staffNombre};
 
@@ -670,8 +672,38 @@ async function cargarNoticias(){
     snap.forEach(doc=>{
       const p=doc.data();const id=doc.id;
       const d=p.creadoEn?.toDate?p.creadoEn.toDate().toLocaleDateString('es-AR'):p.creadoEn?.substring?.(0,10)||'—';
-      const mediaHtml=p.adjuntos?.img?`<img src="${p.adjuntos.img}" class="w-full h-40 object-cover rounded-xl mb-3" alt="">`:
-                      p.link?`<img src="${p.link}" class="w-full h-40 object-cover rounded-xl mb-3" alt="">`:'';
+      // Priorizar el array fotos[], luego adjuntos.img, luego link
+      const primeraFoto=(Array.isArray(p.fotos)&&p.fotos.length>0)?p.fotos[0]:(p.adjuntos?.img||p.link||'');
+      const cantFotos=(Array.isArray(p.fotos)&&p.fotos.length>1)?p.fotos.length:0;
+      const mediaHtml=primeraFoto
+        ?`<div style="position:relative"><img src="${primeraFoto}" class="w-full h-40 object-cover rounded-xl mb-3" alt="">${cantFotos>1?`<span style="position:absolute;bottom:16px;right:8px;background:rgba(0,0,0,.6);color:white;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:800">+${cantFotos-1} fotos</span>`:''}</div>`
+        :'';
+      const cursosStr=(p.cursos||[]).join(', ')||'Todos';
+      cont.innerHTML+=`<div class="card p-5">
+        ${mediaHtml}
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <span class="tag ${tagCls[p.tag]||'tag-info'}">${tagLabels[p.tag]||p.tag}</span>
+          <span class="text-[9px] text-slate-400 font-bold flex-shrink-0">${d}</span>
+        </div>
+        <h3 class="font-black text-slate-900 mb-1">${p.titulo}</h3>
+        <p class="text-slate-500 text-sm line-clamp-2 mb-3">${p.texto}</p>
+        <div class="flex items-center justify-between pt-3 border-t border-slate-50">
+          <div class="flex items-center gap-3 text-[10px] text-slate-400 font-bold">
+            <span><i class="fas fa-eye mr-1"></i>${p.vistas||0}</span>
+            <span><i class="fas fa-heart mr-1 text-rose-400"></i>${p.totalLikes||0}</span>
+            <span class="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full">${cursosStr}</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="editarNoticia('${id}')" class="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl"><i class="fas fa-edit mr-1"></i>Editar</button>
+            <button onclick="eliminarNoticia('${id}')" class="text-[9px] font-black bg-rose-50 text-rose-500 px-3 py-1.5 rounded-xl"><i class="fas fa-trash mr-1"></i>Borrar</button>
+          </div>
+        </div>
+        ${p.adjuntos?.pdf?`<a href="${p.adjuntos.pdf}" target="_blank" class="mt-2 flex items-center gap-2 text-[10px] font-bold text-red-600 bg-red-50 p-2 rounded-xl"><i class="fas fa-file-pdf"></i>Ver PDF adjunto</a>`:''}
+        ${p.adjuntos?.video?`<a href="${p.adjuntos.video}" target="_blank" class="mt-2 flex items-center gap-2 text-[10px] font-bold text-purple-600 bg-purple-50 p-2 rounded-xl"><i class="fas fa-video"></i>Ver video</a>`:''}
+      </div>`;
+    });
+  }catch(e){
+    // Fallback sin orderBy si falta el índice
       const cursosStr=(p.cursos||[]).join(', ')||'Todos';
       cont.innerHTML+=`<div class="card p-5">
         ${mediaHtml}
