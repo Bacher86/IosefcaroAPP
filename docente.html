@@ -25,10 +25,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
 .grilla-tabla td.sticky-col{background:#f8fafc;font-weight:700;font-size:12px;padding:8px 10px;position:sticky;left:0;z-index:5;min-width:140px;white-space:nowrap}
 .grilla-inp{width:64px;height:40px;border:none;text-align:center;font-weight:800;font-size:13px;outline:none;background:transparent;font-family:inherit;display:block;margin:0 auto}
 .grilla-inp:focus{background:#eff6ff}
-.rite-btn{padding:8px 10px;border-radius:.8rem;font-size:11px;font-weight:800;flex:1;text-align:center;border:2px solid transparent;transition:all .2s;cursor:pointer}
-.rite-TEA{background:#dcfce7;color:#166534;border-color:#86efac}.rite-TEA.sel{background:#16a34a;color:white}
-.rite-TEP{background:#dbeafe;color:#1e40af;border-color:#93c5fd}.rite-TEP.sel{background:#2563eb;color:white}
-.rite-TED{background:#fef3c7;color:#92400e;border-color:#fcd34d}.rite-TED.sel{background:#d97706;color:white}
 .alerta-falta{background:#fef3c7;border:1px solid #f59e0b;border-radius:.6rem;padding:3px 8px;font-size:10px;font-weight:800;color:#92400e;display:inline-block}
 </style>
 </head>
@@ -85,7 +81,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Modalidad</label>
         <select id="select-modalidad" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border font-bold mt-1 outline-none text-xs shadow-sm text-blue-600">
           <option value="NUMERICO">Numérico (1-10)</option>
-          <option value="RITE">RITE (TEA/TEP/TED)</option>
+          <option value="INDICADORES">Carga bimestral por indicadores</option>
         </select>
       </div>
     </div>
@@ -105,7 +101,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         </table>
       </div>
     </div>
-    <div id="rite-container" class="hidden space-y-3"></div>
+    <div id="indicadores-container" class="hidden space-y-3"></div>
     <div id="btn-guardar-notas" class="btn-flotante">
       <button onclick="confirmarNotas()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
         <i class="fas fa-save"></i> GUARDAR NOTAS
@@ -367,7 +363,7 @@ async function cargarAlumnos(){
   alumnosActuales.sort((a,b)=>a.nombre.localeCompare(b.nombre));
   const fecha=document.getElementById('fecha-hoy').value;
   document.getElementById('asis-fecha-label').textContent=fecha;
-  if(modalidad==='RITE') await renderRITE(fecha);
+  if(modalidad==='INDICADORES') await renderIndicadores(fecha);
   else await renderGrilla(fecha);
   await renderAsistencia(fecha);
   // Informes
@@ -379,7 +375,7 @@ async function cargarAlumnos(){
 
 // ══ GRILLA NUMÉRICA ══
 async function renderGrilla(fecha){
-  document.getElementById('rite-container').classList.add('hidden');
+  document.getElementById('indicadores-container').classList.add('hidden');
   document.getElementById('grilla-container').classList.remove('hidden');
   document.getElementById('ctrl-examenes').classList.remove('hidden');
   const curso=document.getElementById('select-curso').value;
@@ -488,45 +484,68 @@ async function guardarConfigColumnas(){
   const curso=document.getElementById('select-curso').value;
   await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});
 }
-
-// ══ RITE ══
-async function renderRITE(fecha){
+  // ══ CARGA BIMESTRAL POR INDICADORES ══
+async function renderIndicadores(fecha){
   document.getElementById('grilla-container').classList.add('hidden');
   document.getElementById('ctrl-examenes').classList.add('hidden');
-  const cont=document.getElementById('rite-container');
-  cont.classList.remove('hidden'); cont.innerHTML='';
+
+  const cont=document.getElementById('indicadores-container');
+  cont.classList.remove('hidden');
+  cont.innerHTML='';
+
+  const indicadores=[
+    "Participación",
+    "Tareas",
+    "Conducta",
+    "Progreso"
+  ];
+
   const bloq=periodoActivo.bloqueado;
+
   for(const al of alumnosActuales){
-    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-    const rv=nd.exists?nd.data().rite:null;
-    const alerta=await getFaltaOtraMateria(al.id,fecha);
-    const desc=rv==='TEA'?'Trayectoria Avanzada':rv==='TEP'?'En Proceso':rv==='TED'?'En Desarrollo':'Sin calificación';
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm">
-      <div class="flex justify-between items-center mb-3">
-        <div>
-          <p class="font-bold text-sm">${al.nombre}</p>
-          ${alerta?`<span class="alerta-falta mt-1">${alerta}</span>`:''}
-        </div>
-        ${bloq?'<span class="text-[9px] text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded-lg">Período cerrado</span>':''}
+    const nd=await db.collection('alumnos')
+      .doc(al.id)
+      .collection('notas_v2')
+      .doc(`${periodoActivo.slug}_${materiaActiva}`)
+      .get();
+
+    const data=nd.exists ? (nd.data().indicadores||{}) : {};
+
+    cont.innerHTML+=`
+      <div class="bg-white p-4 rounded-2xl border shadow-sm">
+        <p class="font-bold mb-3">${al.nombre}</p>
+
+        ${indicadores.map(ind=>`
+          <div class="mb-3">
+            <label class="text-xs font-bold">${ind}</label>
+            <select
+              class="input-pro mt-1"
+              ${bloq?'disabled':''}
+              onchange="setIndicador('${al.id}','${ind}',this.value)"
+            >
+              <option value="">Seleccionar</option>
+              <option value="Logrado" ${data[ind]==='Logrado'?'selected':''}>Logrado</option>
+              <option value="En proceso" ${data[ind]==='En proceso'?'selected':''}>En proceso</option>
+              <option value="A fortalecer" ${data[ind]==='A fortalecer'?'selected':''}>A fortalecer</option>
+            </select>
+          </div>
+        `).join('')}
       </div>
-      <div class="flex gap-2">
-        ${['TEA','TEP','TED'].map(v=>`<button onclick="${bloq?`alert('Período cerrado.')`:`selRITE('${al.id}','${v}',this)`}" class="rite-btn rite-${v}${rv===v?' sel':''}">${v}</button>`).join('')}
-      </div>
-      <p class="text-[9px] text-slate-400 mt-2" id="rite-desc-${al.id}">${desc}</p>
-    </div>`;
+    `;
   }
-  if(!alumnosActuales.length) cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>';
 }
 
-function selRITE(alumnoId,val,btn){
-  if(periodoActivo.bloqueado)return;
-  btn.closest('.bg-white').querySelectorAll('.rite-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  const descs={TEA:'Trayectoria Avanzada',TEP:'En Proceso',TED:'En Desarrollo'};
-  const de=document.getElementById('rite-desc-'+alumnoId);
-  if(de) de.textContent=descs[val];
-  if(!cambiosNotas[alumnoId]) cambiosNotas[alumnoId]={};
-  cambiosNotas[alumnoId]={rite:val,materia:materiaActiva,periodo:periodoActivo.slug};
+function setIndicador(alumnoId, indicador, valor){
+  if(periodoActivo.bloqueado) return;
+
+  if(!cambiosNotas[alumnoId])
+    cambiosNotas[alumnoId]={};
+
+  if(!cambiosNotas[alumnoId].indicadores)
+    cambiosNotas[alumnoId].indicadores={};
+
+  cambiosNotas[alumnoId].indicadores[indicador]=valor;
+
   document.getElementById('btn-guardar-notas').style.display='block';
 }
 
