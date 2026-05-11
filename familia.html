@@ -167,7 +167,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
     <div class="relative bg-slate-200 p-1 rounded-2xl flex items-center">
       <div id="switch-selector" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1"></div>
       <button onclick="setModalidad('num')"  id="txt-num"  class="relative flex-1 py-3 text-[10px] font-black uppercase z-10">Numérico</button>
-      <button onclick="setModalidad('bimestral')" id="txt-bimestral" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">Bimestral</button>
+      <button onclick="setModalidad('rite')" id="txt-rite" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">RITE</button>
     </div>
     <div class="grid grid-cols-3 gap-2">
       <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
@@ -662,29 +662,8 @@ async function cargarAcademico(){
     const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();if(nSnap.empty)continue;
     container.innerHTML+=`<div class="bg-slate-100 px-4 py-2 rounded-xl mb-2"><p class="text-[10px] font-black text-slate-500 uppercase">${p.nombre}</p></div>`;
     nSnap.forEach(doc=>{const n=doc.data();brain.notas.push(n);let nh='';
-if(n.indicadores){
-  nh=`
-    <div class="space-y-2">
-      ${Object.entries(n.indicadores).map(([nombre,valor])=>{
-
-        const cls=
-          valor==='Logrado'
-            ? 'bg-emerald-50 text-emerald-700'
-            : valor==='En proceso'
-            ? 'bg-amber-50 text-amber-700'
-            : 'bg-rose-50 text-rose-700';
-
-        return `
-          <div class="flex justify-between items-center ${cls} px-3 py-2 rounded-xl">
-            <span class="text-xs font-bold">${nombre}</span>
-            <span class="text-xs font-black">${valor}</span>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-    else{const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');if(cols.length){nh=`<div class="flex flex-wrap gap-2">${cols.map(([,v])=>{const nota=parseFloat(v);return`<div class="${nota>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700'} px-3 py-1.5 rounded-xl text-center"><p class="font-black text-sm">${nota}</p></div>`;}).join('')}</div>`;}else nh=`<p class="text-slate-300 text-xs italic">Sin notas</p>`;}
+      if(n.rite){const rc=n.rite==='TEA'?'bg-emerald-600':n.rite==='TEP'?'bg-blue-600':'bg-amber-600';const rd=n.rite==='TEA'?'Avanzada':n.rite==='TEP'?'En Proceso':'En Desarrollo';nh=`<div class="${rc} text-white p-3 rounded-xl text-center font-black text-sm">${n.rite} <span class="font-normal text-xs opacity-80">— ${rd}</span></div>`;}
+      else{const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');if(cols.length){nh=`<div class="flex flex-wrap gap-2">${cols.map(([,v])=>{const nota=parseFloat(v);return`<div class="${nota>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700'} px-3 py-1.5 rounded-xl text-center"><p class="font-black text-sm">${nota}</p></div>`;}).join('')}</div>`;}else nh=`<p class="text-slate-300 text-xs italic">Sin notas</p>`;}
       container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${nh}</div>`;
     });
   }
@@ -1096,7 +1075,7 @@ async function generarBoletinPDF(){
     const n=doc.data();if(!n.materia)return;materias.add(n.materia);
     if(!notasPorMateriaPeriodo[n.materia])notasPorMateriaPeriodo[n.materia]={};
     const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_')&&n[k]!=='');
-    if(n.bimestral)if(n.indicadores) notasPorMateriaPeriodo[n.materia][n.periodo]=n.indicadores;
+    if(n.rite) notasPorMateriaPeriodo[n.materia][n.periodo]=n.rite;
     else if(cols.length) notasPorMateriaPeriodo[n.materia][n.periodo]=cols.map(([,v])=>parseFloat(v)).filter(Boolean).reduce((a,b,_,arr)=>a+b/arr.length,0).toFixed(1);
     else notasPorMateriaPeriodo[n.materia][n.periodo]='';
   });
@@ -1106,17 +1085,8 @@ async function generarBoletinPDF(){
   const asisSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
   let faltas=0,tardes=0; asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
   // Construir HTML del boletín
-  const getColor=v=>{
-  const n=parseFloat(v);
-
-  if(isNaN(n)) return '#64748b';
-
-  return n>=7
-    ? '#16a34a'
-    : n>=6
-    ? '#d97706'
-    : '#ef4444';
-};
+  const colores={'TEA':'#16a34a','TEP':'#2563eb','TED':'#d97706'};
+  const getColor=v=>{if(v==='TEA'||v==='TEP'||v==='TED')return colores[v];const n=parseFloat(v);if(isNaN(n))return '#64748b';return n>=7?'#16a34a':n>=6?'#d97706':'#ef4444';};
   let thead=`<tr style="background:#0f172a;color:white"><th style="padding:8px 10px;text-align:left;font-size:11px">ASIGNATURA</th>`;
   periodosArr.forEach(p=>thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">${p.slug||p.nombre.slice(0,4)}</th>`);
   thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">PROM.</th></tr>`;
@@ -1124,28 +1094,7 @@ async function generarBoletinPDF(){
   materiasArr.forEach((mat,idx)=>{
     const bg=idx%2===0?'#f8fafc':'white';tbody+=`<tr style="background:${bg}"><td style="padding:7px 10px;font-size:11px;font-weight:600;border-bottom:1px solid #f1f5f9">${mat}</td>`;
     let suma=0,cnt=0;
-let texto='—';
-
-if(typeof v==='object'){
-  texto=Object.entries(v)
-    .map(([k,val])=>`${k}: ${val}`)
-    .join('<br>');
-}else{
-  texto=v||'—';
-}
-
-tbody+=`
-<td style="
-padding:7px 10px;
-text-align:center;
-font-size:10px;
-font-weight:700;
-color:${color};
-border-bottom:1px solid #f1f5f9
-">
-${texto}
-</td>
-`;
+    periodosArr.forEach(p=>{const v=notasPorMateriaPeriodo[mat]?.[p.slug]||notasPorMateriaPeriodo[mat]?.[p.nombre]||'';const color=getColor(v);if(parseFloat(v)){suma+=parseFloat(v);cnt++;}tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${color};border-bottom:1px solid #f1f5f9">${v||'—'}</td>`;});
     const prom=cnt>0?(suma/cnt).toFixed(1):'—';const promColor=getColor(prom);
     tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${promColor};border-bottom:1px solid #f1f5f9;background:#f0fdf4">${prom}</td></tr>`;
   });
@@ -1174,6 +1123,7 @@ ${texto}
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#4ade80;margin-bottom:4px">Generado</p><p style="font-size:11px;font-weight:800;color:#16a34a">${new Date().toLocaleDateString('es-AR')}</p></div>
     </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
+      <div><p style="font-size:9px;color:#94a3b8;font-weight:700">TEA = Trayectoria Avanzada · TEP = En Proceso · TED = En Desarrollo</p><p style="font-size:9px;color:#94a3b8;font-weight:700;margin-top:2px">Verde ≥ 7 · Naranja = 6 · Rojo &lt; 6</p></div>
       <p style="font-size:9px;color:#94a3b8;font-weight:700">Iosef Caro © ${new Date().getFullYear()}</p>
     </div>
   </div>`;
