@@ -484,22 +484,99 @@ async function guardarConfigColumnas(){
   const curso=document.getElementById('select-curso').value;
   await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});
 }
-  // ══ CARGA BIMESTRAL POR INDICADORES ══
+ // ══ CARGA BIMESTRAL POR INDICADORES ══
 async function renderIndicadores(fecha){
   document.getElementById('grilla-container').classList.add('hidden');
   document.getElementById('ctrl-examenes').classList.add('hidden');
 
   const cont=document.getElementById('indicadores-container');
   cont.classList.remove('hidden');
+
+  const refConfig=db.collection('config_indicadores')
+    .doc(`${materiaActiva}_${periodoActivo.slug}`);
+
+  const cfg=await refConfig.get();
+  let indicadores=cfg.exists ? (cfg.data().lista||[]) : [];
+
+  cont.innerHTML=`
+    <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
+      <p class="font-bold mb-3">Indicadores de esta materia</p>
+
+      <div class="flex gap-2 mb-3">
+        <input
+          id="nuevo-indicador"
+          class="input-pro flex-1"
+          placeholder="Escribir nuevo indicador..."
+        >
+        <button
+          onclick="agregarIndicador()"
+          class="bg-blue-600 text-white px-4 rounded-xl"
+        >
+          Agregar
+        </button>
+      </div>
+
+      <div id="lista-indicadores" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <div id="indicadores-alumnos"></div>
+  `;
+
+  window.indicadoresActuales=indicadores;
+
+  renderListaIndicadores();
+  renderIndicadoresAlumnos();
+}
+
+  function renderListaIndicadores(){
+  const box=document.getElementById('lista-indicadores');
+
+  box.innerHTML=window.indicadoresActuales.map((ind,i)=>`
+    <div class="bg-blue-100 px-3 py-1 rounded-full text-sm">
+      ${ind}
+      <button onclick="eliminarIndicador(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+  async function agregarIndicador(){
+  const input=document.getElementById('nuevo-indicador');
+  const texto=input.value.trim();
+
+  if(!texto) return;
+
+  window.indicadoresActuales.push(texto);
+
+  await db.collection('config_indicadores')
+    .doc(`${materiaActiva}_${periodoActivo.slug}`)
+    .set({
+      lista: window.indicadoresActuales
+    });
+
+  input.value='';
+
+  renderListaIndicadores();
+  renderIndicadoresAlumnos();
+}
+
+  async function eliminarIndicador(i){
+  window.indicadoresActuales.splice(i,1);
+
+  await db.collection('config_indicadores')
+    .doc(`${materiaActiva}_${periodoActivo.slug}`)
+    .set({
+      lista: window.indicadoresActuales
+    });
+
+  renderListaIndicadores();
+  renderIndicadoresAlumnos();
+}
+
+  async function renderIndicadoresAlumnos(){
+  const cont=document.getElementById('indicadores-alumnos');
   cont.innerHTML='';
 
-  const indicadores=[
-    "Participación",
-    "Tareas",
-    "Conducta",
-    "Progreso"
-  ];
-
+  const indicadores=window.indicadoresActuales;
   const bloq=periodoActivo.bloqueado;
 
   for(const al of alumnosActuales){
@@ -512,7 +589,7 @@ async function renderIndicadores(fecha){
     const data=nd.exists ? (nd.data().indicadores||{}) : {};
 
     cont.innerHTML+=`
-      <div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
         <p class="font-bold mb-3">${al.nombre}</p>
 
         ${indicadores.map(ind=>`
