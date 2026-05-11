@@ -167,7 +167,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
     <div class="relative bg-slate-200 p-1 rounded-2xl flex items-center">
       <div id="switch-selector" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1"></div>
       <button onclick="setModalidad('num')"  id="txt-num"  class="relative flex-1 py-3 text-[10px] font-black uppercase z-10">Numérico</button>
-      <button onclick="setModalidad('rite')" id="txt-rite" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">RITE</button>
+      <button onclick="setModalidad('bimestral')" id="txt-bimestral" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">Bimestral</button>
     </div>
     <div class="grid grid-cols-3 gap-2">
       <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
@@ -1096,7 +1096,7 @@ async function generarBoletinPDF(){
     const n=doc.data();if(!n.materia)return;materias.add(n.materia);
     if(!notasPorMateriaPeriodo[n.materia])notasPorMateriaPeriodo[n.materia]={};
     const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_')&&n[k]!=='');
-    if(n.rite)if(n.indicadores) notasPorMateriaPeriodo[n.materia][n.periodo]=n.indicadores;
+    if(n.bimestral)if(n.indicadores) notasPorMateriaPeriodo[n.materia][n.periodo]=n.indicadores;
     else if(cols.length) notasPorMateriaPeriodo[n.materia][n.periodo]=cols.map(([,v])=>parseFloat(v)).filter(Boolean).reduce((a,b,_,arr)=>a+b/arr.length,0).toFixed(1);
     else notasPorMateriaPeriodo[n.materia][n.periodo]='';
   });
