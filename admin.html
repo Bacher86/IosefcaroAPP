@@ -182,6 +182,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 <div id="admin-content" class="hidden">
   <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
     <button onclick="switchTab('stats')"      class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
+    <button onclick="switchTab('boletin-auth')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
 
 
     <button onclick="switchTab('importar')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
@@ -220,12 +221,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
           <div style="position:relative;height:200px"><canvas id="chart-asistencia"></canvas></div>
         </div>
         <div class="bg-white p-6 rounded-3xl border shadow-sm">
-          <h3 class="font-black text-sm mb-3">Comunicados — lecturas</h3>
+          <h3 class="font-black text-sm mb-3">Comunicados — lecturas confirmadas</h3>
           <div style="position:relative;height:200px"><canvas id="chart-comunicados"></canvas></div>
         </div>
         <div class="bg-white p-6 rounded-3xl border shadow-sm">
           <h3 class="font-black text-sm mb-3">Mensajes últimos 7 días</h3>
           <div style="position:relative;height:200px"><canvas id="chart-mensajes"></canvas></div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border shadow-sm">
+          <h3 class="font-black text-sm mb-3 flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> Confirmaciones de lectura (últimos 5 comunicados)</h3>
+          <div style="position:relative;height:220px"><canvas id="chart-lecturas-conf"></canvas></div>
         </div>
       </div>
       <div class="bg-white p-6 rounded-3xl border shadow-sm">
@@ -235,6 +240,42 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       <div class="bg-white p-6 rounded-3xl border shadow-sm">
         <h3 class="font-black text-sm mb-4">Últimos informes pedagógicos</h3>
         <div id="lista-informes-rec" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- ════ BOLETÍN — AUTORIZAR PUBLICACIÓN ════ -->
+    <section id="tab-boletin-auth" class="tab-content space-y-6">
+      <h2 class="text-2xl font-black tracking-tight">Boletín Bimestral</h2>
+
+      <!-- Autorizar publicación -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <h3 class="font-black text-base flex items-center gap-2"><i class="fas fa-lock-open text-emerald-500"></i> Autorizar publicación por curso y período</h3>
+        <p class="text-xs text-slate-400">Habilitá qué familias pueden ver el boletín de cada período. Los docentes ya cargaron las notas; vos autorizás que se publiquen.</p>
+        <div class="flex flex-wrap gap-3 items-center">
+          <select id="auth-periodo-sel" class="input-pro" style="max-width:220px" onchange="cargarAuthBoletín()">
+            <option value="">Seleccionar período...</option>
+          </select>
+          <button onclick="publicarTodoBoletin()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs"><i class="fas fa-check-double mr-1"></i>Publicar TODO el período</button>
+          <button onclick="ocultarTodoBoletin()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs"><i class="fas fa-eye-slash mr-1"></i>Ocultar TODO</button>
+        </div>
+        <div id="auth-boletin-tabla" class="space-y-3">
+          <p class="text-slate-400 text-xs text-center py-4">Seleccioná un período para gestionar la visibilidad.</p>
+        </div>
+      </div>
+
+      <!-- Confirmaciones de lectura de comunicados -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <h3 class="font-black text-base flex items-center gap-2"><i class="fas fa-eye text-blue-500"></i> Confirmaciones de lectura — Comunicados</h3>
+        <p class="text-xs text-slate-400">Verificá qué familias confirmaron haber leído cada comunicado.</p>
+        <select id="lectura-comunicado-sel" class="input-pro" style="max-width:100%" onchange="cargarLecturasComun()">
+          <option value="">Seleccionar comunicado...</option>
+        </select>
+        <div id="lectura-stats" class="grid grid-cols-3 gap-3 hidden">
+          <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="lec-confirmaron">0</div><div class="stat-l">Confirmaron</div></div>
+          <div class="stat-card text-center"><div class="stat-n text-amber-500" id="lec-pendientes">0</div><div class="stat-l">Pendientes</div></div>
+          <div class="stat-card text-center"><div class="stat-n text-slate-400" id="lec-total">0</div><div class="stat-l">Total familias</div></div>
+        </div>
+        <div id="lectura-lista" class="space-y-2 max-h-64 overflow-y-auto"></div>
       </div>
     </section>
 
@@ -794,6 +835,20 @@ async function cargarEstadisticas(){
   mS.forEach(d=>{const ts=d.data().creadoEn;if(!ts)return;const fd=ts.toDate?ts.toDate():new Date(ts.seconds*1000);const diff=Math.floor((Date.now()-fd.getTime())/86400000);if(diff>=0&&diff<7)cnt[6-diff]++;});
   if(cMsg)cMsg.destroy();
   cMsg=new Chart(document.getElementById('chart-mensajes'),{type:'bar',data:{labels:dias,datasets:[{label:'Convs.',data:cnt,backgroundColor:'#6366f1',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+  // Gráfico de confirmaciones de lectura
+  try{
+    let lecSnap=await db.collection('comunicados').orderBy('creadoEn','desc').limit(5).get();
+    const lecLabels=[],lecConf=[],lecPend=[];
+    const famSnap2=await db.collection('usuarios').where('rol','==','familia').get();
+    const totalFam=famSnap2.size;
+    for(const doc of lecSnap.docs){
+      const p=doc.data();lecLabels.push((p.titulo||doc.id).slice(0,22)+'…');
+      const lS=await db.collection('comunicados').doc(doc.id).collection('leidos').get();
+      lecConf.push(lS.size);lecPend.push(Math.max(0,totalFam-lS.size));
+    }
+    const lecCanvas=document.getElementById('chart-lecturas-conf');
+    if(lecCanvas) new Chart(lecCanvas,{type:'bar',data:{labels:lecLabels,datasets:[{label:'Confirmaron',data:lecConf,backgroundColor:'#16a34a',borderRadius:4},{label:'Pendientes',data:lecPend,backgroundColor:'#fbbf24',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{x:{beginAtZero:true,stacked:true},y:{stacked:true}}}});
+  }catch(e){console.warn('Lectura chart:',e.message);}
   const cont=document.getElementById('tabla-doc-actividad');cont.innerHTML='';const rows=[];
   for(const dDoc of (dS.docs||[])){const dd=dDoc.data();const asSn=await db.collection('asistencia').where('docenteEmail','==',dDoc.id).get();rows.push({nombre:dd.nombre,email:dDoc.id,nivel:dd.nivel,reg:asSn.size});}
   rows.sort((a,b)=>b.reg-a.reg);const maxR=rows[0]?.reg||1;
@@ -818,8 +873,121 @@ async function cargarEstadisticas(){
 
 
 // ══════════════════════
-// EXCEL
+// BOLETÍN AUTH
 // ══════════════════════
+async function inicializarBoletinAuth(){
+  // Cargar períodos en selectores
+  const snap=await db.collection('periodos').orderBy('orden','asc').get();
+  const sel=document.getElementById('auth-periodo-sel');
+  snap.forEach(doc=>{
+    const p=doc.data();
+    sel.innerHTML+=`<option value="${doc.id}">${p.nombre||p.slug}</option>`;
+  });
+  // Cargar comunicados en selector de lecturas
+  const comSnap=await db.collection('comunicados').orderBy('creadoEn','desc').limit(30).get();
+  const selCom=document.getElementById('lectura-comunicado-sel');
+  comSnap.forEach(doc=>{selCom.innerHTML+=`<option value="${doc.id}">${doc.data().titulo||doc.id}</option>`;});
+}
+
+async function cargarAuthBoletín(){
+  const perId=document.getElementById('auth-periodo-sel').value;
+  if(!perId){document.getElementById('auth-boletin-tabla').innerHTML='<p class="text-slate-400 text-xs text-center py-4">Seleccioná un período.</p>';return;}
+  const cont=document.getElementById('auth-boletin-tabla');
+  cont.innerHTML='<p class="text-slate-400 text-xs text-center py-2"><i class="fas fa-spinner fa-spin mr-1"></i>Cargando...</p>';
+  const visDoc=await db.collection('config_visibilidad').doc(perId).get();
+  const vis=visDoc.exists?visDoc.data():{};
+  const cursosSnap=await db.collection('cursos').orderBy('nombre','asc').get();
+  if(cursosSnap.empty){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Sin cursos creados.</p>';return;}
+  cont.innerHTML='';
+  cursosSnap.forEach(doc=>{
+    const curso=doc.data().nombre;
+    const perDocSnap=document.getElementById('auth-periodo-sel');
+    const slug=perDocSnap.options[perDocSnap.selectedIndex]?.text||perId;
+    const key=`${perId}_${curso}`;
+    const activo=!!(vis[key]||vis['todos']);
+    cont.innerHTML+=`<div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+      <div>
+        <p class="font-black text-sm">${curso}</p>
+        <p class="text-[9px] text-slate-400 font-bold uppercase">${activo?'✅ Visible para familias':'🔒 Oculto'}</p>
+      </div>
+      <label class="toggle-vis">
+        <input type="checkbox" ${activo?'checked':''} onchange="toggleVisBoletín('${perId}','${curso}',this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>`;
+  });
+}
+
+async function toggleVisBoletín(perId,curso,visible){
+  const key=`${perId}_${curso}`;
+  await db.collection('config_visibilidad').doc(perId).set({[key]:visible},{merge:true});
+}
+
+async function publicarTodoBoletin(){
+  const perId=document.getElementById('auth-periodo-sel').value;
+  if(!perId){alert('Seleccioná un período.');return;}
+  const cursosSnap=await db.collection('cursos').get();
+  const batch=db.batch();const ref=db.collection('config_visibilidad').doc(perId);
+  const upd={};cursosSnap.forEach(doc=>{upd[`${perId}_${doc.data().nombre}`]=true;});upd['todos']=true;
+  batch.set(ref,upd,{merge:true});await batch.commit();
+  await cargarAuthBoletín();alert('✅ Boletín publicado para todos los cursos.');
+}
+
+async function ocultarTodoBoletin(){
+  const perId=document.getElementById('auth-periodo-sel').value;
+  if(!perId){alert('Seleccioná un período.');return;}
+  const cursosSnap=await db.collection('cursos').get();
+  const batch=db.batch();const ref=db.collection('config_visibilidad').doc(perId);
+  const upd={todos:false};cursosSnap.forEach(doc=>{upd[`${perId}_${doc.data().nombre}`]=false;});
+  batch.set(ref,upd,{merge:true});await batch.commit();
+  await cargarAuthBoletín();alert('🔒 Boletín ocultado para todos los cursos.');
+}
+
+// ══════════════════════
+// LECTURAS COMUNICADOS
+// ══════════════════════
+async function cargarLecturasComun(){
+  const comId=document.getElementById('lectura-comunicado-sel').value;
+  if(!comId)return;
+  document.getElementById('lectura-stats').classList.remove('hidden');
+  const lista=document.getElementById('lectura-lista');
+  lista.innerHTML='<p class="text-xs text-slate-400 text-center py-3"><i class="fas fa-spinner fa-spin mr-1"></i>Cargando...</p>';
+
+  // Obtener familias totales
+  const famSnap=await db.collection('usuarios').where('rol','==','familia').get();
+  const totalFam=famSnap.size;
+
+  // Obtener quiénes confirmaron lectura
+  const leidosSnap=await db.collection('comunicados').doc(comId).collection('leidos').get();
+  const leidosSet=new Set();leidosSnap.forEach(d=>leidosSet.add(d.id));
+
+  document.getElementById('lec-confirmaron').textContent=leidosSet.size;
+  document.getElementById('lec-pendientes').textContent=Math.max(0,totalFam-leidosSet.size);
+  document.getElementById('lec-total').textContent=totalFam;
+
+  // Listar familias con estado
+  lista.innerHTML='';
+  famSnap.forEach(doc=>{
+    const f=doc.data();const email=doc.id;
+    const confirmó=leidosSet.has(email);
+    const fechaDoc=leidosSnap.docs.find(d=>d.id===email);
+    const fecha=fechaDoc?.data()?.fecha?new Date(fechaDoc.data().fecha).toLocaleDateString('es-AR'):'—';
+    lista.innerHTML+=`<div class="flex items-center gap-3 p-3 rounded-xl ${confirmó?'bg-emerald-50 border border-emerald-100':'bg-amber-50 border border-amber-100'}">
+      <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${confirmó?'bg-emerald-100 text-emerald-600':'bg-amber-100 text-amber-600'}">
+        <i class="fas ${confirmó?'fa-check':'fa-clock'} text-xs"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-xs truncate">${f.nombre||email}</p>
+        <p class="text-[9px] text-slate-400">${email}</p>
+      </div>
+      <span class="text-[9px] font-black ${confirmó?'text-emerald-600':'text-amber-500'}">${confirmó?'✓ '+fecha:'Pendiente'}</span>
+    </div>`;
+  });
+  if(!famSnap.size)lista.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Sin familias registradas.</p>';
+}
+
+// Mejorar switchTab para cargar boletinAuth
+
 async function exportarExcel(){
   const opcion=await elegirExportacion();if(!opcion)return;
   const wb=XLSX.utils.book_new();
@@ -1081,8 +1249,7 @@ function switchTab(t){
   event.currentTarget?.classList.add('bg-slate-900','text-white');
   if(t==='stats')cargarEstadisticas();
   if(t==='periodos')cargarPeriodosAdmin();
-  
-
+  if(t==='boletin-auth')inicializarBoletinAuth().catch(()=>{});
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
 }
@@ -1156,3 +1323,4 @@ document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='E
 </script>
 </body>
 </html>
+
