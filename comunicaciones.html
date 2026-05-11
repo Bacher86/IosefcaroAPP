@@ -122,16 +122,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
         <!-- Adjuntos -->
         <div class="space-y-2">
           <label class="text-[9px] font-black text-slate-400 uppercase">Adjuntos (opcional)</label>
-          <!-- Imagen -->
+          <!-- Múltiples imágenes (carrousel) -->
           <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
-            <p class="text-[9px] font-black text-slate-500 uppercase mb-2">📷 Imagen</p>
-            <div class="flex gap-2 items-center">
-              <input type="file" id="file-img" accept="image/*" class="hidden" onchange="subirArchivo('img',this)">
-              <button type="button" onclick="document.getElementById('file-img').click()" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold flex-shrink-0">Subir imagen</button>
-              <input type="text" id="not-img" class="input-pro text-xs" placeholder="o pegar URL de imagen">
+            <p class="text-[9px] font-black text-slate-500 uppercase mb-2">📷 Imágenes (carrousel — podés subir varias)</p>
+            <div class="flex gap-2 items-center mb-2">
+              <input type="file" id="file-imgs-multi" accept="image/*" multiple class="hidden" onchange="subirMultiplesFotos(this)">
+              <button type="button" onclick="document.getElementById('file-imgs-multi').click()" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold flex-shrink-0"><i class="fas fa-images mr-1"></i>Subir imágenes</button>
+              <span class="text-[9px] text-slate-400">o</span>
+              <input type="text" id="not-img-url" class="input-pro text-xs" placeholder="URL de imagen única">
+              <button type="button" onclick="agregarUrlFoto()" class="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold flex-shrink-0">+ URL</button>
             </div>
-            <div id="prog-img" class="hidden mt-1"><div class="prog-bar-wrap"><div id="prog-bar-img" class="prog-bar" style="width:0%"></div></div><p id="prog-txt-img" class="text-[9px] text-slate-400"></p></div>
-            <div id="prev-img" class="hidden mt-2"><img id="prev-img-el" class="w-full h-24 object-cover rounded-lg" src=""></div>
+            <div id="fotos-preview" class="flex flex-wrap gap-2 mt-2"></div>
+            <div id="prog-imgs" class="hidden mt-1"><div class="prog-bar-wrap"><div id="prog-bar-imgs" class="prog-bar" style="width:0%"></div></div><p id="prog-txt-imgs" class="text-[9px] text-slate-400"></p></div>
+            <!-- Campo legacy para compatibilidad -->
+            <input type="hidden" id="not-img">
           </div>
           <!-- Video -->
           <div class="border border-slate-200 rounded-xl p-3 bg-slate-50">
@@ -472,6 +476,62 @@ async function cargarCursos(){
 function toggleTodos(cb){document.querySelectorAll('.check-cursos').forEach(c=>c.checked=cb.checked);}
 function toggleTodosCal(cb){document.querySelectorAll('.check-cal').forEach(c=>c.checked=cb.checked);}
 
+// ═══ MULTI-FOTOS ═══
+let fotosSubidas = []; // Array de URLs de fotos
+
+function subirMultiplesFotos(input){
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  const progWrap = document.getElementById('prog-imgs');
+  const progBar = document.getElementById('prog-bar-imgs');
+  const progTxt = document.getElementById('prog-txt-imgs');
+  progWrap.classList.remove('hidden');
+  progTxt.textContent = `Subiendo 0/${files.length}...`;
+
+  let done = 0;
+  files.forEach(async (file) => {
+    if(file.size > 10*1024*1024){ progTxt.textContent='❌ Archivo demasiado grande (máx 10MB)'; return; }
+    const path = `comunicados/imgs/${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
+    const ref = storage.ref(path);
+    const task = ref.put(file);
+    task.on('state_changed', snap=>{
+      const p = Math.round(snap.bytesTransferred/snap.totalBytes*100);
+      progBar.style.width = p+'%';
+    }, err=>{
+      progTxt.textContent = '❌ Error: '+err.message;
+    }, async ()=>{
+      const url = await task.snapshot.ref.getDownloadURL();
+      fotosSubidas.push(url);
+      done++;
+      progTxt.textContent = done === files.length ? '✅ Fotos listas' : `Subiendo ${done}/${files.length}...`;
+      progBar.style.width = '100%'; progBar.style.background = '#10b981';
+      renderFotosPreview();
+    });
+  });
+}
+
+function agregarUrlFoto(){
+  const url = document.getElementById('not-img-url').value.trim();
+  if(!url){ alert('Ingresá una URL válida.'); return; }
+  fotosSubidas.push(url);
+  document.getElementById('not-img-url').value = '';
+  renderFotosPreview();
+}
+
+function renderFotosPreview(){
+  const cont = document.getElementById('fotos-preview');
+  cont.innerHTML = fotosSubidas.map((url, i) => `
+    <div style="position:relative;width:72px;height:72px">
+      <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;display:block">
+      <button onclick="quitarFoto(${i})" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>`).join('');
+}
+
+function quitarFoto(idx){
+  fotosSubidas.splice(idx,1);
+  renderFotosPreview();
+}
+
 // ═══ UPLOAD ARCHIVOS ═══
 function subirArchivo(tipo,input){
   const file=input.files[0];if(!file)return;
@@ -548,7 +608,10 @@ async function guardarNoticia(){
   if(pdf) adjuntos.pdf=pdf;
   if(link) adjuntos.link=link;
 
-  const datos={titulo,texto,tag,cursos,adjuntos,creadoPor:staffEmail,creadoPorNombre:staffNombre};
+  // Fotos múltiples (carrousel)
+  const fotosArr = fotosSubidas.length > 0 ? [...fotosSubidas] : (img ? [img] : []);
+
+  const datos={titulo,texto,tag,cursos,adjuntos,fotos:fotosArr,creadoPor:staffEmail,creadoPorNombre:staffNombre};
 
   if(idEditando){
     await db.collection('comunicados').doc(idEditando).update({...datos,editadoEn:new Date().toISOString()});
@@ -583,17 +646,17 @@ async function guardarNoticia(){
 }
 
 function resetForm(){
-  ['not-titulo','not-texto','not-img','not-video','not-pdf','not-link'].forEach(id=>document.getElementById(id).value='');
+  ['not-titulo','not-texto','not-img','not-video','not-pdf','not-link','not-img-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  fotosSubidas=[];renderFotosPreview();
   document.getElementById('not-tag').value='info';
   document.getElementById('not-id-editando').value='';
   document.getElementById('form-titulo-label').textContent='Nuevo comunicado';
   document.getElementById('btn-guardar-txt').textContent='PUBLICAR COMUNICADO';
   document.getElementById('btn-cancelar-edit').classList.add('hidden');
-  document.getElementById('prev-img').classList.add('hidden');
   document.getElementById('prev-pdf').classList.add('hidden');
   document.querySelectorAll('.check-cursos').forEach(c=>c.checked=false);
   document.getElementById('cur-todos').checked=false;
-  ['prog-img','prog-video','prog-pdf'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['prog-imgs','prog-video','prog-pdf'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
 }
 
 async function cargarNoticias(){
@@ -652,6 +715,9 @@ async function editarNoticia(id){
   document.getElementById('not-video').value=p.adjuntos?.video||'';
   document.getElementById('not-pdf').value=p.adjuntos?.pdf||'';
   document.getElementById('not-link').value=p.adjuntos?.link||'';
+  // Cargar fotos existentes
+  fotosSubidas=(p.fotos&&p.fotos.length>0)?[...p.fotos]:(p.adjuntos?.img?[p.adjuntos.img]:p.link?[p.link]:[]);
+  renderFotosPreview();
   document.getElementById('form-titulo-label').textContent='Editar comunicado';
   document.getElementById('btn-guardar-txt').textContent='GUARDAR CAMBIOS';
   document.getElementById('btn-cancelar-edit').classList.remove('hidden');
