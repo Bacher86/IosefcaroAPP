@@ -182,7 +182,67 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
     <div id="container-agenda" class="space-y-3"></div>
   </section>
 
-  <!-- ACADÉMICO / BOLETÍN -->\n  <section id=\"tab-academico\" class=\"tab-content space-y-5\">\n    <div class=\"flex justify-between items-end\">\n      <h3 class=\"font-black text-2xl tracking-tight\">Desempeño</h3>\n      <div class=\"flex gap-2\">\n        <button onclick=\"switchTab('justificaciones')\" class=\"bg-amber-500 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase\"><i class=\"fas fa-file-medical mr-1\"></i>Justificar</button>\n        <button onclick=\"generarBoletinPDF()\" class=\"bg-blue-600 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase\"><i class=\"fas fa-file-pdf mr-1\"></i>PDF</button>\n      </div>\n    </div>\n\n    <!-- Logros -->\n    <div id=\"logros-container\" class=\"space-y-2 hidden\">\n      <h4 class=\"font-black text-sm text-slate-700 flex items-center gap-2\"><i class=\"fas fa-trophy text-amber-500\"></i> Reconocimientos</h4>\n      <div id=\"lista-logros\" class=\"space-y-2\"></div>\n    </div>\n\n    <!-- Switch Numérico / Bimestral -->\n    <div class=\"relative bg-slate-200 p-1 rounded-2xl flex items-center\">\n      <div id=\"switch-selector\" class=\"absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1\"></div>\n      <button onclick=\"setModalidad('num')\"  id=\"txt-num\"  class=\"relative flex-1 py-3 text-[10px] font-black uppercase z-10\">Numérico</button>\n      <button onclick=\"setModalidad('bim')\" id=\"txt-bim\" class=\"relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500\">Bimestral</button>\n    </div>\n\n    <!-- Asistencia -->\n    <div class=\"grid grid-cols-3 gap-2\">\n      <div class=\"bg-white p-4 rounded-3xl border shadow-sm text-center\"><p class=\"text-[8px] font-black text-slate-400 uppercase leading-tight mb-1\">Faltas</p><p id=\"count-faltas\" class=\"text-3xl font-black\">0</p></div>\n      <div class=\"bg-white p-4 rounded-3xl border shadow-sm text-center\"><p class=\"text-[8px] font-black text-slate-400 uppercase leading-tight mb-1\">Tardes</p><p id=\"count-tardes\" class=\"text-3xl font-black\">0</p></div>\n      <div class=\"bg-amber-50 p-4 rounded-3xl border border-amber-100 shadow-sm text-center\"><p class=\"text-[8px] font-black text-amber-500 uppercase leading-tight mb-1\">Sin uniforme</p><p id=\"count-uniforme\" class=\"text-3xl font-black text-amber-600\">0</p></div>\n    </div>\n    <div id=\"detalle-uniforme\" class=\"hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 -mt-1\">\n      <p class=\"text-[9px] font-black text-amber-600 uppercase mb-2\">Días sin uniforme</p>\n      <div id=\"lista-uniforme\" class=\"space-y-1\"></div>\n    </div>\n\n    <!-- Vista NUMÉRICA -->\n    <div id=\"vista-num\">\n      <div id=\"container-notas\" class=\"space-y-4\"></div>\n    </div>\n\n    <!-- Vista BIMESTRAL -->\n    <div id=\"vista-bim\" class=\"hidden\">\n      <div class=\"bg-white rounded-[2rem] p-5 shadow-sm border space-y-4\">\n        <h4 class=\"font-black text-base flex items-center gap-2\"><i class=\"fas fa-graduation-cap text-blue-500\"></i> Calificaciones Bimestrales</h4>\n        <div id=\"bim-loading\" class=\"text-center py-6 text-slate-400 text-sm\"><i class=\"fas fa-spinner fa-spin mr-2\"></i>Cargando períodos...</div>\n        <div id=\"bim-tabs-wrap\" class=\"hidden\">\n          <div id=\"bim-tabs\" class=\"flex bg-slate-100 p-1 rounded-2xl gap-1 mb-4\"></div>\n          <div id=\"bim-content\" class=\"space-y-3\"></div>\n        </div>\n        <div id=\"bim-empty\" class=\"hidden text-center py-6\">\n          <i class=\"fas fa-lock text-3xl text-slate-200 mb-3 block\"></i>\n          <p class=\"font-bold text-slate-400 text-sm\">Las calificaciones no están disponibles todavía.</p>\n        </div>\n      </div>\n    </div>\n\n    <!-- Informes docentes -->\n    <div class=\"mt-2\">\n      <h4 class=\"font-black text-lg text-slate-800 mb-3\">Informes de los Docentes</h4>\n      <div id=\"container-informes\" class=\"space-y-3\"></div>\n    </div>\n  </section>
+  <!-- ACADÉMICO / BOLETÍN -->
+  <section id="tab-academico" class="tab-content space-y-5">
+    <div class="flex justify-between items-end">
+      <h3 class="font-black text-2xl tracking-tight">Desempeño</h3>
+      <div class="flex gap-2">
+        <button onclick="switchTab('justificaciones')" class="bg-amber-500 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase"><i class="fas fa-file-medical mr-1"></i>Justificar</button>
+        <button onclick="generarBoletinPDF()" class="bg-blue-600 text-white text-[10px] font-bold px-3 py-2 rounded-xl shadow-lg uppercase"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
+      </div>
+    </div>
+
+    <!-- Logros -->
+    <div id="logros-container" class="space-y-2 hidden">
+      <h4 class="font-black text-sm text-slate-700 flex items-center gap-2"><i class="fas fa-trophy text-amber-500"></i> Reconocimientos</h4>
+      <div id="lista-logros" class="space-y-2"></div>
+    </div>
+
+    <!-- Switch Numérico / Bimestral -->
+    <div class="relative bg-slate-200 p-1 rounded-2xl flex items-center">
+      <div id="switch-selector" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm switch-bg left-1"></div>
+      <button onclick="setModalidad('num')"  id="txt-num"  class="relative flex-1 py-3 text-[10px] font-black uppercase z-10">Numérico</button>
+      <button onclick="setModalidad('bim')" id="txt-bim" class="relative flex-1 py-3 text-[10px] font-black uppercase z-10 text-slate-500">Bimestral</button>
+    </div>
+
+    <!-- Asistencia -->
+    <div class="grid grid-cols-3 gap-2">
+      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
+      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Tardes</p><p id="count-tardes" class="text-3xl font-black">0</p></div>
+      <div class="bg-amber-50 p-4 rounded-3xl border border-amber-100 shadow-sm text-center"><p class="text-[8px] font-black text-amber-500 uppercase leading-tight mb-1">Sin uniforme</p><p id="count-uniforme" class="text-3xl font-black text-amber-600">0</p></div>
+    </div>
+    <div id="detalle-uniforme" class="hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 -mt-1">
+      <p class="text-[9px] font-black text-amber-600 uppercase mb-2">Días sin uniforme</p>
+      <div id="lista-uniforme" class="space-y-1"></div>
+    </div>
+
+    <!-- Vista NUMÉRICA -->
+    <div id="vista-num">
+      <div id="container-notas" class="space-y-4"></div>
+    </div>
+
+    <!-- Vista BIMESTRAL -->
+    <div id="vista-bim" class="hidden">
+      <div class="bg-white rounded-[2rem] p-5 shadow-sm border space-y-4">
+        <h4 class="font-black text-base flex items-center gap-2"><i class="fas fa-graduation-cap text-blue-500"></i> Calificaciones Bimestrales</h4>
+        <div id="bim-loading" class="text-center py-6 text-slate-400 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando períodos...</div>
+        <div id="bim-tabs-wrap" class="hidden">
+          <div id="bim-tabs" class="flex bg-slate-100 p-1 rounded-2xl gap-1 mb-4"></div>
+          <div id="bim-content" class="space-y-3"></div>
+        </div>
+        <div id="bim-empty" class="hidden text-center py-6">
+          <i class="fas fa-lock text-3xl text-slate-200 mb-3 block"></i>
+          <p class="font-bold text-slate-400 text-sm">Las calificaciones no están disponibles todavía.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informes docentes -->
+    <div class="mt-2">
+      <h4 class="font-black text-lg text-slate-800 mb-3">Informes de los Docentes</h4>
+      <div id="container-informes" class="space-y-3"></div>
+    </div>
+  </section>
 
   <!-- MENSAJES -->
   <section id="tab-mensajes" class="tab-content" style="padding-bottom:0">
