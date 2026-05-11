@@ -113,49 +113,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     </div>
   </section>
 
-  <section class="panel-card">
-  <h2>📘 Nota bimestral</h2>
-
-  <div class="contexto-superior">
-    <label>Curso:</label>
-    <select id="cursoActivo">
-      <option>1° A</option>
-      <option>2° A</option>
-      <option>3° A</option>
-    </select>
-
-    <label>Bimestre:</label>
-    <select id="bimestreActivo">
-      <option value="1">1°</option>
-      <option value="2">2°</option>
-      <option value="3">3°</option>
-      <option value="4">4°</option>
-    </select>
-  </div>
-
-  <table class="tabla-indicadores">
-    <thead>
-      <tr>
-        <th>Indicador</th>
-        <th>1°</th>
-        <th>2°</th>
-        <th>3°</th>
-        <th>4°</th>
-      </tr>
-    </thead>
-    <tbody id="tbodyIndicadores"></tbody>
-  </table>
-
-  <button onclick="agregarIndicador()">➕ Agregar Indicador</button>
-
-  <div class="calificacion-final">
-    <label>Calificación Final:</label>
-    <input type="number" id="calificacionFinal" min="1" max="10">
-  </div>
-
-  <button onclick="guardarEvaluacion()">💾 Guardar Evaluación</button>
-</section>
-
   <!-- ASISTENCIA -->
   <section id="tab-asis" class="tab-content">
     <div class="flex items-center justify-between mb-4">
@@ -866,8 +823,6 @@ function poblarCursosEnComunicados(){
   curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
 }
 
-  
-
 // ══ UTILS ══
 function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
@@ -893,57 +848,6 @@ window.addEventListener('load',()=>{
     login(em);
   }
 });
-<script>
-function agregarIndicador(texto = '') {
-  const tbody = document.getElementById('tbodyIndicadores');
-  const fila = document.createElement('tr');
-
-  fila.innerHTML = `
-    <td><input type="text" value="${texto}" placeholder="Escriba el indicador"></td>
-    <td><input type="checkbox"></td>
-    <td><input type="checkbox"></td>
-    <td><input type="checkbox"></td>
-    <td><input type="checkbox"></td>
-  `;
-
-  tbody.appendChild(fila);
-}
-
-function guardarEvaluacion() {
-  const curso = document.getElementById('cursoActivo').value;
-  const bimestre = document.getElementById('bimestreActivo').value;
-  const nota = document.getElementById('calificacionFinal').value;
-
-  const filas = document.querySelectorAll('#tbodyIndicadores tr');
-  const indicadores = [];
-
-  filas.forEach(fila => {
-    const texto = fila.querySelector('td input[type="text"]').value;
-    const checks = fila.querySelectorAll('input[type="checkbox"]');
-
-    indicadores.push({
-      descripcion: texto,
-      b1: checks[0].checked,
-      b2: checks[1].checked,
-      b3: checks[2].checked,
-      b4: checks[3].checked
-    });
-  });
-
-  const datos = {
-    curso,
-    bimestre,
-    nota,
-    indicadores,
-    fecha: new Date().toISOString()
-  };
-
-  localStorage.setItem(`evaluacion_${curso}_${bimestre}`, JSON.stringify(datos));
-  alert('Evaluación guardada correctamente');
-}
-
-agregarIndicador('Interpreta grupalmente obras musicales');
-agregarIndicador('Participa activamente en clase');
 </script>
 </body>
 </html>
