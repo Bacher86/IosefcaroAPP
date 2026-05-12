@@ -1279,74 +1279,180 @@ function setModalidad(m){
 function cambiarHijo(id){alumnoSeleccionadoId=id;window._bimestresLoaded=false;inicializarApp();}
 function toggleIosi(){const m=document.getElementById('iosi-modal');m.style.display=m.style.display==='flex'?'none':'flex';}
 async function generarBoletinPDF(){
-  const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId);
-  if(!hijo)return;
-  // Recopilar notas agrupadas por período
-  const periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.innerHTML=`<div style="background:white;border-radius:28px;padding:28px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <h3 style="font-size:18px;font-weight:900;color:#0f172a;margin:0 0 6px">Descargar Boletín PDF</h3>
+    <p style="font-size:12px;color:#64748b;margin:0 0 20px">¿Qué tipo de boletín querés descargar?</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button id="pdf-btn-num" style="background:#0f172a;color:white;border:none;padding:16px;border-radius:16px;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left">
+        <span style="font-size:22px">🔢</span><div><div>Boletín Numérico</div><div style="font-size:10px;font-weight:500;opacity:.7">Notas por período y promedio</div></div>
+      </button>
+      <button id="pdf-btn-bim" style="background:#1d4ed8;color:white;border:none;padding:16px;border-radius:16px;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left">
+        <span style="font-size:22px">📋</span><div><div>Boletín Bimestral</div><div style="font-size:10px;font-weight:500;opacity:.7">Indicadores por materia y período</div></div>
+      </button>
+      <button id="pdf-btn-cancel" style="background:#f1f5f9;color:#64748b;border:none;padding:12px;border-radius:16px;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  const tipo = await new Promise(resolve=>{
+    overlay.querySelector('#pdf-btn-num').onclick=()=>{overlay.remove();resolve('num');};
+    overlay.querySelector('#pdf-btn-bim').onclick=()=>{overlay.remove();resolve('bim');};
+    overlay.querySelector('#pdf-btn-cancel').onclick=()=>{overlay.remove();resolve(null);};
+  });
+  if(!tipo) return;
+  if(tipo==='num') await _generarPDFNumerico();
+  else             await _generarPDFBimestral();
+}
+
+async function _generarPDFNumerico(){
+  const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId); if(!hijo) return;
+  let periodosSnap;
+  try{periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();}
+  catch(e){periodosSnap=await db.collection('periodos').get();}
   const periodos=[]; periodosSnap.forEach(doc=>periodos.push({id:doc.id,...doc.data()}));
   const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
   const cursoAlu=alumnoDoc.data()?.curso||'';
-  // Obtener todas las materias con notas
   const todasNotasSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').get();
   const materias=new Set(); const notasPorMateriaPeriodo={};
   todasNotasSnap.forEach(doc=>{
-    const n=doc.data();if(!n.materia)return;materias.add(n.materia);
-    if(!notasPorMateriaPeriodo[n.materia])notasPorMateriaPeriodo[n.materia]={};
+    const n=doc.data(); if(!n.materia) return;
     const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_')&&n[k]!=='');
-    if(n.rite) notasPorMateriaPeriodo[n.materia][n.periodo]=n.rite;
-    else if(cols.length) notasPorMateriaPeriodo[n.materia][n.periodo]=cols.map(([,v])=>parseFloat(v)).filter(Boolean).reduce((a,b,_,arr)=>a+b/arr.length,0).toFixed(1);
-    else notasPorMateriaPeriodo[n.materia][n.periodo]='';
+    if(!cols.length) return;
+    materias.add(n.materia);
+    if(!notasPorMateriaPeriodo[n.materia]) notasPorMateriaPeriodo[n.materia]={};
+    const prom=(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1);
+    notasPorMateriaPeriodo[n.materia][n.periodo]=prom;
   });
   const materiasArr=[...materias].sort();
-  const periodosArr=periodos.filter(p=>materias.size>0);
-  // Asistencia
+  const periodosArr=periodos.filter(p=>materiasArr.some(m=>notasPorMateriaPeriodo[m]?.[p.slug]||notasPorMateriaPeriodo[m]?.[p.nombre]));
   const asisSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
   let faltas=0,tardes=0; asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
-  // Construir HTML del boletín
-  const colores={'TEA':'#16a34a','TEP':'#2563eb','TED':'#d97706'};
-  const getColor=v=>{if(v==='TEA'||v==='TEP'||v==='TED')return colores[v];const n=parseFloat(v);if(isNaN(n))return '#64748b';return n>=7?'#16a34a':n>=6?'#d97706':'#ef4444';};
+  const getColor=v=>{const n=parseFloat(v);if(isNaN(n))return'#64748b';return n>=7?'#16a34a':n>=6?'#d97706':'#ef4444';};
   let thead=`<tr style="background:#0f172a;color:white"><th style="padding:8px 10px;text-align:left;font-size:11px">ASIGNATURA</th>`;
-  periodosArr.forEach(p=>thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">${p.slug||p.nombre.slice(0,4)}</th>`);
+  periodosArr.forEach(p=>thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">${(p.nombre||p.slug||'').slice(0,8)}</th>`);
   thead+=`<th style="padding:8px 10px;text-align:center;font-size:10px">PROM.</th></tr>`;
   let tbody='';
   materiasArr.forEach((mat,idx)=>{
-    const bg=idx%2===0?'#f8fafc':'white';tbody+=`<tr style="background:${bg}"><td style="padding:7px 10px;font-size:11px;font-weight:600;border-bottom:1px solid #f1f5f9">${mat}</td>`;
+    const bg=idx%2===0?'#f8fafc':'white';
+    tbody+=`<tr style="background:${bg}"><td style="padding:7px 10px;font-size:11px;font-weight:600;border-bottom:1px solid #f1f5f9">${mat}</td>`;
     let suma=0,cnt=0;
-    periodosArr.forEach(p=>{const v=notasPorMateriaPeriodo[mat]?.[p.slug]||notasPorMateriaPeriodo[mat]?.[p.nombre]||'';const color=getColor(v);if(parseFloat(v)){suma+=parseFloat(v);cnt++;}tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${color};border-bottom:1px solid #f1f5f9">${v||'—'}</td>`;});
-    const prom=cnt>0?(suma/cnt).toFixed(1):'—';const promColor=getColor(prom);
-    tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${promColor};border-bottom:1px solid #f1f5f9;background:#f0fdf4">${prom}</td></tr>`;
+    periodosArr.forEach(p=>{
+      const v=notasPorMateriaPeriodo[mat]?.[p.slug]||notasPorMateriaPeriodo[mat]?.[p.nombre]||'';
+      const color=getColor(v); if(parseFloat(v)){suma+=parseFloat(v);cnt++;}
+      tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${color};border-bottom:1px solid #f1f5f9">${v||'—'}</td>`;
+    });
+    const prom=cnt>0?(suma/cnt).toFixed(1):'—'; const pc=getColor(prom);
+    tbody+=`<td style="padding:7px 10px;text-align:center;font-size:12px;font-weight:800;color:${pc};border-bottom:1px solid #f1f5f9;background:#f0fdf4">${prom}</td></tr>`;
   });
-  const htmlBoletín=`
-  <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#1e293b;padding:32px;max-width:700px;margin:0 auto">
+  const html=_headerPDF(hijo.nombre,cursoAlu)+
+    `<table style="width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+      <thead>${thead}</thead><tbody>${tbody}</tbody>
+    </table>`+
+    _footerPDF(faltas,tardes)+
+    `<p style="font-size:9px;color:#94a3b8;font-weight:700;margin-top:12px">Verde &ge;7 &middot; Naranja =6 &middot; Rojo &lt;6</p></div>`;
+  _descargarPDF(html,`Boletín_Numérico_${hijo.nombre}`);
+}
+
+async function _generarPDFBimestral(){
+  const hijo=listaHijos.find(h=>h.id===alumnoSeleccionadoId); if(!hijo) return;
+  let periodosSnap;
+  try{periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();}
+  catch(e){periodosSnap=await db.collection('periodos').get();}
+  const periodos=[]; periodosSnap.forEach(doc=>periodos.push({id:doc.id,...doc.data()}));
+  const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
+  const cursoAlu=alumnoDoc.data()?.curso||'';
+  const todasNotasSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').get();
+  const porPeriodo={};
+  todasNotasSnap.forEach(doc=>{
+    const n=doc.data(); if(!n.materia||!n.indicadores) return;
+    if(!Object.keys(n.indicadores).length) return;
+    if(!porPeriodo[n.periodo]) porPeriodo[n.periodo]={};
+    porPeriodo[n.periodo][n.materia]=n.indicadores;
+  });
+  const asisSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
+  let faltas=0,tardes=0; asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
+  const colInd={'Logrado':'#16a34a','En proceso':'#d97706','A fortalecer':'#ef4444'};
+  const bgInd={'Logrado':'#f0fdf4','En proceso':'#fffbeb','A fortalecer':'#fff5f5'};
+  const iconInd={'Logrado':'&#10003;','En proceso':'&#9680;','A fortalecer':'&#9651;'};
+  let seccionesHtml='';
+  const periodosConDatos=periodos.filter(p=>porPeriodo[p.slug]||porPeriodo[p.nombre]);
+  if(!periodosConDatos.length){
+    seccionesHtml=`<p style="color:#94a3b8;text-align:center;padding:32px;font-size:13px">No hay calificaciones bimestrales disponibles.</p>`;
+  } else {
+    periodosConDatos.forEach(per=>{
+      const materias=porPeriodo[per.slug]||porPeriodo[per.nombre]||{};
+      let tablasMateria='';
+      Object.entries(materias).sort(([a],[b])=>a.localeCompare(b)).forEach(([materia,indicadores])=>{
+        let rows='';
+        Object.entries(indicadores).forEach(([ind,val])=>{
+          const color=colInd[val]||'#64748b'; const bg=bgInd[val]||'#f8fafc'; const icon=iconInd[val]||'&mdash;';
+          rows+=`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">${ind}</td>
+            <td style="padding:6px 10px;text-align:center;border-bottom:1px solid #f1f5f9">
+              <span style="background:${bg};color:${color};padding:2px 10px;border-radius:20px;font-size:10px;font-weight:800">${icon} ${val||'&mdash;'}</span>
+            </td></tr>`;
+        });
+        tablasMateria+=`<div style="margin-bottom:12px">
+          <p style="font-size:10px;font-weight:800;text-transform:uppercase;color:#475569;margin-bottom:4px;letter-spacing:.05em">${materia}</p>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+            <thead><tr style="background:#f8fafc">
+              <th style="padding:6px 10px;text-align:left;font-size:10px;color:#64748b;font-weight:700">Indicador</th>
+              <th style="padding:6px 10px;text-align:center;font-size:10px;color:#64748b;font-weight:700;width:130px">Estado</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>`;
+      });
+      seccionesHtml+=`<div style="margin-bottom:24px">
+        <div style="background:#0f172a;color:white;padding:8px 14px;border-radius:10px;margin-bottom:12px;font-size:12px;font-weight:800">${per.nombre||per.slug}</div>
+        ${tablasMateria}
+      </div>`;
+    });
+  }
+  const leyenda=`<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+    <span style="font-size:9px;color:#16a34a;font-weight:700">&#10003; Logrado</span>
+    <span style="font-size:9px;color:#d97706;font-weight:700">&#9680; En proceso</span>
+    <span style="font-size:9px;color:#ef4444;font-weight:700">&#9651; A fortalecer</span>
+  </div>`;
+  const html=_headerPDF(hijo.nombre,cursoAlu)+seccionesHtml+_footerPDF(faltas,tardes)+leyenda+`</div>`;
+  _descargarPDF(html,`Boletín_Bimestral_${hijo.nombre}`);
+}
+
+function _headerPDF(nombre,curso){
+  return`<div style="font-family:sans-serif;color:#1e293b;padding:32px;max-width:700px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0f172a;padding-bottom:16px;margin-bottom:20px">
       <div>
-        <p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#64748b">Instituto Iosef Caro</p>
+        <p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin:0">Instituto Iosef Caro</p>
         <h1 style="font-size:22px;font-weight:800;margin:4px 0;color:#0f172a">Boletín de Calificaciones</h1>
-        <p style="font-size:13px;color:#64748b">Año lectivo ${new Date().getFullYear()}</p>
+        <p style="font-size:13px;color:#64748b;margin:0">Año lectivo ${new Date().getFullYear()}</p>
       </div>
-      <div style="text-align:right">
-        <div style="width:52px;height:52px;background:#0f172a;border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px">🏫</div>
-      </div>
+      <div style="width:52px;height:52px;background:#0f172a;border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px">&#127979;</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Alumno/a</p><p style="font-size:15px;font-weight:800;color:#0f172a">${hijo.nombre}</p></div>
-      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Curso</p><p style="font-size:15px;font-weight:800;color:#0f172a">${cursoAlu}</p></div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
-      <thead>${thead}</thead><tbody>${tbody}</tbody>
-    </table>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px">
-      <div style="background:#fff5f5;border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f87171;margin-bottom:4px">Inasistencias</p><p style="font-size:24px;font-weight:800;color:#ef4444">${faltas}</p></div>
-      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f59e0b;margin-bottom:4px">Tardanzas</p><p style="font-size:24px;font-weight:800;color:#d97706">${tardes}</p></div>
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#4ade80;margin-bottom:4px">Generado</p><p style="font-size:11px;font-weight:800;color:#16a34a">${new Date().toLocaleDateString('es-AR')}</p></div>
-    </div>
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
-      <div><p style="font-size:9px;color:#94a3b8;font-weight:700">TEA = Trayectoria Avanzada · TEP = En Proceso · TED = En Desarrollo</p><p style="font-size:9px;color:#94a3b8;font-weight:700;margin-top:2px">Verde ≥ 7 · Naranja = 6 · Rojo &lt; 6</p></div>
-      <p style="font-size:9px;color:#94a3b8;font-weight:700">Iosef Caro © ${new Date().getFullYear()}</p>
-    </div>
+      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin:0 0 4px">Alumno/a</p><p style="font-size:15px;font-weight:800;color:#0f172a;margin:0">${nombre}</p></div>
+      <div style="background:#f8fafc;border-radius:12px;padding:12px 16px"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin:0 0 4px">Curso</p><p style="font-size:15px;font-weight:800;color:#0f172a;margin:0">${curso}</p></div>
+    </div>`;
+}
+function _footerPDF(faltas,tardes){
+  return`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px">
+    <div style="background:#fff5f5;border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f87171;margin:0 0 4px">Inasistencias</p><p style="font-size:24px;font-weight:800;color:#ef4444;margin:0">${faltas}</p></div>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#f59e0b;margin:0 0 4px">Tardanzas</p><p style="font-size:24px;font-weight:800;color:#d97706;margin:0">${tardes}</p></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center"><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#4ade80;margin:0 0 4px">Generado</p><p style="font-size:11px;font-weight:800;color:#16a34a;margin:0">${new Date().toLocaleDateString('es-AR')}</p></div>
+  </div>
+  <div style="margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9;text-align:right">
+    <p style="font-size:9px;color:#94a3b8;font-weight:700;margin:0">Iosef Caro &copy; ${new Date().getFullYear()}</p>
   </div>`;
-  const container=document.createElement('div');container.innerHTML=htmlBoletín;document.body.appendChild(container);
-  html2pdf().from(container).set({margin:0,filename:`Boletín_${hijo.nombre}_${new Date().getFullYear()}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).save().then(()=>container.remove());
+}
+function _descargarPDF(html,nombre){
+  const container=document.createElement('div');
+  container.innerHTML=html;
+  document.body.appendChild(container);
+  html2pdf().from(container).set({
+    margin:0,
+    filename:`${nombre}_${new Date().getFullYear()}.pdf`,
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).save().then(()=>container.remove());
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 // Auto-login desde index.html (URL param o sessionStorage)
