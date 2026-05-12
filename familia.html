@@ -763,26 +763,38 @@ async function cargarAcademico(){
     const visDoc=await db.collection('config_visibilidad').doc(perDoc.id).get();
     const visData=visDoc.exists?visDoc.data():{};
     if(!visData[`${p.slug}_${cursoAlu}`]&&!visData[p.slug]&&!visData['todos'])continue;
+
+    // Solo documentos con notas numéricas (nota_*)
     const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();
-    if(nSnap.empty)continue;
+    if(nSnap.empty) continue;
+
+    // Filtrar solo los que tienen al menos un campo nota_*
+    const conNotas=nSnap.docs.filter(d=>{
+      const dd=d.data();
+      return Object.keys(dd).some(k=>k.startsWith('nota_')&&dd[k]!=='');
+    });
+    if(!conNotas.length) continue;
+
     container.innerHTML+=`<div class="bg-slate-100 px-4 py-2 rounded-xl mb-2"><p class="text-[10px] font-black text-slate-500 uppercase">${p.nombre}</p></div>`;
-    nSnap.forEach(doc=>{
-      const n=doc.data();brain.notas.push(n);let nh='';
+    conNotas.forEach(doc=>{
+      const n=doc.data(); brain.notas.push(n);
+      // Leer columnas configuradas para mostrar labels, fallback a claves
       const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
-      if(cols.length){
-        nh=`<div class="flex flex-wrap gap-2">${cols.map(([,v])=>{const nota=parseFloat(v);return`<div class="${nota>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700'} px-3 py-1.5 rounded-xl text-center"><p class="font-black text-sm">${nota}</p></div>`;}).join('')}</div>`;
-      } else if(n.calificacion_final||n.nota_final){
-        const val=n.calificacion_final||n.nota_final;
-        const nf=parseFloat(val);
-        const cls=isNaN(nf)?'bg-blue-50 text-blue-700':(nf>=6?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-700');
-        nh=`<div class="${cls} px-3 py-1.5 rounded-xl inline-block"><p class="font-black text-sm">${val}</p></div>`;
-      } else {
-        nh=`<p class="text-slate-300 text-xs italic">Sin notas</p>`;
-      }
-      container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3"><p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>${nh}</div>`;
+      const notasHtml=cols.map(([,v])=>{
+        const nota=parseFloat(v);
+        const cls=nota>=6?'bg-emerald-50 text-emerald-700 border border-emerald-100':'bg-rose-50 text-rose-700 border border-rose-100';
+        return`<div class="${cls} px-4 py-2 rounded-2xl text-center"><p class="font-black text-lg">${nota}</p></div>`;
+      }).join('');
+      const prom=cols.length>1?(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1):null;
+      const promHtml=prom?`<div class="flex items-center gap-1 mt-2 pt-2 border-t border-slate-50"><span class="text-[9px] font-black text-slate-400 uppercase">Promedio</span><span class="font-black text-sm ${parseFloat(prom)>=6?'text-emerald-600':'text-rose-600'}">${prom}</span></div>`:'';
+      container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3">
+        <p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>
+        <div class="flex flex-wrap gap-2">${notasHtml||'<p class="text-slate-300 text-xs italic">Sin notas cargadas</p>'}</div>
+        ${promHtml}
+      </div>`;
     });
   }
-  if(!brain.notas.length)container.innerHTML=`<div class="bg-white p-8 rounded-3xl border shadow-sm text-center"><i class="fas fa-lock text-3xl text-slate-200 mb-3 block"></i><p class="font-bold text-slate-400">Las calificaciones no están disponibles todavía.</p></div>`;
+  if(!brain.notas.length) container.innerHTML=`<div class="bg-white p-8 rounded-3xl border shadow-sm text-center"><i class="fas fa-lock text-3xl text-slate-200 mb-3 block"></i><p class="font-bold text-slate-400">Las calificaciones numéricas no están disponibles todavía.</p></div>`;
 
   // Asistencia
   const aSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
@@ -830,8 +842,13 @@ async function cargarBimestral(){
     const key=`${p.slug}_${cursoAlu}`;
     if(visData[key]||visData[p.slug]||visData['todos']){
       const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();
-      if(!nSnap.empty){
-        const notas=[];nSnap.forEach(d=>notas.push(d.data()));
+      // Solo documentos que tengan campo "indicadores" (objeto con indicadores bimestrales)
+      const conIndicadores=nSnap.docs.filter(d=>{
+        const dd=d.data();
+        return dd.indicadores && typeof dd.indicadores==='object' && Object.keys(dd.indicadores).length>0;
+      });
+      if(conIndicadores.length>0){
+        const notas=conIndicadores.map(d=>d.data());
         bimestresVisibles.push({id:perDoc.id,per:p,notas});
       }
     }
@@ -850,45 +867,36 @@ function mostrarBimestre(idx){
   if(!bim){document.getElementById('bim-content').innerHTML='';return;}
   const contentEl=document.getElementById('bim-content');
   contentEl.innerHTML='';
-  const porMateria={};
-  bim.notas.forEach(n=>{if(!porMateria[n.materia])porMateria[n.materia]=[];porMateria[n.materia].push(n);});
-  for(const [materia,notas] of Object.entries(porMateria)){
-    let indicadoresHtml='';
-    for(const n of notas){
-      const indCols=Object.entries(n).filter(([k])=>k.startsWith('ind_')||k.startsWith('indicador_'));
-      if(indCols.length>0){
-        indCols.forEach(([k,v])=>{
-          const label=k.replace(/^ind_|^indicador_/,'').replace(/_/g,' ');
-          const cumple=v===true||v==='si'||v==='X'||v==='x'||v===1;
-          indicadoresHtml+=`<div class="bim-ind-row"><div class="bim-x ${cumple?'si':'no'}">${cumple?'✓':'—'}</div><span class="text-xs text-slate-700 font-semibold">${label}</span></div>`;
-        });
-      }
-      const calFinal=n.calificacion_final||n.calif_final||n.nota_final||n.calificacion||'';
-      const notaNums=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
-      let calHtml='';
-      if(calFinal){
-        const nf=parseFloat(calFinal);
-        const cls=isNaN(nf)?'def':(nf>=7?'alto':nf>=6?'medio':'bajo');
-        calHtml=`<div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100"><span class="text-[9px] font-black text-slate-400 uppercase">Calificación final</span><span class="bim-calif ${cls}">${calFinal}</span></div>`;
-      } else if(notaNums.length>0){
-        const notasHtml=notaNums.map(([,v])=>{const nota=parseFloat(v);const cls=nota>=7?'alto':nota>=6?'medio':'bajo';return`<span class="bim-calif ${cls}">${nota}</span>`;}).join('');
-        calHtml=`<div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-100"><span class="text-[9px] font-black text-slate-400 uppercase">Notas</span>${notasHtml}</div>`;
-      }
-      if(indicadoresHtml||calHtml){
-        contentEl.innerHTML+=`<div class="bim-materia-row"><p class="text-[10px] font-black uppercase text-slate-800 mb-1">${materia}</p>${indicadoresHtml}${calHtml}</div>`;
-      }
-    }
-    // Fallback: materia sin indicadores especiales
-    if(!indicadoresHtml&&notas.length>0){
-      const n=notas[0];
-      let calHtml='';
-      const notaNums=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
-      if(notaNums.length){calHtml=notaNums.map(([,v])=>{const nota=parseFloat(v);const cls=nota>=7?'alto':nota>=6?'medio':'bajo';return`<span class="bim-calif ${cls}">${nota}</span>`;}).join('');}
-      else if(n.calificacion_final||n.nota_final){const val=n.calificacion_final||n.nota_final;const nf=parseFloat(val);const cls=isNaN(nf)?'def':(nf>=7?'alto':nf>=6?'medio':'bajo');calHtml=`<span class="bim-calif ${cls}">${val}</span>`;}
-      contentEl.innerHTML+=`<div class="bim-materia-row"><div class="flex items-center justify-between flex-wrap gap-2"><p class="text-[10px] font-black uppercase text-slate-800">${materia}</p><div class="flex flex-wrap gap-2">${calHtml||'<span class="text-xs text-slate-300">Sin calificación</span>'}</div></div></div>`;
-    }
-  }
-  if(!contentEl.innerHTML.trim())contentEl.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin datos para este período.</p>';
+
+  // Los docentes guardan: {materia, periodo, indicadores: {"Nombre indicador": "Logrado"|"En proceso"|"A fortalecer"}}
+  const colorInd={
+    'Logrado':       {bg:'bg-emerald-100',text:'text-emerald-700',icon:'✓'},
+    'En proceso':    {bg:'bg-amber-100',  text:'text-amber-700',  icon:'◐'},
+    'A fortalecer':  {bg:'bg-rose-100',   text:'text-rose-700',   icon:'△'},
+  };
+
+  bim.notas.forEach(n=>{
+    const indicadores=n.indicadores||{};
+    const entries=Object.entries(indicadores);
+    if(!entries.length) return;
+
+    const indHtml=entries.map(([nombre,valor])=>{
+      const c=colorInd[valor]||{bg:'bg-slate-100',text:'text-slate-500',icon:'—'};
+      return`<div class="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 gap-3">
+        <span class="text-sm text-slate-700 font-medium flex-1">${nombre}</span>
+        <span class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black ${c.bg} ${c.text}">
+          ${c.icon} ${valor||'—'}
+        </span>
+      </div>`;
+    }).join('');
+
+    contentEl.innerHTML+=`<div class="bim-materia-row">
+      <p class="text-[10px] font-black uppercase text-slate-500 mb-2 tracking-wide">${n.materia}</p>
+      ${indHtml}
+    </div>`;
+  });
+
+  if(!contentEl.innerHTML.trim()) contentEl.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin indicadores cargados para este período.</p>';
 }
 
 async function cargarInformesFamilia(){
