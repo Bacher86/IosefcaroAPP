@@ -570,45 +570,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
   </main>
 </div>
 <script>
-// ── Firebase ready queue ──
-window._fbReady = false;
-window._fbQueue = [];
-window._fbOnReady = function(fn){ if(window._fbReady){ fn(); } else { window._fbQueue.push(fn); } };
-
-// Universal stub: catches calls to any function not yet defined
-// For each known onclick function, create a stub that queues execution
-(function(){
-  var _stubs = ['validarIngreso','switchTab','cerrarSesion','cargaManualAlumno',
-    'generarPassAlumno','previewAluMail','cargarCSVAlumnos','ejecutarCSVAlumnos',
-    'procesarCSV','procesarCSVDocentes','crearStaff','crearDocente','crearMaestro',
-    'crearCurso','crearPeriodo','crearCiclo','activarCiclo','eliminarDoc',
-    'exportarExcel','guardarPerfilAlumno','cerrarModalAlumno','cerrarModalStaff',
-    'abrirModalAlumno','eliminarAlumnosSeleccionados','eliminarFamiliasSeleccionadas',
-    'eliminarStaff','guardarEdicionStaff','toggleSeleccionarTodo',
-    'toggleSeleccionarTodoAlumnos','agregarTag','quitarTag','agregarContactoEmergencia',
-    'publicarTodoBoletin','ocultarTodoBoletin','publicarTodoElPeriodo','ocultarTodoElPeriodo',
-    'togglePeriodoActivo','agregarIndicador','eliminarIndicador','login',
-    'confirmarNotas','confirmarAsistencia','guardarInforme','publicarComunicadoDocente',
-    'eliminarComunicadoDocente','publicarTablon','cancelarEditarTablon',
-    'editarTablonDocente','eliminarTablonDocente','selTipoTablon',
-    'guardarEvento','editarEventoDoc','eliminarEventoDoc','cancelarEditarEventoDoc',
-    'agregarColumna','eliminarColumna','setAsis','setUniforme'];
-  _stubs.forEach(function(name){
-    if(typeof window[name]==='undefined'){
-      window[name]=function(){
-        var args=arguments;
-        window._fbOnReady(function(){ if(typeof window[name]==='function' && window[name]!==arguments.callee){ window[name].apply(window,args); } });
-      };
-    }
-  });
-})();
-</script>
-
-<script>
+// Firebase sequential loader
 var _afq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
 var _afqi=0;
-function _loadNextA(){if(_afqi>=_afq.length){_initAdmin();return;}var s=document.createElement('script');s.src=_afq[_afqi++];s.onload=_loadNextA;s.onerror=_loadNextA;document.head.appendChild(s);}
+function _loadNextA(){
+  if(_afqi>=_afq.length){_initAdmin();return;}
+  var s=document.createElement('script');
+  s.src=_afq[_afqi++];
+  s.onload=_loadNextA;
+  s.onerror=function(){console.error('Error cargando Firebase '+_afq[_afqi-1]);};
+  document.head.appendChild(s);
+}
 _loadNextA();
+
 function _initAdmin(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124288",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);const db=firebase.firestore();
@@ -621,7 +595,7 @@ let alumnoEditandoId=null;
 // ══════════════════════
 // LOGIN
 // ══════════════════════
-async function validarIngreso(){
+window.validarIngreso = async function validarIngreso(){
   const em=document.getElementById('log-email').value.trim().toLowerCase();
   const ps=document.getElementById('log-pass').value.trim();
   if(!em||!ps)return alert("Ingresá tus datos.");
@@ -636,7 +610,7 @@ async function validarIngreso(){
     autorizar();
   }catch(e){alert("Error de conexión.");}
 }
-function autorizar(){
+window.autorizar = function autorizar(){
   sessionStorage.setItem('iosef_admin_session','admin');
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('admin-content').classList.remove('hidden');
@@ -665,12 +639,12 @@ window.onload=()=>{
     refrescarTodo();
   }
 };
-function cerrarSesion(){sessionStorage.clear();location.reload();}
+window.cerrarSesion = function cerrarSesion(){sessionStorage.clear();location.reload();}
 
 // ══════════════════════
 // LOG DE ACTIVIDAD
 // ══════════════════════
-async function registrarLog(tipo,descripcion,categoria='general'){
+window.registrarLog = async function registrarLog(tipo,descripcion,categoria='general'){
   try{
     await db.collection('log_actividad').add({
       tipo,descripcion,categoria,
@@ -681,7 +655,7 @@ async function registrarLog(tipo,descripcion,categoria='general'){
   }catch(e){console.warn('Error log:',e);}
 }
 
-async function cargarLog(){
+window.cargarLog = async function cargarLog(){
   const filtroTipo=document.getElementById('log-filtro-tipo').value;
   const filtroDias=parseInt(document.getElementById('log-filtro-dias').value||30);
   const cont=document.getElementById('log-container');
@@ -716,7 +690,7 @@ async function cargarLog(){
 // ══════════════════════
 // CICLO LECTIVO
 // ══════════════════════
-async function cargarCiclos(){
+window.cargarCiclos = async function cargarCiclos(){
   const snap=await db.collection('ciclos_lectivos').orderBy('nombre','desc').get();
   const cont=document.getElementById('lista-ciclos');
   const labelActivo=document.getElementById('ciclo-activo-label');
@@ -746,7 +720,7 @@ async function cargarCiclos(){
   if(!hayActivo){labelActivo.textContent='Sin ciclo activo';nombreActual.textContent='—';fechasActual.textContent='Creá y activá un ciclo lectivo';}
 }
 
-async function crearCiclo(){
+window.crearCiclo = async function crearCiclo(){
   const nombre=document.getElementById('ciclo-nombre').value.trim();
   const inicio=document.getElementById('ciclo-inicio').value;
   const fin=document.getElementById('ciclo-fin').value;
@@ -758,7 +732,7 @@ async function crearCiclo(){
   cargarCiclos();
 }
 
-async function activarCiclo(id){
+window.activarCiclo = async function activarCiclo(id){
   if(!confirm("¿Activar este ciclo? El ciclo actualmente activo quedará como histórico. Los docentes comenzarán a cargar en el nuevo ciclo."))return;
   const batch=db.batch();
   const snap=await db.collection('ciclos_lectivos').get();
@@ -773,7 +747,7 @@ async function activarCiclo(id){
 // ══════════════════════
 // PERFIL ALUMNO
 // ══════════════════════
-async function abrirModalAlumno(alumnoId,nombre){
+window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
   alumnoEditandoId=alumnoId;
   document.getElementById('modal-alu-nombre').textContent=nombre;
   // Limpiar
@@ -826,7 +800,7 @@ async function abrirModalAlumno(alumnoId,nombre){
   document.getElementById('modal-alumno').classList.add('open');
 }
 
-function agregarContactoEmergencia(){
+window.agregarContactoEmergencia = function agregarContactoEmergencia(){
   const div=document.createElement('div');div.className='contacto-emergencia grid grid-cols-3 gap-2';
   div.innerHTML=`<input type="text" class="ce-nombre input-pro text-xs" placeholder="Nombre">
     <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
@@ -834,7 +808,7 @@ function agregarContactoEmergencia(){
   document.getElementById('contactos-emergencia-cont').appendChild(div);
 }
 
-async function guardarPerfilAlumno(){
+window.guardarPerfilAlumno = async function guardarPerfilAlumno(){
   if(!alumnoEditandoId)return;
   const contactos=[];
   document.querySelectorAll('.contacto-emergencia').forEach(row=>{
@@ -862,13 +836,13 @@ async function guardarPerfilAlumno(){
   cargarAlumnosFiltrados();
 }
 
-function cerrarModalAlumno(){document.getElementById('modal-alumno').classList.remove('open');alumnoEditandoId=null;}
+window.cerrarModalAlumno = function cerrarModalAlumno(){document.getElementById('modal-alumno').classList.remove('open');alumnoEditandoId=null;}
 document.getElementById('modal-alumno').addEventListener('click',function(e){if(e.target===this)cerrarModalAlumno();});
 
 // ══════════════════════
 // ESTADÍSTICAS
 // ══════════════════════
-async function cargarEstadisticas(){
+window.cargarEstadisticas = async function cargarEstadisticas(){
   try { await cargarCiclos(); } catch(e){ console.warn('ciclos:',e); }
   let alS,dS,fS,cS;
   try{
@@ -963,7 +937,7 @@ async function cargarEstadisticas(){
 // ══════════════════════
 // BOLETÍN AUTH
 // ══════════════════════
-async function inicializarBoletinAuth(){
+window.inicializarBoletinAuth = async function inicializarBoletinAuth(){
   // Cargar períodos en selectores
   const snap=await db.collection('periodos').orderBy('orden','asc').get();
   const sel=document.getElementById('auth-periodo-sel');
@@ -977,7 +951,7 @@ async function inicializarBoletinAuth(){
   comSnap.forEach(doc=>{selCom.innerHTML+=`<option value="${doc.id}">${doc.data().titulo||doc.id}</option>`;});
 }
 
-async function cargarAuthBoletín(){
+window.cargarAuthBoletín = async function cargarAuthBoletín(){
   const perId=document.getElementById('auth-periodo-sel').value;
   if(!perId){document.getElementById('auth-boletin-tabla').innerHTML='<p class="text-slate-400 text-xs text-center py-4">Seleccioná un período.</p>';return;}
   const cont=document.getElementById('auth-boletin-tabla');
@@ -1006,12 +980,12 @@ async function cargarAuthBoletín(){
   });
 }
 
-async function toggleVisBoletín(perId,curso,visible){
+window.toggleVisBoletín = async function toggleVisBoletín(perId,curso,visible){
   const key=`${perId}_${curso}`;
   await db.collection('config_visibilidad').doc(perId).set({[key]:visible},{merge:true});
 }
 
-async function publicarTodoBoletin(){
+window.publicarTodoBoletin = async function publicarTodoBoletin(){
   const perId=document.getElementById('auth-periodo-sel').value;
   if(!perId){alert('Seleccioná un período.');return;}
   const cursosSnap=await db.collection('cursos').get();
@@ -1021,7 +995,7 @@ async function publicarTodoBoletin(){
   await cargarAuthBoletín();alert('✅ Boletín publicado para todos los cursos.');
 }
 
-async function ocultarTodoBoletin(){
+window.ocultarTodoBoletin = async function ocultarTodoBoletin(){
   const perId=document.getElementById('auth-periodo-sel').value;
   if(!perId){alert('Seleccioná un período.');return;}
   const cursosSnap=await db.collection('cursos').get();
@@ -1034,7 +1008,7 @@ async function ocultarTodoBoletin(){
 // ══════════════════════
 // LECTURAS COMUNICADOS
 // ══════════════════════
-async function cargarLecturasComun(){
+window.cargarLecturasComun = async function cargarLecturasComun(){
   const comId=document.getElementById('lectura-comunicado-sel').value;
   if(!comId)return;
   document.getElementById('lectura-stats').classList.remove('hidden');
@@ -1076,7 +1050,7 @@ async function cargarLecturasComun(){
 
 // Mejorar switchTab para cargar boletinAuth
 
-async function exportarExcel(){
+window.exportarExcel = async function exportarExcel(){
   const opcion=await elegirExportacion();if(!opcion)return;
   const wb=XLSX.utils.book_new();
   if(opcion==='padron'||opcion==='todo') await exportarPadron(wb);
@@ -1087,29 +1061,29 @@ async function exportarExcel(){
   XLSX.writeFile(wb,fname);
   registrarLog('exportar',`Exportación Excel: ${opcion}`,'exportar');
 }
-function elegirExportacion(){
+window.elegirExportacion = function elegirExportacion(){
   return new Promise(r=>{const c=prompt("¿Qué exportar?\n1. Padrón de alumnos\n2. Asistencias del mes\n3. Notas\n4. Informes EOE\n5. TODO\n\nIngresá el número:");const ops=['padron','asistencia','notas','eoe','todo'];r(ops[parseInt(c)-1]||null);});
 }
-async function exportarPadron(wb){
+window.exportarPadron = async function exportarPadron(wb){
   const snap=await db.collection('alumnos').get();
   const rows=[['Nombre','Curso','Nivel','Familia','Grupo Sanguíneo','Obra Social','Autorización Imagen','Contacto Emergencia 1','Tel. Emergencia 1']];
   snap.forEach(doc=>{const d=doc.data();const ce=d.contactosEmergencia?.[0];rows.push([d.nombre||'',d.curso||'',d.nivel||'',d.familiaNombre||'',d.grupoSanguineo||'',d.obraSocial||'',d.autorizacionImagen||'pendiente',ce?.nombre||'',ce?.tel||'']);});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Padrón');
 }
-async function exportarAsistencia(wb){
+window.exportarAsistencia = async function exportarAsistencia(wb){
   const hoy=new Date(),mes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
   const snap=await db.collection('asistencia').get();
   const rows=[['AlumnoID','Fecha','Estado','Materia','Docente']];
   snap.forEach(doc=>{const d=doc.data();if(d.fecha?.startsWith(mes))rows.push([d.alumnoId||'',d.fecha||'',d.estado||'',d.materia||'',d.docenteEmail||'']);});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Asistencia');
 }
-async function exportarNotas(wb){
+window.exportarNotas = async function exportarNotas(wb){
   const alSnap=await db.collection('alumnos').get();
   const rows=[['Alumno','Curso','Nivel','Materia','Período','Calificación']];
   for(const al of alSnap.docs){const nS=await db.collection('alumnos').doc(al.id).collection('notas_v2').get();nS.forEach(doc=>{const n=doc.data();const cols=Object.entries(n).filter(([k])=>k.startsWith('nota_'));const c=n.rite||(cols.length?cols.map(([,v])=>v).join(' / '):'');rows.push([al.data().nombre||'',al.data().curso||'',al.data().nivel||'',n.materia||'',n.periodo||'',c]);});}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Notas');
 }
-async function exportarEOE(wb){
+window.exportarEOE = async function exportarEOE(wb){
   const snap=await db.collection('informes_eoe').orderBy('fecha','desc').get();
   const rows=[['Alumno','Curso','Profesional','Tipo','Seguimiento','Adulto','Texto','Fecha']];
   snap.forEach(doc=>{const d=doc.data();rows.push([d.alumnoNombre||'',d.curso||'',d.profesional||'',d.tipo||'',d.seguimiento||'',d.adulto||'',d.texto||'',new Date(d.fecha).toLocaleDateString('es-AR')]);});
@@ -1119,7 +1093,7 @@ async function exportarEOE(wb){
 // ══════════════════════
 // PERÍODOS
 // ══════════════════════
-async function cargarPeriodosAdmin(){
+window.cargarPeriodosAdmin = async function cargarPeriodosAdmin(){
   const snap=await db.collection('periodos').orderBy('orden','asc').get();
   const cont=document.getElementById('lista-periodos-admin'),sel=document.getElementById('vis-periodo-sel');
   cont.innerHTML='';sel.innerHTML='<option value="">Seleccionar período...</option>';
@@ -1128,7 +1102,7 @@ async function cargarPeriodosAdmin(){
     sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug}">${p.nombre}</option>`;
   });
 }
-async function crearPeriodo(){
+window.crearPeriodo = async function crearPeriodo(){
   const nombre=document.getElementById('per-nombre').value.trim(),slug=document.getElementById('per-slug').value.trim().toUpperCase();
   if(!nombre||!slug)return alert("Nombre y clave obligatorios.");
   const snap=await db.collection('periodos').get();
@@ -1136,7 +1110,7 @@ async function crearPeriodo(){
   registrarLog('crear',`Período académico creado: ${nombre}`,'periodo');
   alert("Período creado.");cargarPeriodosAdmin();
 }
-async function togglePeriodoActivo(id,nuevoEstado){
+window.togglePeriodoActivo = async function togglePeriodoActivo(id,nuevoEstado){
   if(nuevoEstado){const s=await db.collection('periodos').get();const b=db.batch();s.forEach(d=>b.update(d.ref,{activo:false}));await b.commit();}
   await db.collection('periodos').doc(id).update({activo:nuevoEstado});
   registrarLog('editar',`Período ${nuevoEstado?'activado':'desactivado'}`,'periodo');
@@ -1146,7 +1120,7 @@ async function togglePeriodoActivo(id,nuevoEstado){
 // ══════════════════════
 // VISIBILIDAD NOTAS
 // ══════════════════════
-async function cargarVisibilidadNotas(){
+window.cargarVisibilidadNotas = async function cargarVisibilidadNotas(){
   const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';
   if(!pid)return;const cont=document.getElementById('tabla-visibilidad');cont.innerHTML='<p class="text-slate-400 text-sm">Cargando...</p>';
   const visDoc=await db.collection('config_visibilidad').doc(pid).get();const visData=visDoc.exists?visDoc.data():{};
@@ -1156,15 +1130,15 @@ async function cargarVisibilidadNotas(){
   });
   if(cursosSnap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin cursos.</p>';
 }
-async function toggleVisCurso(pid,clave,val){await db.collection('config_visibilidad').doc(pid).set({[clave]:val},{merge:true});}
-async function publicarTodoElPeriodo(){
+window.toggleVisCurso = async function toggleVisCurso(pid,clave,val){await db.collection('config_visibilidad').doc(pid).set({[clave]:val},{merge:true});}
+window.publicarTodoElPeriodo = async function publicarTodoElPeriodo(){
   const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';if(!pid)return alert("Seleccioná un período.");
   const snap=await db.collection('cursos').get();const data={};snap.forEach(d=>{data[`${slug}_${d.data().nombre}`]=true;});
   await db.collection('config_visibilidad').doc(pid).set(data,{merge:true});
   registrarLog('editar',`Notas publicadas para período ${slug}`,'visibilidad');
   alert("Publicado.");cargarVisibilidadNotas();
 }
-async function ocultarTodoElPeriodo(){
+window.ocultarTodoElPeriodo = async function ocultarTodoElPeriodo(){
   const selEl=document.getElementById('vis-periodo-sel'),pid=selEl.value,slug=selEl.options[selEl.selectedIndex]?.dataset.slug||'';if(!pid)return alert("Seleccioná un período.");
   const snap=await db.collection('cursos').get();const data={};snap.forEach(d=>{data[`${slug}_${d.data().nombre}`]=false;});
   await db.collection('config_visibilidad').doc(pid).set(data,{merge:true});alert("Ocultado.");cargarVisibilidadNotas();
@@ -1173,33 +1147,33 @@ async function ocultarTodoElPeriodo(){
 // ══════════════════════
 // CSV
 // ══════════════════════
-async function procesarCSV(){
+window.procesarCSV = async function procesarCSV(){
   const file=document.getElementById('csv-file').files[0];if(!file)return alert("Carga un csv.");
   const r=new FileReader();r.onload=async(e)=>{const lines=e.target.result.split(/\r?\n/);let logs=0;
     for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[alu,nivel,cur,fam]=cols;const emails=cols.slice(4).filter(em=>em&&em.includes('@'));if(alu&&emails.length>0){await guardarAlumnoData(alu,nivel||'primario',cur,fam,emails);logs++;document.getElementById('csv-status').innerText=`Procesando: ${logs}...`;}}
     registrarLog('crear',`CSV importado: ${logs} alumnos`,'importar');alert(`${logs} alumnos importados.`);refrescarTodo();};r.readAsText(file);
 }
-async function procesarCSVDocentes(){
+window.procesarCSVDocentes = async function procesarCSVDocentes(){
   const file=document.getElementById('csv-doc-file').files[0];if(!file)return alert("Carga un csv.");
   const r=new FileReader();r.onload=async(e)=>{const lines=e.target.result.split(/\r?\n/);let logs=0;
     for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[nombre,email,nivel,matsR,cursR]=cols;if(!nombre||!email||!email.includes('@'))continue;const materias=(matsR||'').split('|').map(m=>m.trim()).filter(Boolean);const cursos=(cursR||'').split('|').map(c=>c.trim()).filter(Boolean);await db.collection('usuarios').doc(email.toLowerCase()).set({nombre,rol:'docente',nivel:nivel||'primario',materias,cursos},{merge:true});logs++;}
     registrarLog('crear',`CSV importado: ${logs} docentes`,'importar');alert(`${logs} docentes importados.`);cargarDocentes();};r.readAsText(file);
 }
 // ── Helpers alumno ──
-function previewAluMail(){
+window.previewAluMail = function previewAluMail(){
   var u=document.getElementById('manual-alu-user').value.trim().toLowerCase().replace(/\s+/g,'.');
   document.getElementById('preview-alu-mail').textContent=u?u+'@iosefcaro.org':'—';
 }
-function generarPassAlumno(){
+window.generarPassAlumno = function generarPassAlumno(){
   var chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   var p=''; for(var i=0;i<8;i++)p+=chars[Math.floor(Math.random()*chars.length)];
   document.getElementById('manual-alu-pass').value=p;
 }
-function mailDesdeNombre(nombre){
+window.mailDesdeNombre = function mailDesdeNombre(nombre){
   return nombre.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'.')+'@iosefcaro.org';
 }
 
-async function guardarAlumnoData(alu, nivel, cur, fam, emailsFamilia, emailAlumno, passAlumno){
+window.guardarAlumnoData = async function guardarAlumnoData(alu, nivel, cur, fam, emailsFamilia, emailAlumno, passAlumno){
   const cn=(cur||'').toUpperCase(), nn=(nivel||'primario').toLowerCase();
   const aId=(alu+'_'+cn).replace(/\s+/g,'_');
 
@@ -1230,7 +1204,7 @@ async function guardarAlumnoData(alu, nivel, cur, fam, emailsFamilia, emailAlumn
   }
 }
 
-async function cargaManualAlumno(){
+window.cargaManualAlumno = async function cargaManualAlumno(){
   const alu=document.getElementById('manual-alu').value.trim();
   const nivel=document.getElementById('manual-nivel').value;
   const cur=document.getElementById('manual-cur').value.trim();
@@ -1263,7 +1237,7 @@ async function cargaManualAlumno(){
 
 // ── CSV Alumnos masivo ──
 var _csvAluData=[];
-function cargarCSVAlumnos(inp){
+window.cargarCSVAlumnos = function cargarCSVAlumnos(inp){
   const file=inp.files[0]; if(!file)return;
   document.getElementById('csv-alu-nombre').textContent=file.name;
   const r=new FileReader();
@@ -1301,7 +1275,7 @@ function cargarCSVAlumnos(inp){
   };
   r.readAsText(file,'UTF-8');
 }
-async function ejecutarCSVAlumnos(){
+window.ejecutarCSVAlumnos = async function ejecutarCSVAlumnos(){
   if(!_csvAluData.length){alert('No hay datos.');return;}
   const btn=document.querySelector('[onclick="ejecutarCSVAlumnos()"]');
   btn.disabled=true;
@@ -1325,7 +1299,7 @@ async function ejecutarCSVAlumnos(){
 // ══════════════════════
 // STAFF
 // ══════════════════════
-async function crearStaff(){
+window.crearStaff = async function crearStaff(){
   const n=document.getElementById('staff-nombre').value,m=document.getElementById('staff-email').value.toLowerCase().trim(),p=document.getElementById('staff-pass').value,r=document.getElementById('staff-rol').value;
   const niveles=Array.from(document.querySelectorAll('.staff-nivel-check:checked')).map(c=>c.value);
   if(!n||!m||!p)return alert("Completa todos los campos.");
@@ -1337,25 +1311,25 @@ async function crearStaff(){
 // ══════════════════════
 // MATERIAS/CURSOS
 // ══════════════════════
-async function crearMaestro(col,inpId){const val=document.getElementById(inpId).value.trim();if(!val)return;await db.collection(col).add({nombre:val});document.getElementById(inpId).value='';registrarLog('crear',`${col} creado: ${val}`,col);refrescarTodo();}
-async function crearCurso(){const nombre=document.getElementById('new-curso').value.trim(),nivel=document.getElementById('new-curso-nivel').value;if(!nombre)return;await db.collection('cursos').add({nombre:nombre.toUpperCase(),nivel});document.getElementById('new-curso').value='';registrarLog('crear',`Curso creado: ${nombre} (${nivel})`,'curso');refrescarTodo();}
+window.crearMaestro = async function crearMaestro(col,inpId){const val=document.getElementById(inpId).value.trim();if(!val)return;await db.collection(col).add({nombre:val});document.getElementById(inpId).value='';registrarLog('crear',`${col} creado: ${val}`,col);refrescarTodo();}
+window.crearCurso = async function crearCurso(){const nombre=document.getElementById('new-curso').value.trim(),nivel=document.getElementById('new-curso-nivel').value;if(!nombre)return;await db.collection('cursos').add({nombre:nombre.toUpperCase(),nivel});document.getElementById('new-curso').value='';registrarLog('crear',`Curso creado: ${nombre} (${nivel})`,'curso');refrescarTodo();}
 
 // ══════════════════════
 // DOCENTES
 // ══════════════════════
-async function cargarSelectsDocente(){
+window.cargarSelectsDocente = async function cargarSelectsDocente(){
   const nivel=document.getElementById('doc-nivel').value,sM=document.getElementById('doc-materia'),sC=document.getElementById('doc-curso');
   sM.innerHTML='<option value="">Seleccionar Materia</option>';sC.innerHTML='<option value="">Seleccionar Curso</option>';
   allMats.forEach(m=>sM.innerHTML+=`<option value="${m.nombre}">${m.nombre}</option>`);
   allCursos.filter(c=>!nivel||c.nivel===nivel).forEach(c=>sC.innerHTML+=`<option value="${c.nombre}">${c.nombre}</option>`);
 }
-function agregarTag(tipo){const sel=document.getElementById('doc-'+tipo),val=sel.value;if(!val)return;if(tipo==='materia'){if(!matSel.includes(val))matSel.push(val);}else{if(!curSel.includes(val))curSel.push(val);}renderTags();}
-function quitarTag(tipo,val){if(tipo==='materia')matSel=matSel.filter(m=>m!==val);else curSel=curSel.filter(c=>c!==val);renderTags();}
-function renderTags(){
+window.agregarTag = function agregarTag(tipo){const sel=document.getElementById('doc-'+tipo),val=sel.value;if(!val)return;if(tipo==='materia'){if(!matSel.includes(val))matSel.push(val);}else{if(!curSel.includes(val))curSel.push(val);}renderTags();}
+window.quitarTag = function quitarTag(tipo,val){if(tipo==='materia')matSel=matSel.filter(m=>m!==val);else curSel=curSel.filter(c=>c!==val);renderTags();}
+window.renderTags = function renderTags(){
   document.getElementById('tags-materias').innerHTML=matSel.map(m=>`<span class="tag-doc">${m} <i onclick="quitarTag('materia','${m}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`).join('');
   document.getElementById('tags-cursos').innerHTML=curSel.map(c=>`<span class="tag-doc">${c} <i onclick="quitarTag('curso','${c}')" class="fas fa-times cursor-pointer text-slate-400"></i></span>`).join('');
 }
-async function crearDocente(){
+window.crearDocente = async function crearDocente(){
   const n=document.getElementById('doc-nombre').value,e=document.getElementById('doc-email').value.toLowerCase().trim(),nivel=document.getElementById('doc-nivel').value;
   if(!n||!e||!nivel||!matSel.length||!curSel.length)return alert("Completá todos los campos.");
   await db.collection('usuarios').doc(e).set({nombre:n,rol:'docente',nivel,materias:matSel,cursos:curSel});
@@ -1366,7 +1340,7 @@ async function crearDocente(){
 // ══════════════════════
 // CARGAR LISTAS
 // ══════════════════════
-async function cargarMaestros(col,contId){
+window.cargarMaestros = async function cargarMaestros(col,contId){
   const snap=await db.collection(col).orderBy('nombre','asc').get(),cont=document.getElementById(contId);cont.innerHTML='';
   if(col==='materias')allMats=[];if(col==='cursos')allCursos=[];
   snap.forEach(doc=>{const d=doc.data(),name=d.nombre;if(col==='materias')allMats.push({id:doc.id,nombre:name});if(col==='cursos')allCursos.push({id:doc.id,nombre:name,nivel:d.nivel});
@@ -1375,7 +1349,7 @@ async function cargarMaestros(col,contId){
   });cargarSelectsDocente();
 }
 
-async function cargarStaff(){
+window.cargarStaff = async function cargarStaff(){
   const rolesQuery=['admin','director','comunicacion','secretaria_inicial','secretaria_primario','secretaria_secundario','eoe'];
   const snap=await db.collection('usuarios').where('rol','in',rolesQuery).get();
   const cont=document.getElementById('lista-staff');cont.innerHTML='';
@@ -1396,14 +1370,14 @@ async function cargarStaff(){
   });
 }
 
-async function cargarDocentes(){
+window.cargarDocentes = async function cargarDocentes(){
   const snap=await db.collection('usuarios').where('rol','==','docente').get(),cont=document.getElementById('lista-docentes');cont.innerHTML='';
   snap.forEach(doc=>{const d=doc.data(),mats=d.materias?d.materias.join(', '):(d.materia||'---'),curs=d.cursos?d.cursos.join(', '):(d.curso||'---');const nbc=d.nivel==='inicial'?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';
     cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm"><span><b>${d.nombre}</b>${d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:''}<br><small class="text-blue-600 font-bold uppercase text-[9px]">MATS: ${mats}</small><br><small class="text-emerald-600 font-bold uppercase text-[9px]">CURSOS: ${curs}</small><br><small class="text-slate-400 text-[9px]">${doc.id}</small></span><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-user-minus"></i></button></div>`;
   });
 }
 
-async function cargarAlumnosFiltrados(){
+window.cargarAlumnosFiltrados = async function cargarAlumnosFiltrados(){
   const nivel=document.getElementById('filter-alu-nivel').value;let q=db.collection('alumnos');if(nivel)q=q.where('nivel','==',nivel);
   const snap=await q.get(),cont=document.getElementById('lista-alumnos');cont.innerHTML='';
   document.getElementById('count-alumnos').innerText=snap.size+' Alumnos';
@@ -1438,16 +1412,16 @@ async function cargarAlumnosFiltrados(){
   });
 }
 
-async function cargarFamilias(){
+window.cargarFamilias = async function cargarFamilias(){
   const snap=await db.collection('usuarios').where('rol','==','familia').get(),cont=document.getElementById('lista-familias');cont.innerHTML='';
   snap.forEach(doc=>{const data=doc.data();const nbc=data.nivel==='inicial'?'nb-i':data.nivel==='secundario'?'nb-s':'nb-p';
     cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm relative" data-search="${data.nombre} ${doc.id}"><div class="absolute top-4 right-4"><input type="checkbox" value="${doc.id}" class="fam-checkbox w-5 h-5 cursor-pointer accent-rose-600" onchange="actualizarContadorSeleccion()"></div><p class="font-bold text-sm pr-8">${data.nombre}</p><p class="text-[10px] text-slate-400 truncate mb-1">${doc.id}</p>${data.nivel?`<span class="nb ${nbc}">${data.nivel}</span>`:''}<div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-50"><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-[9px] font-black text-rose-300 uppercase hover:text-rose-600">Borrar</button></div></div>`;
   });
 }
 
-function actualizarContadorSeleccion(){const sel=document.querySelectorAll('.fam-checkbox:checked').length;document.getElementById('count-seleccion').innerText=sel;document.getElementById('btn-eliminar-masivo').classList.toggle('hidden',sel===0);}
-function toggleSeleccionarTodo(master){document.querySelectorAll('#lista-familias div:not([style*="display: none"]) .fam-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContadorSeleccion();}
-async function eliminarFamiliasSeleccionadas(){
+window.actualizarContadorSeleccion = function actualizarContadorSeleccion(){const sel=document.querySelectorAll('.fam-checkbox:checked').length;document.getElementById('count-seleccion').innerText=sel;document.getElementById('btn-eliminar-masivo').classList.toggle('hidden',sel===0);}
+window.toggleSeleccionarTodo = function toggleSeleccionarTodo(master){document.querySelectorAll('#lista-familias div:not([style*="display: none"]) .fam-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContadorSeleccion();}
+window.eliminarFamiliasSeleccionadas = async function eliminarFamiliasSeleccionadas(){
   const sel=Array.from(document.querySelectorAll('.fam-checkbox:checked')).map(cb=>cb.value);if(!sel.length)return;
   if(confirm(`¿Eliminar ${sel.length} familias?`)){const b=db.batch();sel.forEach(id=>b.delete(db.collection('usuarios').doc(id)));await b.commit();registrarLog('eliminar',`${sel.length} familias eliminadas`,'eliminar');alert(`${sel.length} eliminadas.`);refrescarTodo();}
 }
@@ -1455,7 +1429,7 @@ async function eliminarFamiliasSeleccionadas(){
 // ══════════════════════
 // UTILS
 // ══════════════════════
-function switchTab(t){
+window.switchTab = function switchTab(t){
   document.querySelectorAll('.tab-content').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+t)?.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-slate-900','text-white');b.classList.add('text-slate-500');});
@@ -1466,7 +1440,7 @@ function switchTab(t){
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
 }
-async function eliminarAlumnoConf(id,nombre){
+window.eliminarAlumnoConf = async function eliminarAlumnoConf(id,nombre){
   if(!confirm(`¿Eliminar al alumno "${nombre}"?
 
 Esto eliminará su ficha. Las notas y asistencias históricas se conservan.`))return;
@@ -1474,7 +1448,7 @@ Esto eliminará su ficha. Las notas y asistencias históricas se conservan.`))re
   registrarLog('eliminar',`Alumno eliminado: ${nombre}`,'alumno');
   cargarAlumnosFiltrados();
 }
-async function eliminarDoc(col,id){
+window.eliminarDoc = async function eliminarDoc(col,id){
   if(confirm("¿Seguro?")){
     const docRef=db.collection(col).doc(id);
     await docRef.delete();
@@ -1483,7 +1457,7 @@ async function eliminarDoc(col,id){
   }
 }
 let staffEditandoId=null;
-async function abrirEditarStaff(id){
+window.abrirEditarStaff = async function abrirEditarStaff(id){
   staffEditandoId=id;
   const doc=await db.collection('usuarios').doc(id).get();if(!doc.exists)return;
   const u=doc.data();
@@ -1495,7 +1469,7 @@ async function abrirEditarStaff(id){
   document.querySelectorAll('.perm-edit-check').forEach(cb=>cb.checked=(u.permisos||[]).includes(cb.value));
   document.getElementById('modal-staff').style.display='flex';
 }
-async function guardarEdicionStaff(){
+window.guardarEdicionStaff = async function guardarEdicionStaff(){
   if(!staffEditandoId)return;
   const nombre=document.getElementById('staff-edit-nombre').value.trim();
   const pass=document.getElementById('staff-edit-pass').value.trim();
@@ -1507,19 +1481,19 @@ async function guardarEdicionStaff(){
   registrarLog('editar',`Staff editado: ${nombre} (${staffEditandoId})`,'staff');
   alert('✅ Usuario actualizado.');cerrarModalStaff();cargarStaff();
 }
-function cerrarModalStaff(){document.getElementById('modal-staff').style.display='none';staffEditandoId=null;}
+window.cerrarModalStaff = function cerrarModalStaff(){document.getElementById('modal-staff').style.display='none';staffEditandoId=null;}
 document.getElementById('modal-staff').addEventListener('click',function(e){if(e.target===this)cerrarModalStaff();});
 
-async function eliminarStaff(id,nombre){
+window.eliminarStaff = async function eliminarStaff(id,nombre){
   if(confirm(`¿Eliminar usuario ${nombre}?`)){
     await db.collection('usuarios').doc(id).delete();
     registrarLog('eliminar',`Usuario staff eliminado: ${nombre} (${id})`,'eliminar');
     cargarStaff();
   }
 }
-function actualizarContAlu(){const sel=document.querySelectorAll('.alu-checkbox:checked').length;document.getElementById('count-alu-sel').textContent=sel;document.getElementById('btn-eliminar-masivo-alu').classList.toggle('hidden',sel===0);}
-function toggleSeleccionarTodoAlumnos(master){document.querySelectorAll('.alu-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContAlu();}
-async function eliminarAlumnosSeleccionados(){
+window.actualizarContAlu = function actualizarContAlu(){const sel=document.querySelectorAll('.alu-checkbox:checked').length;document.getElementById('count-alu-sel').textContent=sel;document.getElementById('btn-eliminar-masivo-alu').classList.toggle('hidden',sel===0);}
+window.toggleSeleccionarTodoAlumnos = function toggleSeleccionarTodoAlumnos(master){document.querySelectorAll('.alu-checkbox').forEach(cb=>cb.checked=master.checked);actualizarContAlu();}
+window.eliminarAlumnosSeleccionados = async function eliminarAlumnosSeleccionados(){
   const sel=Array.from(document.querySelectorAll('.alu-checkbox:checked')).map(cb=>cb.value);if(!sel.length)return;
   if(!confirm(`¿Eliminar ${sel.length} alumno/s seleccionado/s?
 
@@ -1530,8 +1504,8 @@ Sus fichas serán eliminadas. Las notas históricas se conservan.`))return;
   document.getElementById('btn-eliminar-masivo-alu').classList.add('hidden');
   cargarAlumnosFiltrados();
 }
-function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
-function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
+window.buscar = function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
+window.refrescarTodo = function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
 } // fin _initAdmin
 </script>
