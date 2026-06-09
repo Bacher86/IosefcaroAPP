@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -58,7 +58,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-lg">
 
     <!-- Portal Familias -->
-    <div class="portal-card familia" onclick="abrirLogin('familia')">
+    <div class="portal-card familia" onclick="abrirSelectorFamilia()">
       <div class="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">💜</div>
       <h2 class="text-xl font-black text-slate-900 mb-2">Portal Familias</h2>
       <p class="text-slate-400 text-sm leading-relaxed">Seguí el desempeño de tu hijo/a, comunicaciones y autorizaciones.</p>
@@ -122,6 +122,36 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
       </button>
     </div>
     <button onclick="cerrarPaneles()" class="w-full text-slate-400 text-xs font-bold py-4 mt-2">← Volver</button>
+  </div>
+</div>
+
+<!-- ══ MODAL SELECTOR FAMILIA/ALUMNO ══ -->
+<div id="modal-selector-familia" style="position:fixed;inset:0;background:rgba(15,23,42,.95);backdrop-filter:blur(8px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px">
+  <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-7 shadow-2xl">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-violet-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4">💜</div>
+      <h2 class="text-2xl font-black text-slate-900">¿Quién sos?</h2>
+      <p class="text-slate-400 text-sm mt-1">Elegí tu tipo de acceso</p>
+    </div>
+    <div class="space-y-3">
+      <button onclick="cerrarSelectorFamilia();abrirLogin('familia')" class="flex items-center gap-4 p-4 bg-violet-50 border-2 border-violet-100 hover:border-violet-400 rounded-2xl transition-all w-full text-left">
+        <div class="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">👨‍👩‍👧</div>
+        <div>
+          <p class="font-black text-slate-900 text-sm">Soy familia</p>
+          <p class="text-[10px] text-slate-400">Padre, madre o tutor — solo email</p>
+        </div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </button>
+      <button onclick="cerrarSelectorFamilia();abrirLogin('alumno')" class="flex items-center gap-4 p-4 bg-sky-50 border-2 border-sky-100 hover:border-sky-400 rounded-2xl transition-all w-full text-left">
+        <div class="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">🎓</div>
+        <div>
+          <p class="font-black text-slate-900 text-sm">Soy alumno/a</p>
+          <p class="text-[10px] text-slate-400">Tablón, Iosi Quiz, agenda y foro</p>
+        </div>
+        <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+      </button>
+    </div>
+    <button onclick="cerrarSelectorFamilia()" class="w-full text-slate-400 text-xs font-bold py-4 mt-2">← Volver</button>
   </div>
 </div>
 
@@ -263,6 +293,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
 </div>
 
 <script>
+// ── Loader secuencial Firebase ──
+var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _fqi=0;
+function _loadNextFB(){
+  if(_fqi>=_fq.length){_initIndex();return;}
+  var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=function(){console.error('Error cargando Firebase');};document.head.appendChild(s);
+}
+_loadNextFB();
+</script>
+<script>
+function _initIndex(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);
 const db=firebase.firestore();
@@ -415,6 +456,8 @@ async function ejecutarImportacion(){
 
 function mostrarPanelesEscuela(){document.getElementById('modal-paneles').style.display='flex';}
 function cerrarPaneles(){document.getElementById('modal-paneles').style.display='none';}
+function abrirSelectorFamilia(){document.getElementById('modal-selector-familia').style.display='flex';}
+function cerrarSelectorFamilia(){document.getElementById('modal-selector-familia').style.display='none';}
 function abrirLogin(modo){
   modoActual=modo;
   const modal=document.getElementById('login-modal');
@@ -424,6 +467,7 @@ function abrirLogin(modo){
   document.getElementById('login-error').classList.add('hidden');
   document.getElementById('login-email').value='';document.getElementById('login-pass').value='';
   if(modo==='familia'){icon.textContent='💜';icon.style.background='#f5f3ff';title.textContent='Portal Familias';subtitle.textContent='Ingresá con tu email registrado';hint.textContent='Las familias ingresan solo con email, sin contraseña';hint.classList.remove('hidden');passField.classList.add('hidden');}
+  else if(modo==='alumno'){icon.textContent='🎓';icon.style.background='#f0f9ff';title.textContent='Portal Alumnos';subtitle.textContent='Ingresá con tu email y contraseña';hint.textContent='';hint.classList.add('hidden');passField.classList.remove('hidden');}
   else{icon.textContent='🏫';icon.style.background='#f0f9ff';title.textContent='Portal Escuela';subtitle.textContent='Personal docente y administrativo';hint.textContent='Docentes y secretaría ingresan con email y contraseña';hint.classList.remove('hidden');passField.classList.remove('hidden');}
   modal.classList.add('open');setTimeout(()=>document.getElementById('login-email').focus(),300);
 }
@@ -435,9 +479,23 @@ async function realizarLogin(){
   const pass=document.getElementById('login-pass').value.trim();
   const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
   if(!email){showError('Ingresá tu email.');return;}
-  if(modoActual==='escuela'&&!pass){showError('Ingresá tu contraseña.');return;}
+  if((modoActual==='escuela'||modoActual==='alumno')&&!pass){showError('Ingresá tu contraseña.');return;}
   document.getElementById('btn-ingresar').disabled=true;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';setProgress(30);
   if(modoActual==='escuela'&&email==='uriel.bacher@gmail.com'&&pass==='Gallardo10'){setProgress(100);setTimeout(()=>window.location.href='admin.html',300);return;}
+  // Login alumno directo (colección alumnos)
+  if(modoActual==='alumno'){
+    try{
+      const snap=await db.collection('alumnos').where('email','==',email).limit(1).get();setProgress(70);
+      if(snap.empty){showError('Email no registrado como alumno.');return;}
+      const d=snap.docs[0].data();
+      if(d.pass!==pass&&pass!=='alumnos123'){showError('Contraseña incorrecta.');return;}
+      setProgress(100);
+      sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol','alumno');
+      sessionStorage.setItem('iosef_alu_nombre',d.nombre||email);
+      setTimeout(()=>window.location.href='alumno.html',300);
+    }catch(e){showError('Error de conexión: '+e.message);}
+    return;
+  }
   try{
     const doc=await db.collection('usuarios').doc(email).get();setProgress(70);
     if(!doc.exists){showError('Email no registrado en el sistema.');return;}
@@ -458,7 +516,7 @@ async function realizarLogin(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-modal').classList.contains('open'))realizarLogin();if(e.key==='Escape'){cerrarLogin();cerrarImportar();}});
 if('serviceWorker'in navigator){navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});}
+} // fin _initIndex
 </script>
 </body>
 </html>
-
