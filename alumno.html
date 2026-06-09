@@ -11,19 +11,19 @@
 /* ── RESET & BASE ── */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d0f14;
-  --surface:#161920;
-  --surface2:#1e2130;
-  --border:#252a3a;
+  --bg:#f8fafc;
+  --surface:#ffffff;
+  --surface2:#f1f5f9;
+  --border:#e2e8f0;
   --accent:#6c63ff;
-  --accent2:#a78bfa;
-  --green:#34d399;
-  --red:#f87171;
-  --amber:#fbbf24;
-  --blue:#60a5fa;
-  --text:#f1f5f9;
-  --text2:#94a3b8;
-  --text3:#475569;
+  --accent2:#8b5cf6;
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --blue:#3b82f6;
+  --text:#0f172a;
+  --text2:#64748b;
+  --text3:#94a3b8;
   --r-card:1.25rem;
   --r-pill:999px;
 }
@@ -563,10 +563,10 @@ async function doLogin(){
 
   // ── Acceso admin total ──
   if(em==='uriel.bacher@gmail.com'&&ps==='Gallardo10'){
-    alumnoEmail=em;alumnoNombre='Administrador';alumnoCurso='ADMIN';alumnoNivel='secundario';
+    alumnoEmail=em;alumnoNombre='Admin';alumnoCurso='';alumnoNivel='secundario';
     sessionStorage.setItem('iosef_alu_email',em);
-    sessionStorage.setItem('iosef_alu_nombre','Administrador');
-    sessionStorage.setItem('iosef_alu_curso','ADMIN');
+    sessionStorage.setItem('iosef_alu_nombre','Admin');
+    sessionStorage.setItem('iosef_alu_curso','');
     sessionStorage.setItem('iosef_alu_nivel','secundario');
     iniciarPanel();
     btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
@@ -579,6 +579,31 @@ async function doLogin(){
     btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;
   }
 
+  try{
+    const uDoc=await db.collection('usuarios').doc(em).get();
+    if(!uDoc.exists){showErr('Email no registrado.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
+    const u=uDoc.data();
+    if(u.rol!=='alumno'){showErr('Este portal es solo para alumnos.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
+    if(u.pass!==ps){showErr('Contraseña incorrecta.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
+    alumnoEmail=em;
+    alumnoNombre=u.nombre||em;
+    alumnoCurso=u.curso||'';
+    alumnoNivel=u.nivel||'secundario';
+    const aSnap=await db.collection('alumnos').where('email','==',em).limit(1).get();
+    if(!aSnap.empty)alumnoId=aSnap.docs[0].id;
+    sessionStorage.setItem('iosef_alu_email',em);
+    sessionStorage.setItem('iosef_alu_nombre',alumnoNombre);
+    sessionStorage.setItem('iosef_alu_curso',alumnoCurso);
+    sessionStorage.setItem('iosef_alu_nivel',alumnoNivel);
+    sessionStorage.setItem('iosef_alu_id',alumnoId);
+    if(ps===PASS_GENERICA){
+      btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
+      document.getElementById('modal-pass').style.display='flex';
+      return;
+    }
+    iniciarPanel();
+  }catch(e){showErr('Error de conexión: '+e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
 }
 async function guardarNuevaPass(){
   const nueva=document.getElementById('np-nueva').value.trim();
@@ -616,10 +641,11 @@ function iniciarPanel(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
   const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const primerNombre = alumnoNombre.split(' ')[0] || alumnoNombre;
   document.getElementById('bv-dia').textContent=dias[new Date().getDay()]+', '+new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long'});
-  document.getElementById('bv-nombre').textContent='Hola, '+alumnoNombre.split(' ')[0]+'!';
+  document.getElementById('bv-nombre').textContent='Hola, '+primerNombre+'!';
   document.getElementById('bv-curso').textContent=alumnoCurso||alumnoNivel;
-  document.getElementById('h-nombre').textContent=alumnoNombre.split(' ')[0]||alumnoNombre;
+  document.getElementById('h-nombre').textContent=primerNombre;
   document.getElementById('h-curso').textContent=alumnoCurso?`Curso ${alumnoCurso}`:alumnoNivel;
   cargarInicio();
   cargarTablon();
