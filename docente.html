@@ -347,17 +347,59 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <i class="fas fa-layer-group text-lg"></i>TABLÓN
   </button>
 </nav>
+<script>
+// ── Firebase ready queue ──
+window._fbReady = false;
+window._fbQueue = [];
+window._fbOnReady = function(fn){ if(window._fbReady){ fn(); } else { window._fbQueue.push(fn); } };
+
+// Universal stub: catches calls to any function not yet defined
+// For each known onclick function, create a stub that queues execution
+(function(){
+  var _stubs = ['validarIngreso','switchTab','cerrarSesion','cargaManualAlumno',
+    'generarPassAlumno','previewAluMail','cargarCSVAlumnos','ejecutarCSVAlumnos',
+    'procesarCSV','procesarCSVDocentes','crearStaff','crearDocente','crearMaestro',
+    'crearCurso','crearPeriodo','crearCiclo','activarCiclo','eliminarDoc',
+    'exportarExcel','guardarPerfilAlumno','cerrarModalAlumno','cerrarModalStaff',
+    'abrirModalAlumno','eliminarAlumnosSeleccionados','eliminarFamiliasSeleccionadas',
+    'eliminarStaff','guardarEdicionStaff','toggleSeleccionarTodo',
+    'toggleSeleccionarTodoAlumnos','agregarTag','quitarTag','agregarContactoEmergencia',
+    'publicarTodoBoletin','ocultarTodoBoletin','publicarTodoElPeriodo','ocultarTodoElPeriodo',
+    'togglePeriodoActivo','agregarIndicador','eliminarIndicador','login',
+    'confirmarNotas','confirmarAsistencia','guardarInforme','publicarComunicadoDocente',
+    'eliminarComunicadoDocente','publicarTablon','cancelarEditarTablon',
+    'editarTablonDocente','eliminarTablonDocente','selTipoTablon',
+    'guardarEvento','editarEventoDoc','eliminarEventoDoc','cancelarEditarEventoDoc',
+    'agregarColumna','eliminarColumna','setAsis','setUniforme'];
+  _stubs.forEach(function(name){
+    if(typeof window[name]==='undefined'){
+      window[name]=function(){
+        var args=arguments;
+        window._fbOnReady(function(){ if(typeof window[name]==='function' && window[name]!==arguments.callee){ window[name].apply(window,args); } });
+      };
+    }
+  });
+})();
+</script>
+
+<script>
+// ── Stubs globales (disponibles antes de Firebase) ──
+// Evitan "function not defined" mientras carga Firebase
+function login(e){if(window._doLogin)window._doLogin(e);else{var b=document.getElementById('login-error');if(b){b.textContent='Cargando...';b.classList.remove('hidden');}setTimeout(function(){if(window._doLogin)window._doLogin(e);},2000);}}
+function switchTab(t){if(window._switchTab)window._switchTab(t);}
+function cerrarLogin(){var s=document.getElementById('login-screen');if(s)s.style.display='none';}
+</script>
 
 <script>
 var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
 var _fqi=0;
 function _loadNextFB(){if(_fqi>=_fq.length){_initDocente();return;}var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=_loadNextFB;document.head.appendChild(s);}
 _loadNextFB();
-</script>
-<script>
+
 function _initDocente(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);
+window._fbReady=true;window._fbQueue.forEach(function(f){f();});window._fbQueue=[];
 const db=firebase.firestore();
 
 const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
@@ -369,7 +411,7 @@ let columnaExamenes=[], alumnosActuales=[];
 document.getElementById('fecha-hoy').valueAsDate=new Date();
 
 // ══ LOGIN ══
-async function login(emailOverride){
+window._doLogin = async function login(emailOverride){
   const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
   const pass=(document.getElementById('login-pass')?.value||'').trim();
   const errEl=document.getElementById('login-error');
@@ -1185,7 +1227,7 @@ async function eliminarTablonDocente(id){
 }
 
 // ══ UTILS ══
-function switchTab(tab){
+window._switchTab = function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
@@ -1212,6 +1254,3 @@ window.addEventListener('load',()=>{
 });
 } // fin _initDocente
 </script>
-</body>
-</html>
-
