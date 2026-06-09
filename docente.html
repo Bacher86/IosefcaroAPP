@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Panel Docente - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -26,6 +24,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
 .grilla-inp{width:64px;height:40px;border:none;text-align:center;font-weight:800;font-size:13px;outline:none;background:transparent;font-family:inherit;display:block;margin:0 auto}
 .grilla-inp:focus{background:#eff6ff}
 .alerta-falta{background:#fef3c7;border:1px solid #f59e0b;border-radius:.6rem;padding:3px 8px;font-size:10px;font-weight:800;color:#92400e;display:inline-block}
+.tipo-tablon-btn{transition:all .15s}
+.tipo-tablon-btn.active{border-color:#2563eb!important;background:#eff6ff!important;color:#1d4ed8!important}
 </style>
 </head>
 <body>
@@ -192,7 +192,100 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <div id="lista-cal-doc" class="space-y-2"></div>
   </section>
 
-  <!-- COMUNICADOS DOCENTE ══════════════════ -->
+  <!-- TABLÓN ALUMNOS ══════════════════ -->
+  <section id="tab-tablon" class="tab-content space-y-4 pb-24">
+    <div>
+      <h3 class="font-black text-xl">Tablón de Alumnos</h3>
+      <p class="text-slate-400 text-xs -mt-1">Publicá tareas, materiales de estudio y mensajes que aparecen directamente en el app del alumno con notificación.</p>
+    </div>
+
+    <div class="bg-white rounded-3xl border shadow-sm p-5 space-y-4">
+      <input type="hidden" id="tablon-id-editando">
+      <div class="flex items-center justify-between">
+        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de publicación</label>
+        <button id="btn-cancelar-tablon" onclick="cancelarEditarTablon()" class="hidden text-[9px] font-black text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">✕ Cancelar</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="selTipoTablon('tarea')" id="tipo-tarea" class="tipo-tablon-btn active flex flex-col items-center gap-1.5 p-3 border-2 border-blue-400 bg-blue-50 rounded-2xl text-blue-700 font-black text-xs transition-all">
+          <span class="text-xl">📋</span>Tarea
+        </button>
+        <button onclick="selTipoTablon('material')" id="tipo-material" class="tipo-tablon-btn flex flex-col items-center gap-1.5 p-3 border-2 border-slate-200 bg-slate-50 rounded-2xl text-slate-500 font-black text-xs transition-all">
+          <span class="text-xl">📚</span>Material
+        </button>
+        <button onclick="selTipoTablon('estudio')" id="tipo-estudio" class="tipo-tablon-btn flex flex-col items-center gap-1.5 p-3 border-2 border-slate-200 bg-slate-50 rounded-2xl text-slate-500 font-black text-xs transition-all">
+          <span class="text-xl">🧠</span>Iosi Study
+        </button>
+        <button onclick="selTipoTablon('recordatorio')" id="tipo-recordatorio" class="tipo-tablon-btn flex flex-col items-center gap-1.5 p-3 border-2 border-slate-200 bg-slate-50 rounded-2xl text-slate-500 font-black text-xs transition-all">
+          <span class="text-xl">🔔</span>Recordatorio
+        </button>
+      </div>
+
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
+        <input type="text" id="tablon-titulo" class="input-pro mt-1" placeholder="Ej: Tarea de Matemática para el viernes">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Curso destinatario</label>
+          <select id="tablon-curso" class="input-pro mt-1 text-xs"></select>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Materia</label>
+          <select id="tablon-materia" class="input-pro mt-1 text-xs"></select>
+        </div>
+      </div>
+      <div id="tablon-fecha-wrap">
+        <label class="text-[9px] font-black text-slate-400 uppercase">Fecha de entrega (opcional)</label>
+        <input type="date" id="tablon-fecha" class="input-pro mt-1">
+      </div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Descripción / Contenido</label>
+        <textarea id="tablon-texto" rows="5" class="input-pro mt-1 resize-none" placeholder="Detallá la tarea, material o mensaje..."></textarea>
+      </div>
+      <div id="tablon-estudio-opts" class="hidden space-y-3 border-t pt-3">
+        <p class="text-[9px] font-black text-slate-400 uppercase">Configuración Iosi Study (IA)</p>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Tipo quiz</label>
+            <select id="tablon-tipoQuiz" class="input-pro mt-1 text-xs">
+              <option value="mixto">Mixto</option>
+              <option value="multiple">Solo múltiple</option>
+              <option value="desarrollo">Solo desarrollo</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Múltiple</label>
+            <input type="number" id="tablon-cantMultiple" value="4" min="1" max="10" class="input-pro mt-1 text-xs">
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Desarrollo</label>
+            <input type="number" id="tablon-cantDesarrollo" value="1" min="0" max="5" class="input-pro mt-1 text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Contenido para el quiz (puede ser igual a la descripción o más detallado)</label>
+          <textarea id="tablon-contenidoEstudio" rows="4" class="input-pro mt-1 resize-none" placeholder="Pegá el texto, resumen o apuntes que Iosi va a usar para generar las preguntas..."></textarea>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+        <input type="checkbox" id="tablon-notif" checked class="accent-emerald-600 w-4 h-4">
+        <div>
+          <label for="tablon-notif" class="text-xs font-black text-emerald-800 cursor-pointer">Enviar notificación a los alumnos</label>
+          <p class="text-[10px] text-emerald-600">Aparece como alerta en el tablón del alumno con punto rojo</p>
+        </div>
+      </div>
+      <button onclick="publicarTablon()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+        <i class="fas fa-paper-plane"></i><span id="btn-tablon-txt">PUBLICAR EN TABLÓN</span>
+      </button>
+    </div>
+
+    <h4 class="font-black text-sm text-slate-700">Mis publicaciones</h4>
+    <div id="lista-tablon-doc" class="space-y-2">
+      <p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+    </div>
+  </section>
+
+</main>
   <section id="tab-comunicados" class="tab-content space-y-4 pb-24">
     <div>
       <h3 class="font-black text-xl">Avisos a Familias</h3>
@@ -250,9 +343,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   <button onclick="switchTab('comunicados')" id="btn-comunicados" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
     <i class="fas fa-bullhorn text-lg"></i>AVISOS
   </button>
+  <button onclick="switchTab('tablon')" id="btn-tablon" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]" style="position:relative">
+    <i class="fas fa-layer-group text-lg"></i>TABLÓN
+  </button>
 </nav>
 
 <script>
+var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _fqi=0;
+function _loadNextFB(){if(_fqi>=_fq.length){_initDocente();return;}var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=_loadNextFB;document.head.appendChild(s);}
+_loadNextFB();
+</script>
+<script>
+function _initDocente(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);
 const db=firebase.firestore();
@@ -919,11 +1022,174 @@ function poblarCursosEnComunicados(){
   curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
 }
 
+// ══ TABLÓN DE ALUMNOS ══
+let tipoTablonActivo = 'tarea';
+
+function selTipoTablon(tipo){
+  tipoTablonActivo = tipo;
+  document.querySelectorAll('.tipo-tablon-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tipo-'+tipo).classList.add('active');
+  // Mostrar/ocultar opciones de Iosi Study
+  document.getElementById('tablon-estudio-opts').classList.toggle('hidden', tipo !== 'estudio');
+  // Mostrar/ocultar fecha de entrega
+  document.getElementById('tablon-fecha-wrap').classList.toggle('hidden', tipo === 'recordatorio');
+}
+
+function poblarCursosTablon(){
+  const sel = document.getElementById('tablon-curso');
+  if(!sel) return;
+  sel.innerHTML = '';
+  const curs = Array.isArray(docenteData?.cursos) ? docenteData.cursos : [];
+  if(!curs.length){ sel.innerHTML='<option value="">Sin cursos asignados</option>'; return; }
+  curs.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+}
+
+function poblarMateriasTablon(){
+  const sel = document.getElementById('tablon-materia');
+  if(!sel) return;
+  sel.innerHTML = '';
+  const mats = Array.isArray(docenteData?.materias) ? docenteData.materias : ['General'];
+  if(!mats.length){ sel.innerHTML='<option value="General">General</option>'; return; }
+  mats.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+}
+
+function cancelarEditarTablon(){
+  document.getElementById('tablon-id-editando').value = '';
+  document.getElementById('tablon-titulo').value = '';
+  document.getElementById('tablon-texto').value = '';
+  document.getElementById('tablon-fecha').value = '';
+  document.getElementById('tablon-contenidoEstudio').value = '';
+  document.getElementById('btn-cancelar-tablon').classList.add('hidden');
+  document.getElementById('btn-tablon-txt').textContent = 'PUBLICAR EN TABLÓN';
+  selTipoTablon('tarea');
+}
+
+async function publicarTablon(){
+  const titulo = document.getElementById('tablon-titulo').value.trim();
+  const texto = document.getElementById('tablon-texto').value.trim();
+  const curso = document.getElementById('tablon-curso').value;
+  const materia = document.getElementById('tablon-materia').value;
+  const fecha = document.getElementById('tablon-fecha').value;
+  const notif = document.getElementById('tablon-notif').checked;
+  const idEditando = document.getElementById('tablon-id-editando').value;
+  if(!titulo || !texto){ alert('Completá el título y la descripción.'); return; }
+  if(!curso){ alert('Seleccioná un curso destinatario.'); return; }
+  const cursosAsignados = Array.isArray(docenteData?.cursos) ? docenteData.cursos : [];
+  if(!cursosAsignados.includes(curso)){ alert('Solo podés publicar para tus cursos asignados.'); return; }
+
+  const btn = document.querySelector('[onclick="publicarTablon()"]');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
+
+  const data = {
+    titulo, texto, tipo: tipoTablonActivo, curso, materia,
+    docenteEmail, docenteNombre: docenteData?.nombre || '',
+    creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+    fechaEntrega: fecha || null,
+    leidos: []
+  };
+
+  if(tipoTablonActivo === 'estudio'){
+    data.tipoQuiz = document.getElementById('tablon-tipoQuiz').value;
+    data.cantMultiple = parseInt(document.getElementById('tablon-cantMultiple').value) || 4;
+    data.cantDesarrollo = parseInt(document.getElementById('tablon-cantDesarrollo').value) || 1;
+    data.contenidoEstudio = document.getElementById('tablon-contenidoEstudio').value.trim() || texto;
+  }
+
+  try {
+    let docRef;
+    if(idEditando){
+      await db.collection('tablon').doc(idEditando).update(data);
+    } else {
+      docRef = await db.collection('tablon').add(data);
+      // Notificación push → aparece en dot-tablon del alumno
+      if(notif){
+        await db.collection('notificaciones_push').add({
+          tipo: 'tablon',
+          tipoTablon: tipoTablonActivo,
+          titulo,
+          texto: texto.slice(0, 120),
+          curso,
+          materia,
+          tablonId: docRef.id,
+          docenteNombre: docenteData?.nombre || '',
+          creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+          leidos: []
+        });
+      }
+    }
+    alert('✅ Publicado en el tablón de ' + curso + (notif ? ' · Notificación enviada' : '') + '.');
+    cancelarEditarTablon();
+    cargarTablonDocente();
+  } catch(e){ alert('Error: ' + e.message); }
+
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> PUBLICAR EN TABLÓN';
+}
+
+async function cargarTablonDocente(){
+  const cont = document.getElementById('lista-tablon-doc');
+  if(!cont) return;
+  cont.innerHTML = '<p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  try {
+    let snap;
+    try { snap = await db.collection('tablon').where('docenteEmail','==',docenteEmail).orderBy('creadoEn','desc').limit(30).get(); }
+    catch(e){ snap = await db.collection('tablon').where('docenteEmail','==',docenteEmail).get(); }
+    cont.innerHTML = '';
+    if(snap.empty){ cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste nada en el tablón.</p>'; return; }
+    const tipoIcon = {tarea:'📋',material:'📚',estudio:'🧠',recordatorio:'🔔'};
+    const tipoColor = {tarea:'bg-amber-50 text-amber-700 border-amber-200',material:'bg-blue-50 text-blue-700 border-blue-200',estudio:'bg-violet-50 text-violet-700 border-violet-200',recordatorio:'bg-slate-50 text-slate-600 border-slate-200'};
+    snap.forEach(doc => {
+      const d = doc.data();
+      const fecha = d.creadoEn?.toDate?.();
+      const fechaStr = fecha ? fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+      const lbl = (tipoIcon[d.tipo]||'📌') + ' ' + (d.tipo||'');
+      const cls = tipoColor[d.tipo] || 'bg-slate-50 text-slate-600 border-slate-200';
+      cont.innerHTML += `<div class="bg-white rounded-2xl border p-4 space-y-2 shadow-sm">
+        <div class="flex items-start justify-between gap-2">
+          <p class="font-bold text-sm flex-1">${d.titulo||'Sin título'}</p>
+          <span class="text-[9px] font-black px-2 py-1 rounded-lg border flex-shrink-0 ${cls}">${lbl}</span>
+        </div>
+        <p class="text-xs text-slate-500 line-clamp-2">${d.texto||''}</p>
+        <div class="flex items-center justify-between">
+          <p class="text-[10px] text-slate-400">📅 ${fechaStr} · ${d.curso||''} · <b>${d.materia||''}</b></p>
+          <div class="flex gap-2">
+            <button onclick="editarTablonDocente('${doc.id}')" class="text-blue-400 hover:text-blue-600 p-1"><i class="fas fa-pen text-xs"></i></button>
+            <button onclick="eliminarTablonDocente('${doc.id}')" class="text-rose-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button>
+          </div>
+        </div>
+      </div>`;
+    });
+  } catch(e){ cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Error al cargar.</p>'; }
+}
+
+async function editarTablonDocente(id){
+  const doc = await db.collection('tablon').doc(id).get();
+  if(!doc.exists) return;
+  const d = doc.data();
+  document.getElementById('tablon-id-editando').value = id;
+  document.getElementById('tablon-titulo').value = d.titulo||'';
+  document.getElementById('tablon-texto').value = d.texto||'';
+  document.getElementById('tablon-fecha').value = d.fechaEntrega||'';
+  document.getElementById('tablon-contenidoEstudio').value = d.contenidoEstudio||'';
+  if(d.curso){ document.getElementById('tablon-curso').value = d.curso; }
+  if(d.materia){ document.getElementById('tablon-materia').value = d.materia; }
+  selTipoTablon(d.tipo||'tarea');
+  document.getElementById('btn-cancelar-tablon').classList.remove('hidden');
+  document.getElementById('btn-tablon-txt').textContent = 'GUARDAR CAMBIOS';
+  document.getElementById('tab-tablon').scrollIntoView({behavior:'smooth'});
+}
+
+async function eliminarTablonDocente(id){
+  if(!confirm('¿Eliminar esta publicación del tablón?')) return;
+  await db.collection('tablon').doc(id).delete();
+  cargarTablonDocente();
+}
+
 // ══ UTILS ══
 function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
+  if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
   document.getElementById('tab-'+tab)?.classList.add('active');
   document.getElementById('btn-'+tab)?.classList.add('active');
   document.getElementById('btn-guardar-notas').style.display='none';
@@ -944,6 +1210,7 @@ window.addEventListener('load',()=>{
     login(em);
   }
 });
+} // fin _initDocente
 </script>
 </body>
 </html>
