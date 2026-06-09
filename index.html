@@ -293,230 +293,179 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
 </div>
 
 <script>
-// ── Loader secuencial Firebase ──
-var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
-var _fqi=0;
-function _loadNextFB(){
-  if(_fqi>=_fq.length){_initIndex();return;}
-  var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=function(){console.error('Error cargando Firebase');};document.head.appendChild(s);
-}
-_loadNextFB();
-</script>
-<script>
-function _initIndex(){
-const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
-firebase.initializeApp(FB);
-const db=firebase.firestore();
+// ── Variables globales (accesibles antes de Firebase) ──
+var modoActual = 'familia';
+var impAppActual = null;
+var impDatosParseados = [];
 
-let modoActual='familia';
-let impAppActual=null;
-let impDatosParseados=[];
-
-const IMP_APPS={
-  xhendra:{
-    nombre:'Xhendra',
-    pasos:[
-      '1. Abrí Xhendra y andá a <b>Alumnos → Exportar</b>.',
-      '2. Elegí formato <b>CSV (separado por comas)</b>.',
-      '3. Incluí al menos: nombre, nivel, sección/curso, email del tutor.',
-      '4. Guardá el archivo y subilo en el Paso 3.'
-    ],
-    columnas:{alumno:'nombre',nivel:'nivel',curso:'seccion',familia:'tutor',mail1:'email_tutor',mail2:'email_padre',mail3:'email_madre'}
-  },
-  acadeu:{
-    nombre:'Acadeu',
-    pasos:[
-      '1. En Acadeu ir a <b>Reportes → Padrón → Exportar CSV</b>.',
-      '2. El CSV incluye: apellido_nombre, grado, turno, responsable, correo_responsable.',
-      '3. Subí el archivo en el Paso 3.'
-    ],
-    columnas:{alumno:'apellido_nombre',nivel:'nivel_edu',curso:'grado',familia:'responsable',mail1:'correo_responsable',mail2:'correo_alt',mail3:''}
-  },
-  handing:{
-    nombre:'Handing',
-    pasos:[
-      '1. En Handing ir a <b>Gestión → Alumnos → Descargar planilla</b>.',
-      '2. Elegir Excel (.xlsx) o CSV.',
-      '3. Campos esperados: nombre_alumno, nivel, curso, apellido_familia, email1, email2.',
-      '4. Subí el archivo en el Paso 3.'
-    ],
-    columnas:{alumno:'nombre_alumno',nivel:'nivel',curso:'curso',familia:'apellido_familia',mail1:'email1',mail2:'email2',mail3:''}
-  },
-  generico:{
-    nombre:'tu sistema',
-    pasos:[
-      '1. Exportá un CSV o Excel desde tu sistema de gestión.',
-      '2. El archivo debe tener columnas con: nombre del alumno, nivel (inicial/primario/secundario), curso, nombre de la familia y al menos un email.',
-      '3. En el siguiente paso podés mapear tus columnas a los campos de Iosef Caro.',
-      '4. Subí el archivo en el Paso 3.'
-    ],
-    columnas:{alumno:'nombre',nivel:'nivel',curso:'curso',familia:'familia',mail1:'email',mail2:'email2',mail3:'email3'}
-  }
+var IMP_APPS = {
+  xhendra:{nombre:'Xhendra',pasos:['1. Abrí Xhendra y andá a <b>Alumnos → Exportar</b>.','2. Elegí formato <b>CSV (separado por comas)</b>.','3. Incluí al menos: nombre, nivel, sección/curso, email del tutor.','4. Guardá el archivo y subilo en el Paso 3.'],columnas:{alumno:'nombre',nivel:'nivel',curso:'seccion',familia:'tutor',mail1:'email_tutor',mail2:'email_padre',mail3:'email_madre'}},
+  acadeu:{nombre:'Acadeu',pasos:['1. En Acadeu ir a <b>Reportes → Padrón → Exportar CSV</b>.','2. El CSV incluye: apellido_nombre, grado, turno, responsable, correo_responsable.','3. Subí el archivo en el Paso 3.'],columnas:{alumno:'apellido_nombre',nivel:'nivel_edu',curso:'grado',familia:'responsable',mail1:'correo_responsable',mail2:'correo_alt',mail3:''}},
+  handing:{nombre:'Handing',pasos:['1. En Handing ir a <b>Gestión → Alumnos → Descargar planilla</b>.','2. Elegir Excel (.xlsx) o CSV.','3. Campos esperados: nombre_alumno, nivel, curso, apellido_familia, email1, email2.','4. Subí el archivo en el Paso 3.'],columnas:{alumno:'nombre_alumno',nivel:'nivel',curso:'curso',familia:'apellido_familia',mail1:'email1',mail2:'email2',mail3:''}},
+  generico:{nombre:'tu sistema',pasos:['1. Exportá un CSV o Excel desde tu sistema de gestión.','2. El archivo debe tener columnas con: nombre del alumno, nivel (inicial/primario/secundario), curso, nombre de la familia y al menos un email.','3. En el siguiente paso podés mapear tus columnas a los campos de Iosef Caro.','4. Subí el archivo en el Paso 3.'],columnas:{alumno:'nombre',nivel:'nivel',curso:'curso',familia:'familia',mail1:'email',mail2:'email2',mail3:'email3'}}
 };
+var IMP_CAMPOS = {alumno:'Nombre del alumno',nivel:'Nivel (inicial/primario/sec.)',curso:'Curso (ej: 1A)',familia:'Nombre de la familia',mail1:'Email principal',mail2:'Email 2 (opcional)',mail3:'Email 3 (opcional)'};
 
-const IMP_CAMPOS={alumno:'Nombre del alumno',nivel:'Nivel (inicial/primario/sec.)',curso:'Curso (ej: 1A)',familia:'Nombre de la familia',mail1:'Email principal',mail2:'Email 2 (opcional)',mail3:'Email 3 (opcional)'};
-
-function abrirImportar(){
-  document.getElementById('modal-importar').style.display='flex';
-  resetImport();
-}
-function cerrarImportar(){document.getElementById('modal-importar').style.display='none';}
-function resetImport(){
-  impAppActual=null;impDatosParseados=[];
-  document.querySelectorAll('.app-origen-btn').forEach(b=>{b.classList.remove('border-indigo-400','bg-indigo-50');b.classList.add('border-slate-100');});
-  ['imp-instrucciones','imp-mapeo-sect','imp-archivo-sect','imp-preview-sect','imp-acciones','imp-resultado'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  document.getElementById('imp-file-nombre').textContent='Sin archivo seleccionado';
-}
-function seleccionarApp(app){
-  impAppActual=app;
-  document.querySelectorAll('.app-origen-btn').forEach(b=>{b.classList.remove('border-indigo-400','bg-indigo-50');b.classList.add('border-slate-100');});
-  document.querySelector(`[data-app="${app}"]`).classList.add('border-indigo-400','bg-indigo-50');
-  const cfg=IMP_APPS[app];
-  document.getElementById('imp-app-nombre').textContent=cfg.nombre;
-  document.getElementById('imp-pasos').innerHTML=cfg.pasos.map(p=>`<p>• ${p}</p>`).join('');
-  document.getElementById('imp-instrucciones').classList.remove('hidden');
-  // Generar mapeo
-  const grid=document.getElementById('imp-mapeo-grid');grid.innerHTML='';
-  Object.entries(IMP_CAMPOS).forEach(([campo,etiqueta])=>{
-    grid.innerHTML+=`<div><label class="text-[9px] font-black text-slate-500 uppercase block mb-1">${etiqueta}</label><input type="text" id="map-${campo}" value="${cfg.columnas[campo]||campo}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-indigo-400 transition"></div>`;
-  });
-  document.getElementById('imp-mapeo-sect').classList.remove('hidden');
-  document.getElementById('imp-archivo-sect').classList.remove('hidden');
-}
-function manejarDropImport(e){e.preventDefault();const f=e.dataTransfer.files[0];if(f)procesarArchivoImport(f);}
-function cargarArchivoImport(inp){if(inp.files[0])procesarArchivoImport(inp.files[0]);}
-async function procesarArchivoImport(file){
-  document.getElementById('imp-file-nombre').textContent=file.name;
-  const texto=await leerArchivoComoTexto(file);
-  const lineas=texto.trim().split('\n').filter(l=>l.trim());
-  if(lineas.length<2){alert('El archivo parece estar vacío o sin filas.');return;}
-  const sep=lineas[0].includes(';')?';':',';
-  const headers=lineas[0].split(sep).map(h=>h.replace(/"/g,'').trim().toLowerCase());
-  const filas=lineas.slice(1).map(l=>l.split(sep).map(v=>v.replace(/"/g,'').trim()));
-  // Leer mapeo
-  const mapa={};
-  Object.keys(IMP_CAMPOS).forEach(campo=>{mapa[campo]=document.getElementById('map-'+campo)?.value.trim().toLowerCase()||campo;});
-  const getCol=(fila,nombre)=>{const idx=headers.indexOf(nombre.toLowerCase());return idx>=0?fila[idx]:''};
-  impDatosParseados=filas.map(f=>({
-    nombre: getCol(f,mapa.alumno),
-    nivel: normalizarNivel(getCol(f,mapa.nivel)),
-    curso: getCol(f,mapa.curso).toUpperCase(),
-    familiaNombre: getCol(f,mapa.familia),
-    mail1: getCol(f,mapa.mail1).toLowerCase(),
-    mail2: mapa.mail2?getCol(f,mapa.mail2).toLowerCase():'',
-    mail3: mapa.mail3?getCol(f,mapa.mail3).toLowerCase():'',
-  })).filter(a=>a.nombre);
-  if(!impDatosParseados.length){alert('No se encontraron alumnos. Revisá el mapeo de columnas.');return;}
-  // Vista previa
-  const prev=impDatosParseados.slice(0,5);
-  let tabla=`<table class="w-full text-[10px] font-bold border-collapse"><thead><tr class="bg-slate-100"><th class="p-2 text-left rounded-tl-xl">Nombre</th><th class="p-2 text-left">Nivel</th><th class="p-2 text-left">Curso</th><th class="p-2 text-left rounded-tr-xl">Email</th></tr></thead><tbody>`;
-  prev.forEach(a=>{tabla+=`<tr class="border-t border-slate-100"><td class="p-2">${a.nombre}</td><td class="p-2">${a.nivel}</td><td class="p-2">${a.curso}</td><td class="p-2 text-blue-500">${a.mail1}</td></tr>`;});
-  tabla+=`</tbody></table><p class="text-[9px] text-slate-400 mt-2 text-center">Total detectado: <b>${impDatosParseados.length} alumnos</b></p>`;
-  document.getElementById('imp-preview-tabla').innerHTML=tabla;
-  document.getElementById('imp-preview-sect').classList.remove('hidden');
-  document.getElementById('imp-btn-text').textContent=`IMPORTAR ${impDatosParseados.length} ALUMNOS`;
-  document.getElementById('imp-acciones').classList.remove('hidden');
-}
-function normalizarNivel(v){
-  v=(v||'').toLowerCase();
-  if(v.includes('inic')||v.includes('jard')||v.includes('kinder'))return 'inicial';
-  if(v.includes('sec')||v.includes('media')||v.includes('bachi'))return 'secundario';
-  return 'primario';
-}
-function leerArchivoComoTexto(file){
-  return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file,'UTF-8');});
-}
-async function ejecutarImportacion(){
-  if(!impDatosParseados.length){alert('No hay datos para importar.');return;}
-  const btn=document.getElementById('imp-btn-text');btn.textContent='Importando...';
-  let creados=0,actualizados=0,errores=0;
-  const batch=db.batch();
-  const emails=new Set();
-  for(const alu of impDatosParseados){
-    try{
-      const key=(alu.nombre+alu.curso).toLowerCase().replace(/\s+/g,'_');
-      const aluRef=db.collection('alumnos').doc(key);
-      const existente=await aluRef.get();
-      if(existente.exists)actualizados++;else creados++;
-      batch.set(aluRef,{nombre:alu.nombre,nivel:alu.nivel,curso:alu.curso,familiaNombre:alu.familiaNombre,importadoDe:impAppActual||'generico',actualizadoEn:new Date().toISOString()},{merge:true});
-      // Crear usuarios familia para cada email
-      [alu.mail1,alu.mail2,alu.mail3].filter(m=>m&&m.includes('@')&&!emails.has(m)).forEach(mail=>{
-        emails.add(mail);
-        const uRef=db.collection('usuarios').doc(mail);
-        batch.set(uRef,{rol:'familia',nombre:alu.familiaNombre||'Familia',alumnos:[alu.nombre],nivel:alu.nivel,importadoDe:impAppActual||'generico'},{merge:true});
-      });
-    }catch(e){errores++;}
-  }
-  await batch.commit();
-  document.getElementById('imp-resultado-titulo').textContent=`¡Importación completada! 🎉`;
-  document.getElementById('imp-resultado-detalle').textContent=`${creados} alumnos nuevos · ${actualizados} actualizados · ${errores} errores · ${emails.size} emails de familia registrados`;
-  document.getElementById('imp-acciones').classList.add('hidden');
-  document.getElementById('imp-resultado').classList.remove('hidden');
-}
-
+// ── Funciones UI (no necesitan Firebase) ──
 function mostrarPanelesEscuela(){document.getElementById('modal-paneles').style.display='flex';}
 function cerrarPaneles(){document.getElementById('modal-paneles').style.display='none';}
 function abrirSelectorFamilia(){document.getElementById('modal-selector-familia').style.display='flex';}
 function cerrarSelectorFamilia(){document.getElementById('modal-selector-familia').style.display='none';}
+function cerrarLogin(){document.getElementById('login-modal').classList.remove('open');}
+function setProgress(pct){var cont=document.getElementById('progress-cont'),bar=document.getElementById('progress-bar');if(pct===0){cont.style.display='none';bar.style.width='0%';return;}cont.style.display='block';bar.style.width=pct+'%';}
+function showError(msg){var el=document.getElementById('login-error');el.textContent=msg;el.classList.remove('hidden');setProgress(0);document.getElementById('btn-ingresar').disabled=false;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';}
 function abrirLogin(modo){
   modoActual=modo;
-  const modal=document.getElementById('login-modal');
-  const icon=document.getElementById('login-icon'),title=document.getElementById('login-title');
-  const subtitle=document.getElementById('login-subtitle'),hint=document.getElementById('login-hint');
-  const passField=document.getElementById('pass-field');
+  var modal=document.getElementById('login-modal');
+  var icon=document.getElementById('login-icon'),title=document.getElementById('login-title');
+  var subtitle=document.getElementById('login-subtitle'),hint=document.getElementById('login-hint');
+  var passField=document.getElementById('pass-field');
   document.getElementById('login-error').classList.add('hidden');
   document.getElementById('login-email').value='';document.getElementById('login-pass').value='';
   if(modo==='familia'){icon.textContent='💜';icon.style.background='#f5f3ff';title.textContent='Portal Familias';subtitle.textContent='Ingresá con tu email registrado';hint.textContent='Las familias ingresan solo con email, sin contraseña';hint.classList.remove('hidden');passField.classList.add('hidden');}
   else if(modo==='alumno'){icon.textContent='🎓';icon.style.background='#f0f9ff';title.textContent='Portal Alumnos';subtitle.textContent='Ingresá con tu email y contraseña';hint.textContent='';hint.classList.add('hidden');passField.classList.remove('hidden');}
   else{icon.textContent='🏫';icon.style.background='#f0f9ff';title.textContent='Portal Escuela';subtitle.textContent='Personal docente y administrativo';hint.textContent='Docentes y secretaría ingresan con email y contraseña';hint.classList.remove('hidden');passField.classList.remove('hidden');}
-  modal.classList.add('open');setTimeout(()=>document.getElementById('login-email').focus(),300);
+  modal.classList.add('open');setTimeout(function(){document.getElementById('login-email').focus();},300);
 }
-function cerrarLogin(){document.getElementById('login-modal').classList.remove('open');}
-function setProgress(pct){const cont=document.getElementById('progress-cont'),bar=document.getElementById('progress-bar');if(pct===0){cont.style.display='none';bar.style.width='0%';return;}cont.style.display='block';bar.style.width=pct+'%';}
-function showError(msg){const el=document.getElementById('login-error');el.textContent=msg;el.classList.remove('hidden');setProgress(0);document.getElementById('btn-ingresar').disabled=false;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';}
-async function realizarLogin(){
-  const email=document.getElementById('login-email').value.trim().toLowerCase();
-  const pass=document.getElementById('login-pass').value.trim();
-  const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
-  if(!email){showError('Ingresá tu email.');return;}
-  if((modoActual==='escuela'||modoActual==='alumno')&&!pass){showError('Ingresá tu contraseña.');return;}
-  document.getElementById('btn-ingresar').disabled=true;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';setProgress(30);
-  if(modoActual==='escuela'&&email==='uriel.bacher@gmail.com'&&pass==='Gallardo10'){setProgress(100);setTimeout(()=>window.location.href='admin.html',300);return;}
-  // Login alumno directo (colección alumnos)
-  if(modoActual==='alumno'){
+function abrirImportar(){document.getElementById('modal-importar').style.display='flex';resetImport();}
+function cerrarImportar(){document.getElementById('modal-importar').style.display='none';}
+function resetImport(){
+  impAppActual=null;impDatosParseados=[];
+  document.querySelectorAll('.app-origen-btn').forEach(function(b){b.classList.remove('border-indigo-400','bg-indigo-50');b.classList.add('border-slate-100');});
+  ['imp-instrucciones','imp-mapeo-sect','imp-archivo-sect','imp-preview-sect','imp-acciones','imp-resultado'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  document.getElementById('imp-file-nombre').textContent='Sin archivo seleccionado';
+}
+function seleccionarApp(app){
+  impAppActual=app;
+  document.querySelectorAll('.app-origen-btn').forEach(function(b){b.classList.remove('border-indigo-400','bg-indigo-50');b.classList.add('border-slate-100');});
+  document.querySelector('[data-app="'+app+'"]').classList.add('border-indigo-400','bg-indigo-50');
+  var cfg=IMP_APPS[app];
+  document.getElementById('imp-app-nombre').textContent=cfg.nombre;
+  document.getElementById('imp-pasos').innerHTML=cfg.pasos.map(function(p){return '<p>• '+p+'</p>';}).join('');
+  document.getElementById('imp-instrucciones').classList.remove('hidden');
+  var grid=document.getElementById('imp-mapeo-grid');grid.innerHTML='';
+  Object.entries(IMP_CAMPOS).forEach(function([campo,etiqueta]){
+    grid.innerHTML+='<div><label class="text-[9px] font-black text-slate-500 uppercase block mb-1">'+etiqueta+'</label><input type="text" id="map-'+campo+'" value="'+(cfg.columnas[campo]||campo)+'" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-indigo-400 transition"></div>';
+  });
+  document.getElementById('imp-mapeo-sect').classList.remove('hidden');
+  document.getElementById('imp-archivo-sect').classList.remove('hidden');
+}
+function manejarDropImport(e){e.preventDefault();var f=e.dataTransfer.files[0];if(f)procesarArchivoImport(f);}
+function cargarArchivoImport(inp){if(inp.files[0])procesarArchivoImport(inp.files[0]);}
+function normalizarNivel(v){v=(v||'').toLowerCase();if(v.includes('inic')||v.includes('jard')||v.includes('kinder'))return 'inicial';if(v.includes('sec')||v.includes('media')||v.includes('bachi'))return 'secundario';return 'primario';}
+function leerArchivoComoTexto(file){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.onerror=rej;r.readAsText(file,'UTF-8');});}
+async function procesarArchivoImport(file){
+  document.getElementById('imp-file-nombre').textContent=file.name;
+  var texto=await leerArchivoComoTexto(file);
+  var lineas=texto.trim().split('\n').filter(function(l){return l.trim();});
+  if(lineas.length<2){alert('El archivo parece estar vacío o sin filas.');return;}
+  var sep=lineas[0].includes(';')?';':',';
+  var headers=lineas[0].split(sep).map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
+  var filas=lineas.slice(1).map(function(l){return l.split(sep).map(function(v){return v.replace(/"/g,'').trim();});});
+  var mapa={};
+  Object.keys(IMP_CAMPOS).forEach(function(campo){mapa[campo]=document.getElementById('map-'+campo)?.value.trim().toLowerCase()||campo;});
+  function getCol(fila,nombre){var idx=headers.indexOf(nombre.toLowerCase());return idx>=0?fila[idx]:'';}
+  impDatosParseados=filas.map(function(f){return {nombre:getCol(f,mapa.alumno),nivel:normalizarNivel(getCol(f,mapa.nivel)),curso:getCol(f,mapa.curso).toUpperCase(),familiaNombre:getCol(f,mapa.familia),mail1:getCol(f,mapa.mail1).toLowerCase(),mail2:mapa.mail2?getCol(f,mapa.mail2).toLowerCase():'',mail3:mapa.mail3?getCol(f,mapa.mail3).toLowerCase():''};}).filter(function(a){return a.nombre;});
+  if(!impDatosParseados.length){alert('No se encontraron alumnos. Revisá el mapeo de columnas.');return;}
+  var prev=impDatosParseados.slice(0,5);
+  var tabla='<table class="w-full text-[10px] font-bold border-collapse"><thead><tr class="bg-slate-100"><th class="p-2 text-left rounded-tl-xl">Nombre</th><th class="p-2 text-left">Nivel</th><th class="p-2 text-left">Curso</th><th class="p-2 text-left rounded-tr-xl">Email</th></tr></thead><tbody>';
+  prev.forEach(function(a){tabla+='<tr class="border-t border-slate-100"><td class="p-2">'+a.nombre+'</td><td class="p-2">'+a.nivel+'</td><td class="p-2">'+a.curso+'</td><td class="p-2 text-blue-500">'+a.mail1+'</td></tr>';});
+  tabla+='</tbody></table><p class="text-[9px] text-slate-400 mt-2 text-center">Total detectado: <b>'+impDatosParseados.length+' alumnos</b></p>';
+  document.getElementById('imp-preview-tabla').innerHTML=tabla;
+  document.getElementById('imp-preview-sect').classList.remove('hidden');
+  document.getElementById('imp-btn-text').textContent='IMPORTAR '+impDatosParseados.length+' ALUMNOS';
+  document.getElementById('imp-acciones').classList.remove('hidden');
+}
+
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.getElementById('login-modal').classList.contains('open'))realizarLogin();if(e.key==='Escape'){cerrarLogin();cerrarImportar();}});
+if('serviceWorker'in navigator){navigator.serviceWorker.register('firebase-messaging-sw.js').catch(function(){});}
+</script>
+
+<script>
+// ── Loader secuencial Firebase ──
+var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _fqi=0;
+function _loadNextFB(){
+  if(_fqi>=_fq.length){_initIndex();return;}
+  var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=function(){console.error('Error cargando Firebase. Algunas funciones no estarán disponibles.');};document.head.appendChild(s);
+}
+_loadNextFB();
+
+function _initIndex(){
+  var FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+  firebase.initializeApp(FB);
+  window._db=firebase.firestore();
+
+  // Exponer realizarLogin y ejecutarImportacion al scope global (usan _db)
+  window.realizarLogin = async function(){
+    var db=window._db;
+    var email=document.getElementById('login-email').value.trim().toLowerCase();
+    var pass=document.getElementById('login-pass').value.trim();
+    document.getElementById('login-error').classList.add('hidden');
+    if(!email){showError('Ingresá tu email.');return;}
+    if((modoActual==='escuela'||modoActual==='alumno')&&!pass){showError('Ingresá tu contraseña.');return;}
+    document.getElementById('btn-ingresar').disabled=true;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';setProgress(30);
+    if(modoActual==='escuela'&&email==='uriel.bacher@gmail.com'&&pass==='Gallardo10'){setProgress(100);setTimeout(function(){window.location.href='admin.html';},300);return;}
+    if(modoActual==='alumno'){
+      try{
+        var snap=await db.collection('alumnos').where('email','==',email).limit(1).get();setProgress(70);
+        if(snap.empty){showError('Email no registrado como alumno.');return;}
+        var d=snap.docs[0].data();
+        if(d.pass!==pass&&pass!=='alumnos123'){showError('Contraseña incorrecta.');return;}
+        setProgress(100);
+        sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol','alumno');
+        sessionStorage.setItem('iosef_alu_nombre',d.nombre||email);
+        setTimeout(function(){window.location.href='alumno.html';},300);
+      }catch(e){showError('Error de conexión: '+e.message);}
+      return;
+    }
     try{
-      const snap=await db.collection('alumnos').where('email','==',email).limit(1).get();setProgress(70);
-      if(snap.empty){showError('Email no registrado como alumno.');return;}
-      const d=snap.docs[0].data();
-      if(d.pass!==pass&&pass!=='alumnos123'){showError('Contraseña incorrecta.');return;}
+      var doc=await db.collection('usuarios').doc(email).get();setProgress(70);
+      if(!doc.exists){showError('Email no registrado en el sistema.');return;}
+      var data=doc.data();
+      if(modoActual==='familia'){if(data.rol!=='familia'){showError('Este email pertenece a personal de la institución. Usá el Portal Escuela.');return;}setProgress(100);setTimeout(function(){window.location.href='familia.html?email='+encodeURIComponent(email);},300);return;}
+      if(data.rol==='familia'){showError('Este email es de una familia. Usá el Portal Familias.');return;}
+      if(data.pass!==pass){showError('Contraseña incorrecta.');return;}
       setProgress(100);
-      sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol','alumno');
-      sessionStorage.setItem('iosef_alu_nombre',d.nombre||email);
-      setTimeout(()=>window.location.href='alumno.html',300);
+      var rol=data.rol;var destino='admin.html';
+      if(rol==='eoe')destino='eoe.html';
+      else if(rol==='docente')destino='docente.html';
+      else if(['secretaria_inicial','secretaria_primario','secretaria_secundario'].includes(rol))destino='secretaria.html';
+      else if(rol==='comunicacion')destino='comunicaciones.html';
+      else destino='admin.html';
+      sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol',rol);sessionStorage.setItem('iosef_nombre',data.nombre||email);sessionStorage.setItem('iosef_pass_tmp',pass);
+      setTimeout(function(){window.location.href=destino;},300);
     }catch(e){showError('Error de conexión: '+e.message);}
-    return;
-  }
-  try{
-    const doc=await db.collection('usuarios').doc(email).get();setProgress(70);
-    if(!doc.exists){showError('Email no registrado en el sistema.');return;}
-    const data=doc.data();
-    if(modoActual==='familia'){if(data.rol!=='familia'){showError('Este email pertenece a personal de la institución. Usá el Portal Escuela.');return;}setProgress(100);setTimeout(()=>window.location.href='familia.html?email='+encodeURIComponent(email),300);return;}
-    if(data.rol==='familia'){showError('Este email es de una familia. Usá el Portal Familias.');return;}
-    if(data.pass!==pass){showError('Contraseña incorrecta.');return;}
-    setProgress(100);
-    const rol=data.rol;let destino='admin.html';
-    if(rol==='eoe')destino='eoe.html';
-    else if(rol==='docente')destino='docente.html';
-    else if(['secretaria_inicial','secretaria_primario','secretaria_secundario'].includes(rol))destino='secretaria.html';
-    else if(rol==='comunicacion')destino='comunicaciones.html';
-    else destino='admin.html';
-    sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol',rol);sessionStorage.setItem('iosef_nombre',data.nombre||email);sessionStorage.setItem('iosef_pass_tmp',pass);
-    setTimeout(()=>window.location.href=destino,300);
-  }catch(e){showError('Error de conexión: '+e.message);}
+  };
+
+  window.ejecutarImportacion = async function(){
+    var db=window._db;
+    if(!impDatosParseados.length){alert('No hay datos para importar.');return;}
+    var btn=document.getElementById('imp-btn-text');btn.textContent='Importando...';
+    var creados=0,actualizados=0,errores=0;
+    var batch=db.batch();
+    var emails=new Set();
+    for(var alu of impDatosParseados){
+      try{
+        var key=(alu.nombre+alu.curso).toLowerCase().replace(/\s+/g,'_');
+        var aluRef=db.collection('alumnos').doc(key);
+        var existente=await aluRef.get();
+        if(existente.exists)actualizados++;else creados++;
+        batch.set(aluRef,{nombre:alu.nombre,nivel:alu.nivel,curso:alu.curso,familiaNombre:alu.familiaNombre,importadoDe:impAppActual||'generico',actualizadoEn:new Date().toISOString()},{merge:true});
+        [alu.mail1,alu.mail2,alu.mail3].filter(function(m){return m&&m.includes('@')&&!emails.has(m);}).forEach(function(mail){
+          emails.add(mail);
+          var uRef=db.collection('usuarios').doc(mail);
+          batch.set(uRef,{rol:'familia',nombre:alu.familiaNombre||'Familia',alumnos:[alu.nombre],nivel:alu.nivel,importadoDe:impAppActual||'generico'},{merge:true});
+        });
+      }catch(e){errores++;}
+    }
+    await batch.commit();
+    document.getElementById('imp-resultado-titulo').textContent='¡Importación completada! 🎉';
+    document.getElementById('imp-resultado-detalle').textContent=creados+' alumnos nuevos · '+actualizados+' actualizados · '+errores+' errores · '+emails.size+' emails de familia registrados';
+    document.getElementById('imp-acciones').classList.add('hidden');
+    document.getElementById('imp-resultado').classList.remove('hidden');
+  };
 }
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-modal').classList.contains('open'))realizarLogin();if(e.key==='Escape'){cerrarLogin();cerrarImportar();}});
-if('serviceWorker'in navigator){navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});}
-} // fin _initIndex
 </script>
 </body>
 </html>
