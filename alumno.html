@@ -532,8 +532,7 @@ function _loadNext(){
   var s=document.createElement('script');s.src=_q[_qi++];s.onload=_loadNext;s.onerror=_loadNext;document.head.appendChild(s);
 }
 _loadNext();
-</script>
-<script>
+
 function _initApp(){
 
 // ── FIREBASE ──
@@ -558,41 +557,29 @@ async function doLogin(){
   const errEl=document.getElementById('login-err');
   errEl.style.display='none';
   if(!em||!ps){showErr('Completá todos los campos.');return;}
-  // Validar dominio @iosefcaro
-  if(!em.includes(DOMINIO_VALIDO)){
-    showErr('El email debe ser institucional (@iosefcaro).');return;
-  }
+
   const btn=document.querySelector('.btn-login');
   btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';
-  try{
-    const uDoc=await db.collection('usuarios').doc(em).get();
-    if(uDoc.exists){
-      const u=uDoc.data();
-      if(u.rol!=='alumno'){showErr('Este portal es solo para alumnos.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
-      if(u.pass!==ps){showErr('Contraseña incorrecta.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
-      // Guardar datos del alumno en memoria
-      alumnoEmail=em;alumnoNombre=u.nombre||em;alumnoCurso=u.curso||'';alumnoNivel=u.nivel||'secundario';
-      const aSnap=await db.collection('alumnos').where('email','==',em).limit(1).get();
-      if(!aSnap.empty)alumnoId=aSnap.docs[0].id;
-      sessionStorage.setItem('iosef_alu_email',em);
-      sessionStorage.setItem('iosef_alu_nombre',u.nombre||em);
-      sessionStorage.setItem('iosef_alu_curso',u.curso||'');
-      sessionStorage.setItem('iosef_alu_nivel',u.nivel||'secundario');
-      sessionStorage.setItem('iosef_alu_id',alumnoId);
-      // Primer login: contraseña genérica → forzar cambio
-      if(ps===PASS_GENERICA){
-        btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
-        document.getElementById('modal-pass').style.display='flex';
-        return;
-      }
-      iniciarPanel();
-    } else {
-      showErr('Email no registrado.');
-    }
-  }catch(e){showErr('Error de conexión: '+e.message);}
-  btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
-}
 
+  // ── Acceso admin total ──
+  if(em==='uriel.bacher@gmail.com'&&ps==='Gallardo10'){
+    alumnoEmail=em;alumnoNombre='Administrador';alumnoCurso='ADMIN';alumnoNivel='secundario';
+    sessionStorage.setItem('iosef_alu_email',em);
+    sessionStorage.setItem('iosef_alu_nombre','Administrador');
+    sessionStorage.setItem('iosef_alu_curso','ADMIN');
+    sessionStorage.setItem('iosef_alu_nivel','secundario');
+    iniciarPanel();
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
+    return;
+  }
+
+  // Validar dominio @iosefcaro
+  if(!em.includes(DOMINIO_VALIDO)){
+    showErr('El email debe ser institucional (@iosefcaro).');
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;
+  }
+
+}
 async function guardarNuevaPass(){
   const nueva=document.getElementById('np-nueva').value.trim();
   const rep=document.getElementById('np-repetir').value.trim();
