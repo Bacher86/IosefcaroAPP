@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Gestión Maestro - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -284,17 +282,71 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         <div id="csv-doc-status" class="mt-4 text-sm font-bold text-slate-400"></div>
       </div>
       <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-        <div class="flex items-center gap-4 mb-6"><div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-user-plus"></i></div><h2 class="text-xl font-black">Carga Manual — Alumno</h2></div>
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-user-plus"></i></div>
+          <div><h2 class="text-xl font-black">Carga Manual — Alumno</h2><p class="text-xs text-slate-400 mt-0.5">El mail del alumno debe ser <b>@iosefcaro.org</b> para acceder al Portal Alumnos</p></div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input type="text"  id="manual-alu"   placeholder="Nombre del Alumno"    class="input-pro">
+          <input type="text"  id="manual-alu"   placeholder="Nombre y Apellido del Alumno" class="input-pro">
           <select id="manual-nivel" class="input-pro"><option value="">Nivel...</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
           <input type="text"  id="manual-cur"   placeholder="Curso (Ej: 1A)"       class="input-pro">
           <input type="text"  id="manual-fam"   placeholder="Nombre de la Familia" class="input-pro">
-          <input type="email" id="manual-mail1" placeholder="Email Principal"       class="input-pro">
-          <input type="email" id="manual-mail2" placeholder="Email 2 (Opcional)"   class="input-pro">
-          <input type="email" id="manual-mail3" placeholder="Email 3 (Opcional)"   class="input-pro">
-          <button onclick="cargaManualAlumno()" class="md:col-span-3 bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg">GUARDAR ALUMNO</button>
+
+          <!-- Email del ALUMNO (para login en Portal Alumnos) -->
+          <div class="md:col-span-3">
+            <label class="text-[9px] font-black text-slate-500 uppercase block mb-1.5">📧 Email del Alumno (Portal Alumnos)</label>
+            <div class="flex gap-2 items-center">
+              <input type="text" id="manual-alu-user" placeholder="nombre.apellido" class="input-pro flex-1" oninput="previewAluMail()">
+              <span class="font-black text-slate-500 text-sm flex-shrink-0">@iosefcaro.org</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">Preview: <span id="preview-alu-mail" class="font-bold text-blue-600">—</span></p>
+          </div>
+
+          <!-- Contraseña del alumno -->
+          <div class="md:col-span-2">
+            <label class="text-[9px] font-black text-slate-500 uppercase block mb-1.5">🔑 Contraseña del Alumno</label>
+            <input type="text" id="manual-alu-pass" placeholder="Ej: Caro2026 (mínimo 6 caracteres)" class="input-pro">
+          </div>
+          <div class="flex items-end">
+            <button onclick="generarPassAlumno()" class="input-pro bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition cursor-pointer">🎲 Generar automática</button>
+          </div>
+
+          <!-- Emails de familia (opcional) -->
+          <div class="md:col-span-3">
+            <label class="text-[9px] font-black text-slate-500 uppercase block mb-1.5">👨‍👩‍👧 Emails de la Familia (opcional — para Portal Familias)</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input type="email" id="manual-mail1" placeholder="Email familia 1" class="input-pro">
+              <input type="email" id="manual-mail2" placeholder="Email familia 2" class="input-pro">
+              <input type="email" id="manual-mail3" placeholder="Email familia 3" class="input-pro">
+            </div>
+          </div>
+
+          <button onclick="cargaManualAlumno()" class="md:col-span-3 bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg flex items-center justify-center gap-2"><i class="fas fa-user-plus"></i> GUARDAR ALUMNO</button>
         </div>
+      </div>
+
+      <!-- CSV carga masiva alumnos con mail -->
+      <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-file-csv"></i></div>
+          <div><h2 class="text-xl font-black">Carga Masiva — CSV Alumnos</h2><p class="text-xs text-slate-400 mt-0.5">Columnas: <b>nombre, nivel, curso, familia, mail_alumno, pass_alumno, mail_fam1, mail_fam2</b></p></div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-4 text-xs text-amber-800 font-bold flex items-start gap-2">
+          <i class="fas fa-info-circle mt-0.5 text-amber-500"></i>
+          <span>El campo <b>mail_alumno</b> debe terminar en <b>@iosefcaro.org</b>. Si está vacío se genera automáticamente como <i>nombre.apellido@iosefcaro.org</i>. El campo <b>pass_alumno</b> es opcional (si vacío: <b>Caro2026</b>).</span>
+        </div>
+        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center cursor-pointer hover:border-emerald-400 transition" onclick="document.getElementById('csv-alu-input').click()">
+          <i class="fas fa-cloud-upload-alt text-3xl text-slate-300 mb-2"></i>
+          <p class="font-bold text-slate-500 text-sm">Arrastrá el CSV o hacé click aquí</p>
+          <p id="csv-alu-nombre" class="text-xs text-slate-400 mt-1">Sin archivo seleccionado</p>
+          <input type="file" id="csv-alu-input" accept=".csv" class="hidden" onchange="cargarCSVAlumnos(this)">
+        </div>
+        <div id="csv-alu-preview" class="hidden mt-4">
+          <div class="bg-slate-50 rounded-2xl p-4 mb-3 max-h-48 overflow-y-auto" id="csv-alu-tabla"></div>
+          <p class="text-xs text-slate-500 mb-3" id="csv-alu-info"></p>
+          <button onclick="ejecutarCSVAlumnos()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2"><i class="fas fa-rocket"></i> <span id="csv-alu-btn-txt">IMPORTAR</span></button>
+        </div>
+        <p id="csv-alu-status" class="text-xs text-slate-400 mt-2 text-center"></p>
       </div>
     </section>
 
@@ -517,8 +569,47 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 
   </main>
 </div>
+<script>
+// ── Firebase ready queue ──
+window._fbReady = false;
+window._fbQueue = [];
+window._fbOnReady = function(fn){ if(window._fbReady){ fn(); } else { window._fbQueue.push(fn); } };
+
+// Universal stub: catches calls to any function not yet defined
+// For each known onclick function, create a stub that queues execution
+(function(){
+  var _stubs = ['validarIngreso','switchTab','cerrarSesion','cargaManualAlumno',
+    'generarPassAlumno','previewAluMail','cargarCSVAlumnos','ejecutarCSVAlumnos',
+    'procesarCSV','procesarCSVDocentes','crearStaff','crearDocente','crearMaestro',
+    'crearCurso','crearPeriodo','crearCiclo','activarCiclo','eliminarDoc',
+    'exportarExcel','guardarPerfilAlumno','cerrarModalAlumno','cerrarModalStaff',
+    'abrirModalAlumno','eliminarAlumnosSeleccionados','eliminarFamiliasSeleccionadas',
+    'eliminarStaff','guardarEdicionStaff','toggleSeleccionarTodo',
+    'toggleSeleccionarTodoAlumnos','agregarTag','quitarTag','agregarContactoEmergencia',
+    'publicarTodoBoletin','ocultarTodoBoletin','publicarTodoElPeriodo','ocultarTodoElPeriodo',
+    'togglePeriodoActivo','agregarIndicador','eliminarIndicador','login',
+    'confirmarNotas','confirmarAsistencia','guardarInforme','publicarComunicadoDocente',
+    'eliminarComunicadoDocente','publicarTablon','cancelarEditarTablon',
+    'editarTablonDocente','eliminarTablonDocente','selTipoTablon',
+    'guardarEvento','editarEventoDoc','eliminarEventoDoc','cancelarEditarEventoDoc',
+    'agregarColumna','eliminarColumna','setAsis','setUniforme'];
+  _stubs.forEach(function(name){
+    if(typeof window[name]==='undefined'){
+      window[name]=function(){
+        var args=arguments;
+        window._fbOnReady(function(){ if(typeof window[name]==='function' && window[name]!==arguments.callee){ window[name].apply(window,args); } });
+      };
+    }
+  });
+})();
+</script>
 
 <script>
+var _afq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _afqi=0;
+function _loadNextA(){if(_afqi>=_afq.length){_initAdmin();return;}var s=document.createElement('script');s.src=_afq[_afqi++];s.onload=_loadNextA;s.onerror=_loadNextA;document.head.appendChild(s);}
+_loadNextA();
+function _initAdmin(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124288",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);const db=firebase.firestore();
 const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
@@ -1094,16 +1185,141 @@ async function procesarCSVDocentes(){
     for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(s=>s?.trim());const[nombre,email,nivel,matsR,cursR]=cols;if(!nombre||!email||!email.includes('@'))continue;const materias=(matsR||'').split('|').map(m=>m.trim()).filter(Boolean);const cursos=(cursR||'').split('|').map(c=>c.trim()).filter(Boolean);await db.collection('usuarios').doc(email.toLowerCase()).set({nombre,rol:'docente',nivel:nivel||'primario',materias,cursos},{merge:true});logs++;}
     registrarLog('crear',`CSV importado: ${logs} docentes`,'importar');alert(`${logs} docentes importados.`);cargarDocentes();};r.readAsText(file);
 }
-async function guardarAlumnoData(alu,nivel,cur,fam,emails){
-  const cn=(cur||'').toUpperCase(),nn=(nivel||'primario').toLowerCase();
-  for(const mail of emails){const m=mail.toLowerCase().trim();await db.collection('usuarios').doc(m).set({nombre:fam,rol:'familia',nivel:nn,hijos:firebase.firestore.FieldValue.arrayUnion({nombre:alu,curso:cn,nivel:nn})},{merge:true});}
-  const aId=`${alu}_${cn}`.replace(/\s+/g,'_');await db.collection('alumnos').doc(aId).set({nombre:alu,curso:cn,nivel:nn,familiaNombre:fam},{merge:true});
+// ── Helpers alumno ──
+function previewAluMail(){
+  var u=document.getElementById('manual-alu-user').value.trim().toLowerCase().replace(/\s+/g,'.');
+  document.getElementById('preview-alu-mail').textContent=u?u+'@iosefcaro.org':'—';
 }
+function generarPassAlumno(){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  var p=''; for(var i=0;i<8;i++)p+=chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('manual-alu-pass').value=p;
+}
+function mailDesdeNombre(nombre){
+  return nombre.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'.')+'@iosefcaro.org';
+}
+
+async function guardarAlumnoData(alu, nivel, cur, fam, emailsFamilia, emailAlumno, passAlumno){
+  const cn=(cur||'').toUpperCase(), nn=(nivel||'primario').toLowerCase();
+  const aId=(alu+'_'+cn).replace(/\s+/g,'_');
+
+  // Guardar registro alumno
+  const aluDoc = {nombre:alu, curso:cn, nivel:nn, familiaNombre:fam||''};
+
+  // Si tiene email de alumno (@iosefcaro.org), guardarlo con credenciales de login
+  const mailAlu = (emailAlumno||'').toLowerCase().trim();
+  if(mailAlu && mailAlu.endsWith('@iosefcaro.org')){
+    aluDoc.email = mailAlu;
+    aluDoc.pass = passAlumno || 'Caro2026';
+    // También guardar en colección usuarios para lookup
+    await db.collection('usuarios').doc(mailAlu).set({
+      rol:'alumno', nombre:alu, curso:cn, nivel:nn,
+      pass: passAlumno||'Caro2026', alumnoId:aId
+    },{merge:true});
+  }
+  await db.collection('alumnos').doc(aId).set(aluDoc, {merge:true});
+
+  // Guardar emails de familia
+  for(const mail of (emailsFamilia||[])){
+    const m=mail.toLowerCase().trim();
+    if(!m||!m.includes('@'))continue;
+    await db.collection('usuarios').doc(m).set({
+      nombre:fam||'Familia', rol:'familia', nivel:nn,
+      hijos: firebase.firestore.FieldValue.arrayUnion({nombre:alu,curso:cn,nivel:nn})
+    },{merge:true});
+  }
+}
+
 async function cargaManualAlumno(){
-  const alu=document.getElementById('manual-alu').value.trim(),nivel=document.getElementById('manual-nivel').value,cur=document.getElementById('manual-cur').value.trim(),fam=document.getElementById('manual-fam').value.trim();
-  const m1=document.getElementById('manual-mail1').value.trim(),m2=document.getElementById('manual-mail2').value.trim(),m3=document.getElementById('manual-mail3').value.trim();
-  if(!alu||!nivel||!cur||!fam||!m1)return alert("Faltan datos obligatorios.");
-  try{await guardarAlumnoData(alu,nivel,cur,fam,[m1,m2,m3].filter(e=>e&&e.includes('@')));registrarLog('crear',`Alumno cargado manualmente: ${alu}`,'alumno');alert("Alumno cargado.");['manual-alu','manual-cur','manual-fam','manual-mail1','manual-mail2','manual-mail3'].forEach(id=>document.getElementById(id).value='');document.getElementById('manual-nivel').value='';refrescarTodo();}catch(e){alert("Error: "+e.message);}
+  const alu=document.getElementById('manual-alu').value.trim();
+  const nivel=document.getElementById('manual-nivel').value;
+  const cur=document.getElementById('manual-cur').value.trim();
+  const fam=document.getElementById('manual-fam').value.trim();
+  const aluUser=document.getElementById('manual-alu-user').value.trim().toLowerCase().replace(/\s+/g,'.');
+  const aluPass=document.getElementById('manual-alu-pass').value.trim();
+  const m1=document.getElementById('manual-mail1').value.trim();
+  const m2=document.getElementById('manual-mail2').value.trim();
+  const m3=document.getElementById('manual-mail3').value.trim();
+
+  if(!alu||!nivel||!cur){return alert('Faltan datos obligatorios: Nombre, Nivel y Curso.');}
+  if(aluUser && !aluUser.match(/^[a-z0-9._-]+$/)){return alert('El usuario del alumno solo puede contener letras, números, puntos y guiones.');}
+  const emailAlumno = aluUser ? aluUser+'@iosefcaro.org' : '';
+  if(aluUser && aluPass && aluPass.length < 6){return alert('La contraseña del alumno debe tener al menos 6 caracteres.');}
+
+  const btn=document.querySelector('[onclick="cargaManualAlumno()"]');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+  try{
+    await guardarAlumnoData(alu,nivel,cur,fam,[m1,m2,m3].filter(e=>e&&e.includes('@')),emailAlumno,aluPass);
+    registrarLog('crear',`Alumno creado: ${alu} (${emailAlumno||'sin mail alumno'})`,'alumno');
+    alert('✅ Alumno guardado.'+(emailAlumno?'\n📧 Mail: '+emailAlumno+'\n🔑 Contraseña: '+(aluPass||'Caro2026'):''));
+    ['manual-alu','manual-cur','manual-fam','manual-alu-user','manual-alu-pass','manual-mail1','manual-mail2','manual-mail3'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('manual-nivel').value='';
+    document.getElementById('preview-alu-mail').textContent='—';
+    refrescarTodo();
+  }catch(e){alert('Error: '+e.message);}
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-user-plus"></i> GUARDAR ALUMNO';
+}
+
+// ── CSV Alumnos masivo ──
+var _csvAluData=[];
+function cargarCSVAlumnos(inp){
+  const file=inp.files[0]; if(!file)return;
+  document.getElementById('csv-alu-nombre').textContent=file.name;
+  const r=new FileReader();
+  r.onload=function(e){
+    const lines=e.target.result.trim().split('\n').filter(l=>l.trim());
+    if(lines.length<2){alert('CSV vacío o sin filas.');return;}
+    const sep=lines[0].includes(';')?';':',';
+    const headers=lines[0].split(sep).map(h=>h.replace(/"/g,'').trim().toLowerCase());
+    // Columnas: nombre, nivel, curso, familia, mail_alumno, pass_alumno, mail_fam1, mail_fam2
+    const idx=k=>headers.indexOf(k);
+    _csvAluData=lines.slice(1).map(l=>{
+      const cols=l.split(sep).map(v=>v.replace(/"/g,'').trim());
+      const g=i=>i>=0?cols[i]||'':'';
+      const nombre=g(idx('nombre'))||g(0);
+      const nivel=g(idx('nivel'))||g(1)||'primario';
+      const curso=g(idx('curso'))||g(2);
+      const familia=g(idx('familia'))||g(3);
+      let mailAlu=g(idx('mail_alumno'))||g(4)||'';
+      const passAlu=g(idx('pass_alumno'))||g(5)||'Caro2026';
+      const mFam1=g(idx('mail_fam1'))||g(6);
+      const mFam2=g(idx('mail_fam2'))||g(7);
+      if(!mailAlu&&nombre) mailAlu=mailDesdeNombre(nombre);
+      return {nombre,nivel,curso,familia,mailAlu,passAlu,mFam1,mFam2};
+    }).filter(r=>r.nombre);
+
+    if(!_csvAluData.length){alert('No se encontraron alumnos.');return;}
+    const prev=_csvAluData.slice(0,5);
+    let tabla='<table style="width:100%;font-size:.6875rem;font-weight:600;border-collapse:collapse"><thead><tr style="background:#f1f5f9"><th style="padding:6px 8px;text-align:left">Nombre</th><th>Nivel</th><th>Curso</th><th>Mail alumno</th><th>Pass</th></tr></thead><tbody>';
+    prev.forEach(a=>tabla+='<tr style="border-top:1px solid #e2e8f0"><td style="padding:5px 8px">'+a.nombre+'</td><td style="padding:5px 4px">'+a.nivel+'</td><td style="padding:5px 4px">'+a.curso+'</td><td style="padding:5px 4px;color:#2563eb">'+a.mailAlu+'</td><td style="padding:5px 4px">'+a.passAlu+'</td></tr>');
+    tabla+='</tbody></table>';
+    document.getElementById('csv-alu-tabla').innerHTML=tabla;
+    document.getElementById('csv-alu-info').textContent='Total detectado: '+_csvAluData.length+' alumnos. Se muestran los primeros 5.';
+    document.getElementById('csv-alu-btn-txt').textContent='IMPORTAR '+_csvAluData.length+' ALUMNOS';
+    document.getElementById('csv-alu-preview').classList.remove('hidden');
+  };
+  r.readAsText(file,'UTF-8');
+}
+async function ejecutarCSVAlumnos(){
+  if(!_csvAluData.length){alert('No hay datos.');return;}
+  const btn=document.querySelector('[onclick="ejecutarCSVAlumnos()"]');
+  btn.disabled=true;
+  const st=document.getElementById('csv-alu-status');
+  let ok=0,err=0;
+  for(const a of _csvAluData){
+    try{
+      await guardarAlumnoData(a.nombre,a.nivel,a.curso,a.familia,[a.mFam1,a.mFam2],a.mailAlu,a.passAlu);
+      ok++;st.textContent='Procesando '+ok+'/'+_csvAluData.length+'...';
+    }catch(e){err++;}
+  }
+  registrarLog('crear',`CSV masivo: ${ok} alumnos importados, ${err} errores`,'alumno');
+  alert('✅ Importación completada: '+ok+' alumnos'+(err?' · '+err+' errores':''));
+  document.getElementById('csv-alu-preview').classList.add('hidden');
+  document.getElementById('csv-alu-nombre').textContent='Sin archivo seleccionado';
+  document.getElementById('csv-alu-input').value='';
+  st.textContent='';_csvAluData=[];
+  btn.disabled=false; refrescarTodo();
 }
 
 // ══════════════════════
@@ -1317,6 +1533,7 @@ Sus fichas serán eliminadas. Las notas históricas se conservan.`))return;
 function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
 function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
+} // fin _initAdmin
 </script>
 </body>
 </html>
