@@ -26,11 +26,52 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-botto
 .tab-content{display:none}.tab-content.active{display:block}
 
 /* ── NAV ── */
-.nav-btn{flex:1;padding:.6rem .25rem .5rem;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:800;color:#94a3b8;border:none;background:none;cursor:pointer;transition:color .15s;text-transform:uppercase;letter-spacing:.03em}
-.nav-btn i{font-size:18px;transition:color .15s}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:800;color:#94a3b8;border:none;background:none;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.03em;padding:.6rem .25rem .5rem;flex:1}
+.nav-btn i{font-size:18px}
 .nav-btn.active{color:#2563eb}
 .nav-btn.active i{color:#2563eb}
 .nav-pill{position:absolute;top:4px;right:50%;transform:translateX(50%);background:#ef4444;color:#fff;font-size:8px;font-weight:900;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* ── LAYOUT RESPONSIVO ── */
+@media(min-width:768px){
+  /* Sidebar fijo a la izquierda */
+  nav.app-nav{
+    position:fixed;top:0;left:0;bottom:0;right:auto;
+    width:72px;flex-direction:column;border-right:1px solid #e2e8f0;border-top:none;
+    padding:1rem 0;justify-content:flex-start;gap:0;
+    overflow-y:auto;
+  }
+  nav.app-nav .nav-btn{
+    flex:none;width:100%;padding:.875rem .5rem;
+    border-radius:0;
+    font-size:8px;gap:4px;
+  }
+  nav.app-nav .nav-btn.active{
+    background:#eff6ff;border-right:3px solid #2563eb;color:#2563eb;
+  }
+  nav.app-nav .nav-logo{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;padding:1rem 0 1.5rem;border-bottom:1px solid #e2e8f0;margin-bottom:.5rem;
+  }
+  /* Empujar header y main a la derecha del sidebar */
+  body.app-ready header{margin-left:72px;}
+  body.app-ready main{margin-left:72px;max-width:none;padding:1.5rem 2rem;width:calc(100% - 72px);}
+  body.app-ready header .inner-header{max-width:900px;margin:0 auto;}
+  body.app-ready header .inner-selectors{max-width:900px;margin:0 auto;}
+  /* Flotantes también desplazados */
+  .btn-flotante{left:calc(72px + 1rem);right:1rem;max-width:none;}
+  /* Modal CSV full usar espacio */
+  #modal-csv-notas > div{max-width:560px;}
+}
+@media(max-width:767px){
+  .nav-logo{display:none!important;}
+  nav.app-nav{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    flex-direction:row;width:auto;
+    padding-bottom:env(safe-area-inset-bottom,0);
+    border-top:1px solid #e2e8f0;border-right:none;
+  }
+}
 
 /* ── INPUTS ── */
 .input-pro{border:1.5px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;font-size:14px;font-family:inherit;background:white;transition:border-color .2s;color:#0f172a}
@@ -144,7 +185,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-botto
 
 <!-- HEADER -->
 <header class="bg-white border-b sticky top-0 z-50 shadow-sm">
-  <div class="flex justify-between items-center gap-3 px-4 py-3 max-w-lg mx-auto">
+  <div class="inner-header flex justify-between items-center gap-3 px-4 py-3 max-w-lg mx-auto">
     <div class="flex-1 min-w-0">
       <h1 id="doc-nom" class="font-black text-base leading-none truncate">Hola</h1>
       <div class="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -161,7 +202,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-botto
     </div>
   </div>
   <!-- Selectores compactos -->
-  <div class="flex gap-2 px-4 pb-3 max-w-lg mx-auto overflow-x-auto" id="selectors-bar">
+  <div class="inner-selectors flex gap-2 px-4 pb-3 max-w-lg mx-auto overflow-x-auto" id="selectors-bar">
     <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[11px] font-bold bg-slate-100 rounded-xl px-3 py-2 outline-none border-none cursor-pointer flex-shrink-0"></select>
     <select id="select-periodo" onchange="cargarAlumnos()" class="text-[11px] font-bold bg-slate-100 rounded-xl px-3 py-2 outline-none border-none cursor-pointer flex-shrink-0"></select>
     <select id="select-modalidad" onchange="cargarAlumnos()" class="text-[11px] font-bold bg-slate-100 rounded-xl px-3 py-2 outline-none border-none cursor-pointer flex-shrink-0">
@@ -632,7 +673,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-botto
 </main>
 
 <!-- NAV BOTTOM -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white border-t z-50 flex items-center px-2 pb-safe" style="padding-bottom:env(safe-area-inset-bottom,0)">
+<nav class="app-nav fixed bg-white z-50 flex items-center px-2" style="padding-bottom:env(safe-area-inset-bottom,0)">
+  <div class="nav-logo"><div style="width:36px;height:36px;background:#2563eb;border-radius:.75rem;display:flex;align-items:center;justify-content:center"><i class="fas fa-chalkboard-teacher" style="color:white;font-size:14px"></i></div></div>
   <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn active"><i class="fas fa-home"></i>Inicio</button>
   <button onclick="switchTab('asis')"      id="btn-asis"      class="nav-btn"><i class="fas fa-clipboard-check"></i>Lista</button>
   <button onclick="switchTab('notas')"     id="btn-notas"     class="nav-btn"><i class="fas fa-star-half-alt"></i>Notas</button>
