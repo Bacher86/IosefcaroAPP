@@ -130,6 +130,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         <button onclick="filtrarLegajo('todo')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white">Todo</button>
         <button onclick="filtrarLegajo('eoe')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-violet-600">EOE</button>
         <button onclick="filtrarLegajo('informes')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-blue-600">Informes</button>
+        <button onclick="filtrarLegajo('observaciones')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-indigo-600">Obs. Docente</button>
         <button onclick="filtrarLegajo('asistencia')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-red-500">Asistencia</button>
         <button onclick="filtrarLegajo('notas')" class="legajo-filter whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border text-emerald-600">Notas</button>
       </div>
@@ -360,11 +361,14 @@ async function abrirLegajo(alumnoId,nombre,curso,nivel){
   document.getElementById('legajo-avatar').textContent=nombre.charAt(0).toUpperCase();
   document.getElementById('legajo-nombre').textContent=nombre;
   document.getElementById('legajo-meta').textContent=`${curso} · ${nivel}`.replace(/^ · | · $/g,'').trim();
-  const[asisSnap,informesSnap,eoeSnap,notasSnap]=await Promise.all([
+  const[asisSnap,informesSnap,eoeSnap,notasSnap,obsDocenteSnap]=await Promise.all([
     db.collection('asistencia').where('alumnoId','==',alumnoId).orderBy('fecha','desc').get(),
     db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').get(),
     db.collection('alumnos').doc(alumnoId).collection('informes_eoe').orderBy('fecha','desc').get(),
-    db.collection('alumnos').doc(alumnoId).collection('notas_v2').get()
+    db.collection('alumnos').doc(alumnoId).collection('notas_v2').get(),
+    db.collection('observaciones_eoe').where('alumnoId','==',alumnoId).orderBy('fecha','desc').get().catch(async()=>{
+      return db.collection('observaciones_eoe').where('alumnoId','==',alumnoId).get().catch(()=>({docs:[]}));
+    })
   ]);
   let faltas=0,tardes=0;asisSnap.forEach(d=>{if(d.data().estado==='A')faltas++;if(d.data().estado==='T')tardes++;});
   document.getElementById('leg-faltas').textContent=faltas;document.getElementById('leg-tardes').textContent=tardes;document.getElementById('leg-eoe-count').textContent=eoeSnap.size;
@@ -399,7 +403,28 @@ async function abrirLegajo(alumnoId,nombre,curso,nivel){
       <p class="font-black text-slate-800 text-sm mt-1">${cs}</p>
     </div>`});
   });
+  // Observaciones de docentes (escritas desde el panel docente)
+  if(obsDocenteSnap?.docs){
+    const tipoIcon={academica:'📚',conductual:'⚠️',emocional:'💙'};
+    const tipoBg={academica:'tipo-inf',conductual:'tipo-falta',emocional:'tipo-eoe'};
+    obsDocenteSnap.docs.forEach(doc=>{
+      const d=doc.data();
+      todosLosItems.push({tipo:'observaciones',fecha:d.fecha,html:`
+        <div class="legajo-bloque" data-tipo="observaciones" style="border-left:3px solid #6366f1">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="tipo-tag" style="background:#ede9fe;color:#6d28d9">Obs. Docente · ${tipoIcon[d.tipo]||'📌'} ${d.tipo||''}</span>
+            <span class="text-[9px] font-black bg-slate-100 px-2 rounded-full">${d.materia||''}</span>
+            <span class="text-[9px] text-slate-400 font-bold ml-auto">${new Date(d.fecha).toLocaleDateString('es-AR')}</span>
+          </div>
+          <p class="text-sm text-slate-700">${d.texto}</p>
+          <p class="text-[9px] text-slate-400 mt-2 font-bold">Prof. ${d.docenteNombre||''}</p>
+        </div>`});
+    });
+  }
   todosLosItems.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  // Actualizar contador EOE incluyendo obs docente
+  const totalEoe = eoeSnap.size + (obsDocenteSnap?.docs?.length||0);
+  document.getElementById('leg-eoe-count').textContent = totalEoe;
   filtrarLegajo('todo');
 }
 function filtrarLegajo(tipo){
