@@ -827,14 +827,26 @@ let studyItem=null,quizData=null,respuestas=[],pregActual=0,respuestasDadas={};
 function abrirStudy(id,e){
   e.stopPropagation();
   studyItem=tablonItems.find(t=>t.id===id);
-  if(!studyItem)return;
+  if(!studyItem){
+    // El item no está en tablonItems (ej: el alumno no pasó por el tab Tablón).
+    // Lo buscamos directamente en Firestore.
+    db.collection('tablon').doc(id).get().then(doc=>{
+      if(!doc.exists)return;
+      studyItem={id:doc.id,...doc.data()};
+      _abrirStudyConItem();
+    }).catch(()=>{});
+    return;
+  }
+  _abrirStudyConItem();
+}
+function _abrirStudyConItem(){
   document.getElementById('tablon-list').style.display='none';
   document.getElementById('study-panel').classList.add('open');
   document.getElementById('sp-materia').textContent=studyItem.materia||'';
   document.getElementById('sp-titulo').textContent=studyItem.titulo||'';
   // Ver si ya tiene quiz guardado hoy
   const hoyStr=new Date().toISOString().slice(0,10);
-  db.collection('tablon').doc(id).collection('quizzes').doc(alumnoEmail).get().then(qDoc=>{
+  db.collection('tablon').doc(studyItem.id).collection('quizzes').doc(alumnoEmail).get().then(qDoc=>{
     if(qDoc.exists&&(qDoc.data().fecha||'').startsWith(hoyStr)){
       // Ya completó hoy — mostrar resultado anterior
       mostrarResultadoPrevio(qDoc.data());
