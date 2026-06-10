@@ -404,10 +404,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-botto
     <!-- INFORME PEDAGÓGICO -->
     <div id="subtab-informe" class="space-y-4">
       <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+        <!-- Selector de curso propio (no depende de tener notas/lista cargado) -->
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
+          <select id="informe-curso-sel" onchange="cargarAlumnosParaInforme()" class="input-pro mt-1 text-xs">
+            <option value="">— Seleccioná un curso —</option>
+          </select>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[9px] font-black text-slate-400 uppercase">Alumno</label>
-            <select id="informe-alumno" onchange="cargarInformes();cargarObservaciones()" class="input-pro mt-1 text-xs"></select>
+            <select id="informe-alumno" onchange="cargarInformes();cargarObservaciones()" class="input-pro mt-1 text-xs">
+              <option value="">— Primero elegí un curso —</option>
+            </select>
           </div>
           <div>
             <label class="text-[9px] font-black text-slate-400 uppercase">Período</label>
@@ -1259,18 +1268,23 @@ async function confirmarAsistencia(){
 // ══ INFORMES ══
 async function guardarInforme(){
   const alumnoId=document.getElementById('informe-alumno').value;
-  const periodo=document.getElementById('informe-periodo').value;
+  const periodo=document.getElementById('informe-periodo').value||periodoActivo.nombre||'Sin período';
   const texto=document.getElementById('informe-texto').value.trim();
-  if(!alumnoId||!texto)return alert('Seleccioná un alumno y escribí el informe.');
+  if(!alumnoId){return alert('Seleccioná un alumno primero. Elegí el curso arriba para ver la lista.');}
+  if(!texto){return alert('Escribí el informe antes de guardar.');}
   const alumnoNombre=document.getElementById('informe-alumno').selectedOptions[0]?.text||'';
   const indicadores={participacion:document.getElementById('ind-participacion').checked,entregas:document.getElementById('ind-entregas').checked,conducta:document.getElementById('ind-conducta').checked,progreso:document.getElementById('ind-progreso').checked};
-  await db.collection('alumnos').doc(alumnoId).collection('informes').add({texto,periodo,indicadores,materia:materiaActiva,docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true});
-  // También en colección eoe para que lo vean
-  await db.collection('observaciones_eoe').add({texto,periodo,indicadores,materia:materiaActiva,docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoId,alumnoNombre,fecha:new Date().toISOString(),origen:'docente'});
-  alert('✅ Informe guardado y visible para la familia y EOE.');
-  document.getElementById('informe-texto').value='';
-  ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
-  cargarInformes();
+  const btn=document.querySelector('[onclick="guardarInforme()"]');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';}
+  try{
+    await db.collection('alumnos').doc(alumnoId).collection('informes').add({texto,periodo,indicadores,materia:materiaActiva||'General',docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true});
+    await db.collection('observaciones_eoe').add({texto,periodo,indicadores,materia:materiaActiva||'General',docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoId,alumnoNombre,fecha:new Date().toISOString(),origen:'docente'});
+    alert(`✅ Informe guardado para ${alumnoNombre} (${periodo}).\nVisible para la familia y el equipo EOE.`);
+    document.getElementById('informe-texto').value='';
+    ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
+    cargarInformes();
+  }catch(e){alert('Error al guardar: '+e.message);}
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-save mr-2"></i>GUARDAR INFORME';}
 }
 async function cargarInformes(){
   const alumnoId=document.getElementById('informe-alumno').value;if(!alumnoId)return;
@@ -1680,7 +1694,54 @@ window.verQuienLeyo = verQuienLeyo;
 
 // ══ TANDA 3: PDF, GRÁFICO, OBSERVACIONES, FORO DOCENTE ══
 
-// ── Sub-tabs informes ──
+// ── Informe: selector de curso y alumnos independiente ──
+function poblarCursosSelectorInforme(){
+  const sel=document.getElementById('informe-curso-sel');
+  if(!sel)return;
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  sel.innerHTML='<option value="">— Seleccioná un curso —</option>';
+  curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+  // Si ya hay un curso activo, pre-seleccionarlo
+  if(cursoActivo&&curs.includes(cursoActivo)){
+    sel.value=cursoActivo;
+    cargarAlumnosParaInforme();
+  } else if(curs.length===1){
+    sel.value=curs[0];
+    cargarAlumnosParaInforme();
+  }
+  // Poblar también obs-alumno
+  const selObs=document.getElementById('obs-alumno');
+  if(selObs){selObs.innerHTML='<option value="">— Seleccioná alumno —</option>';
+    curs.forEach(c=>{});
+  }
+}
+window.poblarCursosSelectorInforme=poblarCursosSelectorInforme;
+
+window.cargarAlumnosParaInforme=async function cargarAlumnosParaInforme(){
+  const curso=document.getElementById('informe-curso-sel')?.value;
+  const selAlu=document.getElementById('informe-alumno');
+  const selObs=document.getElementById('obs-alumno');
+  if(!curso||!selAlu){return;}
+  selAlu.innerHTML='<option value="">Cargando...</option>';
+  try{
+    const snap=await db.collection('alumnos').where('curso','==',curso).get();
+    const lista=[];snap.forEach(d=>lista.push({id:d.id,nombre:d.data().nombre}));
+    lista.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    selAlu.innerHTML=lista.length
+      ?lista.map(al=>`<option value="${al.id}">${al.nombre}</option>`).join('')
+      :'<option value="">Sin alumnos en este curso</option>';
+    if(selObs){selObs.innerHTML=selAlu.innerHTML;}
+    if(lista.length){
+      cargarInformes();
+      cargarObservaciones();
+    }
+  }catch(e){selAlu.innerHTML='<option value="">Error al cargar</option>';}
+};
+
+// ── Informe: guardar también poblando obs-alumno ──
+window.guardarInforme=guardarInforme;
+
+
 function setSubtabInformes(sub){
   ['informe','observaciones','grafico','foro'].forEach(s=>{
     document.getElementById('subtab-'+s).classList.toggle('hidden',s!==sub);
@@ -1911,6 +1972,7 @@ window._switchTab=function switchTab(tab){
   if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
   if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
   if(tab==='dashboard'){cargarDashboardStats();cargarUltimaActividad();}
+  if(tab==='informes'){poblarCursosSelectorInforme();}
   document.getElementById('tab-'+tab)?.classList.add('active');
   document.getElementById('btn-'+tab)?.classList.add('active');
   document.getElementById('btn-guardar-notas').style.display='none';
