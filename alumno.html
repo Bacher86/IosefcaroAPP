@@ -143,36 +143,10 @@ main{padding:1rem;max-width:540px;margin:0 auto}
 .study-materia{font-size:.6875rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em}
 .study-titulo{font-family:'Space Grotesk',sans-serif;font-size:1.125rem;font-weight:700;margin-top:2px}
 
-.quiz-loading{text-align:center;padding:3rem 1rem}
-.quiz-loading p{color:var(--text2);font-size:.875rem;margin-top:.75rem;font-weight:600}
 .iosi-pulse{width:64px;height:64px;border-radius:1.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto;animation:pulse-iosi 1.5s infinite}
 @keyframes pulse-iosi{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(108,99,255,.4)}50%{transform:scale(1.06);box-shadow:0 0 0 12px rgba(108,99,255,0)}}
 
-.quiz-progress{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
-.quiz-progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease}
-.quiz-qnum{font-size:.625rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
-.quiz-pregunta{font-size:1rem;font-weight:700;line-height:1.5;margin-bottom:1rem}
-.quiz-opciones{display:flex;flex-direction:column;gap:.5rem}
-.quiz-opt{background:var(--surface2);border:1.5px solid var(--border);border-radius:1rem;padding:.875rem 1rem;font-size:.875rem;font-weight:600;cursor:pointer;text-align:left;color:var(--text);font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:.75rem}
-.quiz-opt:hover:not(:disabled){border-color:var(--accent);background:rgba(108,99,255,.1)}
-.quiz-opt:disabled{cursor:default}
-.quiz-opt.correcto{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green)}
-.quiz-opt.incorrecto{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
-.quiz-opt-letra{width:28px;height:28px;border-radius:.5rem;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;transition:background .15s}
-.quiz-opt.correcto .quiz-opt-letra{background:var(--green);color:#000}
-.quiz-opt.incorrecto .quiz-opt-letra{background:var(--red);color:#fff}
-.quiz-feedback{border-radius:1rem;padding:.875rem 1rem;margin-top:.75rem;font-size:.8125rem;font-weight:600;line-height:1.5}
-.quiz-feedback.ok{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);color:var(--green)}
-.quiz-feedback.mal{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red)}
-.quiz-desarrollo{background:var(--surface2);border:1.5px solid var(--border);border-radius:1rem;padding:.875rem 1rem;width:100%;color:var(--text);font-size:.875rem;font-family:inherit;font-weight:500;outline:none;resize:none;min-height:100px;transition:border-color .2s}
-.quiz-desarrollo:focus{border-color:var(--accent)}
-.btn-quiz{background:var(--accent);color:white;border:none;width:100%;padding:.9rem;border-radius:.875rem;font-size:.875rem;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.btn-quiz:hover{opacity:.85}
-.btn-quiz:disabled{opacity:.4;cursor:not-allowed}
-.btn-quiz.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
-.btn-quiz.secondary:hover{color:var(--text);opacity:1}
 
-.quiz-resultado{text-align:center;padding:1rem 0}
 .resultado-circle{width:100px;height:100px;border-radius:50%;margin:0 auto 1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;border:3px solid}
 .resultado-circle.excelente{border-color:var(--green);background:rgba(52,211,153,.08);color:var(--green)}
 .resultado-circle.bien{border-color:var(--blue);background:rgba(96,165,250,.08);color:var(--blue)}
@@ -314,10 +288,6 @@ main{padding:1rem;max-width:540px;margin:0 auto}
           <p class="stat-num" id="stat-faltas">—</p>
           <p class="stat-lbl">Faltas</p>
         </div>
-        <div class="stat-card" id="stat-quiz-card">
-          <p class="stat-num ok" id="stat-quiz" style="color:var(--accent2)">—</p>
-          <p class="stat-lbl">Quiz hoy</p>
-        </div>
         <div class="stat-card">
           <p class="stat-num" id="stat-tablon" style="color:var(--blue)">—</p>
           <p class="stat-lbl">Sin leer</p>
@@ -433,23 +403,6 @@ main{padding:1rem;max-width:540px;margin:0 auto}
       </div>
     </div>
 
-    <!-- ── IOSI QUIZ ── -->
-    <div id="tab-quiz" class="tab">
-      <p class="sec-label">Iosi Quiz</p>
-      <p style="font-size:.8125rem;color:var(--text2);margin-bottom:1rem;line-height:1.5">Material que comparten tus docentes para practicar antes del examen.</p>
-      <div id="quiz-tablon-list" class="vstack"></div>
-      <!-- Study overlay (reutilizable) -->
-      <div id="quiz-study-panel" class="study-screen">
-        <div class="study-header">
-          <button class="study-back" onclick="cerrarQuizStudy()"><i class="fas fa-arrow-left"></i></button>
-          <div>
-            <p class="study-materia" id="qsp-materia"></p>
-            <p class="study-titulo" id="qsp-titulo"></p>
-          </div>
-        </div>
-        <div id="quiz-study-body"></div>
-      </div>
-    </div>
 
   </main>
 
@@ -473,9 +426,6 @@ main{padding:1rem;max-width:540px;margin:0 auto}
         <span class="bnav-dot" id="dot-foro"></span>
       </div>
       <span>Foro</span>
-    </button>
-    <button class="bnav-btn" id="nb-quiz" onclick="switchTab('quiz')">
-      <i class="fas fa-brain"></i><span>Iosi Quiz</span>
     </button>
     <button class="bnav-btn" id="nb-agenda" onclick="switchTab('agenda')">
       <i class="fas fa-calendar-alt"></i><span>Agenda</span>
@@ -727,15 +677,6 @@ async function cargarProximosInicio(){
     }
     document.getElementById('stat-tablon').textContent=sinLeer;
     if(sinLeer>0)document.getElementById('dot-tablon').style.display='block';
-    // Quiz stat del día
-    const hoyStr=new Date().toISOString().slice(0,10);
-    const qSnap=await db.collection('tablon').where('curso','==',alumnoCurso).where('tipo','==','estudio').get();
-    let quizHoy=0;
-    for(const d of qSnap.docs){
-      const qDoc=await d.ref.collection('quizzes').doc(alumnoEmail).get().catch(()=>null);
-      if(qDoc&&qDoc.exists&&(qDoc.data().fecha||'').startsWith(hoyStr))quizHoy++;
-    }
-    document.getElementById('stat-quiz').textContent=quizHoy>0?'✓'+quizHoy:'0';
   }catch(e){cont.innerHTML='<p class="empty">Sin datos disponibles.</p>';console.warn(e);}
 }
 
@@ -827,26 +768,14 @@ let studyItem=null,quizData=null,respuestas=[],pregActual=0,respuestasDadas={};
 function abrirStudy(id,e){
   e.stopPropagation();
   studyItem=tablonItems.find(t=>t.id===id);
-  if(!studyItem){
-    // El item no está en tablonItems (ej: el alumno no pasó por el tab Tablón).
-    // Lo buscamos directamente en Firestore.
-    db.collection('tablon').doc(id).get().then(doc=>{
-      if(!doc.exists)return;
-      studyItem={id:doc.id,...doc.data()};
-      _abrirStudyConItem();
-    }).catch(()=>{});
-    return;
-  }
-  _abrirStudyConItem();
-}
-function _abrirStudyConItem(){
+  if(!studyItem)return;
   document.getElementById('tablon-list').style.display='none';
   document.getElementById('study-panel').classList.add('open');
   document.getElementById('sp-materia').textContent=studyItem.materia||'';
   document.getElementById('sp-titulo').textContent=studyItem.titulo||'';
   // Ver si ya tiene quiz guardado hoy
   const hoyStr=new Date().toISOString().slice(0,10);
-  db.collection('tablon').doc(studyItem.id).collection('quizzes').doc(alumnoEmail).get().then(qDoc=>{
+  db.collection('tablon').doc(id).collection('quizzes').doc(alumnoEmail).get().then(qDoc=>{
     if(qDoc.exists&&(qDoc.data().fecha||'').startsWith(hoyStr)){
       // Ya completó hoy — mostrar resultado anterior
       mostrarResultadoPrevio(qDoc.data());
@@ -864,63 +793,9 @@ function cerrarStudy(){
 }
 
 async function generarQuiz(){
+  // Quiz desactivado
   const body=document.getElementById('study-body');
-  body.innerHTML=`<div class="quiz-loading"><div class="iosi-pulse">🧠</div><p>Iosi está preparando tu quiz...</p></div>`;
-  const tipo=studyItem.tipoQuiz||'mixto'; // docente puede definir
-  const cantMultiple=studyItem.cantMultiple||4;
-  const cantDesarrollo=studyItem.cantDesarrollo||1;
-  const contenido=studyItem.contenidoEstudio||studyItem.texto||'';
-  if(!contenido||contenido.length<20){
-    body.innerHTML='<p class="empty">Este contenido no tiene suficiente texto para generar preguntas.</p>';
-    return;
-  }
-  const prompt=`Eres un asistente educativo para el Instituto Iosef Caro. Generá preguntas de estudio basadas en el siguiente contenido.
-
-CONTENIDO:
-${contenido}
-
-CONFIGURACIÓN:
-- Preguntas de opción múltiple: ${cantMultiple}
-- Preguntas de desarrollo corto: ${cantDesarrollo}
-
-Respondé ÚNICAMENTE con un JSON válido con esta estructura exacta (sin markdown, sin explicaciones antes ni después):
-{
-  "preguntas": [
-    {
-      "tipo": "multiple",
-      "pregunta": "¿...?",
-      "opciones": ["A. ...", "B. ...", "C. ...", "D. ..."],
-      "correcta": 0,
-      "explicacion": "Breve explicación de por qué es correcta."
-    },
-    {
-      "tipo": "desarrollo",
-      "pregunta": "¿...?",
-      "respuestaEsperada": "Puntos clave que debería mencionar la respuesta."
-    }
-  ]
-}`;
-  try{
-    const GEMINI_KEY='AIzaSyATS0LI0XhWWyYEcVyncMWBkFutT-SlWQE';
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,responseMimeType:'application/json'}})
-    });
-    const data=await res.json();
-    if(data.error)throw new Error(data.error.message||'Error de API');
-    let texto=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    texto=texto.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    const jsonMatch=texto.match(/\{[\s\S]*\}/);
-    if(!jsonMatch)throw new Error('Formato de respuesta inesperado.');
-    quizData=JSON.parse(jsonMatch[0]);
-    if(!quizData.preguntas||!quizData.preguntas.length)throw new Error('Sin preguntas generadas.');
-    pregActual=0;respuestas=[];respuestasDadas={};
-    renderPregunta();
-  }catch(e){
-    body.innerHTML=`<div class="empty">No se pudo generar el quiz.<br><small style="color:var(--text3)">${e.message}</small></div>
-    <button class="btn-quiz secondary" onclick="generarQuiz()" style="margin-top:.75rem"><i class="fas fa-redo"></i> Reintentar</button>`;
-  }
+  if(body && studyItem) body.innerHTML='<div style="padding:1.5rem;text-align:center"><p style="font-weight:700;margin-bottom:.75rem">📚 '+( studyItem.titulo||'Material')+'</p><p style="color:#64748b;font-size:.875rem;margin-bottom:1rem">'+(studyItem.contenidoEstudio||studyItem.texto||'Sin contenido.')+'</p><button onclick="cerrarStudy()" style="background:#2563eb;color:white;border:none;padding:.75rem 1.5rem;border-radius:.875rem;font-weight:700;cursor:pointer;font-family:inherit">← Volver</button></div>';
 }
 
 function renderPregunta(){
@@ -1231,7 +1106,6 @@ function switchTab(tab){
   document.getElementById('nb-'+tab)?.classList.add('active');
   if(tab==='agenda')renderCalendario();
   if(tab==='foro')cargarForo();
-  if(tab==='quiz')cargarQuizTablon();
 }
 
 // ══ FORO ══
@@ -1376,201 +1250,7 @@ async function verificarNotifForo(){
   }catch(e){}
 }
 
-// ══ IOSI QUIZ TAB ══
-let quizStudyItem = null, quizStudyData = null, quizRespuestas = [], quizPregActual = 0, quizRespDadas = {};
 
-async function cargarQuizTablon(){
-  const cont = document.getElementById('quiz-tablon-list');
-  if(!cont) return;
-  cont.innerHTML = '<div class="quiz-loading" style="padding:1.5rem 0"><div class="iosi-pulse">🧠</div><p>Cargando materiales...</p></div>';
-  try{
-    let snap;
-    try{ snap = await db.collection('tablon').where('curso','==',alumnoCurso).where('tipo','==','estudio').orderBy('creadoEn','desc').limit(20).get(); }
-    catch(e){ snap = await db.collection('tablon').where('curso','==',alumnoCurso).where('tipo','==','estudio').get(); }
-    cont.innerHTML = '';
-    if(snap.empty){ cont.innerHTML='<p class="empty">Tu docente todavía no publicó materiales de estudio para tu curso.</p>'; return; }
-    const hoyStr = new Date().toISOString().slice(0,10);
-    for(const doc of snap.docs){
-      const d = doc.data();
-      const qDoc = await db.collection('tablon').doc(doc.id).collection('quizzes').doc(alumnoEmail).get().catch(()=>null);
-      const yaHizo = qDoc && qDoc.exists && (qDoc.data().fecha||'').startsWith(hoyStr);
-      const card = document.createElement('div');
-      card.className = 'tablon-card';
-      card.style.cursor = 'pointer';
-      card.innerHTML = `
-        <div class="tablon-top">
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <span class="tag tag-estudio">📚 Material de estudio</span>
-            ${yaHizo ? '<span class="tag" style="background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)">✓ Hecho hoy</span>' : ''}
-          </div>
-          <p class="tablon-title">${d.titulo||''}</p>
-          <p class="tablon-body">${d.texto||''}</p>
-        </div>
-        <div class="tablon-footer">
-          <span class="tablon-meta">${d.materia||''}</span>
-          <button class="btn-quiz" style="width:auto;padding:.45rem 1rem;font-size:.75rem">
-            <i class="fas fa-brain"></i> ${yaHizo ? 'Nuevo quiz' : 'Estudiar'}
-          </button>
-        </div>`;
-      const btn = card.querySelector('button');
-      const docId = doc.id;
-      btn.addEventListener('click', (e)=>{ e.stopPropagation(); abrirQuizStudy(docId); });
-      card.addEventListener('click', ()=>{ abrirQuizStudy(docId); });
-      cont.appendChild(card);
-    }
-  }catch(e){ cont.innerHTML='<p class="empty">Error al cargar materiales: '+e.message+'</p>'; }
-}
-
-function abrirQuizStudy(id){
-  // reutiliza los datos del tablón ya cargados o los busca en Firestore
-  db.collection('tablon').doc(id).get().then(doc=>{
-    if(!doc.exists) return;
-    quizStudyItem = {...doc.data(), id: doc.id};
-    document.getElementById('quiz-tablon-list').style.display='none';
-    document.getElementById('quiz-study-panel').classList.add('open');
-    document.getElementById('qsp-materia').textContent = quizStudyItem.materia||'';
-    document.getElementById('qsp-titulo').textContent = quizStudyItem.titulo||'';
-    // clone studyItem so generarQuiz can use quizStudyItem
-    studyItem = quizStudyItem;
-    const body = document.getElementById('quiz-study-body');
-    // swap study-body reference for the quiz logic
-    const origBody = document.getElementById('study-body');
-    // We use a different approach: reuse generarQuiz but point output to quiz-study-body
-    _generarQuizEnContenedor(quizStudyItem, 'quiz-study-body');
-  });
-}
-
-function cerrarQuizStudy(){
-  document.getElementById('quiz-tablon-list').style.display='flex';
-  document.getElementById('quiz-study-panel').classList.remove('open');
-  document.getElementById('quiz-study-body').innerHTML='';
-  quizStudyItem=null;quizStudyData=null;quizRespuestas=[];quizPregActual=0;quizRespDadas={};
-  cargarQuizTablon();
-}
-
-async function _generarQuizEnContenedor(item, contenedorId){
-  const body = document.getElementById(contenedorId);
-  body.innerHTML = `<div class="quiz-loading"><div class="iosi-pulse">🧠</div><p>Iosi está preparando tu quiz...</p></div>`;
-  const tipo = item.tipoQuiz||'mixto';
-  const cantMultiple = item.cantMultiple||4;
-  const cantDesarrollo = item.cantDesarrollo||1;
-  const contenido = item.contenidoEstudio||item.texto||'';
-  if(!contenido||contenido.length<20){
-    body.innerHTML=`<div style="text-align:center;padding:2rem 1rem">
-      <div style="font-size:2rem;margin-bottom:.75rem">⚠️</div>
-      <p style="font-weight:700;margin-bottom:.5rem">El docente no cargó el material de estudio todavía</p>
-      <p style="font-size:.8125rem;color:var(--text2)">Para generar preguntas, el docente debe adjuntar un texto o apunte a esta publicación.</p>
-    </div>`;
-    return;
-  }
-  const prompt=`Eres un asistente educativo para el Instituto Iosef Caro. Generá preguntas de estudio basadas en el siguiente contenido.\n\nCONTENIDO:\n${contenido}\n\nCONFIGURACIÓN:\n- Preguntas de opción múltiple: ${cantMultiple}\n- Preguntas de desarrollo corto: ${cantDesarrollo}\n\nRespondé ÚNICAMENTE con un JSON válido con esta estructura exacta (sin markdown, sin explicaciones antes ni después):\n{"preguntas":[{"tipo":"multiple","pregunta":"¿...?","opciones":["A. ...","B. ...","C. ...","D. ..."],"correcta":0,"explicacion":"..."},{"tipo":"desarrollo","pregunta":"¿...?","respuestaEsperada":"..."}]}`;
-  try{
-    const GEMINI_KEY='AIzaSyATS0LI0XhWWyYEcVyncMWBkFutT-SlWQE';
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,responseMimeType:'application/json'}})});
-    const data=await res.json();
-    if(data.error)throw new Error(data.error.message||'Error de API');
-    let texto=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    // Limpiar markdown si Gemini lo agrega (```json ... ```)
-    texto=texto.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    // Buscar el JSON dentro del texto
-    const jsonMatch=texto.match(/\{[\s\S]*\}/);
-    if(!jsonMatch)throw new Error('Formato de respuesta inesperado.');
-    quizStudyData=JSON.parse(jsonMatch[0]);
-    if(!quizStudyData.preguntas||!quizStudyData.preguntas.length)throw new Error('Sin preguntas generadas.');
-    quizPregActual=0;quizRespuestas=[];quizRespDadas={};
-    _renderPreguntaQuiz(contenedorId);
-  }catch(e){
-    body.innerHTML=`<div class="empty">No se pudo generar el quiz.<br><small style="color:var(--text3)">${e.message}</small></div><button class="btn-quiz secondary" onclick="_generarQuizEnContenedor(quizStudyItem,'${contenedorId}')" style="margin-top:.75rem"><i class="fas fa-redo"></i> Reintentar</button>`;
-  }
-}
-
-function _renderPreguntaQuiz(cid){
-  const body=document.getElementById(cid);
-  if(!quizStudyData||quizPregActual>=quizStudyData.preguntas.length){_mostrarResultadoQuiz(cid);return;}
-  const p=quizStudyData.preguntas[quizPregActual];
-  const total=quizStudyData.preguntas.length;
-  const pct=Math.round((quizPregActual/total)*100);
-  const letras=['A','B','C','D'];
-  let html=`<div class="quiz-progress" style="margin-bottom:.875rem"><div class="quiz-progress-bar" style="width:${pct}%"></div></div><p class="quiz-qnum">Pregunta ${quizPregActual+1} de ${total}</p><p class="quiz-pregunta">${p.pregunta}</p>`;
-  if(p.tipo==='multiple'){
-    html+=`<div class="quiz-opciones" id="qz-opts">`;
-    p.opciones.forEach((op,i)=>html+=`<button class="quiz-opt" id="qz-opt-${i}" onclick="_respMultiple(${i},'${cid}')"><span class="quiz-opt-letra">${letras[i]}</span>${op.replace(/^[A-D]\.\s*/,'')}</button>`);
-    html+=`</div><div id="qz-feedback" style="margin-top:.75rem"></div><button class="btn-quiz hidden" id="qz-sig" onclick="quizPregActual++;_renderPreguntaQuiz('${cid}')" style="margin-top:.75rem"><i class="fas fa-arrow-right"></i> Siguiente</button>`;
-  } else {
-    html+=`<textarea class="quiz-desarrollo" id="qz-resp" placeholder="Escribí tu respuesta acá..." rows="4"></textarea><button class="btn-quiz" onclick="_respDesarrollo('${cid}')" style="margin-top:.75rem"><i class="fas fa-check"></i> Confirmar respuesta</button>`;
-  }
-  body.innerHTML=html;
-}
-
-function _respMultiple(idx,cid){
-  const p=quizStudyData.preguntas[quizPregActual];
-  document.querySelectorAll(`#${cid} .quiz-opt`).forEach(b=>b.disabled=true);
-  const esCorr=idx===p.correcta;
-  quizRespuestas.push({tipo:'multiple',correcta:esCorr});
-  document.getElementById('qz-opts').querySelectorAll('.quiz-opt').forEach((b,i)=>{if(i===p.correcta)b.classList.add('correcto');else if(i===idx&&!esCorr)b.classList.add('incorrecto');});
-  document.getElementById('qz-feedback').innerHTML=`<div class="quiz-feedback ${esCorr?'ok':'mal'}">${esCorr?'✓ ¡Correcto! ':'✗ Incorrecto. '}${p.explicacion||''}</div>`;
-  document.getElementById('qz-sig').classList.remove('hidden');
-}
-
-function _respDesarrollo(cid){
-  const texto=document.getElementById('qz-resp').value.trim();
-  if(!texto){alert('Escribí una respuesta primero.');return;}
-  const p=quizStudyData.preguntas[quizPregActual];
-  quizRespuestas.push({tipo:'desarrollo',respuesta:texto});
-  document.getElementById(cid).innerHTML+=`<div class="quiz-feedback ok" style="margin-top:.75rem">📝 Respuesta registrada.<br><small style="opacity:.7">Clave: ${p.respuestaEsperada||''}</small></div>`;
-  const sig=document.createElement('button');sig.className='btn-quiz';sig.style.marginTop='.75rem';sig.innerHTML='<i class="fas fa-arrow-right"></i> Siguiente';sig.onclick=()=>{quizPregActual++;_renderPreguntaQuiz(cid);};
-  document.getElementById(cid).appendChild(sig);
-}
-
-function _mostrarResultadoQuiz(cid){
-  const body=document.getElementById(cid);
-  const total=quizStudyData.preguntas.length;
-  const correctas=quizRespuestas.filter(r=>r.tipo==='multiple'&&r.correcta).length;
-  const multiplesTotal=quizRespuestas.filter(r=>r.tipo==='multiple').length;
-  const pct=multiplesTotal>0?Math.round((correctas/multiplesTotal)*100):null;
-  const emoji=pct===null?'📝':pct>=80?'🏆':pct>=50?'👍':'💪';
-  body.innerHTML=`<div class="quiz-resultado"><div class="iosi-pulse" style="margin-bottom:1rem">${emoji}</div><p style="font-size:1.5rem;font-weight:800;margin-bottom:.25rem">${pct!==null?pct+'%':'¡Listo!'}</p><p style="font-size:.875rem;color:var(--text2);margin-bottom:1.25rem">${multiplesTotal>0?correctas+' de '+multiplesTotal+' correctas':'Respondiste '+total+' preguntas'}</p><button class="btn-quiz" onclick="_generarQuizEnContenedor(quizStudyItem,'${cid}')" style="margin-bottom:.5rem"><i class="fas fa-redo"></i> Nuevo quiz sobre este tema</button><button class="btn-quiz secondary" onclick="cerrarQuizStudy()">Volver a materiales</button></div>`;
-  // Guardar en Firebase
-  const hoyStr=new Date().toISOString().slice(0,10);
-  db.collection('tablon').doc(quizStudyItem.id).collection('quizzes').doc(alumnoEmail).set({fecha:new Date().toISOString(),pct:pct||0,correctas,total}).catch(()=>{});
-}
-
-
-
-// ── UTILS ──
-function fmtFecha(val){
-  if(!val)return'—';
-  try{
-    const d=typeof val==='string'?new Date(val):val.toDate?val.toDate():new Date(val.seconds*1000);
-    return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-  }catch{return val||'—';}
-}
-function fmtFechaCorta(str){
-  if(!str)return'—';
-  const pts=str.split('-');
-  return`${pts[2]||''}/${pts[1]||''}/${pts[0]?.slice(2)||''}`;
-}
-function toast(msg){
-  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2500);
-}
-
-// Exponer al HTML
-window.doLogin=doLogin;
-window.guardarNuevaPass=guardarNuevaPass;
-window.cerrarSesion=cerrarSesion;
-window.switchTab=switchTab;
-window.filtrarTablon=filtrarTablon;
-window.filtrarPeriodo=filtrarPeriodo;
-window.abrirStudy=abrirStudy;
-window.cerrarStudy=cerrarStudy;
-window.responderMultiple=responderMultiple;
-window.responderDesarrollo=responderDesarrollo;
-window.siguiente=siguiente;
-window.generarQuiz=generarQuiz;
-window.cerrarModal=cerrarModal;
-window.cambiarMes=cambiarMes;
-window.selDia=selDia;
 } // end _initApp
 </script>
 </body>
