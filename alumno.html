@@ -902,7 +902,7 @@ Respondé ÚNICAMENTE con un JSON válido con esta estructura exacta (sin markdo
 }`;
   try{
     const GEMINI_KEY='AIzaSyATS0LI0XhWWyYEcVyncMWBkFutT-SlWQE';
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,responseMimeType:'application/json'}})
@@ -1466,7 +1466,7 @@ async function _generarQuizEnContenedor(item, contenedorId){
   const prompt=`Eres un asistente educativo para el Instituto Iosef Caro. Generá preguntas de estudio basadas en el siguiente contenido.\n\nCONTENIDO:\n${contenido}\n\nCONFIGURACIÓN:\n- Preguntas de opción múltiple: ${cantMultiple}\n- Preguntas de desarrollo corto: ${cantDesarrollo}\n\nRespondé ÚNICAMENTE con un JSON válido con esta estructura exacta (sin markdown, sin explicaciones antes ni después):\n{"preguntas":[{"tipo":"multiple","pregunta":"¿...?","opciones":["A. ...","B. ...","C. ...","D. ..."],"correcta":0,"explicacion":"..."},{"tipo":"desarrollo","pregunta":"¿...?","respuestaEsperada":"..."}]}`;
   try{
     const GEMINI_KEY='AIzaSyATS0LI0XhWWyYEcVyncMWBkFutT-SlWQE';
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,responseMimeType:'application/json'}})});
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,responseMimeType:'application/json'}})});
     const data=await res.json();
     if(data.error)throw new Error(data.error.message||'Error de API');
     let texto=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
