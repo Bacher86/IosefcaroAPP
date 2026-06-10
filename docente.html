@@ -818,6 +818,7 @@ window._doLogin=async function login(emailOverride){
     docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};
     docenteEmail=email;document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
     document.getElementById('doc-nom').innerText='Administrador';
+    poblarCursosTablon();poblarMateriasTablon();poblarCursosEnComunicados();
     await cargarPeriodos();iniciarDashboard();return;
   }
   if(email===LLAVE_EMAIL&&!pass){document.getElementById('pass-wrap').style.display='block';errEl.textContent='Ingresá la contraseña.';errEl.classList.remove('hidden');return;}
@@ -906,18 +907,22 @@ function iniciarDashboard(){
 async function cargarDashboardStats(){
   const fecha=document.getElementById('fecha-hoy').value;
   const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
-  if(!curso){document.getElementById('dash-total-alumnos').textContent='—';return;}
+  const elTotal=document.getElementById('dash-total-alumnos');
+  const elPres=document.getElementById('dash-presentes');
+  const elAus=document.getElementById('dash-ausentes');
+  const elSub=document.getElementById('dash-quick-asis-sub');
+  if(!curso){if(elTotal)elTotal.textContent='—';return;}
   // Total alumnos
   const aSnap=await db.collection('alumnos').where('curso','==',curso).get();
   const total=aSnap.size;
-  document.getElementById('dash-total-alumnos').textContent=total;
+  if(elTotal)elTotal.textContent=total;
   // Asistencia de hoy
   let presentes=0,ausentes=0;
   const asSnap=await db.collection('asistencia').where('fecha','==',fecha).where('curso','==',curso).get();
   asSnap.forEach(d=>{if(d.data().estado==='P')presentes++;else if(d.data().estado==='A')ausentes++;});
-  document.getElementById('dash-presentes').textContent=presentes||'—';
-  document.getElementById('dash-ausentes').textContent=ausentes||'—';
-  document.getElementById('dash-quick-asis-sub').textContent=presentes?`${presentes} presentes registrados hoy`:'Aún no pasaste lista hoy';
+  if(elPres)elPres.textContent=presentes||'—';
+  if(elAus)elAus.textContent=ausentes||'—';
+  if(elSub)elSub.textContent=presentes?`${presentes} presentes registrados hoy`:'Aún no pasaste lista hoy';
   // Alertas de ausencias reiteradas
   await verificarAlertasAusencias(curso,'dash-alertas-wrap');
 }
