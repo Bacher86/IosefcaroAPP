@@ -18,6 +18,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .nb{font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:6px}
 .nb-i{background:#fce7f3;color:#9d174d}.nb-p{background:#dbeafe;color:#1e40af}.nb-s{background:#d1fae5;color:#065f46}
+.vista-alu-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.curso-bloque{background:white;border:1px solid #e2e8f0;border-radius:1.5rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.curso-bloque-header{background:#0f172a;color:white;padding:.875rem 1.25rem;display:flex;align-items:center;justify-content:space-between}
+.alumno-row{display:flex;align-items:center;justify-content:space-between;padding:.625rem 1.25rem;border-bottom:1px solid #f8fafc;font-size:.8125rem}
+.alumno-row:last-child{border-bottom:none}
+.alumno-row:hover{background:#f8fafc}
+.busq-result{padding:.5rem .75rem;border-radius:.625rem;cursor:pointer;font-size:.8125rem;font-weight:600;transition:background .1s}
+.busq-result:hover{background:#eff6ff;color:#2563eb}
 .stat-card{background:white;border:1px solid #f1f5f9;border-radius:1.5rem;padding:1.5rem}
 .stat-n{font-size:2.5rem;font-weight:800;line-height:1;color:#0f172a}
 .stat-l{font-size:10px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-top:4px}
@@ -288,8 +296,21 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input type="text"  id="manual-alu"   placeholder="Nombre y Apellido del Alumno" class="input-pro">
-          <select id="manual-nivel" class="input-pro"><option value="">Nivel...</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
-          <input type="text"  id="manual-cur"   placeholder="Curso (Ej: 1A)"       class="input-pro">
+          <select id="manual-nivel" onchange="filtrarCursosSelector()" class="input-pro"><option value="">Nivel...</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option></select>
+          <div>
+            <label class="text-[9px] font-black text-slate-500 uppercase block mb-1.5">Curso</label>
+            <div class="flex gap-2">
+              <select id="manual-cur-sel" class="input-pro flex-1 text-sm">
+                <option value="">— Seleccioná un curso —</option>
+              </select>
+              <button type="button" onclick="toggleNuevoCurso()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs px-3 rounded-xl transition flex-shrink-0" title="Crear curso nuevo">+ Nuevo</button>
+            </div>
+            <div id="nuevo-curso-inline" class="hidden mt-2 flex gap-2">
+              <input type="text" id="manual-cur-new" placeholder="Ej: 3B" class="input-pro flex-1 text-sm">
+              <button type="button" onclick="crearYSeleccionarCurso()" class="bg-blue-600 text-white font-bold text-xs px-3 rounded-xl flex-shrink-0">Crear</button>
+              <button type="button" onclick="toggleNuevoCurso()" class="bg-slate-100 text-slate-500 font-bold text-xs px-2 rounded-xl flex-shrink-0">✕</button>
+            </div>
+          </div>
           <input type="text"  id="manual-fam"   placeholder="Nombre de la Familia" class="input-pro">
 
           <!-- Email del ALUMNO (para login en Portal Alumnos) -->
@@ -500,20 +521,71 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 
     <!-- ════ ALUMNOS ════ -->
     <section id="tab-alumnos" class="tab-content space-y-4">
-      <div class="bg-white p-4 rounded-2xl border flex flex-wrap items-center gap-3 shadow-sm">
-        <input type="text" onkeyup="buscar('search-alu','lista-alumnos')" id="search-alu" placeholder="Filtrar..." class="input-pro max-w-xs">
-        <select id="filter-alu-nivel" onchange="cargarAlumnosFiltrados()" class="input-pro" style="max-width:160px">
-          <option value="">Todos los niveles</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option>
-        </select>
-        <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase ml-auto">Cargando...</span>
+      <!-- Toggle vista lista / por cursos -->
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+          <button id="btn-vista-lista" onclick="setVistaAlumnos('lista')" class="vista-alu-btn active px-4 py-2 rounded-lg text-xs font-black transition-all">
+            <i class="fas fa-list mr-1"></i>Todos
+          </button>
+          <button id="btn-vista-cursos" onclick="setVistaAlumnos('cursos')" class="vista-alu-btn px-4 py-2 rounded-lg text-xs font-black transition-all text-slate-500">
+            <i class="fas fa-layer-group mr-1"></i>Por curso
+          </button>
+        </div>
+        <span id="count-alumnos" class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase">Cargando...</span>
       </div>
-      <p class="text-xs text-slate-400 px-1"><i class="fas fa-info-circle mr-1"></i>Tocá el nombre para editar el perfil. Seleccioná con la casilla para eliminar múltiples a la vez.</p>
-      <div class="flex items-center gap-3 px-1">
-        <input type="checkbox" id="select-all-alu" onclick="toggleSeleccionarTodoAlumnos(this)" class="w-4 h-4 accent-rose-600">
-        <label for="select-all-alu" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos</label>
-        <button id="btn-eliminar-masivo-alu" onclick="eliminarAlumnosSeleccionados()" class="hidden bg-rose-600 text-white px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1"><i class="fas fa-trash-alt"></i> Eliminar (<span id="count-alu-sel">0</span>)</button>
+
+      <!-- Vista lista (original) -->
+      <div id="vista-lista-container">
+        <div class="bg-white p-4 rounded-2xl border flex flex-wrap items-center gap-3 shadow-sm">
+          <input type="text" onkeyup="buscar('search-alu','lista-alumnos')" id="search-alu" placeholder="Filtrar..." class="input-pro max-w-xs">
+          <select id="filter-alu-nivel" onchange="cargarAlumnosFiltrados()" class="input-pro" style="max-width:160px">
+            <option value="">Todos los niveles</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option>
+          </select>
+        </div>
+        <p class="text-xs text-slate-400 px-1"><i class="fas fa-info-circle mr-1"></i>Tocá el nombre para editar el perfil. Seleccioná con la casilla para eliminar múltiples a la vez.</p>
+        <div class="flex items-center gap-3 px-1">
+          <input type="checkbox" id="select-all-alu" onclick="toggleSeleccionarTodoAlumnos(this)" class="w-4 h-4 accent-rose-600">
+          <label for="select-all-alu" class="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Seleccionar todos</label>
+          <button id="btn-eliminar-masivo-alu" onclick="eliminarAlumnosSeleccionados()" class="hidden bg-rose-600 text-white px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1"><i class="fas fa-trash-alt"></i> Eliminar (<span id="count-alu-sel">0</span>)</button>
+        </div>
+        <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
       </div>
-      <div id="lista-alumnos" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+
+      <!-- Vista por cursos -->
+      <div id="vista-cursos-container" class="hidden space-y-4">
+        <div id="cursos-alumnos-grid" class="space-y-4"></div>
+      </div>
+
+      <!-- Modal agregar alumno a curso -->
+      <div id="modal-agregar-a-curso" class="hidden fixed inset-0 bg-black/60 z-[400] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-black text-lg">Agregar alumno al curso</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Curso: <b id="modal-curso-target">—</b></p>
+            </div>
+            <button onclick="cerrarModalAgregarCurso()" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-500 font-bold text-sm">✕</button>
+          </div>
+          <!-- Buscar alumno existente -->
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">Buscar alumno ya registrado</label>
+            <input type="text" id="buscar-alumno-existente" placeholder="Escribí el nombre..." class="input-pro text-sm" oninput="buscarAlumnoParaCurso()">
+            <div id="resultados-busqueda-alumno" class="mt-2 space-y-1 max-h-40 overflow-y-auto"></div>
+          </div>
+          <div class="border-t pt-4">
+            <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">O crear alumno nuevo en este curso</label>
+            <input type="text" id="nuevo-alu-nombre-curso" placeholder="Nombre y Apellido" class="input-pro text-sm mb-2">
+            <div class="flex gap-2">
+              <input type="text" id="nuevo-alu-user-curso" placeholder="usuario (sin @)" class="input-pro text-sm flex-1" oninput="document.getElementById('prev-mail-curso').textContent=this.value?this.value+'@iosefcaro.org':'—'">
+              <span class="text-xs text-slate-400 flex items-center flex-shrink-0">@iosefcaro.org</span>
+            </div>
+            <p class="text-[10px] text-blue-500 font-bold mt-1">Preview: <span id="prev-mail-curso">—</span></p>
+          </div>
+          <button onclick="ejecutarAgregarACurso()" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+            <i class="fas fa-user-plus"></i> AGREGAR AL CURSO
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- ════ FAMILIAS ════ -->
@@ -1207,7 +1279,7 @@ window.guardarAlumnoData = async function guardarAlumnoData(alu, nivel, cur, fam
 window.cargaManualAlumno = async function cargaManualAlumno(){
   const alu=document.getElementById('manual-alu').value.trim();
   const nivel=document.getElementById('manual-nivel').value;
-  const cur=document.getElementById('manual-cur').value.trim();
+  const cur=document.getElementById('manual-cur-sel')?.value || document.getElementById('manual-cur')?.value || '';
   const fam=document.getElementById('manual-fam').value.trim();
   const aluUser=document.getElementById('manual-alu-user').value.trim().toLowerCase().replace(/\s+/g,'.');
   const aluPass=document.getElementById('manual-alu-pass').value.trim();
@@ -1227,7 +1299,8 @@ window.cargaManualAlumno = async function cargaManualAlumno(){
     await guardarAlumnoData(alu,nivel,cur,fam,[m1,m2,m3].filter(e=>e&&e.includes('@')),emailAlumno,aluPass);
     registrarLog('crear',`Alumno creado: ${alu} (${emailAlumno||'sin mail alumno'})`,'alumno');
     alert('✅ Alumno guardado.'+(emailAlumno?'\n📧 Mail: '+emailAlumno+'\n🔑 Contraseña: '+(aluPass||'Caro2026'):''));
-    ['manual-alu','manual-cur','manual-fam','manual-alu-user','manual-alu-pass','manual-mail1','manual-mail2','manual-mail3'].forEach(id=>document.getElementById(id).value='');
+    ['manual-alu','manual-cur','manual-fam','manual-alu-user','manual-alu-pass','manual-mail1','manual-mail2','manual-mail3'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const curSel=document.getElementById('manual-cur-sel');if(curSel)curSel.value='';
     document.getElementById('manual-nivel').value='';
     document.getElementById('preview-alu-mail').textContent='—';
     refrescarTodo();
@@ -1505,7 +1578,240 @@ Sus fichas serán eliminadas. Las notas históricas se conservan.`))return;
   cargarAlumnosFiltrados();
 }
 window.buscar = function buscar(inpId,contId){const q=document.getElementById(inpId).value.toLowerCase();Array.from(document.getElementById(contId).children).forEach(item=>{item.style.display=(item.getAttribute('data-search')||item.innerText).toLowerCase().includes(q)?'block':'none';});}
-window.refrescarTodo = function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();}
+// ══ SELECTOR DE CURSOS EN FORMULARIO MANUAL ══
+window._cursosCache = [];
+
+window.cargarCursosSelector = async function cargarCursosSelector(){
+  const snap = await db.collection('cursos').orderBy('nombre','asc').get().catch(()=>null);
+  if(!snap) return;
+  window._cursosCache = [];
+  snap.forEach(doc => window._cursosCache.push({id:doc.id, ...doc.data()}));
+  poblarSelectorCurso();
+};
+
+function poblarSelectorCurso(nivel=''){
+  const sel = document.getElementById('manual-cur-sel');
+  if(!sel) return;
+  const filtrados = nivel ? window._cursosCache.filter(c=>(c.nivel||'').toLowerCase()===nivel) : window._cursosCache;
+  sel.innerHTML = '<option value="">— Seleccioná un curso —</option>';
+  filtrados.forEach(c => sel.innerHTML += `<option value="${c.nombre}">${c.nombre}${c.nivel?' · '+c.nivel:''}</option>`);
+  if(!filtrados.length) sel.innerHTML += '<option value="" disabled>Sin cursos para este nivel</option>';
+}
+
+window.filtrarCursosSelector = function filtrarCursosSelector(){
+  const nivel = document.getElementById('manual-nivel').value;
+  poblarSelectorCurso(nivel);
+};
+
+window.toggleNuevoCurso = function toggleNuevoCurso(){
+  const wrap = document.getElementById('nuevo-curso-inline');
+  wrap.classList.toggle('hidden');
+  if(!wrap.classList.contains('hidden')) document.getElementById('manual-cur-new').focus();
+};
+
+window.crearYSeleccionarCurso = async function crearYSeleccionarCurso(){
+  const nombre = document.getElementById('manual-cur-new').value.trim().toUpperCase();
+  const nivel = document.getElementById('manual-nivel').value || 'primario';
+  if(!nombre){ alert('Escribí el nombre del curso.'); return; }
+  // Verificar si ya existe
+  const existe = window._cursosCache.find(c => c.nombre === nombre);
+  if(!existe){
+    await db.collection('cursos').add({nombre, nivel});
+    registrarLog('crear', `Curso creado desde alta alumno: ${nombre}`, 'curso');
+  }
+  // Actualizar cache y selector
+  await cargarCursosSelector();
+  const sel = document.getElementById('manual-cur-sel');
+  if(sel) sel.value = nombre;
+  document.getElementById('manual-cur-new').value = '';
+  document.getElementById('nuevo-curso-inline').classList.add('hidden');
+  // Actualizar también lista de cursos en pestaña cursos
+  cargarMaestros('cursos','lista-cursos');
+};
+
+// ══ VISTA POR CURSOS EN TAB ALUMNOS ══
+window.setVistaAlumnos = function setVistaAlumnos(vista){
+  document.getElementById('vista-lista-container').classList.toggle('hidden', vista!=='lista');
+  document.getElementById('vista-cursos-container').classList.toggle('hidden', vista!=='cursos');
+  document.getElementById('btn-vista-lista').classList.toggle('active', vista==='lista');
+  document.getElementById('btn-vista-cursos').classList.toggle('active', vista==='cursos');
+  document.getElementById('btn-vista-lista').classList.toggle('text-slate-500', vista!=='lista');
+  document.getElementById('btn-vista-cursos').classList.toggle('text-slate-500', vista!=='cursos');
+  if(vista==='cursos') cargarAlumnosPorCurso();
+};
+
+window.cargarAlumnosPorCurso = async function cargarAlumnosPorCurso(){
+  const cont = document.getElementById('cursos-alumnos-grid');
+  cont.innerHTML = '<p class="text-slate-400 text-sm text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+
+  // Cargar todos los cursos y todos los alumnos en paralelo
+  const [cursosSnap, alumnosSnap] = await Promise.all([
+    db.collection('cursos').orderBy('nombre','asc').get().catch(()=>({docs:[]})),
+    db.collection('alumnos').get().catch(()=>({docs:[]}))
+  ]);
+
+  if(cursosSnap.docs.length === 0){ cont.innerHTML='<p class="text-slate-400 text-sm text-center py-8">No hay cursos creados todavía.</p>'; return; }
+
+  // Agrupar alumnos por curso
+  const porCurso = {};
+  cursosSnap.docs.forEach(d => porCurso[d.data().nombre] = []);
+  alumnosSnap.docs.forEach(d => {
+    const a = d.data(); const c = a.curso;
+    if(c && porCurso[c] !== undefined) porCurso[c].push({id:d.id,...a});
+    // Si el alumno tiene un curso que no está en la colección cursos, igual mostrarlo
+    else if(c){
+      if(!porCurso[c]) porCurso[c] = [];
+      porCurso[c].push({id:d.id,...a});
+    }
+  });
+
+  const totalAlumnos = alumnosSnap.docs.length;
+  document.getElementById('count-alumnos').textContent = totalAlumnos + ' Alumnos';
+
+  cont.innerHTML = '';
+  const nbc = n => n==='inicial'?'nb-i':n==='secundario'?'nb-s':'nb-p';
+
+  Object.entries(porCurso).sort(([a],[b])=>a.localeCompare(b)).forEach(([curso, alumnos]) => {
+    const nivelCurso = cursosSnap.docs.find(d=>d.data().nombre===curso)?.data()?.nivel || '';
+    const sorted = [...alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+    const bloque = document.createElement('div');
+    bloque.className = 'curso-bloque';
+    bloque.innerHTML = `
+      <div class="curso-bloque-header">
+        <div class="flex items-center gap-3">
+          <span class="font-black text-lg">${curso}</span>
+          ${nivelCurso ? `<span class="nb ${nbc(nivelCurso)} text-[9px] font-black px-2 py-0.5 rounded-full">${nivelCurso}</span>` : ''}
+          <span class="text-[10px] font-bold text-slate-400">${alumnos.length} alumno${alumnos.length!==1?'s':''}</span>
+        </div>
+        <button onclick="abrirModalAgregarCurso('${curso}')"
+          style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:.75rem;padding:.375rem .875rem;color:white;font-size:.6875rem;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:.375rem">
+          <i class="fas fa-user-plus"></i> Agregar alumno
+        </button>
+      </div>
+      ${alumnos.length === 0
+        ? `<div style="padding:1.25rem;text-align:center;color:#94a3b8;font-size:.75rem;font-weight:600">
+            Sin alumnos asignados a este curso.
+            <button onclick="abrirModalAgregarCurso('${curso}')" style="display:block;margin:.75rem auto 0;background:#eff6ff;border:none;border-radius:.75rem;padding:.5rem 1rem;font-size:.6875rem;font-weight:800;color:#2563eb;cursor:pointer;font-family:inherit">
+              <i class="fas fa-user-plus mr-1"></i> Agregar el primero
+            </button>
+          </div>`
+        : `<div>${sorted.map((a,i) => `
+            <div class="alumno-row">
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <span style="font-size:.625rem;font-weight:900;color:#cbd5e1;min-width:20px">${i+1}</span>
+                <div>
+                  <p style="font-weight:700">${a.nombre}</p>
+                  ${a.email ? `<p style="font-size:.625rem;color:#93c5fd">${a.email}</p>` : ''}
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:.5rem">
+                ${a.email ? '<span style="font-size:9px;background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:99px;font-weight:700">✓ Portal</span>' : '<span style="font-size:9px;background:#f1f5f9;color:#94a3b8;padding:2px 7px;border-radius:99px;font-weight:700">Sin acceso</span>'}
+                <button onclick="abrirModalAlumno('${a.id}','${a.nombre.replace(/'/g,"\\'")}');setVistaAlumnos('lista')"
+                  style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:.75rem;padding:2px 6px" title="Editar">
+                  <i class="fas fa-pen"></i>
+                </button>
+              </div>
+            </div>`).join('')}</div>`
+      }`;
+    cont.appendChild(bloque);
+  });
+};
+
+// ── Modal agregar alumno a curso ──
+let _cursoTarget = '';
+window.abrirModalAgregarCurso = function abrirModalAgregarCurso(curso){
+  _cursoTarget = curso;
+  document.getElementById('modal-curso-target').textContent = curso;
+  document.getElementById('buscar-alumno-existente').value = '';
+  document.getElementById('resultados-busqueda-alumno').innerHTML = '';
+  document.getElementById('nuevo-alu-nombre-curso').value = '';
+  document.getElementById('nuevo-alu-user-curso').value = '';
+  document.getElementById('prev-mail-curso').textContent = '—';
+  document.getElementById('modal-agregar-a-curso').classList.remove('hidden');
+};
+window.cerrarModalAgregarCurso = function cerrarModalAgregarCurso(){
+  document.getElementById('modal-agregar-a-curso').classList.add('hidden');
+  _cursoTarget = '';
+};
+
+window.buscarAlumnoParaCurso = async function buscarAlumnoParaCurso(){
+  const q = document.getElementById('buscar-alumno-existente').value.trim().toLowerCase();
+  const cont = document.getElementById('resultados-busqueda-alumno');
+  if(q.length < 2){ cont.innerHTML=''; return; }
+  // Buscar en cache o Firebase
+  const snap = await db.collection('alumnos').get().catch(()=>({docs:[]}));
+  const matches = [];
+  snap.docs.forEach(d => {
+    const a = d.data();
+    if(a.nombre.toLowerCase().includes(q)) matches.push({id:d.id,...a});
+  });
+  cont.innerHTML = '';
+  if(!matches.length){ cont.innerHTML='<p style="font-size:.75rem;color:#94a3b8;padding:.5rem">Sin resultados.</p>'; return; }
+  matches.slice(0,6).forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'busq-result';
+    div.innerHTML = `<span style="font-weight:700">${a.nombre}</span> <span style="color:#94a3b8;font-size:.6875rem">${a.curso||'sin curso'}</span>`;
+    div.onclick = () => asignarAlumnoACurso(a.id, a.nombre, a.curso);
+    cont.appendChild(div);
+  });
+};
+
+async function asignarAlumnoACurso(alumnoId, nombre, cursoAnterior){
+  if(!_cursoTarget) return;
+  if(cursoAnterior === _cursoTarget){ alert(`${nombre} ya está en el curso ${_cursoTarget}.`); return; }
+  if(cursoAnterior && !confirm(`${nombre} está actualmente en ${cursoAnterior}. ¿Moverlo a ${_cursoTarget}?`)) return;
+  await db.collection('alumnos').doc(alumnoId).update({curso: _cursoTarget});
+  // Actualizar también en usuarios si tiene email
+  const aDoc = await db.collection('alumnos').doc(alumnoId).get();
+  const email = aDoc.data()?.email;
+  if(email) await db.collection('usuarios').doc(email).update({curso: _cursoTarget}).catch(()=>{});
+  registrarLog('editar', `Alumno ${nombre} movido de ${cursoAnterior||'sin curso'} a ${_cursoTarget}`, 'alumno');
+  alert(`✅ ${nombre} asignado al curso ${_cursoTarget}.`);
+  cerrarModalAgregarCurso();
+  cargarAlumnosPorCurso();
+}
+
+window.ejecutarAgregarACurso = async function ejecutarAgregarACurso(){
+  const nombre = document.getElementById('nuevo-alu-nombre-curso').value.trim();
+  const aluUser = document.getElementById('nuevo-alu-user-curso').value.trim().toLowerCase().replace(/\s+/g,'.');
+  if(!nombre){ alert('Escribí el nombre del alumno.'); return; }
+  const emailAlumno = aluUser ? aluUser+'@iosefcaro.org' : '';
+  // Buscar el nivel del curso
+  const cursoDoc = window._cursosCache.find(c=>c.nombre===_cursoTarget);
+  const nivel = cursoDoc?.nivel || 'primario';
+  const btn = document.querySelector('[onclick="ejecutarAgregarACurso()"]');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+  try{
+    await guardarAlumnoData(nombre, nivel, _cursoTarget, '', [], emailAlumno, 'Caro2026');
+    registrarLog('crear', `Alumno creado y asignado a curso ${_cursoTarget}: ${nombre}`, 'alumno');
+    alert(`✅ ${nombre} agregado al curso ${_cursoTarget}.${emailAlumno?'\n📧 '+emailAlumno:''}`);
+    cerrarModalAgregarCurso();
+    cargarAlumnosPorCurso();
+    cargarAlumnosFiltrados();
+  }catch(e){ alert('Error: '+e.message); }
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-user-plus"></i> AGREGAR AL CURSO';
+};
+
+// ══ PROPAGACIÓN A DOCENTES/EOE AL CREAR ALUMNO ══
+// Guardar alumno también notifica a docentes del mismo curso en Firebase
+// (el docente carga sus alumnos desde la colección alumnos filtrada por curso,
+// por lo que al agregar el alumno ya aparece automáticamente en todos los paneles)
+// Guardamos también en colección curso_alumnos para suscripciones rápidas:
+const _origGuardarAlumnoData = window.guardarAlumnoData;
+window.guardarAlumnoData = async function guardarAlumnoData(alu, nivel, cur, fam, emailsFamilia, emailAlumno, passAlumno){
+  await _origGuardarAlumnoData(alu, nivel, cur, fam, emailsFamilia, emailAlumno, passAlumno);
+  // Registrar en índice rápido curso→alumnos
+  if(cur){
+    const cn = (cur||'').toUpperCase();
+    await db.collection('curso_alumnos').doc(cn).set({
+      curso: cn, nivel: (nivel||'primario').toLowerCase(),
+      ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true});
+  }
+};
+
+window.refrescarTodo = function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();cargarCursosSelector();}
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
 } // fin _initAdmin
 </script>
