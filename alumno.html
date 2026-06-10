@@ -436,7 +436,7 @@ main{padding:1rem;max-width:540px;margin:0 auto}
     <!-- ── IOSI QUIZ ── -->
     <div id="tab-quiz" class="tab">
       <p class="sec-label">Iosi Quiz</p>
-      <p style="font-size:.8125rem;color:var(--text2);margin-bottom:1rem;line-height:1.5">Practicá con quizzes generados por IA a partir de los materiales de tus docentes.</p>
+      <p style="font-size:.8125rem;color:var(--text2);margin-bottom:1rem;line-height:1.5">Material que comparten tus docentes para practicar antes del examen.</p>
       <div id="quiz-tablon-list" class="vstack"></div>
       <!-- Study overlay (reutilizable) -->
       <div id="quiz-study-panel" class="study-screen">
@@ -1392,10 +1392,13 @@ async function cargarQuizTablon(){
       const d = doc.data();
       const qDoc = await db.collection('tablon').doc(doc.id).collection('quizzes').doc(alumnoEmail).get().catch(()=>null);
       const yaHizo = qDoc && qDoc.exists && (qDoc.data().fecha||'').startsWith(hoyStr);
-      cont.innerHTML += `<div class="tablon-card" style="cursor:pointer" onclick="abrirQuizStudy('${doc.id}')">
+      const card = document.createElement('div');
+      card.className = 'tablon-card';
+      card.style.cursor = 'pointer';
+      card.innerHTML = `
         <div class="tablon-top">
           <div style="display:flex;align-items:center;gap:.5rem">
-            <span class="tag tag-estudio">🧠 Iosi Study</span>
+            <span class="tag tag-estudio">📚 Material de estudio</span>
             ${yaHizo ? '<span class="tag" style="background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)">✓ Hecho hoy</span>' : ''}
           </div>
           <p class="tablon-title">${d.titulo||''}</p>
@@ -1403,13 +1406,17 @@ async function cargarQuizTablon(){
         </div>
         <div class="tablon-footer">
           <span class="tablon-meta">${d.materia||''}</span>
-          <button class="btn-quiz" style="width:auto;padding:.45rem 1rem;font-size:.75rem" onclick="event.stopPropagation();abrirQuizStudy('${doc.id}')">
+          <button class="btn-quiz" style="width:auto;padding:.45rem 1rem;font-size:.75rem">
             <i class="fas fa-brain"></i> ${yaHizo ? 'Nuevo quiz' : 'Estudiar'}
           </button>
-        </div>
-      </div>`;
+        </div>`;
+      const btn = card.querySelector('button');
+      const docId = doc.id;
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); abrirQuizStudy(docId); });
+      card.addEventListener('click', ()=>{ abrirQuizStudy(docId); });
+      cont.appendChild(card);
     }
-  }catch(e){ cont.innerHTML='<p class="empty">Error al cargar materiales.</p>'; }
+  }catch(e){ cont.innerHTML='<p class="empty">Error al cargar materiales: '+e.message+'</p>'; }
 }
 
 function abrirQuizStudy(id){
@@ -1446,7 +1453,14 @@ async function _generarQuizEnContenedor(item, contenedorId){
   const cantMultiple = item.cantMultiple||4;
   const cantDesarrollo = item.cantDesarrollo||1;
   const contenido = item.contenidoEstudio||item.texto||'';
-  if(!contenido||contenido.length<20){ body.innerHTML='<p class="empty">Este contenido no tiene suficiente texto para generar preguntas.</p>'; return; }
+  if(!contenido||contenido.length<20){
+    body.innerHTML=`<div style="text-align:center;padding:2rem 1rem">
+      <div style="font-size:2rem;margin-bottom:.75rem">⚠️</div>
+      <p style="font-weight:700;margin-bottom:.5rem">El docente no cargó el material de estudio todavía</p>
+      <p style="font-size:.8125rem;color:var(--text2)">Para generar preguntas, el docente debe adjuntar un texto o apunte a esta publicación.</p>
+    </div>`;
+    return;
+  }
   const prompt=`Eres un asistente educativo para el Instituto Iosef Caro. Generá preguntas de estudio basadas en el siguiente contenido.\n\nCONTENIDO:\n${contenido}\n\nCONFIGURACIÓN:\n- Preguntas de opción múltiple: ${cantMultiple}\n- Preguntas de desarrollo corto: ${cantDesarrollo}\n\nRespondé ÚNICAMENTE con un JSON válido con esta estructura exacta (sin markdown, sin explicaciones antes ni después):\n{"preguntas":[{"tipo":"multiple","pregunta":"¿...?","opciones":["A. ...","B. ...","C. ...","D. ..."],"correcta":0,"explicacion":"..."},{"tipo":"desarrollo","pregunta":"¿...?","respuestaEsperada":"..."}]}`;
   try{
     const GEMINI_KEY='AIzaSyATS0LI0XhWWyYEcVyncMWBkFutT-SlWQE';
