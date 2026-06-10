@@ -143,6 +143,32 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-botto
 .obs-tipo-btn.active{border-color:#7c3aed!important;background:#f5f3ff!important;color:#6d28d9!important}
 .mtab-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 
+/* ── TABLA BIMESTRAL ── */
+.bim-table{width:100%;border-collapse:collapse;font-size:12px}
+.bim-table th{background:#0f172a;color:white;padding:8px 6px;font-weight:800;font-size:10px;text-transform:uppercase;text-align:center;white-space:nowrap}
+.bim-table th.col-item{text-align:left;min-width:180px;max-width:220px}
+.bim-table td{border:1px solid #e2e8f0;padding:0;vertical-align:middle}
+.bim-table td.col-item{padding:6px 8px;font-weight:600;font-size:11px;background:#f8fafc;position:relative}
+.bim-table td.col-item input{border:none;background:transparent;width:100%;font-weight:600;font-size:11px;font-family:inherit;outline:none;padding:2px 4px}
+.bim-table td.col-item input:focus{background:#eff6ff;border-radius:4px}
+.bim-val{width:52px;height:36px;border:none;text-align:center;font-weight:800;font-size:11px;cursor:pointer;background:transparent;font-family:inherit;display:block;width:100%}
+.bim-val:focus{outline:none;background:#eff6ff}
+.bim-val.val-L{background:#dcfce7;color:#15803d}
+.bim-val.val-EP{background:#fef9c3;color:#a16207}
+.bim-val.val-NL{background:#fee2e2;color:#dc2626}
+.bim-val.val-PPI{background:#ede9fe;color:#6d28d9}
+.bim-table tr.fila-final td{background:#0f172a;color:white;font-weight:900;font-size:11px;padding:6px 8px}
+.bim-table tr.fila-final .bim-val{font-weight:900;color:white}
+.bim-table tr.fila-final .bim-val.val-L{background:#15803d;color:white}
+.bim-table tr.fila-final .bim-val.val-EP{background:#a16207;color:white}
+.bim-table tr.fila-final .bim-val.val-NL{background:#dc2626;color:white}
+.bim-alumno-card{background:white;border:1px solid #e2e8f0;border-radius:1.25rem;overflow:hidden;margin-bottom:.875rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.bim-alumno-header{background:#0f172a;color:white;padding:.625rem 1rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.bim-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ppi-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:99px;cursor:pointer}
+.bim-leyenda{display:flex;gap:.75rem;flex-wrap:wrap;padding:.625rem .875rem;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:9px;font-weight:700}
+</style>
+
 /* ── SWIPE ASISTENCIA ── */
 .asis-card-wrap{position:relative;overflow:hidden;border-radius:1.25rem;margin-bottom:.5rem}
 .asis-swipe-hint{position:absolute;inset:0;display:flex;align-items:center;border-radius:1.25rem;pointer-events:none;transition:opacity .1s;opacity:0}
@@ -1110,60 +1136,269 @@ function agregarColumna(){const n=prompt('Nombre de la evaluación (ej: TP2, Par
 function eliminarColumna(key){if(!confirm('¿Eliminar esta columna?'))return;columnaExamenes=columnaExamenes.filter(c=>c.key!==key);guardarConfigColumnas();cargarAlumnos();}
 async function guardarConfigColumnas(){const curso=cursoActivo||document.getElementById('select-curso')?.value||'';await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});}
 
-// ══ INDICADORES ══
+// ══ INDICADORES BIMESTRALES ══
+// Estructura: materia × periodo → lista de ítems evaluados
+// Por alumno: { bim1, bim2, bim3, bim4, calFinal } por ítem
+// Valores: L=Logrado, EP=En Proceso, NL=No Logrado, PPI=PPI**, vacío=sin dato
+
+const BIMESTRES = ['1°','2°','3°','4°'];
+const VALS = ['','L','EP','NL','PPI'];
+const VAL_LABEL = {'':'—','L':'L','EP':'EP','NL':'NL','PPI':'PPI**'};
+const VAL_CLASS = {'':'','L':'val-L','EP':'val-EP','NL':'val-NL','PPI':'val-PPI'};
+
+window.indicadoresActuales = [];
+window._bimData = {}; // alumnoId → {ítems data}
+
 async function renderIndicadores(fecha){
   document.getElementById('grilla-container').classList.add('hidden');
   document.getElementById('ctrl-examenes').classList.add('hidden');
-  const cont=document.getElementById('indicadores-container');cont.classList.remove('hidden');
-  const refConfig=db.collection('config_indicadores').doc(`${materiaActiva}_${periodoActivo.slug}`);
-  const cfg=await refConfig.get();
-  let indicadores=cfg.exists?(cfg.data().lista||[]):[];
-  cont.innerHTML=`<div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
-    <p class="font-bold mb-3">Indicadores de esta materia</p>
-    <div class="flex gap-2 mb-3"><input id="nuevo-indicador" class="input-pro flex-1" placeholder="Nuevo indicador..." onkeydown="if(event.key==='Enter'){event.preventDefault();agregarIndicador();}">
-    <button onclick="agregarIndicador()" class="bg-blue-600 text-white px-4 rounded-xl font-bold text-sm">+</button></div>
-    <div id="lista-indicadores" class="flex flex-wrap gap-2"></div></div>
-  <div id="indicadores-alumnos"></div>`;
-  window.indicadoresActuales=indicadores;renderListaIndicadores();renderIndicadoresAlumnos();
+  document.getElementById('vista-alumno-container').classList.add('hidden');
+  const cont = document.getElementById('indicadores-container');
+  cont.classList.remove('hidden');
+  const curso = cursoActivo || document.getElementById('select-curso')?.value || '';
+
+  // Config de ítems para esta materia (compartida por curso)
+  const configKey = `${materiaActiva}_${curso}`;
+  const refConfig = db.collection('config_indicadores').doc(configKey);
+  const cfg = await refConfig.get();
+  let items = cfg.exists ? (cfg.data().items || cfg.data().lista || []) : [];
+  window.indicadoresActuales = items;
+
+  cont.innerHTML = `
+    <!-- Panel de edición de ítems -->
+    <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <p class="font-black text-sm">Ítems evaluados — ${materiaActiva}</p>
+          <p class="text-[10px] text-slate-400">Estos ítems son las filas de la tabla bimestral. Podés editarlos haciendo click en el texto.</p>
+        </div>
+        <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">${curso}</span>
+      </div>
+      <div id="lista-items-bim" class="space-y-1 mb-3"></div>
+      <div class="flex gap-2">
+        <input id="nuevo-indicador" class="input-pro flex-1 text-sm" placeholder="Nuevo ítem evaluado (ej: Participa activamente en clase)..."
+          onkeydown="if(event.key==='Enter'){event.preventDefault();agregarIndicador();}">
+        <button onclick="agregarIndicador()" class="bg-blue-600 text-white px-4 rounded-xl font-bold text-sm flex-shrink-0">+ Agregar</button>
+      </div>
+    </div>
+    <!-- Tablas por alumno -->
+    <div id="indicadores-alumnos"></div>`;
+
+  renderListaIndicadores();
+  await cargarYRenderTablasAlumnos();
 }
+
 function renderListaIndicadores(){
-  const box=document.getElementById('lista-indicadores');
-  box.innerHTML=window.indicadoresActuales.map((ind,i)=>`<div class="bg-blue-100 px-3 py-1 rounded-full text-sm flex items-center gap-2">${ind}<button onclick="eliminarIndicador(${i})" class="text-blue-400 hover:text-blue-600">✕</button></div>`).join('');
-}
-async function agregarIndicador(){
-  const input=document.getElementById('nuevo-indicador');const texto=input.value.trim();if(!texto)return;
-  window.indicadoresActuales.push(texto);
-  await db.collection('config_indicadores').doc(`${materiaActiva}_${periodoActivo.slug}`).set({lista:window.indicadoresActuales});
-  input.value='';renderListaIndicadores();renderIndicadoresAlumnos();
-}
-async function eliminarIndicador(i){
-  window.indicadoresActuales.splice(i,1);
-  await db.collection('config_indicadores').doc(`${materiaActiva}_${periodoActivo.slug}`).set({lista:window.indicadoresActuales});
-  renderListaIndicadores();renderIndicadoresAlumnos();
-}
-async function renderIndicadoresAlumnos(){
-  const cont=document.getElementById('indicadores-alumnos');cont.innerHTML='';
-  const indicadores=window.indicadoresActuales;const bloq=periodoActivo.bloqueado;
-  for(const al of alumnosActuales){
-    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-    const data=nd.exists?(nd.data().indicadores||{}):{};
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
-      <p class="font-bold mb-3"><span class="text-slate-400 text-sm mr-2">#${al.numero}</span>${al.nombre}</p>
-      ${indicadores.map(ind=>`<div class="mb-3"><label class="text-xs font-bold">${ind}</label>
-        <select class="input-pro mt-1" ${bloq?'disabled':''} onchange="setIndicador('${al.id}','${ind}',this.value)">
-          <option value="">Seleccionar</option>
-          <option value="Logrado" ${data[ind]==='Logrado'?'selected':''}>✅ Logrado</option>
-          <option value="En proceso" ${data[ind]==='En proceso'?'selected':''}>🟡 En proceso</option>
-          <option value="A fortalecer" ${data[ind]==='A fortalecer'?'selected':''}>🔴 A fortalecer</option>
-        </select></div>`).join('')}</div>`;
+  const box = document.getElementById('lista-items-bim');
+  if(!box) return;
+  if(!window.indicadoresActuales.length){
+    box.innerHTML = '<p class="text-xs text-slate-400 py-2">Sin ítems todavía. Agregá el primero arriba.</p>';
+    return;
   }
+  box.innerHTML = window.indicadoresActuales.map((item, i) => `
+    <div class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+      <span class="text-[10px] font-black text-slate-300 flex-shrink-0">${i+1}</span>
+      <input type="text" value="${item.replace(/"/g,'&quot;')}"
+        class="flex-1 bg-transparent border-none outline-none text-sm font-semibold text-slate-700"
+        onchange="editarItemBim(${i}, this.value)"
+        onblur="editarItemBim(${i}, this.value)">
+      <button onclick="eliminarIndicador(${i})" class="text-slate-300 hover:text-rose-500 flex-shrink-0 transition-colors">
+        <i class="fas fa-times text-xs"></i>
+      </button>
+    </div>`).join('');
 }
-function setIndicador(alumnoId,indicador,valor){
-  if(periodoActivo.bloqueado)return;
-  if(!cambiosNotas[alumnoId])cambiosNotas[alumnoId]={};
-  if(!cambiosNotas[alumnoId].indicadores)cambiosNotas[alumnoId].indicadores={};
-  cambiosNotas[alumnoId].indicadores[indicador]=valor;
-  document.getElementById('btn-guardar-notas').style.display='block';
+
+async function editarItemBim(i, nuevoTexto){
+  const texto = nuevoTexto.trim();
+  if(!texto || window.indicadoresActuales[i] === texto) return;
+  window.indicadoresActuales[i] = texto;
+  const curso = cursoActivo || document.getElementById('select-curso')?.value || '';
+  await db.collection('config_indicadores').doc(`${materiaActiva}_${curso}`).set({items: window.indicadoresActuales},{merge:true});
+  // Re-render tablas sin recargar todo
+  await cargarYRenderTablasAlumnos();
+}
+window.editarItemBim = editarItemBim;
+
+async function agregarIndicador(){
+  const input = document.getElementById('nuevo-indicador');
+  const texto = input.value.trim(); if(!texto) return;
+  window.indicadoresActuales.push(texto);
+  const curso = cursoActivo || document.getElementById('select-curso')?.value || '';
+  await db.collection('config_indicadores').doc(`${materiaActiva}_${curso}`).set({items: window.indicadoresActuales},{merge:true});
+  input.value = '';
+  renderListaIndicadores();
+  await cargarYRenderTablasAlumnos();
+}
+
+async function eliminarIndicador(i){
+  if(!confirm(`¿Eliminar el ítem "${window.indicadoresActuales[i]}"?`)) return;
+  window.indicadoresActuales.splice(i,1);
+  const curso = cursoActivo || document.getElementById('select-curso')?.value || '';
+  await db.collection('config_indicadores').doc(`${materiaActiva}_${curso}`).set({items: window.indicadoresActuales},{merge:true});
+  renderListaIndicadores();
+  await cargarYRenderTablasAlumnos();
+}
+
+async function cargarYRenderTablasAlumnos(){
+  const cont = document.getElementById('indicadores-alumnos');
+  if(!cont) return;
+  if(!window.indicadoresActuales.length){
+    cont.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">Agregá ítems arriba para ver las tablas de los alumnos.</p>';
+    return;
+  }
+  cont.innerHTML = '<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando tablas...</p>';
+  const bloq = periodoActivo.bloqueado;
+  window._bimData = {};
+  // Pre-cargar todos los datos de una sola vez
+  const promises = alumnosActuales.map(al =>
+    db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`bim_${materiaActiva}_${cursoActivo||''}`).get()
+  );
+  const results = await Promise.all(promises);
+  results.forEach((nd, i) => {
+    window._bimData[alumnosActuales[i].id] = nd.exists ? nd.data() : {};
+  });
+  cont.innerHTML = alumnosActuales.map(al => renderTablaBim(al, bloq)).join('');
+}
+
+function renderTablaBim(al, bloq){
+  const data = window._bimData[al.id] || {};
+  const items = window.indicadoresActuales;
+  const ppi = data._ppi || false;
+
+  const filasItems = items.map((item, i) => {
+    const bims = BIMESTRES.map((bim, b) => {
+      const key = `item_${i}_bim_${b}`;
+      const val = data[key] || '';
+      const cls = VAL_CLASS[val] || '';
+      if(bloq) return `<td style="text-align:center;padding:0"><div class="bim-val ${cls}">${VAL_LABEL[val]||'—'}</div></td>`;
+      return `<td style="text-align:center;padding:0">
+        <select class="bim-val ${cls}" data-aid="${al.id}" data-key="${key}"
+          onchange="setBimVal('${al.id}','${key}',this)">
+          ${VALS.map(v=>`<option value="${v}" ${val===v?'selected':''}>${VAL_LABEL[v]}</option>`).join('')}
+        </select></td>`;
+    }).join('');
+    const keyFinal = `item_${i}_final`;
+    const valFinal = data[keyFinal] || '';
+    const clsFinal = VAL_CLASS[valFinal] || '';
+    const finalCell = bloq
+      ? `<td style="text-align:center;padding:0;background:#1e293b"><div class="bim-val ${clsFinal}" style="background:inherit">${VAL_LABEL[valFinal]||'—'}</div></td>`
+      : `<td style="text-align:center;padding:0;background:#1e293b"><select class="bim-val ${clsFinal}" style="background:${valFinal?'':''}" data-aid="${al.id}" data-key="${keyFinal}" onchange="setBimVal('${al.id}','${keyFinal}',this)">${VALS.map(v=>`<option value="${v}" ${valFinal===v?'selected':''}>${VAL_LABEL[v]}</option>`).join('')}</select></td>`;
+    return `<tr>
+      <td class="col-item">${item}</td>
+      ${bims}
+      ${finalCell}
+    </tr>`;
+  }).join('');
+
+  // Fila calificación final
+  const keyCalFinal = '_cal_final';
+  const calFinal = data[keyCalFinal] || '';
+  const calFinalCell = bloq
+    ? `<td colspan="4" style="text-align:center;background:#0f172a;color:white;padding:6px;font-weight:900">${calFinal||'—'}</td>`
+    : `<td colspan="4" style="text-align:center;background:#0f172a;padding:4px">
+        <input type="text" value="${calFinal}" placeholder="Cal. final..."
+          style="background:transparent;border:none;color:white;text-align:center;font-weight:900;font-size:12px;width:100%;outline:none;font-family:inherit"
+          onchange="setBimCalFinal('${al.id}','${keyCalFinal}',this.value)"
+          onblur="setBimCalFinal('${al.id}','${keyCalFinal}',this.value)">
+      </td>`;
+
+  return `<div class="bim-alumno-card">
+    <div class="bim-alumno-header" onclick="toggleBimAlumno('bim-body-${al.id}')">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:10px;font-weight:900;color:rgba(255,255,255,.4)">${al.numero}</span>
+        <span style="font-weight:800;font-size:.9375rem">${al.nombre}</span>
+        ${ppi ? '<span class="ppi-badge" style="background:rgba(109,40,217,.4);color:#c4b5fd">PPI**</span>' : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        ${calFinal ? `<span style="font-size:10px;font-weight:900;background:rgba(255,255,255,.15);padding:2px 10px;border-radius:99px">${calFinal}</span>` : ''}
+        <i class="fas fa-chevron-down" style="font-size:10px;color:rgba(255,255,255,.5)"></i>
+      </div>
+    </div>
+    <div id="bim-body-${al.id}">
+      <div class="bim-table-wrap">
+        <table class="bim-table">
+          <thead>
+            <tr>
+              <th class="col-item">Ítem evaluado</th>
+              <th>1°</th><th>2°</th><th>3°</th><th>4°</th>
+              <th style="background:#1e293b">Cal. final</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filasItems}
+            <tr class="fila-final">
+              <td style="background:#0f172a;color:white;padding:6px 8px;font-weight:900;font-size:11px">Calificación final</td>
+              ${calFinalCell}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bim-leyenda">
+        <span style="color:#15803d">■ L = Logrado</span>
+        <span style="color:#a16207">■ EP = En Proceso</span>
+        <span style="color:#dc2626">■ NL = No Logrado</span>
+        <span style="color:#6d28d9">■ PPI** = Proyecto Pedagógico Individual</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleBimAlumno(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+window.toggleBimAlumno = toggleBimAlumno;
+
+function setBimVal(alumnoId, key, selectEl){
+  const val = selectEl.value;
+  // Actualizar clase visual
+  selectEl.className = 'bim-val ' + (VAL_CLASS[val] || '');
+  // Guardar en cambiosNotas
+  if(!cambiosNotas[alumnoId]) cambiosNotas[alumnoId] = {};
+  cambiosNotas[alumnoId][key] = val;
+  document.getElementById('btn-guardar-notas').style.display = 'block';
+  // También actualizar cache local
+  if(!window._bimData[alumnoId]) window._bimData[alumnoId] = {};
+  window._bimData[alumnoId][key] = val;
+}
+window.setBimVal = setBimVal;
+
+function setBimCalFinal(alumnoId, key, valor){
+  if(!cambiosNotas[alumnoId]) cambiosNotas[alumnoId] = {};
+  cambiosNotas[alumnoId][key] = valor;
+  if(!window._bimData[alumnoId]) window._bimData[alumnoId] = {};
+  window._bimData[alumnoId][key] = valor;
+  document.getElementById('btn-guardar-notas').style.display = 'block';
+}
+window.setBimCalFinal = setBimCalFinal;
+
+// Override confirmarNotas para guardar en colección bimestral
+const _origConfirmarNotas = confirmarNotas;
+window.confirmarNotas = async function(){
+  const modalidad = document.getElementById('select-modalidad').value;
+  if(modalidad !== 'INDICADORES'){ await _origConfirmarNotas.call(this); return; }
+  // Guardar datos bimestrales
+  const btn = document.getElementById('btn-guardar-notas').querySelector('button') || event?.currentTarget;
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> GUARDANDO...'; }
+  const batch = db.batch();
+  for(const alumnoId in cambiosNotas){
+    const ref = db.collection('alumnos').doc(alumnoId).collection('notas_v2').doc(`bim_${materiaActiva}_${cursoActivo||''}`);
+    batch.set(ref, cambiosNotas[alumnoId], {merge:true});
+  }
+  await batch.commit();
+  alert('✅ Notas bimestrales guardadas.');
+  cambiosNotas = {};
+  document.getElementById('btn-guardar-notas').style.display = 'none';
+  if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> GUARDAR NOTAS'; }
+};
+
+// setIndicador legacy (por si se llama desde otro lado)
+function setIndicador(alumnoId, indicador, valor){
+  if(!cambiosNotas[alumnoId]) cambiosNotas[alumnoId] = {};
+  if(!cambiosNotas[alumnoId].indicadores) cambiosNotas[alumnoId].indicadores = {};
+  cambiosNotas[alumnoId].indicadores[indicador] = valor;
+  document.getElementById('btn-guardar-notas').style.display = 'block';
 }
 
 // ══ ASISTENCIA ══
