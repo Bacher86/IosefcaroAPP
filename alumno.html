@@ -81,7 +81,7 @@ main{padding:1rem;max-width:540px;margin:0 auto}
 .bienvenida{background:linear-gradient(135deg,#1a1540,#1e1b4b);border:1px solid #312e81;border-radius:var(--r-card);padding:1.25rem;position:relative;overflow:hidden}
 .bienvenida::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,.25),transparent 70%)}
 .bv-greeting{font-size:.6875rem;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.07em}
-.bv-name{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin:.25rem 0 .125rem}
+.bv-name{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin:.25rem 0 .125rem;color:#ffffff}
 .bv-curso{font-size:.75rem;font-weight:600;color:var(--text2)}
 
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.625rem}
@@ -1068,51 +1068,64 @@ async function cargarFaltas(){
 }
 
 async function cargarNotas(){
-  if(!alumnoId)return;
+  const cont = document.getElementById('notas-list');
+  if(!cont) return;
   try{
     const snap=await db.collection('alumnos').doc(alumnoId).collection('notas_v2').get();
+    if(snap.empty){cont.innerHTML='<div class="empty">Sin notas registradas todavía.</div>';return;}
+
+    // Verificar visibilidad por período
     const porMateria={};
     snap.forEach(doc=>{
       const d=doc.data();
       if(!d.materia)return;
-      if(!porMateria[d.materia])porMateria[d.materia]={materia:d.materia,periodos:[]};
+      if(!porMateria[d.materia])porMateria[d.materia]={periodos:[]};
       const notas=Object.entries(d).filter(([k])=>k.startsWith('nota_'));
-      porMateria[d.materia].periodos.push({periodo:d.periodo||'—',notas});
+      porMateria[d.materia].periodos.push({periodo:d.periodo||'—',notas,periodoSlug:d.periodo||'GEN'});
     });
-    // Periodos para filtro
-    const todosLosPer=[...new Set(snap.docs.map(d=>d.data().periodo).filter(Boolean))];
-    const filtroEl=document.querySelector('#per-todos').parentNode;
-    todosLosPer.forEach(p=>{
-      filtroEl.insertAdjacentHTML('beforeend',`<button class="filter-chip" id="per-${p}" onclick="filtrarPeriodo('${p}')">${p}</button>`);
-    });
-    const cont=document.getElementById('notas-list');
-    if(!Object.keys(porMateria).length){cont.innerHTML='<div class="empty">Sin calificaciones disponibles aún.</div>';return;}
+
     cont.innerHTML='';
-    Object.values(porMateria).forEach(m=>{
-      const todasNotas=m.periodos.flatMap(p=>p.notas.map(([,v])=>parseFloat(v))).filter(n=>!isNaN(n));
+    for(const [mat,m] of Object.entries(porMateria)){
+      // Check visibility for each period
+      const periodosVisibles=[];
+      for(const p of m.periodos){
+        const slug=p.periodoSlug;
+        const visDoc=await db.collection('config_visibilidad').doc(slug).get().catch(()=>null);
+        const vis=visDoc?.exists?visDoc.data():{};
+        // Check if notes are visible for this course+period
+        const cursoKey=`${slug}_${alumnoCurso}`;
+        const visible=vis[cursoKey]===true||vis['todos']===true;
+        if(visible) periodosVisibles.push(p);
+      }
+
+      if(!periodosVisibles.length){
+        // No periods published yet for this materia
+        cont.innerHTML+=`<div class="tablon-card" style="opacity:.6">
+          <div class="tablon-top">
+            <p class="tablon-title">${mat}</p>
+            <p class="tablon-body" style="font-size:.75rem;color:var(--text3)">Las notas de esta materia aún no están publicadas.</p>
+          </div>
+        </div>`;
+        continue;
+      }
+
+      const todasNotas=periodosVisibles.flatMap(p=>p.notas.map(([,v])=>parseFloat(v))).filter(n=>!isNaN(n));
       const prom=todasNotas.length?Math.round((todasNotas.reduce((a,b)=>a+b,0)/todasNotas.length)*10)/10:null;
       const nivelNota=prom===null?'sin':prom>=7?'alta':prom>=6?'media':'baja';
-      const notasHtml=m.periodos.flatMap(p=>p.notas.map(([k,v])=>`<span class="nota-mini">${k.replace('nota_','')} <span>${v}</span></span>`)).join('');
-      cont.innerHTML+=`<div class="materia-row">
-        <div class="materia-name">
-          <span>${m.materia}</span>
-          <span class="nota-chip ${nivelNota}">${prom!==null?prom:'—'}</span>
+      const notasHtml=periodosVisibles.flatMap(p=>p.notas.map(([k,v])=>`<span class="nota-mini">${k.replace('nota_','')} <span>${v}</span></span>`)).join('');
+      cont.innerHTML+=`<div class="tablon-card">
+        <div class="tablon-top">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem">
+            <p class="tablon-title">${mat}</p>
+            <span class="nota-chip ${nivelNota}">${prom!==null?prom:'—'}</span>
+          </div>
+          <div class="notas-detalle">${notasHtml||'<span style="font-size:.75rem;color:var(--text3)">Sin notas</span>'}</div>
         </div>
-        <div class="notas-detalle">${notasHtml||'<span style="font-size:.75rem;color:var(--text3)">Sin notas</span>'}</div>
       </div>`;
-    });
-  }catch(e){document.getElementById('notas-list').innerHTML='<div class="empty">No se pudieron cargar las notas.</div>';}
+    }
+    if(!cont.innerHTML) cont.innerHTML='<div class="empty">Sin notas publicadas todavía.</div>';
+  }catch(e){cont.innerHTML='<div class="empty">No se pudieron cargar las notas.</div>';}
 }
-
-function filtrarPeriodo(p){
-  document.querySelectorAll('[id^="per-"]').forEach(b=>b.classList.remove('active'));
-  document.getElementById('per-'+p)?.classList.add('active');
-  // Si necesita filtrado real, recargar con filtro
-  cargarNotas();
-}
-
-// ── AGENDA ──
-let eventosAll=[];
 async function cargarAgenda(){
   try{
     const s=await db.collection('eventos').orderBy('fecha','asc').get();
