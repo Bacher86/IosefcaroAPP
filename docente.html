@@ -147,7 +147,6 @@ body.app-ready nav.app-nav{display:flex}
 .subtab-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .obs-tipo-btn{transition:all .15s;cursor:pointer;font-family:inherit}
 .obs-tipo-btn.active{border-color:#7c3aed!important;background:#f5f3ff!important;color:#6d28d9!important}
-.mtab-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 
 /* ── TABLA BIMESTRAL ── */
 .bim-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -617,7 +616,6 @@ body.app-ready nav.app-nav{display:flex}
       <div class="grid grid-cols-4 gap-2">
         <button onclick="selTipoTablon('tarea')" id="tipo-tarea" class="tipo-tablon-btn active"><span class="text-xl">📋</span>Tarea</button>
         <button onclick="selTipoTablon('material')" id="tipo-material" class="tipo-tablon-btn"><span class="text-xl">📚</span>Material</button>
-        <button onclick="selTipoTablon('estudio')" id="tipo-estudio" class="tipo-tablon-btn"><span class="text-xl">🧠</span>Study</button>
         <button onclick="selTipoTablon('recordatorio')" id="tipo-recordatorio" class="tipo-tablon-btn"><span class="text-xl">🔔</span>Aviso</button>
       </div>
       <div>
@@ -642,43 +640,6 @@ body.app-ready nav.app-nav{display:flex}
         <label class="text-[9px] font-black text-slate-400 uppercase">Descripción</label>
         <textarea id="tablon-texto" rows="4" class="input-pro mt-1 resize-none" placeholder="Detallá la tarea, material o mensaje..."></textarea>
       </div>
-      <div id="tablon-estudio-opts" class="hidden space-y-3 border-t pt-3">
-        <p class="text-[9px] font-black text-slate-400 uppercase">Config. Iosi Study (IA)</p>
-        <div class="grid grid-cols-3 gap-2">
-          <div><label class="text-[9px] font-black text-slate-400 uppercase">Tipo</label>
-            <select id="tablon-tipoQuiz" class="input-pro mt-1 text-xs"><option value="mixto">Mixto</option><option value="multiple">Solo múltiple</option><option value="desarrollo">Solo desarrollo</option></select>
-          </div>
-          <div><label class="text-[9px] font-black text-slate-400 uppercase">Múltiple</label><input type="number" id="tablon-cantMultiple" value="4" min="1" max="10" class="input-pro mt-1 text-xs"></div>
-          <div><label class="text-[9px] font-black text-slate-400 uppercase">Desarrollo</label><input type="number" id="tablon-cantDesarrollo" value="1" min="0" max="5" class="input-pro mt-1 text-xs"></div>
-        </div>
-        <!-- Material para Iosi -->
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase block mb-1.5">📎 Material de estudio para Iosi</label>
-          <p class="text-[10px] text-slate-400 mb-2">Iosi generará preguntas basadas en este contenido. Podés escribir, pegar un texto o subir un archivo.</p>
-          <!-- Tabs: texto / archivo -->
-          <div class="flex bg-slate-100 rounded-xl p-1 gap-1 mb-2">
-            <button onclick="setMaterialTab('texto')" id="mtab-texto" class="mtab-btn active flex-1 py-1.5 rounded-lg text-[10px] font-black">✏️ Escribir / pegar</button>
-            <button onclick="setMaterialTab('archivo')" id="mtab-archivo" class="mtab-btn flex-1 py-1.5 rounded-lg text-[10px] font-black text-slate-500">📄 Subir archivo</button>
-          </div>
-          <!-- Texto -->
-          <div id="material-tab-texto">
-            <textarea id="tablon-contenidoEstudio" rows="5" class="input-pro resize-none" placeholder="Pegá el texto del apunte, resumen o tema que Iosi va a usar para generar preguntas..."></textarea>
-          </div>
-          <!-- Archivo -->
-          <div id="material-tab-archivo" class="hidden">
-            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-center cursor-pointer hover:border-blue-400 transition" onclick="document.getElementById('estudio-file-input').click()">
-              <i class="fas fa-file-upload text-2xl text-slate-300 mb-1"></i>
-              <p class="font-bold text-slate-500 text-xs">Tocá para subir un archivo de texto o PDF</p>
-              <p id="estudio-file-nombre" class="text-[10px] text-slate-400 mt-1">Sin archivo seleccionado</p>
-              <input type="file" id="estudio-file-input" accept=".txt,.pdf,.md,.docx" class="hidden" onchange="procesarArchivoEstudio(this)">
-            </div>
-            <div id="estudio-file-preview" class="hidden mt-2 bg-slate-50 rounded-xl p-3">
-              <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Vista previa del contenido extraído</p>
-              <p id="estudio-file-texto" class="text-xs text-slate-600 line-clamp-4"></p>
-              <p id="estudio-file-chars" class="text-[9px] text-slate-400 mt-1"></p>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
         <input type="checkbox" id="tablon-notif" checked class="accent-emerald-600 w-4 h-4">
@@ -1648,7 +1609,6 @@ function selTipoTablon(tipo){
   tipoTablonActivo=tipo;
   document.querySelectorAll('.tipo-tablon-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tipo-'+tipo).classList.add('active');
-  document.getElementById('tablon-estudio-opts').classList.toggle('hidden',tipo!=='estudio');
   document.getElementById('tablon-fecha-wrap').classList.toggle('hidden',tipo==='recordatorio');
 }
 function poblarCursosTablon(){
@@ -1679,7 +1639,6 @@ async function publicarTablon(){
   if(!cursosAsignados.includes(curso)){alert('Solo podés publicar para tus cursos asignados.');return;}
   const btn=document.querySelector('[onclick="publicarTablon()"]');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
   const data={titulo,texto,tipo:tipoTablonActivo,curso,materia,docenteEmail,docenteNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),fechaEntrega:fecha||null,leidos:[]};
-  if(tipoTablonActivo==='estudio'){data.tipoQuiz=document.getElementById('tablon-tipoQuiz').value;data.cantMultiple=parseInt(document.getElementById('tablon-cantMultiple').value)||4;data.cantDesarrollo=parseInt(document.getElementById('tablon-cantDesarrollo').value)||1;data.contenidoEstudio=document.getElementById('tablon-contenidoEstudio').value.trim()||texto;}
   try{
     let docRef;
     if(idEditando){await db.collection('tablon').doc(idEditando).update(data);}
@@ -1697,8 +1656,8 @@ async function cargarTablonDocente(){
   try{
     let snap;try{snap=await db.collection('tablon').where('docenteEmail','==',docenteEmail).orderBy('creadoEn','desc').limit(30).get();}catch(e){snap=await db.collection('tablon').where('docenteEmail','==',docenteEmail).get();}
     cont.innerHTML='';if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste nada en el tablón.</p>';return;}
-    const tipoIcon={tarea:'📋',material:'📚',estudio:'🧠',recordatorio:'🔔'};
-    const tipoColor={tarea:'bg-amber-50 text-amber-700 border-amber-200',material:'bg-blue-50 text-blue-700 border-blue-200',estudio:'bg-violet-50 text-violet-700 border-violet-200',recordatorio:'bg-slate-50 text-slate-600 border-slate-200'};
+    const tipoIcon={tarea:'📋',material:'📚',recordatorio:'🔔'};
+    const tipoColor={tarea:'bg-amber-50 text-amber-700 border-amber-200',material:'bg-blue-50 text-blue-700 border-blue-200',recordatorio:'bg-slate-50 text-slate-600 border-slate-200'};
     snap.forEach(doc=>{
       const d=doc.data();const fecha=d.creadoEn?.toDate?.();const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'—';
       const lbl=(tipoIcon[d.tipo]||'📌')+' '+(d.tipo||'');const cls=tipoColor[d.tipo]||'bg-slate-50 text-slate-600 border-slate-200';
@@ -1866,9 +1825,9 @@ function togglePreviewTablon(){
   if(!panel.classList.contains('hidden')) actualizarPreviewTablon();
 }
 function actualizarPreviewTablon(){
-  const tipoIcon = {tarea:'📋',material:'📚',estudio:'🧠',recordatorio:'🔔'};
-  const tipoLabel = {tarea:'Tarea',material:'Material',estudio:'Iosi Study',recordatorio:'Aviso'};
-  const tipoBg = {tarea:'bg-amber-100 text-amber-700',material:'bg-blue-100 text-blue-700',estudio:'bg-violet-100 text-violet-700',recordatorio:'bg-slate-100 text-slate-600'};
+  const tipoIcon = {tarea:'📋',material:'📚',recordatorio:'🔔'};
+  const tipoLabel = {tarea:'Tarea',material:'Material',recordatorio:'Aviso'};
+  const tipoBg = {tarea:'bg-amber-100 text-amber-700',material:'bg-blue-100 text-blue-700',recordatorio:'bg-slate-100 text-slate-600'};
   const t = tipoTablonActivo;
   document.getElementById('prev-icon').textContent = tipoIcon[t]||'📌';
   const tipoBadge = document.getElementById('prev-tipo');
@@ -2460,50 +2419,6 @@ window.toggleEntrega=async function(tablonId,alumnoId,btn){
 // ══ FIN MEJORAS FINALES ══
 
 // ── IOSI STUDY: CARGA DE MATERIAL ──
-window.setMaterialTab = function setMaterialTab(tab){
-  ['texto','archivo'].forEach(t=>{
-    document.getElementById('material-tab-'+t).classList.toggle('hidden', t!==tab);
-    const btn=document.getElementById('mtab-'+t);
-    btn.classList.toggle('active', t===tab);
-    btn.classList.toggle('text-slate-500', t!==tab);
-  });
-};
-window.setMaterialTab = setMaterialTab;
-
-window.procesarArchivoEstudio = async function procesarArchivoEstudio(inp){
-  const file = inp.files[0]; if(!file) return;
-  document.getElementById('estudio-file-nombre').textContent = file.name;
-  let texto = '';
-  if(file.type === 'application/pdf'){
-    // PDF: leer como texto plano (extracción básica del stream de texto)
-    try{
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8 = new Uint8Array(arrayBuffer);
-      let raw = '';
-      for(let i=0;i<uint8.length;i++) raw += String.fromCharCode(uint8[i]);
-      // Extraer texto plano del PDF (streams BT...ET)
-      const matches = raw.match(/BT[\s\S]*?ET/g) || [];
-      const textoExtraido = matches.map(blk=>{
-        return blk.replace(/BT|ET/g,'').replace(/Tj|TJ|Td|TD|Tf|Tm|T\*|Ts|Tc|Tw|TL/g,' ')
-          .replace(/\((.*?)\)/g,'$1').replace(/\[(.*?)\]/g,'$1')
-          .replace(/\\n/g,'\n').replace(/\s+/g,' ').trim();
-      }).join(' ');
-      texto = textoExtraido || 'No se pudo extraer texto de este PDF. Pegá el contenido manualmente.';
-    }catch(e){
-      texto = 'Error al leer el PDF. Pegá el contenido en la pestaña "Escribir / pegar".';
-    }
-  } else {
-    // TXT, MD, etc — leer como texto
-    texto = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsText(file,'UTF-8'); });
-  }
-  // Guardar en el textarea oculto
-  document.getElementById('tablon-contenidoEstudio').value = texto;
-  // Mostrar preview
-  document.getElementById('estudio-file-texto').textContent = texto.slice(0,400)+(texto.length>400?'...':'');
-  document.getElementById('estudio-file-chars').textContent = texto.length + ' caracteres extraídos';
-  document.getElementById('estudio-file-preview').classList.remove('hidden');
-};
-
 } // fin _initDocente
 </script>
 
