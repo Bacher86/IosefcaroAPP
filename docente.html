@@ -134,6 +134,10 @@ body.app-ready nav.app-nav{display:flex}
 .resumen-asis-bar{height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;margin-top:4px}
 .resumen-asis-fill{height:100%;border-radius:99px;background:#22c55e;transition:width .4s}
 .vista-nota-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.modo-nota-btn{cursor:pointer;font-family:inherit;transition:all .15s;text-align:left}
+.modo-nota-btn.active{border-color:#2563eb!important;background:#eff6ff!important}
+.modo-nota-btn.active p:first-child{color:#1d4ed8!important}
+.modo-nota-btn.active p:last-child{color:#3b82f6!important}
 .alumno-nota-card{background:white;border:1px solid #e2e8f0;border-radius:1.25rem;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .plantilla-btn{background:white;border:1.5px solid #e2e8f0;border-radius:1rem;padding:.625rem .875rem;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s;color:#0f172a}
 .plantilla-btn:hover{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
@@ -306,8 +310,25 @@ body.app-ready nav.app-nav{display:flex}
 
   <!-- ══ NOTAS ══ -->
   <section id="tab-notas" class="tab-content space-y-4">
-    <!-- Toggle vista + CSV -->
-    <div class="flex items-center justify-between">
+    <!-- Selector de modo prominente -->
+    <div class="bg-white border rounded-2xl p-3 shadow-sm">
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Modo de carga de notas</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="setModoNotas('NUMERICO')" id="modo-btn-NUMERICO"
+          class="modo-nota-btn active p-3 rounded-xl border-2 border-blue-400 bg-blue-50 text-left">
+          <p class="font-black text-sm text-blue-700">📊 Numérico</p>
+          <p class="text-[10px] text-blue-500">Notas del 1 al 10</p>
+        </button>
+        <button onclick="setModoNotas('INDICADORES')" id="modo-btn-INDICADORES"
+          class="modo-nota-btn p-3 rounded-xl border-2 border-slate-200 bg-slate-50 text-left">
+          <p class="font-black text-sm text-slate-600">📋 Boletín Bimestral</p>
+          <p class="text-[10px] text-slate-400">L / EP / NL por ítem · 4 bimestres</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Toggle vista (solo visible en modo numérico) -->
+    <div id="toggle-vista-wrap" class="flex items-center justify-between">
       <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
         <button id="btn-vista-grilla" onclick="setVistaNota('grilla')" class="vista-nota-btn active px-3 py-1.5 rounded-lg text-xs font-black transition-all">
           <i class="fas fa-table mr-1"></i>Grilla
@@ -1716,6 +1737,9 @@ async function eliminarTablonDocente(id){if(!confirm('¿Eliminar esta publicaci�
 // ── 9: Vista por alumno ──
 let vistaNotaActual = 'grilla';
 function setVistaNota(vista){
+  const modalidad = document.getElementById('select-modalidad').value;
+  // Si estamos en modo indicadores, el toggle grilla/alumno no aplica
+  if(modalidad === 'INDICADORES') return;
   vistaNotaActual = vista;
   document.getElementById('btn-vista-grilla').classList.toggle('active', vista==='grilla');
   document.getElementById('btn-vista-alumno').classList.toggle('active', vista==='alumno');
@@ -1724,7 +1748,7 @@ function setVistaNota(vista){
   document.getElementById('grilla-container').classList.toggle('hidden', vista!=='grilla');
   document.getElementById('ctrl-examenes').classList.toggle('hidden', vista!=='grilla');
   document.getElementById('vista-alumno-container').classList.toggle('hidden', vista!=='alumno');
-  document.getElementById('indicadores-container').classList.toggle('hidden', true);
+  document.getElementById('indicadores-container').classList.add('hidden');
   if(vista==='alumno') renderVistaAlumno();
 }
 
@@ -1918,6 +1942,41 @@ async function verQuienLeyo(id, titulo){
 }
 
 window.setVistaNota = setVistaNota;
+
+// ── Cambio de modo de notas (Numérico / Bimestral) ──
+window.setModoNotas = function setModoNotas(modo){
+  // Update select-modalidad hidden selector
+  const sel = document.getElementById('select-modalidad');
+  if(sel) sel.value = modo;
+
+  // Update button styles
+  ['NUMERICO','INDICADORES'].forEach(m => {
+    const btn = document.getElementById('modo-btn-'+m);
+    if(!btn) return;
+    if(m === modo){
+      btn.classList.add('active');
+      btn.style.borderColor = '#2563eb';
+      btn.style.background = '#eff6ff';
+    } else {
+      btn.classList.remove('active');
+      btn.style.borderColor = '#e2e8f0';
+      btn.style.background = '#f8fafc';
+    }
+  });
+
+  // Show/hide toggle vista (only for numeric)
+  const toggleWrap = document.getElementById('toggle-vista-wrap');
+  if(toggleWrap) toggleWrap.style.display = modo === 'NUMERICO' ? 'flex' : 'none';
+
+  // Hide all containers first
+  document.getElementById('grilla-container').classList.add('hidden');
+  document.getElementById('ctrl-examenes').classList.add('hidden');
+  document.getElementById('indicadores-container').classList.add('hidden');
+  document.getElementById('vista-alumno-container').classList.add('hidden');
+
+  // Re-trigger load
+  cargarAlumnos();
+};
 window.abrirImportCSV = abrirImportCSV;
 window.cerrarImportCSV = cerrarImportCSV;
 window.procesarCSVNotas = procesarCSVNotas;
@@ -2209,6 +2268,19 @@ window._switchTab=function switchTab(tab){
   if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
   if(tab==='dashboard'){cargarDashboardStats();cargarUltimaActividad();}
   if(tab==='informes'){poblarCursosSelectorInforme();}
+  if(tab==='notas'){
+    // Sync modo buttons with current select-modalidad value
+    const modalidad = document.getElementById('select-modalidad')?.value || 'NUMERICO';
+    const toggleWrap = document.getElementById('toggle-vista-wrap');
+    if(toggleWrap) toggleWrap.style.display = modalidad === 'NUMERICO' ? 'flex' : 'none';
+    ['NUMERICO','INDICADORES'].forEach(m => {
+      const btn = document.getElementById('modo-btn-'+m);
+      if(!btn) return;
+      btn.classList.toggle('active', m===modalidad);
+      btn.style.borderColor = m===modalidad ? '#2563eb' : '#e2e8f0';
+      btn.style.background = m===modalidad ? '#eff6ff' : '#f8fafc';
+    });
+  }
   document.getElementById('tab-'+tab)?.classList.add('active');
   document.getElementById('btn-'+tab)?.classList.add('active');
   document.getElementById('btn-guardar-notas').style.display='none';
