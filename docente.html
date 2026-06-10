@@ -7,85 +7,256 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+/* ── CRÍTICO: no depende de Tailwind ── */
+#login-screen{position:fixed;inset:0;background:white;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
+#login-screen input{width:100%;max-width:300px;padding:1rem;background:#f1f5f9;border-radius:1rem;border:none;outline:none;font-size:1rem;font-family:inherit;font-weight:600;margin-bottom:.75rem;display:block}
+#login-screen button{width:100%;max-width:300px;background:#0f172a;color:white;padding:1rem;border-radius:1rem;border:none;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;margin-top:.25rem}
+#login-screen .login-icon{width:64px;height:64px;background:#2563eb;border-radius:1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1.25rem;color:white}
+main{display:none}
+header{display:none}
+nav{display:none}
+body.app-ready main{display:block}
+body.app-ready header{display:block}
+body.app-ready nav{display:block}
 *{box-sizing:border-box}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-bottom:130px}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f4f8;padding-bottom:80px;min-height:100vh}
+
+/* ── TABS ── */
 .tab-content{display:none}.tab-content.active{display:block}
-.nav-btn.active{color:#2563eb;background:#eff6ff;border-radius:1rem}
-.btn-flotante{position:fixed;bottom:100px;left:1rem;right:1rem;z-index:900;display:none}
-.input-pro{border:1.5px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;font-size:14px;font-family:inherit;background:white;transition:border-color .2s}
-.input-pro:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.grilla-wrapper{overflow-x:auto;border:1px solid #e2e8f0;border-radius:1rem}
+
+/* ── NAV ── */
+.nav-btn{flex:1;padding:.6rem .25rem .5rem;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:800;color:#94a3b8;border:none;background:none;cursor:pointer;transition:color .15s;text-transform:uppercase;letter-spacing:.03em}
+.nav-btn i{font-size:18px;transition:color .15s}
+.nav-btn.active{color:#2563eb}
+.nav-btn.active i{color:#2563eb}
+.nav-pill{position:absolute;top:4px;right:50%;transform:translateX(50%);background:#ef4444;color:#fff;font-size:8px;font-weight:900;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* ── INPUTS ── */
+.input-pro{border:1.5px solid #e2e8f0;border-radius:1rem;padding:.75rem;outline:none;width:100%;font-size:14px;font-family:inherit;background:white;transition:border-color .2s;color:#0f172a}
+.input-pro:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+
+/* ── GRILLA ── */
+.grilla-wrapper{overflow-x:auto;border:1px solid #e2e8f0;border-radius:1rem;background:white}
 .grilla-tabla{width:100%;border-collapse:collapse;font-size:12px}
-.grilla-tabla th{background:#0f172a;color:white;padding:8px 10px;font-weight:800;font-size:10px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0;z-index:10}
+.grilla-tabla th{background:#0f172a;color:white;padding:10px 10px;font-weight:800;font-size:10px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0;z-index:10}
 .grilla-tabla th.sticky-col{left:0;z-index:11;min-width:140px}
 .grilla-tabla td{border:1px solid #f1f5f9;padding:0}
 .grilla-tabla td.sticky-col{background:#f8fafc;font-weight:700;font-size:12px;padding:8px 10px;position:sticky;left:0;z-index:5;min-width:140px;white-space:nowrap}
 .grilla-inp{width:64px;height:40px;border:none;text-align:center;font-weight:800;font-size:13px;outline:none;background:transparent;font-family:inherit;display:block;margin:0 auto}
 .grilla-inp:focus{background:#eff6ff}
-.alerta-falta{background:#fef3c7;border:1px solid #f59e0b;border-radius:.6rem;padding:3px 8px;font-size:10px;font-weight:800;color:#92400e;display:inline-block}
-.tipo-tablon-btn{transition:all .15s}
-.tipo-tablon-btn.active{border-color:#2563eb!important;background:#eff6ff!important;color:#1d4ed8!important}
+
+/* ── NOTA COLORS ── */
+.nota-verde{background:#dcfce7!important;color:#15803d!important}
+.nota-roja{background:#fee2e2!important;color:#dc2626!important}
+.nota-amarilla{background:#fef9c3!important;color:#a16207!important}
+
+/* ── ASISTENCIA ── */
+.asis-card{background:white;border:1px solid #e2e8f0;border-radius:1.25rem;padding:14px 16px;display:grid;align-items:center;gap:12px;grid-template-columns:1fr auto auto;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:border-color .15s}
+.asis-card.presente{border-left:4px solid #22c55e}
+.asis-card.ausente{border-left:4px solid #ef4444}
+.asis-card.tarde{border-left:4px solid #f59e0b}
+.asis-btn{width:38px;height:38px;border-radius:.875rem;font-weight:800;font-size:12px;border:none;cursor:pointer;transition:all .15s;background:#f1f5f9;color:#64748b}
+.asis-btn.activo-P{background:#22c55e;color:white;box-shadow:0 2px 8px rgba(34,197,94,.4)}
+.asis-btn.activo-A{background:#ef4444;color:white;box-shadow:0 2px 8px rgba(239,68,68,.4)}
+.asis-btn.activo-T{background:#f59e0b;color:white;box-shadow:0 2px 8px rgba(245,158,11,.4)}
+.asis-racha{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}
+.alerta-falta{background:#fef3c7;border:1px solid #f59e0b;border-radius:.5rem;padding:2px 7px;font-size:10px;font-weight:800;color:#92400e;display:inline-block}
+
+/* ── CURSO CARDS ── */
+.curso-card{border:2px solid #e2e8f0;border-radius:1.5rem;padding:1rem 1.25rem;cursor:pointer;transition:all .15s;background:white}
+.curso-card.activo{border-color:#2563eb;background:#eff6ff}
+.curso-card:hover{border-color:#93c5fd}
+
+/* ── TABS TIPO TABLÓN ── */
+.tipo-tablon-btn{transition:all .15s;border-radius:1rem;display:flex;flex-direction:column;align-items:center;gap:6px;padding:.75rem .5rem;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:800;font-size:11px;cursor:pointer}
+.tipo-tablon-btn.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+
+/* ── DASHBOARD CARDS ── */
+.dash-stat{background:white;border:1px solid #e2e8f0;border-radius:1.25rem;padding:1rem;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.dash-quick{background:white;border:1.5px solid #e2e8f0;border-radius:1.25rem;padding:.875rem 1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:all .15s;font-family:inherit;border:none;text-align:left;width:100%}
+.dash-quick:hover{background:#f8fafc;border-color:#93c5fd}
+
+/* ── ALERTA AUSENCIAS ── */
+.alerta-ausencias{background:#fef3c7;border:1px solid #fbbf24;border-radius:1rem;padding:.75rem 1rem;margin-bottom:.75rem}
+
+/* ── FLOTANTE ── */
+.btn-flotante{position:fixed;bottom:88px;left:1rem;right:1rem;z-index:900;display:none;max-width:428px;margin:0 auto}
+
+/* ── HEADER ── */
+.header-curso-badge{background:#eff6ff;color:#2563eb;font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.header-materia-badge{background:#f0fdf4;color:#16a34a;font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;white-space:nowrap}
+
+/* ── RESUMEN ASISTENCIA ── */
+.resumen-asis-bar{height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;margin-top:4px}
+.resumen-asis-fill{height:100%;border-radius:99px;background:#22c55e;transition:width .4s}
+.vista-nota-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.alumno-nota-card{background:white;border:1px solid #e2e8f0;border-radius:1.25rem;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.plantilla-btn{background:white;border:1.5px solid #e2e8f0;border-radius:1rem;padding:.625rem .875rem;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s;color:#0f172a}
+.plantilla-btn:hover{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+.preview-tablon{background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:1.25rem;padding:1rem;font-size:12px}
+.lecturas-bar{height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:4px}
+.lecturas-fill{height:100%;border-radius:99px;background:#22c55e;transition:width .4s}
+.subtab-btn.active{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.obs-tipo-btn{transition:all .15s;cursor:pointer;font-family:inherit}
+.obs-tipo-btn.active{border-color:#7c3aed!important;background:#f5f3ff!important;color:#6d28d9!important}
+
+/* ── SWIPE ASISTENCIA ── */
+.asis-card-wrap{position:relative;overflow:hidden;border-radius:1.25rem;margin-bottom:.5rem}
+.asis-swipe-hint{position:absolute;inset:0;display:flex;align-items:center;border-radius:1.25rem;pointer-events:none;transition:opacity .1s;opacity:0}
+.asis-swipe-hint.izq{background:#22c55e;justify-content:flex-start;padding-left:1rem}
+.asis-swipe-hint.der{background:#ef4444;justify-content:flex-end;padding-right:1rem}
+.asis-card{position:relative;z-index:1;touch-action:pan-y;user-select:none}
+
+/* ── HISTORIAL MODAL ── */
+#modal-historial{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+#modal-historial.open{display:flex}
+.historial-sheet{background:white;border-radius:2rem 2rem 0 0;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;padding:1.5rem}
+.hcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:.75rem}
+.hcal-dia{aspect-ratio:1;border-radius:.5rem;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.hcal-P{background:#dcfce7;color:#15803d}
+.hcal-A{background:#fee2e2;color:#dc2626}
+.hcal-T{background:#fef9c3;color:#a16207}
+.hcal-x{background:#f8fafc;color:#e2e8f0}
+
+/* ── DUPLICAR / TAREAS MODAL ── */
+#modal-duplicar{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:1.25rem}
+#modal-duplicar.open{display:flex}
+#modal-entregas{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:500;display:none;align-items:flex-end;justify-content:center}
+#modal-entregas.open{display:flex}
+.entrega-item{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f8fafc;border-radius:.875rem;margin-bottom:.375rem}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center p-8 text-center">
-  <div class="w-16 h-16 bg-blue-600 rounded-2xl mb-5 flex items-center justify-center text-white text-2xl shadow-xl">
-    <i class="fas fa-chalkboard-teacher"></i>
+<div id="login-screen">
+  <div class="login-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+  <h2 style="font-size:1.5rem;font-weight:900;margin-bottom:.25rem">Panel Docente</h2>
+  <p style="color:#94a3b8;font-size:.875rem;margin-bottom:1.5rem">Ingresá con tu email registrado</p>
+  <input type="email" id="login-email" placeholder="Tu email">
+  <div id="pass-wrap" style="display:none;width:100%;max-width:300px;margin-bottom:.75rem">
+    <input type="password" id="login-pass" placeholder="Contraseña" style="margin-bottom:0">
   </div>
-  <h2 class="text-2xl font-black mb-1">Panel Docente</h2>
-  <p class="text-slate-400 text-sm mb-6">Ingresá con tu email registrado</p>
-  <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu email">
-  <div id="pass-wrap" class="hidden w-full max-w-xs mb-4">
-    <input type="password" id="login-pass" class="w-full p-4 bg-slate-100 rounded-2xl font-bold outline-none" placeholder="Contraseña (si tenés)">
-  </div>
-  <p id="login-error" class="text-red-500 text-xs font-bold mb-3 hidden"></p>
-  <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">Entrar</button>
+  <p id="login-error" style="color:#ef4444;font-size:.75rem;font-weight:700;margin-bottom:.5rem;display:none"></p>
+  <button onclick="login()">Entrar →</button>
 </div>
 
 <!-- HEADER -->
-<header class="p-4 bg-white border-b sticky top-0 z-50 flex justify-between items-center gap-3 shadow-sm">
-  <div class="flex-1 min-w-0">
-    <h1 id="doc-nom" class="font-black text-lg leading-none truncate">Hola</h1>
-    <div class="flex items-center gap-3 mt-1">
-      <div>
-        <label class="text-[8px] font-black text-slate-400 uppercase">Materia</label>
-        <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[10px] font-bold text-blue-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
-      </div>
-      <div>
-        <label class="text-[8px] font-black text-slate-400 uppercase">Período</label>
-        <select id="select-periodo" onchange="cargarAlumnos()" class="text-[10px] font-bold text-emerald-600 uppercase bg-transparent outline-none border-none p-0 cursor-pointer block"></select>
+<header class="bg-white border-b sticky top-0 z-50 shadow-sm">
+  <div class="flex justify-between items-center gap-3 px-4 py-3 max-w-lg mx-auto">
+    <div class="flex-1 min-w-0">
+      <h1 id="doc-nom" class="font-black text-base leading-none truncate">Hola</h1>
+      <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+        <span id="badge-curso" class="header-curso-badge hidden">—</span>
+        <span id="badge-materia" class="header-materia-badge hidden">—</span>
+        <span id="badge-periodo" class="text-[9px] font-bold text-slate-400">—</span>
       </div>
     </div>
+    <div class="flex items-center gap-2">
+      <a href="eoe.html" class="w-9 h-9 bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white rounded-lg flex items-center justify-center transition-all" title="Panel EOE">
+        <i class="fas fa-shield-alt text-sm"></i>
+      </a>
+      <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none" onchange="cargarAlumnos()">
+    </div>
   </div>
-  <div class="flex items-center gap-2">
-    <a href="eoe.html" class="w-9 h-9 bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white rounded-lg flex items-center justify-center transition-all" title="Ir al panel EOE">
-      <i class="fas fa-shield-alt text-sm"></i>
-    </a>
-    <input type="date" id="fecha-hoy" class="bg-slate-100 p-2 rounded-lg text-[10px] font-bold outline-none" onchange="cargarAlumnos()">
+  <!-- Selectores compactos -->
+  <div class="flex gap-2 px-4 pb-3 max-w-lg mx-auto overflow-x-auto" id="selectors-bar">
+    <select id="select-materia" onchange="actualizarMateriaActiva()" class="text-[11px] font-bold bg-slate-100 rounded-xl px-3 py-2 outline-none border-none cursor-pointer flex-shrink-0"></select>
+    <select id="select-periodo" onchange="cargarAlumnos()" class="text-[11px] font-bold bg-slate-100 rounded-xl px-3 py-2 outline-none border-none cursor-pointer flex-shrink-0"></select>
+    <select id="select-modalidad" onchange="cargarAlumnos()" class="text-[11px] font-bold bg-slate-100 rounded-xl px-3 py-2 outline-none border-none cursor-pointer flex-shrink-0">
+      <option value="NUMERICO">Numérico 1-10</option>
+      <option value="INDICADORES">Por indicadores</option>
+    </select>
   </div>
 </header>
 
 <main class="p-4 max-w-lg mx-auto">
 
-  <!-- NOTAS -->
-  <section id="tab-notas" class="tab-content active">
-    <div class="grid grid-cols-2 gap-2 mb-4">
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Curso</label>
-        <select id="select-curso" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border font-bold mt-1 outline-none text-xs shadow-sm"></select>
+  <!-- ══ DASHBOARD ══ -->
+  <section id="tab-dashboard" class="tab-content active space-y-4">
+    <div>
+      <h2 class="font-black text-xl" id="dash-saludo">Buenos días</h2>
+      <p class="text-slate-400 text-xs mt-0.5" id="dash-fecha">—</p>
+    </div>
+
+    <!-- Stats rápidas -->
+    <div class="grid grid-cols-3 gap-3">
+      <div class="dash-stat">
+        <p class="text-2xl font-black text-blue-600" id="dash-total-alumnos">—</p>
+        <p class="text-[10px] font-bold text-slate-400 mt-1">Alumnos hoy</p>
       </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase ml-1">Modalidad</label>
-        <select id="select-modalidad" onchange="cargarAlumnos()" class="w-full p-3 bg-white rounded-xl border font-bold mt-1 outline-none text-xs shadow-sm text-blue-600">
-          <option value="NUMERICO">Numérico (1-10)</option>
-          <option value="INDICADORES">Carga bimestral por indicadores</option>
-        </select>
+      <div class="dash-stat">
+        <p class="text-2xl font-black text-emerald-600" id="dash-presentes">—</p>
+        <p class="text-[10px] font-bold text-slate-400 mt-1">Presentes</p>
+      </div>
+      <div class="dash-stat">
+        <p class="text-2xl font-black text-rose-500" id="dash-ausentes">—</p>
+        <p class="text-[10px] font-bold text-slate-400 mt-1">Ausentes</p>
       </div>
     </div>
-    <div id="periodo-info" class="bg-blue-50 border border-blue-100 rounded-2xl p-3 mb-4 hidden">
+
+    <!-- Alerta ausencias reiteradas -->
+    <div id="dash-alertas-wrap" class="hidden"></div>
+
+    <!-- Accesos rápidos -->
+    <div>
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Acceso rápido</p>
+      <div class="space-y-2">
+        <button class="dash-quick" onclick="switchTab('asis')">
+          <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-clipboard-check text-emerald-600"></i></div>
+          <div><p class="font-black text-sm">Pasar lista</p><p class="text-[11px] text-slate-400" id="dash-quick-asis-sub">Tocá para cargar asistencia de hoy</p></div>
+          <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+        </button>
+        <button class="dash-quick" onclick="switchTab('notas')">
+          <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-star-half-alt text-blue-600"></i></div>
+          <div><p class="font-black text-sm">Cargar notas</p><p class="text-[11px] text-slate-400">Numérico o por indicadores</p></div>
+          <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+        </button>
+        <button class="dash-quick" onclick="switchTab('tablon')">
+          <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-layer-group text-amber-600"></i></div>
+          <div><p class="font-black text-sm">Publicar en tablón</p><p class="text-[11px] text-slate-400">Tareas, materiales y recordatorios</p></div>
+          <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+        </button>
+        <button class="dash-quick" onclick="switchTab('informes')">
+          <div class="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-file-alt text-violet-600"></i></div>
+          <div><p class="font-black text-sm">Escribir informe</p><p class="text-[11px] text-slate-400">Pedagógico y observaciones</p></div>
+          <i class="fas fa-chevron-right text-slate-300 ml-auto"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Última actividad -->
+    <div>
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Última actividad</p>
+      <div id="dash-actividad" class="space-y-2">
+        <p class="text-xs text-slate-400 text-center py-4">Cargando...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ NOTAS ══ -->
+  <section id="tab-notas" class="tab-content space-y-4">
+    <!-- Toggle vista + CSV -->
+    <div class="flex items-center justify-between">
+      <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+        <button id="btn-vista-grilla" onclick="setVistaNota('grilla')" class="vista-nota-btn active px-3 py-1.5 rounded-lg text-xs font-black transition-all">
+          <i class="fas fa-table mr-1"></i>Grilla
+        </button>
+        <button id="btn-vista-alumno" onclick="setVistaNota('alumno')" class="vista-nota-btn px-3 py-1.5 rounded-lg text-xs font-black transition-all text-slate-500">
+          <i class="fas fa-user mr-1"></i>Por alumno
+        </button>
+      </div>
+      <button onclick="abrirImportCSV()" class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black px-3 py-2 rounded-xl hover:bg-emerald-100 transition">
+        <i class="fas fa-file-csv"></i> Importar CSV
+      </button>
+    </div>
+    <!-- Selector de curso visual -->
+    <div>
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Seleccioná el curso</p>
+      <div id="cursos-grid" class="grid grid-cols-2 gap-2 mb-4"></div>
+    </div>
+    <div id="periodo-info" class="bg-blue-50 border border-blue-100 rounded-2xl p-3 hidden">
       <p id="periodo-info-txt" class="text-xs font-bold text-blue-700"></p>
     </div>
     <div id="ctrl-examenes" class="mb-4 flex items-center gap-2 flex-wrap hidden">
@@ -102,6 +273,36 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
       </div>
     </div>
     <div id="indicadores-container" class="hidden space-y-3"></div>
+
+    <!-- Vista por alumno -->
+    <div id="vista-alumno-container" class="hidden space-y-3"></div>
+
+    <!-- Modal importar CSV notas -->
+    <div id="modal-csv-notas" class="hidden fixed inset-0 bg-black/60 z-[300] flex items-end justify-center">
+      <div class="bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <h3 class="font-black text-lg">Importar notas desde CSV</h3>
+          <button onclick="cerrarImportCSV()" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-500 font-bold">✕</button>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 font-bold">
+          Columnas esperadas: <b>alumno, nota_1, nota_2, nota_3...</b><br>
+          El nombre del alumno debe coincidir exactamente con el registrado.
+        </div>
+        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 transition" onclick="document.getElementById('csv-notas-input').click()">
+          <i class="fas fa-file-csv text-3xl text-slate-300 mb-2"></i>
+          <p class="font-bold text-slate-500 text-sm">Tocá para seleccionar el CSV</p>
+          <p id="csv-notas-nombre" class="text-xs text-slate-400 mt-1">Sin archivo</p>
+          <input type="file" id="csv-notas-input" accept=".csv" class="hidden" onchange="procesarCSVNotas(this)">
+        </div>
+        <div id="csv-notas-preview" class="hidden">
+          <div id="csv-notas-tabla" class="overflow-x-auto text-xs bg-slate-50 rounded-xl p-3 max-h-40 overflow-y-auto"></div>
+          <p id="csv-notas-info" class="text-xs text-slate-500 mt-2"></p>
+          <button onclick="ejecutarImportNotas()" class="w-full mt-3 bg-blue-600 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-2">
+            <i class="fas fa-upload"></i> <span id="csv-notas-btn-txt">IMPORTAR</span>
+          </button>
+        </div>
+      </div>
+    </div>
     <div id="btn-guardar-notas" class="btn-flotante">
       <button onclick="confirmarNotas()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
         <i class="fas fa-save"></i> GUARDAR NOTAS
@@ -109,13 +310,37 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     </div>
   </section>
 
-  <!-- ASISTENCIA -->
-  <section id="tab-asis" class="tab-content">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-black text-xl">Pasar Lista</h3>
-      <span id="asis-fecha-label" class="text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full"></span>
+  <!-- ══ ASISTENCIA ══ -->
+  <section id="tab-asis" class="tab-content space-y-3">
+    <!-- Header con fecha y resumen mensual -->
+    <div class="bg-white rounded-2xl border p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="font-black text-lg">Pasar Lista</h3>
+          <p class="text-[11px] text-slate-400" id="asis-fecha-label">—</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[9px] font-black text-slate-400 uppercase">Este mes</p>
+          <p class="font-black text-sm"><span id="asis-mes-presentes" class="text-emerald-600">—</span> <span class="text-slate-300">/</span> <span id="asis-mes-total" class="text-slate-500">—</span></p>
+        </div>
+      </div>
+      <!-- Barra de asistencia mensual -->
+      <div>
+        <div class="flex justify-between text-[9px] font-bold text-slate-400 mb-1">
+          <span>Asistencia del mes</span>
+          <span id="asis-mes-pct">—</span>
+        </div>
+        <div class="resumen-asis-bar"><div class="resumen-asis-fill" id="asis-mes-fill" style="width:0%"></div></div>
+      </div>
     </div>
+
+    <!-- Alerta alumnos con 3+ faltas seguidas -->
+    <div id="asis-alertas-bloque" class="hidden"></div>
+
+    <!-- Lista alumnos -->
+    <p class="text-[9px] font-black text-slate-400 uppercase px-1">Lista del día</p>
     <div id="lista-asis" class="space-y-2"></div>
+
     <div id="btn-guardar-asis" class="btn-flotante">
       <button onclick="confirmarAsistencia()" class="w-full bg-emerald-500 text-white p-4 rounded-2xl font-black shadow-2xl flex items-center justify-center gap-2">
         <i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA
@@ -123,41 +348,132 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     </div>
   </section>
 
-  <!-- INFORMES -->
+  <!-- ══ INFORMES ══ -->
   <section id="tab-informes" class="tab-content space-y-4">
-    <h3 class="font-black text-xl">Informes Pedagógicos</h3>
-    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-      <div class="grid grid-cols-2 gap-3">
+
+    <!-- Sub-tabs informes -->
+    <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+      <button id="subtab-btn-informe" onclick="setSubtabInformes('informe')" class="subtab-btn active flex-1 py-2 rounded-lg text-xs font-black transition-all">📝 Informe</button>
+      <button id="subtab-btn-observaciones" onclick="setSubtabInformes('observaciones')" class="subtab-btn flex-1 py-2 rounded-lg text-xs font-black transition-all text-slate-500">🗒 Observaciones</button>
+      <button id="subtab-btn-grafico" onclick="setSubtabInformes('grafico')" class="subtab-btn flex-1 py-2 rounded-lg text-xs font-black transition-all text-slate-500">📊 Rendimiento</button>
+      <button id="subtab-btn-foro" onclick="setSubtabInformes('foro')" class="subtab-btn flex-1 py-2 rounded-lg text-xs font-black transition-all text-slate-500">💬 Foro</button>
+    </div>
+
+    <!-- INFORME PEDAGÓGICO -->
+    <div id="subtab-informe" class="space-y-4">
+      <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Alumno</label>
+            <select id="informe-alumno" onchange="cargarInformes();cargarObservaciones()" class="input-pro mt-1 text-xs"></select>
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Período</label>
+            <select id="informe-periodo" class="input-pro mt-1 text-xs"></select>
+          </div>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Informe pedagógico</label>
+          <textarea id="informe-texto" class="input-pro mt-1 h-28 resize-none" placeholder="Desempeño, logros, áreas a mejorar..."></textarea>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Indicadores de desempeño</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-participacion" class="accent-blue-600"> Participación</label>
+            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-entregas" class="accent-blue-600"> Entregas</label>
+            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-conducta" class="accent-blue-600"> Conducta</label>
+            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-progreso" class="accent-blue-600"> Progreso</label>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="guardarInforme()" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">
+            <i class="fas fa-save mr-2"></i>GUARDAR INFORME
+          </button>
+          <button onclick="generarPDFAlumno()" class="bg-slate-800 text-white px-4 rounded-2xl font-bold flex items-center gap-2 shadow-lg" title="Generar PDF">
+            <i class="fas fa-file-pdf"></i> PDF
+          </button>
+        </div>
+      </div>
+      <div id="lista-informes" class="space-y-3"></div>
+    </div>
+
+    <!-- OBSERVACIONES -->
+    <div id="subtab-observaciones" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+        <div class="flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-xl p-3">
+          <i class="fas fa-shield-alt text-violet-500 flex-shrink-0"></i>
+          <p class="text-xs font-bold text-violet-800">Las observaciones también son visibles para el equipo EOE.</p>
+        </div>
         <div>
           <label class="text-[9px] font-black text-slate-400 uppercase">Alumno</label>
-          <select id="informe-alumno" onchange="cargarInformes()" class="input-pro mt-1 text-xs"></select>
+          <select id="obs-alumno" class="input-pro mt-1 text-xs"></select>
         </div>
         <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Período</label>
-          <select id="informe-periodo" class="input-pro mt-1 text-xs"></select>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Tipo</label>
+          <div class="grid grid-cols-3 gap-2 mt-1">
+            <button onclick="selTipoObs('academica')" id="obs-tipo-academica" class="obs-tipo-btn active p-2 rounded-xl text-xs font-black border-2 border-blue-300 bg-blue-50 text-blue-700">📚 Académica</button>
+            <button onclick="selTipoObs('conductual')" id="obs-tipo-conductual" class="obs-tipo-btn p-2 rounded-xl text-xs font-black border-2 border-slate-200 bg-slate-50 text-slate-500">⚠️ Conductual</button>
+            <button onclick="selTipoObs('emocional')" id="obs-tipo-emocional" class="obs-tipo-btn p-2 rounded-xl text-xs font-black border-2 border-slate-200 bg-slate-50 text-slate-500">💙 Emocional</button>
+          </div>
         </div>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Informe</label>
-        <textarea id="informe-texto" class="input-pro mt-1 h-28" placeholder="Desempeño, logros, áreas a mejorar..."></textarea>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase mb-2 block">Indicadores de desempeño</label>
-        <div class="grid grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-participacion" class="accent-blue-600"> Participación</label>
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-entregas" class="accent-blue-600"> Entregas</label>
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-conducta" class="accent-blue-600"> Conducta</label>
-          <label class="flex items-center gap-2 text-sm font-bold cursor-pointer bg-slate-50 p-3 rounded-xl"><input type="checkbox" id="ind-progreso" class="accent-blue-600"> Progreso</label>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Observación</label>
+          <textarea id="obs-texto" class="input-pro mt-1 h-24 resize-none" placeholder="Ej: Habló con la familia, dificultades en comprensión lectora, cambio de actitud..."></textarea>
         </div>
+        <button onclick="guardarObservacion()" class="w-full bg-violet-600 text-white p-4 rounded-2xl font-bold shadow-lg">
+          <i class="fas fa-save mr-2"></i>GUARDAR OBSERVACIÓN
+        </button>
       </div>
-      <button onclick="guardarInforme()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">
-        <i class="fas fa-save mr-2"></i>GUARDAR INFORME
-      </button>
+      <div id="lista-observaciones" class="space-y-3"></div>
     </div>
-    <div id="lista-informes" class="space-y-3"></div>
+
+    <!-- GRÁFICO DE RENDIMIENTO -->
+    <div id="subtab-grafico" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-3xl border shadow-sm">
+        <h4 class="font-black text-base mb-1">Rendimiento del curso</h4>
+        <p class="text-[11px] text-slate-400 mb-4">Promedio por evaluación — <span id="grafico-curso-label">—</span></p>
+        <div id="grafico-container" style="height:220px;position:relative">
+          <p class="text-slate-400 text-xs text-center py-8">Seleccioná un curso y cargá notas para ver el gráfico.</p>
+        </div>
+      </div>
+      <div class="bg-white p-5 rounded-3xl border shadow-sm">
+        <h4 class="font-black text-sm mb-3">Distribución de notas</h4>
+        <div id="distribucion-container" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- FORO DEL DOCENTE -->
+    <div id="subtab-foro" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+        <h4 class="font-black text-base">Foro del curso</h4>
+        <p class="text-[11px] text-slate-400 -mt-2">Respondé preguntas de tus alumnos. Podés habilitar o deshabilitar las respuestas.</p>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Curso del foro</label>
+          <select id="foro-doc-curso" class="input-pro mt-1 text-xs" onchange="cargarForoDocente()"></select>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+          <div>
+            <p class="text-xs font-black">Permitir respuestas de alumnos</p>
+            <p class="text-[10px] text-slate-400">Si está desactivado, solo vos podés publicar</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="foro-permite-respuestas" checked class="sr-only peer" onchange="togglePermiteRespuestas()">
+            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
+          </label>
+        </div>
+        <textarea id="foro-doc-msg" rows="3" class="input-pro resize-none" placeholder="Escribí un mensaje o respondé al foro del curso..."></textarea>
+        <button onclick="publicarMensajeForo()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+          <i class="fas fa-paper-plane"></i> PUBLICAR EN FORO
+        </button>
+      </div>
+      <div id="lista-foro-doc" class="space-y-3">
+        <p class="text-slate-400 text-xs text-center py-4">Seleccioná un curso para ver el foro.</p>
+      </div>
+    </div>
+
   </section>
 
-  <!-- CALENDARIO -->
+  <!-- ══ CALENDARIO ══ -->
   <section id="tab-calendario" class="tab-content space-y-4">
     <h3 class="font-black text-xl">Avisos de Pruebas</h3>
     <p class="text-slate-400 text-xs -mt-2">Publicá evaluaciones y entregas para que las familias las vean en su agenda.</p>
@@ -167,9 +483,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
         <button id="btn-cancelar-cal-doc" onclick="cancelarEditarEventoDoc()" class="hidden text-[9px] font-black text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">✕ Cancelar</button>
       </div>
-      <div>
-        <input type="text" id="cal-titulo" placeholder="Ej: Parcial de Matemática" class="input-pro mt-1">
-      </div>
+      <input type="text" id="cal-titulo" placeholder="Ej: Parcial de Matemática" class="input-pro">
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-[9px] font-black text-slate-400 uppercase">Fecha</label>
@@ -180,10 +494,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
           <select id="cal-curso" class="input-pro mt-1 text-xs"></select>
         </div>
       </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Descripción (opcional)</label>
-        <textarea id="cal-desc" class="input-pro mt-1 h-16 resize-none" placeholder="Temas a evaluar, materiales necesarios..."></textarea>
-      </div>
+      <textarea id="cal-desc" class="input-pro h-16 resize-none" placeholder="Temas a evaluar, materiales necesarios..."></textarea>
       <button onclick="guardarEvento()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-lg">
         <i class="fas fa-calendar-plus mr-2"></i><span id="btn-cal-doc-txt">PUBLICAR EN AGENDA</span>
       </button>
@@ -192,41 +503,31 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <div id="lista-cal-doc" class="space-y-2"></div>
   </section>
 
-  <!-- TABLÓN ALUMNOS ══════════════════ -->
+  <!-- ══ TABLÓN ══ -->
   <section id="tab-tablon" class="tab-content space-y-4 pb-24">
     <div>
       <h3 class="font-black text-xl">Tablón de Alumnos</h3>
-      <p class="text-slate-400 text-xs -mt-1">Publicá tareas, materiales de estudio y mensajes que aparecen directamente en el app del alumno con notificación.</p>
+      <p class="text-slate-400 text-xs -mt-1">Publicá tareas, materiales y mensajes con notificación al alumno.</p>
     </div>
-
     <div class="bg-white rounded-3xl border shadow-sm p-5 space-y-4">
       <input type="hidden" id="tablon-id-editando">
       <div class="flex items-center justify-between">
         <label class="text-[9px] font-black text-slate-400 uppercase">Tipo de publicación</label>
         <button id="btn-cancelar-tablon" onclick="cancelarEditarTablon()" class="hidden text-[9px] font-black text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">✕ Cancelar</button>
       </div>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="selTipoTablon('tarea')" id="tipo-tarea" class="tipo-tablon-btn active flex flex-col items-center gap-1.5 p-3 border-2 border-blue-400 bg-blue-50 rounded-2xl text-blue-700 font-black text-xs transition-all">
-          <span class="text-xl">📋</span>Tarea
-        </button>
-        <button onclick="selTipoTablon('material')" id="tipo-material" class="tipo-tablon-btn flex flex-col items-center gap-1.5 p-3 border-2 border-slate-200 bg-slate-50 rounded-2xl text-slate-500 font-black text-xs transition-all">
-          <span class="text-xl">📚</span>Material
-        </button>
-        <button onclick="selTipoTablon('estudio')" id="tipo-estudio" class="tipo-tablon-btn flex flex-col items-center gap-1.5 p-3 border-2 border-slate-200 bg-slate-50 rounded-2xl text-slate-500 font-black text-xs transition-all">
-          <span class="text-xl">🧠</span>Iosi Study
-        </button>
-        <button onclick="selTipoTablon('recordatorio')" id="tipo-recordatorio" class="tipo-tablon-btn flex flex-col items-center gap-1.5 p-3 border-2 border-slate-200 bg-slate-50 rounded-2xl text-slate-500 font-black text-xs transition-all">
-          <span class="text-xl">🔔</span>Recordatorio
-        </button>
+      <div class="grid grid-cols-4 gap-2">
+        <button onclick="selTipoTablon('tarea')" id="tipo-tarea" class="tipo-tablon-btn active"><span class="text-xl">📋</span>Tarea</button>
+        <button onclick="selTipoTablon('material')" id="tipo-material" class="tipo-tablon-btn"><span class="text-xl">📚</span>Material</button>
+        <button onclick="selTipoTablon('estudio')" id="tipo-estudio" class="tipo-tablon-btn"><span class="text-xl">🧠</span>Study</button>
+        <button onclick="selTipoTablon('recordatorio')" id="tipo-recordatorio" class="tipo-tablon-btn"><span class="text-xl">🔔</span>Aviso</button>
       </div>
-
       <div>
         <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
         <input type="text" id="tablon-titulo" class="input-pro mt-1" placeholder="Ej: Tarea de Matemática para el viernes">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Curso destinatario</label>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
           <select id="tablon-curso" class="input-pro mt-1 text-xs"></select>
         </div>
         <div>
@@ -235,220 +536,317 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
         </div>
       </div>
       <div id="tablon-fecha-wrap">
-        <label class="text-[9px] font-black text-slate-400 uppercase">Fecha de entrega (opcional)</label>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Fecha de entrega</label>
         <input type="date" id="tablon-fecha" class="input-pro mt-1">
       </div>
       <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Descripción / Contenido</label>
-        <textarea id="tablon-texto" rows="5" class="input-pro mt-1 resize-none" placeholder="Detallá la tarea, material o mensaje..."></textarea>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Descripción</label>
+        <textarea id="tablon-texto" rows="4" class="input-pro mt-1 resize-none" placeholder="Detallá la tarea, material o mensaje..."></textarea>
       </div>
       <div id="tablon-estudio-opts" class="hidden space-y-3 border-t pt-3">
-        <p class="text-[9px] font-black text-slate-400 uppercase">Configuración Iosi Study (IA)</p>
+        <p class="text-[9px] font-black text-slate-400 uppercase">Config. Iosi Study (IA)</p>
         <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="text-[9px] font-black text-slate-400 uppercase">Tipo quiz</label>
-            <select id="tablon-tipoQuiz" class="input-pro mt-1 text-xs">
-              <option value="mixto">Mixto</option>
-              <option value="multiple">Solo múltiple</option>
-              <option value="desarrollo">Solo desarrollo</option>
-            </select>
+          <div><label class="text-[9px] font-black text-slate-400 uppercase">Tipo</label>
+            <select id="tablon-tipoQuiz" class="input-pro mt-1 text-xs"><option value="mixto">Mixto</option><option value="multiple">Solo múltiple</option><option value="desarrollo">Solo desarrollo</option></select>
           </div>
-          <div>
-            <label class="text-[9px] font-black text-slate-400 uppercase">Múltiple</label>
-            <input type="number" id="tablon-cantMultiple" value="4" min="1" max="10" class="input-pro mt-1 text-xs">
-          </div>
-          <div>
-            <label class="text-[9px] font-black text-slate-400 uppercase">Desarrollo</label>
-            <input type="number" id="tablon-cantDesarrollo" value="1" min="0" max="5" class="input-pro mt-1 text-xs">
-          </div>
+          <div><label class="text-[9px] font-black text-slate-400 uppercase">Múltiple</label><input type="number" id="tablon-cantMultiple" value="4" min="1" max="10" class="input-pro mt-1 text-xs"></div>
+          <div><label class="text-[9px] font-black text-slate-400 uppercase">Desarrollo</label><input type="number" id="tablon-cantDesarrollo" value="1" min="0" max="5" class="input-pro mt-1 text-xs"></div>
         </div>
-        <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Contenido para el quiz (puede ser igual a la descripción o más detallado)</label>
-          <textarea id="tablon-contenidoEstudio" rows="4" class="input-pro mt-1 resize-none" placeholder="Pegá el texto, resumen o apuntes que Iosi va a usar para generar las preguntas..."></textarea>
-        </div>
+        <textarea id="tablon-contenidoEstudio" rows="4" class="input-pro resize-none" placeholder="Texto/apuntes para generar preguntas..."></textarea>
       </div>
       <div class="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
         <input type="checkbox" id="tablon-notif" checked class="accent-emerald-600 w-4 h-4">
         <div>
-          <label for="tablon-notif" class="text-xs font-black text-emerald-800 cursor-pointer">Enviar notificación a los alumnos</label>
-          <p class="text-[10px] text-emerald-600">Aparece como alerta en el tablón del alumno con punto rojo</p>
+          <label for="tablon-notif" class="text-xs font-black text-emerald-800 cursor-pointer">Notificar a los alumnos</label>
+          <p class="text-[10px] text-emerald-600">Aparece con punto rojo en el tablón</p>
         </div>
       </div>
+      <!-- Plantillas rápidas -->
+      <div>
+        <p class="text-[9px] font-black text-slate-400 uppercase mb-2">⚡ Plantillas rápidas</p>
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          <button class="plantilla-btn flex-shrink-0" onclick="usarPlantilla('tarea_manana')">📋 Tarea mañana</button>
+          <button class="plantilla-btn flex-shrink-0" onclick="usarPlantilla('eval_semana')">📝 Eval. próxima semana</button>
+          <button class="plantilla-btn flex-shrink-0" onclick="usarPlantilla('materiales')">🎒 Traer materiales</button>
+          <button class="plantilla-btn flex-shrink-0" onclick="usarPlantilla('recordatorio_fecha')">🔔 Recordatorio de fecha</button>
+        </div>
+      </div>
+
       <button onclick="publicarTablon()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
         <i class="fas fa-paper-plane"></i><span id="btn-tablon-txt">PUBLICAR EN TABLÓN</span>
       </button>
-    </div>
 
-    <h4 class="font-black text-sm text-slate-700">Mis publicaciones</h4>
-    <div id="lista-tablon-doc" class="space-y-2">
-      <p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+      <!-- Vista previa -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[9px] font-black text-slate-400 uppercase">Vista previa (como lo ve el alumno)</p>
+          <button onclick="togglePreviewTablon()" class="text-[9px] font-bold text-blue-500">Ver / ocultar</button>
+        </div>
+        <div id="preview-tablon-panel" class="hidden preview-tablon">
+          <div class="flex items-center gap-2 mb-2">
+            <span id="prev-icon" class="text-lg">📋</span>
+            <span id="prev-tipo" class="text-[9px] font-black uppercase px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">Tarea</span>
+            <span id="prev-materia" class="text-[9px] font-bold text-slate-400"></span>
+          </div>
+          <p id="prev-titulo" class="font-black text-sm mb-1">Sin título</p>
+          <p id="prev-texto" class="text-xs text-slate-500 leading-relaxed">—</p>
+          <p id="prev-fecha" class="text-[10px] text-slate-400 mt-2 hidden">📅 Entrega: —</p>
+          <div class="flex items-center gap-1 mt-3 pt-2 border-t border-slate-200">
+            <div class="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-[8px] font-black">D</div>
+            <span id="prev-docente" class="text-[10px] font-bold text-slate-500"></span>
+          </div>
+        </div>
+      </div>
     </div>
+    <h4 class="font-black text-sm text-slate-700">Mis publicaciones</h4>
+    <div id="lista-tablon-doc" class="space-y-2"></div>
   </section>
 
-</main>
+  <!-- ══ COMUNICADOS ══ -->
   <section id="tab-comunicados" class="tab-content space-y-4 pb-24">
-    <div>
-      <h3 class="font-black text-xl">Avisos a Familias</h3>
-      <p class="text-slate-400 text-xs -mt-1">Publicá avisos para los cursos que tenés asignados. Las familias los ven en el Muro.</p>
-    </div>
-
+    <div><h3 class="font-black text-xl">Avisos a Familias</h3>
+    <p class="text-slate-400 text-xs -mt-1">Comunicados que ven los padres y tutores en su portal.</p></div>
     <div class="bg-white rounded-3xl border shadow-sm p-5 space-y-4">
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Título del aviso</label>
-        <input type="text" id="com-titulo" class="input-pro mt-1" placeholder="Ej: Parcial la próxima semana">
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
+        <input type="text" id="com-titulo" class="input-pro mt-1" placeholder="Ej: Reunión de padres — próximo jueves"></div>
+      <div><label class="text-[9px] font-black text-slate-400 uppercase">Mensaje</label>
+        <textarea id="com-texto" rows="4" class="input-pro mt-1 resize-none" placeholder="Escribí el comunicado completo..."></textarea></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-[9px] font-black text-slate-400 uppercase">Curso</label>
+          <select id="com-curso" class="input-pro mt-1 text-xs"></select></div>
+        <div><label class="text-[9px] font-black text-slate-400 uppercase">Categoría</label>
+          <select id="com-tag" class="input-pro mt-1 text-xs">
+            <option value="info">📘 Información</option>
+            <option value="urgente">🔴 Urgente</option>
+            <option value="tramite">📋 Trámite</option>
+          </select></div>
       </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Mensaje</label>
-        <textarea id="com-texto" rows="4" class="input-pro mt-1 resize-none" placeholder="Escribí el mensaje para las familias..."></textarea>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Curso destinatario</label>
-        <select id="com-curso" class="input-pro mt-1 text-xs"></select>
-      </div>
-      <div>
-        <label class="text-[9px] font-black text-slate-400 uppercase">Tipo</label>
-        <select id="com-tag" class="input-pro mt-1 text-xs">
-          <option value="info">📣 Información</option>
-          <option value="urgente">🔴 Urgente</option>
-          <option value="tramite">📋 Trámite</option>
-        </select>
-      </div>
-      <button onclick="publicarComunicadoDocente()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg">
-        <i class="fas fa-paper-plane mr-2"></i>PUBLICAR AVISO
+      <button onclick="publicarComunicadoDocente()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+        <i class="fas fa-paper-plane"></i> PUBLICAR AVISO
       </button>
     </div>
-
     <h4 class="font-black text-sm text-slate-700">Mis avisos publicados</h4>
-    <div id="lista-com-doc" class="space-y-2">
-      <p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
-    </div>
+    <div id="lista-com-doc" class="space-y-2"></div>
   </section>
 
 </main>
 
-<!-- NAV -->
-<nav class="fixed bottom-0 left-4 right-4 bg-white border shadow-2xl rounded-[2rem] mb-4 flex justify-around p-2 z-[1000]">
-  <button onclick="switchTab('notas')"      id="btn-notas"      class="nav-btn active flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-    <i class="fas fa-table text-lg"></i>NOTAS
-  </button>
-  <button onclick="switchTab('asis')"       id="btn-asis"       class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-    <i class="fas fa-list-check text-lg"></i>ASIST.
-  </button>
-  <button onclick="switchTab('informes')"   id="btn-informes"   class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-    <i class="fas fa-file-alt text-lg"></i>INF.
-  </button>
-  <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-    <i class="fas fa-calendar text-lg"></i>CAL.
-  </button>
-  <button onclick="switchTab('comunicados')" id="btn-comunicados" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]">
-    <i class="fas fa-bullhorn text-lg"></i>AVISOS
-  </button>
-  <button onclick="switchTab('tablon')" id="btn-tablon" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 font-bold text-[9px]" style="position:relative">
-    <i class="fas fa-layer-group text-lg"></i>TABLÓN
-  </button>
+<!-- NAV BOTTOM -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t z-50 flex items-center px-2 pb-safe" style="padding-bottom:env(safe-area-inset-bottom,0)">
+  <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn active"><i class="fas fa-home"></i>Inicio</button>
+  <button onclick="switchTab('asis')"      id="btn-asis"      class="nav-btn"><i class="fas fa-clipboard-check"></i>Lista</button>
+  <button onclick="switchTab('notas')"     id="btn-notas"     class="nav-btn"><i class="fas fa-star-half-alt"></i>Notas</button>
+  <button onclick="switchTab('tablon')"    id="btn-tablon"    class="nav-btn" style="position:relative"><i class="fas fa-layer-group"></i>Tablón</button>
+  <button onclick="switchTab('comunicados')" id="btn-comunicados" class="nav-btn"><i class="fas fa-bullhorn"></i>Avisos</button>
+  <button onclick="switchTab('informes')"  id="btn-informes"  class="nav-btn"><i class="fas fa-file-alt"></i>Informes</button>
+  <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn"><i class="fas fa-calendar-alt"></i>Agenda</button>
 </nav>
-<script>
-// ── Firebase ready queue ──
-window._fbReady = false;
-window._fbQueue = [];
-window._fbOnReady = function(fn){ if(window._fbReady){ fn(); } else { window._fbQueue.push(fn); } };
-
-// Universal stub: catches calls to any function not yet defined
-// For each known onclick function, create a stub that queues execution
-(function(){
-  var _stubs = ['validarIngreso','switchTab','cerrarSesion','cargaManualAlumno',
-    'generarPassAlumno','previewAluMail','cargarCSVAlumnos','ejecutarCSVAlumnos',
-    'procesarCSV','procesarCSVDocentes','crearStaff','crearDocente','crearMaestro',
-    'crearCurso','crearPeriodo','crearCiclo','activarCiclo','eliminarDoc',
-    'exportarExcel','guardarPerfilAlumno','cerrarModalAlumno','cerrarModalStaff',
-    'abrirModalAlumno','eliminarAlumnosSeleccionados','eliminarFamiliasSeleccionadas',
-    'eliminarStaff','guardarEdicionStaff','toggleSeleccionarTodo',
-    'toggleSeleccionarTodoAlumnos','agregarTag','quitarTag','agregarContactoEmergencia',
-    'publicarTodoBoletin','ocultarTodoBoletin','publicarTodoElPeriodo','ocultarTodoElPeriodo',
-    'togglePeriodoActivo','agregarIndicador','eliminarIndicador','login',
-    'confirmarNotas','confirmarAsistencia','guardarInforme','publicarComunicadoDocente',
-    'eliminarComunicadoDocente','publicarTablon','cancelarEditarTablon',
-    'editarTablonDocente','eliminarTablonDocente','selTipoTablon',
-    'guardarEvento','editarEventoDoc','eliminarEventoDoc','cancelarEditarEventoDoc',
-    'agregarColumna','eliminarColumna','setAsis','setUniforme'];
-  _stubs.forEach(function(name){
-    if(typeof window[name]==='undefined'){
-      window[name]=function(){
-        var args=arguments;
-        window._fbOnReady(function(){ if(typeof window[name]==='function' && window[name]!==arguments.callee){ window[name].apply(window,args); } });
-      };
-    }
-  });
-})();
-</script>
-
-<script>
-// ── Stubs globales (disponibles antes de Firebase) ──
-// Evitan "function not defined" mientras carga Firebase
-function login(e){if(window._doLogin)window._doLogin(e);else{var b=document.getElementById('login-error');if(b){b.textContent='Cargando...';b.classList.remove('hidden');}setTimeout(function(){if(window._doLogin)window._doLogin(e);},2000);}}
-function switchTab(t){if(window._switchTab)window._switchTab(t);}
-function cerrarLogin(){var s=document.getElementById('login-screen');if(s)s.style.display='none';}
-</script>
 
 <script>
 var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
 var _fqi=0;
-function _loadNextFB(){if(_fqi>=_fq.length){_initDocente();return;}var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=_loadNextFB;document.head.appendChild(s);}
+function _loadNextFB(){
+  if(_fqi>=_fq.length){_initDocente();return;}
+  var s=document.createElement('script');s.src=_fq[_fqi++];s.onload=_loadNextFB;s.onerror=_loadNextFB;document.head.appendChild(s);
+}
 _loadNextFB();
+
+// Stubs globales — evitan "not defined" antes de Firebase
+function login(e){if(window._doLogin)window._doLogin(e);else setTimeout(function(){login(e);},300);}
+function switchTab(t){if(window._switchTab)window._switchTab(t);else setTimeout(function(){switchTab(t);},300);}
+window.selTipoTablon=window.publicarTablon=window.cancelarEditarTablon=window.editarTablonDocente=window.eliminarTablonDocente=window.publicarComunicadoDocente=window.eliminarComunicadoDocente=window.guardarEvento=window.editarEventoDoc=window.eliminarEventoDoc=window.cancelarEditarEventoDoc=window.guardarInforme=window.agregarColumna=window.eliminarColumna=window.confirmarNotas=window.confirmarAsistencia=window.setAsis=window.setUniforme=window.agregarIndicador=window.eliminarIndicador=function(){setTimeout(arguments.callee.bind(this,...arguments),300);};
 
 function _initDocente(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);
-window._fbReady=true;window._fbQueue.forEach(function(f){f();});window._fbQueue=[];
 const db=firebase.firestore();
 
 const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
-let docenteData=null, docenteEmail="", materiaActiva="";
-let periodoActivo={slug:"",nombre:"",id:"",bloqueado:false};
-let cambiosNotas={}, cambiosAsis={};
-let columnaExamenes=[], alumnosActuales=[];
+let docenteData=null,docenteEmail='',materiaActiva='';
+let periodoActivo={slug:'',nombre:'',id:'',bloqueado:false};
+let cambiosNotas={},cambiosAsis={};
+let columnaExamenes=[],alumnosActuales=[];
+let cursoActivo='';
 
 document.getElementById('fecha-hoy').valueAsDate=new Date();
 
+// ══ STUBS REALES ══
+window.selTipoTablon=selTipoTablon;window.publicarTablon=publicarTablon;window.cancelarEditarTablon=cancelarEditarTablon;
+window.editarTablonDocente=editarTablonDocente;window.eliminarTablonDocente=eliminarTablonDocente;
+window.publicarComunicadoDocente=publicarComunicadoDocente;window.eliminarComunicadoDocente=eliminarComunicadoDocente;
+window.guardarEvento=guardarEvento;window.editarEventoDoc=editarEventoDoc;window.eliminarEventoDoc=eliminarEventoDoc;
+window.cancelarEditarEventoDoc=cancelarEditarEventoDoc;window.guardarInforme=guardarInforme;
+window.agregarColumna=agregarColumna;window.eliminarColumna=eliminarColumna;
+window.confirmarNotas=confirmarNotas;window.confirmarAsistencia=confirmarAsistencia;
+window.setAsis=setAsis;window.setUniforme=setUniforme;
+window.agregarIndicador=agregarIndicador;window.eliminarIndicador=eliminarIndicador;
+
 // ══ LOGIN ══
-window._doLogin = async function login(emailOverride){
+window._doLogin=async function login(emailOverride){
   const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
   const pass=(document.getElementById('login-pass')?.value||'').trim();
-  const errEl=document.getElementById('login-error');
-  errEl.classList.add('hidden');
-  if(!email){errEl.textContent="Ingresá tu email.";errEl.classList.remove('hidden');return;}
-  // Llave maestra — acceso completo
-  if(email===LLAVE_EMAIL&&pass===LLAVE_PASS){docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};docenteEmail=email;document.getElementById('login-screen').style.display='none';document.getElementById('doc-nom').innerText='Administrador';await cargarPeriodos();return;}
-  // Si ingresaron llave maestra sin contraseña, pedir contraseña
-  if(email===LLAVE_EMAIL&&!pass){document.getElementById('pass-wrap').classList.remove('hidden');errEl.textContent="Ingresá la contraseña maestra.";errEl.classList.remove('hidden');return;}
+  const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
+  if(!email){errEl.textContent='Ingresá tu email.';errEl.classList.remove('hidden');return;}
+  if(email===LLAVE_EMAIL&&pass===LLAVE_PASS){
+    docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};
+    docenteEmail=email;document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
+    document.getElementById('doc-nom').innerText='Administrador';
+    await cargarPeriodos();iniciarDashboard();return;
+  }
+  if(email===LLAVE_EMAIL&&!pass){document.getElementById('pass-wrap').style.display='block';errEl.textContent='Ingresá la contraseña.';errEl.classList.remove('hidden');return;}
   try{
     const snap=await db.collection('usuarios').doc(email).get();
-    if(!snap.exists){errEl.textContent="Email no registrado.";errEl.classList.remove('hidden');return;}
+    if(!snap.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
     const data=snap.data();
     if(data.rol==='eoe'){window.location.href='eoe.html';return;}
-    if(data.rol!=='docente'){errEl.textContent="Sin permisos para este panel.";errEl.classList.remove('hidden');return;}
-    // Docentes NO necesitan contraseña — solo verificar email y rol
-    docenteData=data; docenteEmail=email;
-    document.getElementById('login-screen').style.display='none';
+    if(data.rol!=='docente'){errEl.textContent='Sin permisos para este panel.';errEl.classList.remove('hidden');return;}
+    docenteData=data;docenteEmail=email;
+    document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
     document.getElementById('doc-nom').innerText=data.nombre;
-    // Poblar materias
-    const sMat=document.getElementById('select-materia'); sMat.innerHTML='';
+    const sMat=document.getElementById('select-materia');sMat.innerHTML='';
     const mats=Array.isArray(data.materias)?data.materias:(data.materia?[data.materia]:[]);
     mats.forEach(m=>sMat.innerHTML+=`<option value="${m}">${m}</option>`);
     materiaActiva=sMat.value;
     // Poblar cursos
-    const sCur=document.getElementById('select-curso');sCur.innerHTML='';
-    const calCur=document.getElementById('cal-curso');calCur.innerHTML='';
     const curs=Array.isArray(data.cursos)?data.cursos:(data.curso?[data.curso]:[]);
-    curs.forEach(c=>{
-      sCur.innerHTML+=`<option value="${c}">${c}</option>`;
-      calCur.innerHTML+=`<option value="${c}">${c}</option>`;
-    });
+    ['cal-curso'].forEach(id=>{const s=document.getElementById(id);if(s){s.innerHTML='';curs.forEach(c=>s.innerHTML+=`<option value="${c}">${c}</option>`);}});
+    cursoActivo=curs[0]||'';
+    renderCursosGrid(curs);
     await cargarPeriodos();
+    iniciarDashboard();
     await cargarAlumnos();
     await cargarEventosDocente();
     poblarCursosEnComunicados();
-  }catch(e){errEl.textContent="Error de conexión: "+e.message;errEl.classList.remove('hidden');}
+  }catch(e){errEl.textContent='Error: '+e.message;errEl.classList.remove('hidden');}
+};
+
+window.login=function(e){window._doLogin(e);};
+
+// ══ SELECTOR DE CURSOS VISUAL ══
+function renderCursosGrid(curs){
+  const grid=document.getElementById('cursos-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+  if(!curs.length){grid.innerHTML='<p class="text-slate-400 text-xs col-span-2">Sin cursos asignados.</p>';return;}
+  curs.forEach((c,i)=>{
+    const card=document.createElement('button');
+    card.className='curso-card text-left'+(i===0?' activo':'');
+    card.dataset.curso=c;
+    card.innerHTML=`<p class="font-black text-lg text-blue-600">${c}</p><p class="text-[10px] text-slate-400 mt-0.5">Tocá para seleccionar</p>`;
+    card.onclick=()=>{
+      document.querySelectorAll('.curso-card').forEach(x=>x.classList.remove('activo'));
+      card.classList.add('activo');
+      cursoActivo=c;
+      // Sync select-curso legacy (used by cargarAlumnos)
+      let legacy=document.getElementById('select-curso');
+      if(!legacy){legacy=document.createElement('select');legacy.id='select-curso';legacy.style.display='none';document.body.appendChild(legacy);}
+      legacy.innerHTML=`<option value="${c}">${c}</option>`;
+      actualizarBadgeHeader();
+      cargarAlumnos();
+    };
+    grid.appendChild(card);
+  });
+  // Crear select-curso oculto para compatibilidad
+  let legacy=document.getElementById('select-curso');
+  if(!legacy){legacy=document.createElement('select');legacy.id='select-curso';legacy.style.display='none';document.body.appendChild(legacy);}
+  legacy.innerHTML='';curs.forEach(c=>legacy.innerHTML+=`<option value="${c}">${c}</option>`);
+}
+
+function actualizarBadgeHeader(){
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
+  const mat=materiaActiva||'';
+  const badgeCurso=document.getElementById('badge-curso');
+  const badgeMat=document.getElementById('badge-materia');
+  const badgePer=document.getElementById('badge-periodo');
+  if(curso){badgeCurso.textContent=curso;badgeCurso.classList.remove('hidden');}
+  if(mat){badgeMat.textContent=mat;badgeMat.classList.remove('hidden');}
+  if(periodoActivo.nombre) badgePer.textContent=periodoActivo.nombre;
+}
+
+// ══ DASHBOARD ══
+function iniciarDashboard(){
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const horas=new Date().getHours();
+  
+  const sal=horas<12?'Buenos días':(horas<19?'Buenas tardes':'Buenas noches');
+  const nombre=(docenteData?.nombre||'').split(' ')[0];
+  document.getElementById('dash-saludo').textContent=sal+(nombre?', '+nombre:'')+'!';
+  document.getElementById('dash-fecha').textContent=dias[new Date().getDay()]+', '+new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  cargarDashboardStats();
+  cargarUltimaActividad();
+}
+
+async function cargarDashboardStats(){
+  const fecha=document.getElementById('fecha-hoy').value;
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
+  if(!curso){document.getElementById('dash-total-alumnos').textContent='—';return;}
+  // Total alumnos
+  const aSnap=await db.collection('alumnos').where('curso','==',curso).get();
+  const total=aSnap.size;
+  document.getElementById('dash-total-alumnos').textContent=total;
+  // Asistencia de hoy
+  let presentes=0,ausentes=0;
+  const asSnap=await db.collection('asistencia').where('fecha','==',fecha).where('curso','==',curso).get();
+  asSnap.forEach(d=>{if(d.data().estado==='P')presentes++;else if(d.data().estado==='A')ausentes++;});
+  document.getElementById('dash-presentes').textContent=presentes||'—';
+  document.getElementById('dash-ausentes').textContent=ausentes||'—';
+  document.getElementById('dash-quick-asis-sub').textContent=presentes?`${presentes} presentes registrados hoy`:'Aún no pasaste lista hoy';
+  // Alertas de ausencias reiteradas
+  await verificarAlertasAusencias(curso,'dash-alertas-wrap');
+}
+
+async function verificarAlertasAusencias(curso,contenedorId){
+  const cont=document.getElementById(contenedorId);
+  if(!cont)return;
+  cont.innerHTML='';cont.classList.add('hidden');
+  try{
+    const hoy=new Date();
+    const fechas=[];
+    // Últimos 5 días hábiles
+    for(let i=0;i<10&&fechas.length<5;i++){
+      const d=new Date(hoy);d.setDate(hoy.getDate()-i);
+      if(d.getDay()!==0&&d.getDay()!==6)fechas.push(d.toISOString().slice(0,10));
+    }
+    const alumnosSnap=await db.collection('alumnos').where('curso','==',curso).get();
+    const alertas=[];
+    for(const alumDoc of alumnosSnap.docs){
+      const al=alumDoc.data();let seguidas=0;
+      for(const fecha of fechas){
+        const asSnap=await db.collection('asistencia').where('alumnoId','==',alumDoc.id).where('fecha','==',fecha).where('estado','==','A').get();
+        if(!asSnap.empty)seguidas++;else break;
+      }
+      if(seguidas>=3)alertas.push({nombre:al.nombre,dias:seguidas});
+    }
+    if(alertas.length){
+      cont.classList.remove('hidden');
+      cont.innerHTML=alertas.map(a=>`
+        <div class="alerta-ausencias flex items-start gap-2">
+          <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5 flex-shrink-0"></i>
+          <div><p class="text-xs font-black text-amber-800">${a.nombre}</p>
+          <p class="text-[10px] text-amber-700">${a.dias} faltas consecutivas — considerá contactar a la familia</p></div>
+        </div>`).join('');
+    }
+  }catch(e){}
+}
+
+async function cargarUltimaActividad(){
+  const cont=document.getElementById('dash-actividad');cont.innerHTML='';
+  try{
+    const items=[];
+    const tabSnap=await db.collection('tablon').where('docenteEmail','==',docenteEmail).orderBy('creadoEn','desc').limit(3).get().catch(()=>null);
+    if(tabSnap)tabSnap.forEach(d=>{const data=d.data();const f=data.creadoEn?.toDate?.();items.push({icon:'📋',txt:data.titulo||'Sin título',sub:data.curso||'',fecha:f?f.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'—'});});
+    const comSnap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).orderBy('creadoEn','desc').limit(2).get().catch(()=>null);
+    if(comSnap)comSnap.forEach(d=>{const data=d.data();const f=data.creadoEn?.toDate?.();items.push({icon:'📢',txt:data.titulo||'Sin título',sub:(data.cursos||[]).join(', '),fecha:f?f.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'—'});});
+    items.sort((a,b)=>a.fecha<b.fecha?1:-1);
+    if(!items.length){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Sin actividad reciente.</p>';return;}
+    items.slice(0,4).forEach(it=>{
+      cont.innerHTML+=`<div class="bg-white rounded-xl border p-3 flex items-center gap-3">
+        <span class="text-xl flex-shrink-0">${it.icon}</span>
+        <div class="flex-1 min-w-0"><p class="text-xs font-bold truncate">${it.txt}</p><p class="text-[10px] text-slate-400">${it.sub}</p></div>
+        <span class="text-[10px] text-slate-400 flex-shrink-0">${it.fecha}</span>
+      </div>`;
+    });
+  }catch(e){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Error al cargar actividad.</p>';}
 }
 
 // ══ PERÍODOS ══
@@ -456,66 +854,81 @@ async function cargarPeriodos(){
   const snap=await db.collection('periodos').orderBy('orden','asc').get();
   const sel=document.getElementById('select-periodo');
   const selInf=document.getElementById('informe-periodo');
-  sel.innerHTML=''; selInf.innerHTML='';
+  sel.innerHTML='';selInf.innerHTML='';
   let activo=null;
   snap.forEach(doc=>{
     const p=doc.data();
-    // IMPORTANTE: data-bloqueado='false' cuando es activo (editable)
     sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug||''}" data-bloqueado="${p.activo?'false':'true'}">${p.nombre}${p.activo?' ✓':''}</option>`;
     selInf.innerHTML+=`<option value="${p.slug||p.nombre}">${p.nombre}</option>`;
-    if(p.activo) activo={id:doc.id,slug:p.slug||'',nombre:p.nombre,bloqueado:false};
+    if(p.activo)activo={id:doc.id,slug:p.slug||'',nombre:p.nombre,bloqueado:false};
   });
-  if(activo){
-    sel.value=activo.id;
-    periodoActivo=activo;
-    document.getElementById('periodo-info').classList.remove('hidden');
-    document.getElementById('periodo-info-txt').innerText=`Período activo: ${activo.nombre}.`;
-  } else if(sel.options.length>0){
-    sel.selectedIndex=0;
+  if(activo){sel.value=activo.id;periodoActivo=activo;}
+  else if(sel.options.length>0){
     const fo=sel.options[0];
     periodoActivo={id:fo.value,slug:fo.dataset.slug||'',nombre:fo.text.replace(' ✓','').trim(),bloqueado:false};
-    document.getElementById('periodo-info').classList.remove('hidden');
-    document.getElementById('periodo-info-txt').innerText=`Usando: ${periodoActivo.nombre}. No hay período activo — activá uno desde el Admin.`;
-  } else {
-    periodoActivo={id:'sin-periodo',slug:'GEN',nombre:'General',bloqueado:false};
-    document.getElementById('periodo-info').classList.remove('hidden');
-    document.getElementById('periodo-info-txt').innerText='Sin períodos. Creá uno desde el Admin.';
-  }
+  }else{periodoActivo={id:'sin-periodo',slug:'GEN',nombre:'General',bloqueado:false};}
+  const pi=document.getElementById('periodo-info'),pit=document.getElementById('periodo-info-txt');
+  if(pi&&pit){pi.classList.remove('hidden');pit.innerText=activo?`Período activo: ${activo.nombre}`:'Sin período activo — activá uno desde el Admin.';}
+  actualizarBadgeHeader();
 }
 
 function actualizarMateriaActiva(){
   materiaActiva=document.getElementById('select-materia').value;
+  actualizarBadgeHeader();
   cargarAlumnos();
 }
 
 // ══ CARGAR ALUMNOS ══
 async function cargarAlumnos(){
-  const curso=document.getElementById('select-curso').value;
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
   const modalidad=document.getElementById('select-modalidad').value;
-  // Leer período seleccionado
   const sel=document.getElementById('select-periodo');
-  if(sel.options.length>0){
+  if(sel&&sel.options.length>0){
     const opt=sel.options[sel.selectedIndex];
     periodoActivo={id:sel.value,slug:opt.dataset.slug||'',nombre:opt.text.replace(' ✓','').trim(),bloqueado:opt.dataset.bloqueado==='true'};
   }
-  if(!curso||!materiaActiva) return;
-  cambiosNotas={}; cambiosAsis={};
+  if(!curso||!materiaActiva)return;
+  cambiosNotas={};cambiosAsis={};
   document.getElementById('btn-guardar-notas').style.display='none';
   document.getElementById('btn-guardar-asis').style.display='none';
   const snap=await db.collection('alumnos').where('curso','==',curso).get();
   alumnosActuales=[];
   snap.forEach(doc=>alumnosActuales.push({id:doc.id,nombre:doc.data().nombre}));
   alumnosActuales.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  // Añadir número de lista
+  alumnosActuales=alumnosActuales.map((al,i)=>({...al,numero:i+1}));
   const fecha=document.getElementById('fecha-hoy').value;
-  document.getElementById('asis-fecha-label').textContent=fecha;
-  if(modalidad==='INDICADORES') await renderIndicadores(fecha);
+  document.getElementById('asis-fecha-label').textContent='Lista del '+fecha.split('-').reverse().join('/');
+  if(modalidad==='INDICADORES')await renderIndicadores(fecha);
   else await renderGrilla(fecha);
   await renderAsistencia(fecha);
-  // Informes
+  await cargarResumenMensual(curso,fecha);
+  await verificarAlertasAusencias(curso,'asis-alertas-bloque');
   const selInfAlu=document.getElementById('informe-alumno');
-  selInfAlu.innerHTML='';
-  alumnosActuales.forEach(al=>selInfAlu.innerHTML+=`<option value="${al.id}">${al.nombre}</option>`);
+  selInfAlu.innerHTML='';alumnosActuales.forEach(al=>selInfAlu.innerHTML+=`<option value="${al.id}">${al.nombre}</option>`);
   cargarInformes();
+  actualizarBadgeHeader();
+}
+
+// ══ RESUMEN MENSUAL ══
+async function cargarResumenMensual(curso,fecha){
+  try{
+    const [yy,mm]=fecha.split('-');
+    const desde=`${yy}-${mm}-01`,hasta=`${yy}-${mm}-31`;
+    let snap;
+    try{snap=await db.collection('asistencia').where('curso','==',curso).where('fecha','>=',desde).where('fecha','<=',hasta).where('materia','==',materiaActiva).get();}
+    catch(e){snap=await db.collection('asistencia').where('curso','==',curso).where('fecha','>=',desde).where('fecha','<=',hasta).get();}
+    const diasSet=new Set();
+    let presentes=0;
+    snap.forEach(d=>{diasSet.add(d.data().fecha);if(d.data().estado==='P')presentes++;});
+    const totalRegistros=snap.size;
+    const pct=totalRegistros>0?Math.round((presentes/totalRegistros)*100):0;
+    document.getElementById('asis-mes-presentes').textContent=presentes;
+    document.getElementById('asis-mes-total').textContent=totalRegistros;
+    document.getElementById('asis-mes-pct').textContent=pct+'%';
+    document.getElementById('asis-mes-fill').style.width=pct+'%';
+    document.getElementById('asis-mes-fill').style.background=pct>=80?'#22c55e':pct>=60?'#f59e0b':'#ef4444';
+  }catch(e){}
 }
 
 // ══ GRILLA NUMÉRICA ══
@@ -523,27 +936,22 @@ async function renderGrilla(fecha){
   document.getElementById('indicadores-container').classList.add('hidden');
   document.getElementById('grilla-container').classList.remove('hidden');
   document.getElementById('ctrl-examenes').classList.remove('hidden');
-  const curso=document.getElementById('select-curso').value;
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
   const colRef=await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).get();
   columnaExamenes=colRef.exists?colRef.data().columnas||[]:[{key:'nota_1',label:'Nota 1'}];
   renderTagsExamenes();
-  // Cabecera
   const head=document.getElementById('grilla-head');
-  head.innerHTML='<th class="sticky-col">Alumno</th>';
+  head.innerHTML='<th class="sticky-col">#  Alumno</th>';
   columnaExamenes.forEach(col=>{
     head.innerHTML+=`<th style="min-width:72px;text-align:center">${col.label}<br><button onclick="eliminarColumna('${col.key}')" style="font-size:9px;color:#94a3b8;background:none;border:none;cursor:pointer">✕</button></th>`;
   });
   head.innerHTML+='<th style="min-width:56px;text-align:center">Prom.</th>';
-  // Cuerpo con event delegation (sin oninput inline)
   const body=document.getElementById('grilla-body');
   body.innerHTML='';
   body.oninput=function(e){
-    if(!e.target.classList.contains('grilla-inp')) return;
+    if(!e.target.classList.contains('grilla-inp'))return;
     let v=parseFloat(e.target.value);
-    if(!isNaN(v)){
-      if(v>10){v=10;e.target.value=10;}
-      if(v<1&&e.target.value!=''){v=1;e.target.value=1;}
-    }
+    if(!isNaN(v)){if(v>10){v=10;e.target.value=10;}if(v<1&&e.target.value!=''){v=1;e.target.value=1;}}
     cambiarNota(e.target.dataset.alumno,e.target.dataset.col,e.target.value);
   };
   for(const al of alumnosActuales){
@@ -554,50 +962,55 @@ async function renderGrilla(fecha){
     let suma=0,cnt=0,cols='';
     columnaExamenes.forEach(col=>{
       const val=nData[col.key]||'';
-      const st=bloq?'color:#94a3b8;background:#f8fafc;cursor:not-allowed':'color:#0f172a';
+      const num=parseFloat(val);
+      // Color de nota
+      let cellBg='';
+      if(val!==''){cellBg=num>=6?'background:#dcfce7':num>=4?'background:#fef9c3':'background:#fee2e2';}
+      const st=bloq?'color:#94a3b8;background:#f8fafc;cursor:not-allowed':(cellBg||'color:#0f172a');
       cols+=`<td style="text-align:center;padding:0"><input type="number" min="1" max="10" step="0.5" value="${val}" ${bloq?'disabled':''} style="${st}" class="grilla-inp" data-alumno="${al.id}" data-col="${col.key}" placeholder="—"></td>`;
       if(val!==''){suma+=parseFloat(val)||0;cnt++;}
     });
     const prom=cnt>0?(suma/cnt).toFixed(1):'—';
-    const promColor=cnt>0?(parseFloat(prom)>=6?'#16a34a':'#ef4444'):'#94a3b8';
+    const promColor=cnt>0?(parseFloat(prom)>=6?'#15803d':parseFloat(prom)>=4?'#a16207':'#dc2626'):'#94a3b8';
     body.innerHTML+=`<tr>
       <td class="sticky-col">
-        <span style="display:block;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${al.nombre}</span>
-        ${alerta?`<span class="alerta-falta">${alerta}</span>`:''}
+        <span style="font-size:10px;font-weight:900;color:#94a3b8;margin-right:6px">${al.numero}</span>
+        <span style="display:inline-block;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle">${al.nombre}</span>
+        ${alerta?`<span class="alerta-falta" style="display:block;margin-top:2px">${alerta}</span>`:''}
       </td>
       ${cols}
-      <td id="prom-${al.id}" style="text-align:center;font-weight:800;font-size:13px;color:${promColor};padding:8px">${prom}</td>
+      <td id="prom-${al.id}" style="text-align:center;font-weight:900;font-size:13px;color:${promColor};padding:8px;background:${cnt>0?(parseFloat(prom)>=6?'#f0fdf4':parseFloat(prom)>=4?'#fefce8':'#fef2f2'):'transparent'}">${prom}</td>
     </tr>`;
   }
-  if(!alumnosActuales.length) body.innerHTML='<tr><td colspan="20" style="text-align:center;padding:24px;color:#94a3b8">Sin alumnos en este curso.</td></tr>';
+  if(!alumnosActuales.length)body.innerHTML='<tr><td colspan="20" style="text-align:center;padding:24px;color:#94a3b8">Sin alumnos en este curso.</td></tr>';
 }
 
 async function getFaltaOtraMateria(alumnoId,fecha){
   const snap=await db.collection('asistencia').where('alumnoId','==',alumnoId).where('fecha','==',fecha).where('estado','==','A').get();
-  let msg='';
-  snap.forEach(d=>{if(d.data().materia&&d.data().materia!==materiaActiva) msg=`⚠ Falta en ${d.data().materia}`;});
+  let msg='';snap.forEach(d=>{if(d.data().materia&&d.data().materia!==materiaActiva)msg=`⚠ Falta en ${d.data().materia}`;});
   return msg;
 }
 
 function cambiarNota(id,colKey,val){
-  if(!cambiosNotas[id]) cambiosNotas[id]={};
-  let v=parseFloat(val);
-  if(!isNaN(v)){if(v>10)v=10;if(v<1)v=1;}
+  if(!cambiosNotas[id])cambiosNotas[id]={};
+  let v=parseFloat(val);if(!isNaN(v)){if(v>10)v=10;if(v<1)v=1;}
   cambiosNotas[id][colKey]=isNaN(v)?val:v;
-  // Promedio en vivo
   const pe=document.getElementById('prom-'+id);
   if(pe){
     const todos=Object.entries({...cambiosNotas[id]}).filter(([k,vv])=>k.startsWith('nota_')&&vv!=='');
     if(todos.length){
       const p=(todos.reduce((s,[,vv])=>s+(parseFloat(vv)||0),0)/todos.length).toFixed(1);
-      pe.textContent=p; pe.style.color=parseFloat(p)>=6?'#16a34a':'#ef4444';
+      const pf=parseFloat(p);
+      pe.textContent=p;
+      pe.style.color=pf>=6?'#15803d':pf>=4?'#a16207':'#dc2626';
+      pe.style.background=pf>=6?'#f0fdf4':pf>=4?'#fefce8':'#fef2f2';
     }
   }
   document.getElementById('btn-guardar-notas').style.display='block';
 }
 
 async function confirmarNotas(){
-  if(periodoActivo.bloqueado)return alert("Período cerrado. No podés editar notas.");
+  if(periodoActivo.bloqueado)return alert('Período cerrado.');
   if(!Object.keys(cambiosNotas).length)return;
   event.currentTarget.innerHTML='<i class="fas fa-spinner fa-spin"></i> GUARDANDO...';
   const batch=db.batch();
@@ -606,8 +1019,7 @@ async function confirmarNotas(){
     batch.set(ref,{...cambiosNotas[id],materia:materiaActiva,periodo:periodoActivo.slug,fechaUpdate:new Date().toLocaleDateString()},{merge:true});
   }
   await batch.commit();
-  alert("✅ Notas guardadas.");
-  cambiosNotas={};
+  alert('✅ Notas guardadas.');cambiosNotas={};
   document.getElementById('btn-guardar-notas').style.display='none';
   event.currentTarget.innerHTML='<i class="fas fa-save"></i> GUARDAR NOTAS';
 }
@@ -615,244 +1027,163 @@ async function confirmarNotas(){
 function renderTagsExamenes(){
   document.getElementById('tags-examenes').innerHTML=columnaExamenes.map(c=>`<span style="background:#f1f5f9;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #e2e8f0">${c.label}</span>`).join('');
 }
-function agregarColumna(){
-  const n=prompt("Nombre de la evaluación (ej: TP2, Parcial 1):");if(!n?.trim())return;
-  columnaExamenes.push({key:'nota_'+Date.now(),label:n.trim()});
-  guardarConfigColumnas(); cargarAlumnos();
-}
-function eliminarColumna(key){
-  if(!confirm("¿Eliminar esta columna de evaluación?"))return;
-  columnaExamenes=columnaExamenes.filter(c=>c.key!==key);
-  guardarConfigColumnas(); cargarAlumnos();
-}
-async function guardarConfigColumnas(){
-  const curso=document.getElementById('select-curso').value;
-  await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});
-}
- // ══ CARGA BIMESTRAL POR INDICADORES ══
+function agregarColumna(){const n=prompt('Nombre de la evaluación (ej: TP2, Parcial 1):');if(!n?.trim())return;columnaExamenes.push({key:'nota_'+Date.now(),label:n.trim()});guardarConfigColumnas();cargarAlumnos();}
+function eliminarColumna(key){if(!confirm('¿Eliminar esta columna?'))return;columnaExamenes=columnaExamenes.filter(c=>c.key!==key);guardarConfigColumnas();cargarAlumnos();}
+async function guardarConfigColumnas(){const curso=cursoActivo||document.getElementById('select-curso')?.value||'';await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});}
+
+// ══ INDICADORES ══
 async function renderIndicadores(fecha){
   document.getElementById('grilla-container').classList.add('hidden');
   document.getElementById('ctrl-examenes').classList.add('hidden');
-
-  const cont=document.getElementById('indicadores-container');
-  cont.classList.remove('hidden');
-
-  const refConfig=db.collection('config_indicadores')
-    .doc(`${materiaActiva}_${periodoActivo.slug}`);
-
+  const cont=document.getElementById('indicadores-container');cont.classList.remove('hidden');
+  const refConfig=db.collection('config_indicadores').doc(`${materiaActiva}_${periodoActivo.slug}`);
   const cfg=await refConfig.get();
-  let indicadores=cfg.exists ? (cfg.data().lista||[]) : [];
-
-  cont.innerHTML=`
-    <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
-      <p class="font-bold mb-3">Indicadores de esta materia</p>
-
-      <div class="flex gap-2 mb-3">
-        <input
-          id="nuevo-indicador"
-          class="input-pro flex-1"
-          placeholder="Escribir nuevo indicador..."
-        >
-        <button
-          onclick="agregarIndicador()"
-          class="bg-blue-600 text-white px-4 rounded-xl"
-        >
-          Agregar
-        </button>
-      </div>
-
-      <div id="lista-indicadores" class="flex flex-wrap gap-2"></div>
-    </div>
-
-    <div id="indicadores-alumnos"></div>
-  `;
-
-  window.indicadoresActuales=indicadores;
-
-  renderListaIndicadores();
-  renderIndicadoresAlumnos();
+  let indicadores=cfg.exists?(cfg.data().lista||[]):[];
+  cont.innerHTML=`<div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
+    <p class="font-bold mb-3">Indicadores de esta materia</p>
+    <div class="flex gap-2 mb-3"><input id="nuevo-indicador" class="input-pro flex-1" placeholder="Nuevo indicador...">
+    <button onclick="agregarIndicador()" class="bg-blue-600 text-white px-4 rounded-xl font-bold text-sm">+</button></div>
+    <div id="lista-indicadores" class="flex flex-wrap gap-2"></div></div>
+  <div id="indicadores-alumnos"></div>`;
+  window.indicadoresActuales=indicadores;renderListaIndicadores();renderIndicadoresAlumnos();
 }
-
-  function renderListaIndicadores(){
+function renderListaIndicadores(){
   const box=document.getElementById('lista-indicadores');
-
-  box.innerHTML=window.indicadoresActuales.map((ind,i)=>`
-    <div class="bg-blue-100 px-3 py-1 rounded-full text-sm">
-      ${ind}
-      <button onclick="eliminarIndicador(${i})">✕</button>
-    </div>
-  `).join('');
+  box.innerHTML=window.indicadoresActuales.map((ind,i)=>`<div class="bg-blue-100 px-3 py-1 rounded-full text-sm flex items-center gap-2">${ind}<button onclick="eliminarIndicador(${i})" class="text-blue-400 hover:text-blue-600">✕</button></div>`).join('');
 }
-
-  async function agregarIndicador(){
-  const input=document.getElementById('nuevo-indicador');
-  const texto=input.value.trim();
-
-  if(!texto) return;
-
+async function agregarIndicador(){
+  const input=document.getElementById('nuevo-indicador');const texto=input.value.trim();if(!texto)return;
   window.indicadoresActuales.push(texto);
-
-  await db.collection('config_indicadores')
-    .doc(`${materiaActiva}_${periodoActivo.slug}`)
-    .set({
-      lista: window.indicadoresActuales
-    });
-
-  input.value='';
-
-  renderListaIndicadores();
-  renderIndicadoresAlumnos();
+  await db.collection('config_indicadores').doc(`${materiaActiva}_${periodoActivo.slug}`).set({lista:window.indicadoresActuales});
+  input.value='';renderListaIndicadores();renderIndicadoresAlumnos();
 }
-
-  async function eliminarIndicador(i){
+async function eliminarIndicador(i){
   window.indicadoresActuales.splice(i,1);
-
-  await db.collection('config_indicadores')
-    .doc(`${materiaActiva}_${periodoActivo.slug}`)
-    .set({
-      lista: window.indicadoresActuales
-    });
-
-  renderListaIndicadores();
-  renderIndicadoresAlumnos();
+  await db.collection('config_indicadores').doc(`${materiaActiva}_${periodoActivo.slug}`).set({lista:window.indicadoresActuales});
+  renderListaIndicadores();renderIndicadoresAlumnos();
 }
-
-  async function renderIndicadoresAlumnos(){
-  const cont=document.getElementById('indicadores-alumnos');
-  cont.innerHTML='';
-
-  const indicadores=window.indicadoresActuales;
-  const bloq=periodoActivo.bloqueado;
-
+async function renderIndicadoresAlumnos(){
+  const cont=document.getElementById('indicadores-alumnos');cont.innerHTML='';
+  const indicadores=window.indicadoresActuales;const bloq=periodoActivo.bloqueado;
   for(const al of alumnosActuales){
-    const nd=await db.collection('alumnos')
-      .doc(al.id)
-      .collection('notas_v2')
-      .doc(`${periodoActivo.slug}_${materiaActiva}`)
-      .get();
-
-    const data=nd.exists ? (nd.data().indicadores||{}) : {};
-
-    cont.innerHTML+=`
-      <div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
-        <p class="font-bold mb-3">${al.nombre}</p>
-
-        ${indicadores.map(ind=>`
-          <div class="mb-3">
-            <label class="text-xs font-bold">${ind}</label>
-            <select
-              class="input-pro mt-1"
-              ${bloq?'disabled':''}
-              onchange="setIndicador('${al.id}','${ind}',this.value)"
-            >
-              <option value="">Seleccionar</option>
-              <option value="Logrado" ${data[ind]==='Logrado'?'selected':''}>Logrado</option>
-              <option value="En proceso" ${data[ind]==='En proceso'?'selected':''}>En proceso</option>
-              <option value="A fortalecer" ${data[ind]==='A fortalecer'?'selected':''}>A fortalecer</option>
-            </select>
-          </div>
-        `).join('')}
-      </div>
-    `;
+    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
+    const data=nd.exists?(nd.data().indicadores||{}):{};
+    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm mb-4">
+      <p class="font-bold mb-3"><span class="text-slate-400 text-sm mr-2">#${al.numero}</span>${al.nombre}</p>
+      ${indicadores.map(ind=>`<div class="mb-3"><label class="text-xs font-bold">${ind}</label>
+        <select class="input-pro mt-1" ${bloq?'disabled':''} onchange="setIndicador('${al.id}','${ind}',this.value)">
+          <option value="">Seleccionar</option>
+          <option value="Logrado" ${data[ind]==='Logrado'?'selected':''}>✅ Logrado</option>
+          <option value="En proceso" ${data[ind]==='En proceso'?'selected':''}>🟡 En proceso</option>
+          <option value="A fortalecer" ${data[ind]==='A fortalecer'?'selected':''}>🔴 A fortalecer</option>
+        </select></div>`).join('')}</div>`;
   }
 }
-
-function setIndicador(alumnoId, indicador, valor){
-  if(periodoActivo.bloqueado) return;
-
-  if(!cambiosNotas[alumnoId])
-    cambiosNotas[alumnoId]={};
-
-  if(!cambiosNotas[alumnoId].indicadores)
-    cambiosNotas[alumnoId].indicadores={};
-
+function setIndicador(alumnoId,indicador,valor){
+  if(periodoActivo.bloqueado)return;
+  if(!cambiosNotas[alumnoId])cambiosNotas[alumnoId]={};
+  if(!cambiosNotas[alumnoId].indicadores)cambiosNotas[alumnoId].indicadores={};
   cambiosNotas[alumnoId].indicadores[indicador]=valor;
-
   document.getElementById('btn-guardar-notas').style.display='block';
 }
 
 // ══ ASISTENCIA ══
 async function renderAsistencia(fecha){
-  const cont=document.getElementById('lista-asis'); cont.innerHTML='';
-  // Encabezado de columnas
-  cont.innerHTML=`<div class="grid items-center gap-2 px-4 pb-1" style="grid-template-columns:1fr auto auto">
-    <span class="text-[9px] font-black text-slate-400 uppercase">Alumno</span>
-    <span class="text-[9px] font-black text-slate-400 uppercase text-center w-32">Asistencia</span>
-    <span class="text-[9px] font-black text-slate-400 uppercase text-center w-16">Uniforme</span>
-  </div>`;
+  const cont=document.getElementById('lista-asis');cont.innerHTML='';
   for(const al of alumnosActuales){
     const snap=await db.collection('asistencia').where('alumnoId','==',al.id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
     const docData=snap.empty?null:snap.docs[0].data();
-    const est=docData?.estado||null;
-    const uni=docData?.uniforme||null; // 'S' o 'N'
+    const est=docData?.estado||null;const uni=docData?.uniforme||null;
     const alerta=await getFaltaOtraMateria(al.id,fecha);
-    const cls=e=>e==='P'?'bg-emerald-500 text-white shadow-lg':e==='A'?'bg-rose-500 text-white shadow-lg':'bg-amber-500 text-white shadow-lg';
-    const def='bg-slate-50 text-slate-400';
-    const uniCls=u=>u==='S'?'bg-blue-500 text-white shadow-lg':u==='N'?'bg-slate-400 text-white shadow-lg':def;
-    cont.innerHTML+=`<div class="bg-white p-3 rounded-2xl border shadow-sm grid items-center gap-2" style="grid-template-columns:1fr auto auto">
-      <div>
-        <p class="text-sm font-bold leading-tight">${al.nombre}</p>
-        ${alerta?`<span class="alerta-falta">${alerta}</span>`:''}
-      </div>
-      <div class="flex gap-1" id="asis-btns-${al.id}">
-        <button onclick="setAsis('${al.id}','P',this)" class="w-9 h-9 rounded-xl font-bold text-xs transition-all ${est==='P'?cls('P'):def}">P</button>
-        <button onclick="setAsis('${al.id}','A',this)" class="w-9 h-9 rounded-xl font-bold text-xs transition-all ${est==='A'?cls('A'):def}">A</button>
-        <button onclick="setAsis('${al.id}','T',this)" class="w-9 h-9 rounded-xl font-bold text-xs transition-all ${est==='T'?cls('T'):def}">T</button>
-      </div>
-      <div class="flex gap-1" id="uni-btns-${al.id}">
-        <button onclick="setUniforme('${al.id}','S',this)" class="w-8 h-9 rounded-xl font-bold text-[10px] transition-all ${uni==='S'?uniCls('S'):def}" title="Con uniforme">✓</button>
-        <button onclick="setUniforme('${al.id}','N',this)" class="w-8 h-9 rounded-xl font-bold text-[10px] transition-all ${uni==='N'?uniCls('N'):def}" title="Sin uniforme">✗</button>
-      </div>
-    </div>`;
+    const estadoCard=est==='P'?'presente':est==='A'?'ausente':est==='T'?'tarde':'';
+    const wrap=document.createElement('div');
+    wrap.className='asis-card-wrap';wrap.id='asis-wrap-'+al.id;
+    const nombre_escaped=al.nombre.replace(/'/g,"\\'");
+    wrap.innerHTML=
+      '<div class="asis-swipe-hint izq" id="sh-izq-'+al.id+'"><span style="color:white;font-weight:900;font-size:13px">✓ Presente</span></div>'+
+      '<div class="asis-swipe-hint der" id="sh-der-'+al.id+'"><span style="color:white;font-weight:900;font-size:13px">✗ Ausente</span></div>'+
+      '<div class="asis-card '+estadoCard+'" id="asis-card-'+al.id+'">'+
+        '<div onclick="abrirHistorial(\''+al.id+'\',\''+nombre_escaped+'\')" style="cursor:pointer">'+
+          '<div style="display:flex;align-items:center;gap:.5rem">'+
+            '<span style="font-size:10px;font-weight:900;color:#cbd5e1">'+al.numero+'</span>'+
+            '<p style="font-size:.875rem;font-weight:700;line-height:1.2">'+al.nombre+'</p>'+
+            '<i class="fas fa-history" style="font-size:9px;color:#cbd5e1" title="Ver historial"></i>'+
+          '</div>'+
+          (alerta?'<span class="alerta-falta" style="margin-top:3px;display:inline-block">'+alerta+'</span>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:4px" id="asis-btns-'+al.id+'">'+
+          '<button onclick="setAsis(\''+al.id+'\',\'P\',this)" class="asis-btn'+(est==='P'?' activo-P':'')+'">P</button>'+
+          '<button onclick="setAsis(\''+al.id+'\',\'A\',this)" class="asis-btn'+(est==='A'?' activo-A':'')+'">A</button>'+
+          '<button onclick="setAsis(\''+al.id+'\',\'T\',this)" class="asis-btn'+(est==='T'?' activo-T':'')+'">T</button>'+
+        '</div>'+
+        '<div style="display:flex;gap:4px" id="uni-btns-'+al.id+'">'+
+          '<button onclick="setUniforme(\''+al.id+'\',\'S\',this)" class="asis-btn" style="font-size:10px'+(uni==='S'?';background:#22c55e;color:white':'')+'">✓</button>'+
+          '<button onclick="setUniforme(\''+al.id+'\',\'N\',this)" class="asis-btn" style="font-size:10px'+(uni==='N'?';background:#ef4444;color:white':'')+'">✗</button>'+
+        '</div>'+
+      '</div>';
+    cont.appendChild(wrap);
+    activarSwipeAsis(al.id);
   }
-  if(!alumnosActuales.length) cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>';
+  if(!alumnosActuales.length)cont.innerHTML='<p style="color:#94a3b8;text-align:center;padding:2rem">Sin alumnos en este curso.</p>';
 }
+
+function activarSwipeAsis(id){
+  const card=document.getElementById('asis-card-'+id);if(!card)return;
+  let startX=0,curX=0,drag=false;const TH=60;
+  card.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;drag=true;},{passive:true});
+  card.addEventListener('touchmove',e=>{
+    if(!drag)return;curX=e.touches[0].clientX-startX;
+    card.style.transform='translateX('+curX+'px)';
+    const p=Math.min(Math.abs(curX)/TH,1);
+    document.getElementById('sh-izq-'+id).style.opacity=curX>0?p:0;
+    document.getElementById('sh-der-'+id).style.opacity=curX<0?p:0;
+  },{passive:true});
+  card.addEventListener('touchend',()=>{
+    if(!drag)return;drag=false;card.style.transform='';
+    document.getElementById('sh-izq-'+id).style.opacity=0;
+    document.getElementById('sh-der-'+id).style.opacity=0;
+    if(curX>TH){const b=document.getElementById('asis-btns-'+id)?.querySelectorAll('button')[0];if(b)b.click();}
+    else if(curX<-TH){const b=document.getElementById('asis-btns-'+id)?.querySelectorAll('button')[1];if(b)b.click();}
+    curX=0;
+  });
+}
+window.activarSwipeAsis=activarSwipeAsis;
 
 function setAsis(id,tipo,btn){
-  if(!cambiosAsis[id])cambiosAsis[id]={};
-  cambiosAsis[id].estado=tipo;
-  const cls=t=>t==='P'?'bg-emerald-500 text-white shadow-lg':t==='A'?'bg-rose-500 text-white shadow-lg':'bg-amber-500 text-white shadow-lg';
-  btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-9 h-9 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs transition-all');
-  btn.className=`w-9 h-9 rounded-xl font-bold text-xs transition-all ${cls(tipo)}`;
+  if(!cambiosAsis[id])cambiosAsis[id]={};cambiosAsis[id].estado=tipo;
+  btn.closest('[id^="asis-btns-"]').querySelectorAll('button').forEach(b=>b.className='asis-btn');
+  btn.className=`asis-btn activo-${tipo}`;
+  // Actualizar borde tarjeta
+  const card=document.getElementById('asis-card-'+id);
+  if(card){card.className='asis-card '+(tipo==='P'?'presente':tipo==='A'?'ausente':'tarde');}
   document.getElementById('btn-guardar-asis').style.display='block';
 }
-
 function setUniforme(id,val,btn){
-  if(!cambiosAsis[id])cambiosAsis[id]={};
-  cambiosAsis[id].uniforme=val;
-  const cls=v=>v==='S'?'bg-blue-500 text-white shadow-lg':'bg-slate-400 text-white shadow-lg';
-  btn.parentElement.querySelectorAll('button').forEach(b=>b.className='w-8 h-9 rounded-xl bg-slate-50 text-slate-400 font-bold text-[10px] transition-all');
-  btn.className=`w-8 h-9 rounded-xl font-bold text-[10px] transition-all ${cls(val)}`;
+  if(!cambiosAsis[id])cambiosAsis[id]={};cambiosAsis[id].uniforme=val;
+  btn.closest('[id^="uni-btns-"]').querySelectorAll('button').forEach(b=>b.className='asis-btn text-[10px]');
+  btn.className=`asis-btn text-[10px] ${val==='S'?'activo-P':'activo-A'}`;
   document.getElementById('btn-guardar-asis').style.display='block';
 }
-
 async function confirmarAsistencia(){
-  const btn=event.currentTarget; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
+  const btn=event.currentTarget;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> PROCESANDO...';
   const fecha=document.getElementById('fecha-hoy').value;
   const batch=db.batch();
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
   for(let id in cambiosAsis){
     const cambio=cambiosAsis[id];
-    // cambio puede ser {estado, uniforme} (nuevo formato) o string (legacy)
     const estado=typeof cambio==='object'?cambio.estado:cambio;
     const uniforme=typeof cambio==='object'?cambio.uniforme:undefined;
-    const datos={alumnoId:id,fecha,materia:materiaActiva,docenteEmail,curso:document.getElementById('select-curso').value};
-    if(estado)datos.estado=estado;
-    if(uniforme)datos.uniforme=uniforme;
+    const datos={alumnoId:id,fecha,materia:materiaActiva,docenteEmail,curso};
+    if(estado)datos.estado=estado;if(uniforme)datos.uniforme=uniforme;
     const ex=await db.collection('asistencia').where('alumnoId','==',id).where('fecha','==',fecha).where('materia','==',materiaActiva).get();
-    if(!ex.empty){
-      const upd={};
-      if(estado)upd.estado=estado;
-      if(uniforme)upd.uniforme=uniforme;
-      if(Object.keys(upd).length)batch.update(db.collection('asistencia').doc(ex.docs[0].id),upd);
-    }else{
-      batch.set(db.collection('asistencia').doc(),datos);
-    }
+    if(!ex.empty){const upd={};if(estado)upd.estado=estado;if(uniforme)upd.uniforme=uniforme;if(Object.keys(upd).length)batch.update(db.collection('asistencia').doc(ex.docs[0].id),upd);}
+    else{batch.set(db.collection('asistencia').doc(),datos);}
   }
   await batch.commit();
-  alert("✅ Asistencia registrada.");
-  cambiosAsis={};
+  alert('✅ Asistencia registrada.');cambiosAsis={};
   document.getElementById('btn-guardar-asis').style.display='none';
   btn.innerHTML='<i class="fas fa-check-circle"></i> CONFIRMAR ASISTENCIA';
+  await cargarResumenMensual(cursoActivo||document.getElementById('select-curso')?.value||'',fecha);
 }
 
 // ══ INFORMES ══
@@ -860,397 +1191,884 @@ async function guardarInforme(){
   const alumnoId=document.getElementById('informe-alumno').value;
   const periodo=document.getElementById('informe-periodo').value;
   const texto=document.getElementById('informe-texto').value.trim();
-  if(!alumnoId||!texto)return alert("Seleccioná un alumno y escribí el informe.");
+  if(!alumnoId||!texto)return alert('Seleccioná un alumno y escribí el informe.');
   const alumnoNombre=document.getElementById('informe-alumno').selectedOptions[0]?.text||'';
-  const indicadores={
-    participacion:document.getElementById('ind-participacion').checked,
-    entregas:document.getElementById('ind-entregas').checked,
-    conducta:document.getElementById('ind-conducta').checked,
-    progreso:document.getElementById('ind-progreso').checked
-  };
-  await db.collection('alumnos').doc(alumnoId).collection('informes').add({
-    texto,periodo,indicadores,materia:materiaActiva,docenteEmail,
-    docenteNombre:docenteData?.nombre||'',alumnoNombre,
-    fecha:new Date().toISOString(),visibleFamilia:true
-  });
-  alert("✅ Informe guardado y visible para la familia.");
+  const indicadores={participacion:document.getElementById('ind-participacion').checked,entregas:document.getElementById('ind-entregas').checked,conducta:document.getElementById('ind-conducta').checked,progreso:document.getElementById('ind-progreso').checked};
+  await db.collection('alumnos').doc(alumnoId).collection('informes').add({texto,periodo,indicadores,materia:materiaActiva,docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true});
+  // También en colección eoe para que lo vean
+  await db.collection('observaciones_eoe').add({texto,periodo,indicadores,materia:materiaActiva,docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoId,alumnoNombre,fecha:new Date().toISOString(),origen:'docente'});
+  alert('✅ Informe guardado y visible para la familia y EOE.');
   document.getElementById('informe-texto').value='';
   ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
   cargarInformes();
 }
-
 async function cargarInformes(){
   const alumnoId=document.getElementById('informe-alumno').value;if(!alumnoId)return;
-  const snap=await db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').limit(10).get();
-  const cont=document.getElementById('lista-informes'); cont.innerHTML='';
+  const snap=await db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').limit(10).get().catch(async()=>await db.collection('alumnos').doc(alumnoId).collection('informes').get());
+  const cont=document.getElementById('lista-informes');cont.innerHTML='';
   snap.forEach(doc=>{
     const inf=doc.data();const d=new Date(inf.fecha).toLocaleDateString('es-AR');
     cont.innerHTML+=`<div class="bg-white p-5 rounded-2xl border shadow-sm">
       <div class="flex justify-between items-start mb-2">
-        <div>
-          <span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span>
-          <span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span>
-        </div>
-        <span class="text-[9px] text-slate-400 font-bold">${d}</span>
-      </div>
-      <p class="text-sm text-slate-700 mt-2">${inf.texto}</p>
-    </div>`;
+        <div><span class="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">${inf.periodo}</span>
+        <span class="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase ml-1">${inf.materia}</span></div>
+        <span class="text-[9px] text-slate-400 font-bold">${d}</span></div>
+      <p class="text-sm text-slate-700 mt-2">${inf.texto}</p></div>`;
   });
-  if(snap.empty) cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes para este alumno.</p>';
+  if(snap.empty)cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin informes para este alumno.</p>';
 }
 
 // ══ CALENDARIO ══
 async function guardarEvento(){
-  const titulo=document.getElementById('cal-titulo').value.trim();
-  const fecha=document.getElementById('cal-fecha').value;
-  const curso=document.getElementById('cal-curso').value;
-  const desc=document.getElementById('cal-desc').value.trim();
-  if(!titulo||!fecha)return alert("Título y fecha obligatorios.");
+  const titulo=document.getElementById('cal-titulo').value.trim();const fecha=document.getElementById('cal-fecha').value;const curso=document.getElementById('cal-curso').value;const desc=document.getElementById('cal-desc').value.trim();
+  if(!titulo||!fecha)return alert('Título y fecha obligatorios.');
   const idEditando=document.getElementById('cal-id-editando-doc').value;
-  if(idEditando){
-    await db.collection('eventos').doc(idEditando).update({titulo,descripcion:desc,fecha,tag:[curso],editadoEn:new Date().toISOString()});
-    alert("✅ Evento actualizado.");
-  }else{
-    await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp()});
-    alert("✅ Publicado en el calendario.");
-  }
-  cancelarEditarEventoDoc();
-  cargarEventosDocente();
+  if(idEditando){await db.collection('eventos').doc(idEditando).update({titulo,descripcion:desc,fecha,tag:[curso],editadoEn:new Date().toISOString()});alert('✅ Evento actualizado.');}
+  else{await db.collection('eventos').add({titulo,descripcion:desc,fecha,tipo:'examen',tag:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp()});alert('✅ Publicado en el calendario.');}
+  cancelarEditarEventoDoc();cargarEventosDocente();
 }
-
 async function editarEventoDoc(id){
-  const doc=await db.collection('eventos').doc(id).get();
-  if(!doc.exists)return;
-  const ev=doc.data();
-  document.getElementById('cal-id-editando-doc').value=id;
-  document.getElementById('cal-titulo').value=ev.titulo||'';
-  document.getElementById('cal-fecha').value=ev.fecha||'';
-  document.getElementById('cal-desc').value=ev.descripcion||'';
-  const sel=document.getElementById('cal-curso');
-  if(ev.tag?.[0])sel.value=ev.tag[0];
-  document.getElementById('btn-cal-doc-txt').textContent='GUARDAR CAMBIOS';
-  document.getElementById('btn-cancelar-cal-doc').classList.remove('hidden');
+  const doc=await db.collection('eventos').doc(id).get();if(!doc.exists)return;const ev=doc.data();
+  document.getElementById('cal-id-editando-doc').value=id;document.getElementById('cal-titulo').value=ev.titulo||'';document.getElementById('cal-fecha').value=ev.fecha||'';document.getElementById('cal-desc').value=ev.descripcion||'';
+  if(ev.tag?.[0])document.getElementById('cal-curso').value=ev.tag[0];
+  document.getElementById('btn-cal-doc-txt').textContent='GUARDAR CAMBIOS';document.getElementById('btn-cancelar-cal-doc').classList.remove('hidden');
   document.getElementById('cal-titulo').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
 function cancelarEditarEventoDoc(){
-  document.getElementById('cal-id-editando-doc').value='';
-  document.getElementById('cal-titulo').value='';
-  document.getElementById('cal-fecha').value='';
-  document.getElementById('cal-desc').value='';
-  document.getElementById('btn-cal-doc-txt').textContent='PUBLICAR EN AGENDA';
-  document.getElementById('btn-cancelar-cal-doc').classList.add('hidden');
+  document.getElementById('cal-id-editando-doc').value='';document.getElementById('cal-titulo').value='';document.getElementById('cal-fecha').value='';document.getElementById('cal-desc').value='';document.getElementById('btn-cal-doc-txt').textContent='PUBLICAR EN AGENDA';document.getElementById('btn-cancelar-cal-doc').classList.add('hidden');
 }
-
-async function eliminarEventoDoc(id){
-  if(!confirm('¿Eliminar este evento?'))return;
-  await db.collection('eventos').doc(id).delete();
-  cargarEventosDocente();
-}
-
+async function eliminarEventoDoc(id){if(!confirm('¿Eliminar?'))return;await db.collection('eventos').doc(id).delete();cargarEventosDocente();}
 async function cargarEventosDocente(){
-  let snap;
-  try{
-    snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();
-  }catch(e){
-    snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).get();
-  }
-  const cont=document.getElementById('lista-cal-doc'); cont.innerHTML='';
+  let snap;try{snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).orderBy('fecha','desc').get();}catch(e){snap=await db.collection('eventos').where('creadoPor','==',docenteEmail).get();}
+  const cont=document.getElementById('lista-cal-doc');cont.innerHTML='';
   snap.forEach(doc=>{
     const e=doc.data();const id=doc.id;const pts=e.fecha.split('-');
     cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex items-center gap-3 shadow-sm">
-      <div class="text-center min-w-[42px] bg-slate-100 p-2 rounded-xl">
-        <p class="text-[8px] font-black text-blue-600">${pts[1]}</p>
-        <p class="text-lg font-black">${pts[2]}</p>
-      </div>
-      <div class="flex-1">
-        <p class="font-bold text-sm">📝 ${e.titulo}</p>
-        <p class="text-[10px] text-slate-400">Curso: ${e.tag?.join(', ')||''}</p>
-      </div>
+      <div class="text-center min-w-[42px] bg-slate-100 p-2 rounded-xl"><p class="text-[8px] font-black text-blue-600">${pts[1]}</p><p class="text-lg font-black">${pts[2]}</p></div>
+      <div class="flex-1"><p class="font-bold text-sm">📝 ${e.titulo}</p><p class="text-[10px] text-slate-400">Curso: ${e.tag?.join(', ')||''}</p></div>
       <div class="flex gap-2 flex-shrink-0">
-        <button onclick="editarEventoDoc('${id}')" class="text-blue-400 hover:text-blue-600 p-1" title="Editar"><i class="fas fa-pencil-alt text-xs"></i></button>
-        <button onclick="eliminarEventoDoc('${id}')" class="text-rose-300 hover:text-rose-500 p-1" title="Eliminar"><i class="fas fa-trash text-xs"></i></button>
-      </div>
-    </div>`;
+        <button onclick="editarEventoDoc('${id}')" class="text-blue-400 hover:text-blue-600 p-1"><i class="fas fa-pencil-alt text-xs"></i></button>
+        <button onclick="eliminarEventoDoc('${id}')" class="text-rose-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button>
+      </div></div>`;
   });
-  if(snap.empty) cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Sin eventos publicados.</p>';
+  if(snap.empty)cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Sin eventos publicados.</p>';
 }
 
-
-// ══ COMUNICADOS DOCENTE ══
+// ══ COMUNICADOS ══
 async function publicarComunicadoDocente(){
-  const titulo=document.getElementById('com-titulo').value.trim();
-  const texto=document.getElementById('com-texto').value.trim();
-  const curso=document.getElementById('com-curso').value;
-  const tag=document.getElementById('com-tag').value;
+  const titulo=document.getElementById('com-titulo').value.trim();const texto=document.getElementById('com-texto').value.trim();const curso=document.getElementById('com-curso').value;const tag=document.getElementById('com-tag').value;
   if(!titulo||!texto){alert('Completá el título y el mensaje.');return;}
   if(!curso){alert('Seleccioná un curso destinatario.');return;}
-  // Solo puede publicar para cursos que tiene asignados
   const cursosAsignados=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
   if(!cursosAsignados.includes(curso)){alert('Solo podés publicar para tus cursos asignados.');return;}
   const btn=event.currentTarget;btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
   try{
-    await db.collection('comunicados').add({
-      titulo,
-      texto,
-      tag,
-      cursos:[curso],
-      creadoPor:docenteEmail,
-      creadoPorNombre:docenteData?.nombre||'',
-      creadoPorRol:'docente',
-      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
-      vistas:0,totalLikes:0
-    });
-    // Notificación push para familias
-    await db.collection('notificaciones_push').add({
-      tipo:'comunicado',
-      titulo,
-      texto:texto.slice(0,120),
-      tag,
-      cursos:[curso],
-      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
-      leidos:[]
-    });
-    document.getElementById('com-titulo').value='';
-    document.getElementById('com-texto').value='';
-    alert('✅ Aviso publicado para el curso '+curso+'.');
-    cargarComunicadosDocente();
+    await db.collection('comunicados').add({titulo,texto,tag,cursos:[curso],creadoPor:docenteEmail,creadoPorNombre:docenteData?.nombre||'',creadoPorRol:'docente',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),vistas:0,totalLikes:0});
+    await db.collection('notificaciones_push').add({tipo:'comunicado',titulo,texto:texto.slice(0,120),tag,cursos:[curso],creadoEn:firebase.firestore.FieldValue.serverTimestamp(),leidos:[]});
+    document.getElementById('com-titulo').value='';document.getElementById('com-texto').value='';
+    alert('✅ Aviso publicado para '+curso+'.');cargarComunicadosDocente();
   }catch(e){alert('Error: '+e.message);}
   btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane mr-2"></i>PUBLICAR AVISO';
 }
-
 async function cargarComunicadosDocente(){
-  const cont=document.getElementById('lista-com-doc');
-  if(!cont)return;
+  const cont=document.getElementById('lista-com-doc');if(!cont)return;
   cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
   try{
-    let snap;
-    try{snap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).orderBy('creadoEn','desc').limit(20).get();}
-    catch(e){snap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).get();}
-    cont.innerHTML='';
-    if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste avisos.</p>';return;}
+    let snap;try{snap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).orderBy('creadoEn','desc').limit(20).get();}catch(e){snap=await db.collection('comunicados').where('creadoPor','==',docenteEmail).get();}
+    cont.innerHTML='';if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste avisos.</p>';return;}
+    const tagCls={urgente:'bg-red-100 text-red-700',info:'bg-blue-100 text-blue-700',tramite:'bg-slate-100 text-slate-600'};
     snap.forEach(doc=>{
-      const d=doc.data();
-      const fecha=d.creadoEn?.toDate?.();
-      const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
-      const tagCls={urgente:'bg-red-100 text-red-700',info:'bg-blue-100 text-blue-700',tramite:'bg-slate-100 text-slate-600'};
+      const d=doc.data();const fecha=d.creadoEn?.toDate?.();const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
       cont.innerHTML+=`<div class="bg-white rounded-2xl border p-4 space-y-2 shadow-sm">
-        <div class="flex items-start justify-between gap-2">
-          <p class="font-bold text-sm flex-1">${d.titulo||'Sin título'}</p>
-          <span class="text-[9px] font-black px-2 py-1 rounded-lg flex-shrink-0 ${tagCls[d.tag]||'bg-slate-100 text-slate-600'}">${d.tag||'info'}</span>
-        </div>
+        <div class="flex items-start justify-between gap-2"><p class="font-bold text-sm flex-1">${d.titulo||'Sin título'}</p>
+        <span class="text-[9px] font-black px-2 py-1 rounded-lg flex-shrink-0 ${tagCls[d.tag]||'bg-slate-100 text-slate-600'}">${d.tag||'info'}</span></div>
         <p class="text-xs text-slate-500 line-clamp-2">${d.texto||''}</p>
-        <div class="flex items-center justify-between">
-          <p class="text-[10px] text-slate-400">📅 ${fechaStr} · Curso: <b>${(d.cursos||[]).join(', ')}</b></p>
-          <button onclick="eliminarComunicadoDocente('${doc.id}')" class="text-rose-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button>
-        </div>
-      </div>`;
+        <div class="flex items-center justify-between"><p class="text-[10px] text-slate-400">📅 ${fechaStr} · Curso: <b>${(d.cursos||[]).join(', ')}</b></p>
+        <button onclick="eliminarComunicadoDocente('${doc.id}')" class="text-rose-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button></div></div>`;
     });
-  }catch(e){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Error al cargar avisos.</p>';}
+  }catch(e){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Error al cargar.</p>';}
 }
-
-async function eliminarComunicadoDocente(id){
-  if(!confirm('¿Eliminar este aviso?'))return;
-  await db.collection('comunicados').doc(id).delete();
-  cargarComunicadosDocente();
-}
-
+async function eliminarComunicadoDocente(id){if(!confirm('¿Eliminar?'))return;await db.collection('comunicados').doc(id).delete();cargarComunicadosDocente();}
 function poblarCursosEnComunicados(){
-  const sel=document.getElementById('com-curso');
-  if(!sel)return;
-  sel.innerHTML='';
+  const sel=document.getElementById('com-curso');if(!sel)return;sel.innerHTML='';
   const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
   if(!curs.length){sel.innerHTML='<option value="">Sin cursos asignados</option>';return;}
   curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
 }
 
-// ══ TABLÓN DE ALUMNOS ══
-let tipoTablonActivo = 'tarea';
-
+// ══ TABLÓN ══
+let tipoTablonActivo='tarea';
 function selTipoTablon(tipo){
-  tipoTablonActivo = tipo;
+  tipoTablonActivo=tipo;
   document.querySelectorAll('.tipo-tablon-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tipo-'+tipo).classList.add('active');
-  // Mostrar/ocultar opciones de Iosi Study
-  document.getElementById('tablon-estudio-opts').classList.toggle('hidden', tipo !== 'estudio');
-  // Mostrar/ocultar fecha de entrega
-  document.getElementById('tablon-fecha-wrap').classList.toggle('hidden', tipo === 'recordatorio');
+  document.getElementById('tablon-estudio-opts').classList.toggle('hidden',tipo!=='estudio');
+  document.getElementById('tablon-fecha-wrap').classList.toggle('hidden',tipo==='recordatorio');
 }
-
 function poblarCursosTablon(){
-  const sel = document.getElementById('tablon-curso');
-  if(!sel) return;
-  sel.innerHTML = '';
-  const curs = Array.isArray(docenteData?.cursos) ? docenteData.cursos : [];
-  if(!curs.length){ sel.innerHTML='<option value="">Sin cursos asignados</option>'; return; }
-  curs.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+  const sel=document.getElementById('tablon-curso');if(!sel)return;sel.innerHTML='';
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  if(!curs.length){sel.innerHTML='<option value="">Sin cursos asignados</option>';return;}
+  curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
 }
-
 function poblarMateriasTablon(){
-  const sel = document.getElementById('tablon-materia');
-  if(!sel) return;
-  sel.innerHTML = '';
-  const mats = Array.isArray(docenteData?.materias) ? docenteData.materias : ['General'];
-  if(!mats.length){ sel.innerHTML='<option value="General">General</option>'; return; }
-  mats.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+  const sel=document.getElementById('tablon-materia');if(!sel)return;sel.innerHTML='';
+  const mats=Array.isArray(docenteData?.materias)?docenteData.materias:['General'];
+  mats.forEach(m=>sel.innerHTML+=`<option value="${m}">${m}</option>`);
 }
-
 function cancelarEditarTablon(){
-  document.getElementById('tablon-id-editando').value = '';
-  document.getElementById('tablon-titulo').value = '';
-  document.getElementById('tablon-texto').value = '';
-  document.getElementById('tablon-fecha').value = '';
-  document.getElementById('tablon-contenidoEstudio').value = '';
-  document.getElementById('btn-cancelar-tablon').classList.add('hidden');
-  document.getElementById('btn-tablon-txt').textContent = 'PUBLICAR EN TABLÓN';
+  document.getElementById('tablon-id-editando').value='';document.getElementById('tablon-titulo').value='';document.getElementById('tablon-texto').value='';
+  document.getElementById('tablon-fecha').value='';document.getElementById('tablon-contenidoEstudio').value='';
+  document.getElementById('btn-cancelar-tablon').classList.add('hidden');document.getElementById('btn-tablon-txt').textContent='PUBLICAR EN TABLÓN';
   selTipoTablon('tarea');
 }
-
 async function publicarTablon(){
-  const titulo = document.getElementById('tablon-titulo').value.trim();
-  const texto = document.getElementById('tablon-texto').value.trim();
-  const curso = document.getElementById('tablon-curso').value;
-  const materia = document.getElementById('tablon-materia').value;
-  const fecha = document.getElementById('tablon-fecha').value;
-  const notif = document.getElementById('tablon-notif').checked;
-  const idEditando = document.getElementById('tablon-id-editando').value;
-  if(!titulo || !texto){ alert('Completá el título y la descripción.'); return; }
-  if(!curso){ alert('Seleccioná un curso destinatario.'); return; }
-  const cursosAsignados = Array.isArray(docenteData?.cursos) ? docenteData.cursos : [];
-  if(!cursosAsignados.includes(curso)){ alert('Solo podés publicar para tus cursos asignados.'); return; }
-
-  const btn = document.querySelector('[onclick="publicarTablon()"]');
-  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
-
-  const data = {
-    titulo, texto, tipo: tipoTablonActivo, curso, materia,
-    docenteEmail, docenteNombre: docenteData?.nombre || '',
-    creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-    fechaEntrega: fecha || null,
-    leidos: []
-  };
-
-  if(tipoTablonActivo === 'estudio'){
-    data.tipoQuiz = document.getElementById('tablon-tipoQuiz').value;
-    data.cantMultiple = parseInt(document.getElementById('tablon-cantMultiple').value) || 4;
-    data.cantDesarrollo = parseInt(document.getElementById('tablon-cantDesarrollo').value) || 1;
-    data.contenidoEstudio = document.getElementById('tablon-contenidoEstudio').value.trim() || texto;
-  }
-
-  try {
+  const titulo=document.getElementById('tablon-titulo').value.trim();const texto=document.getElementById('tablon-texto').value.trim();
+  const curso=document.getElementById('tablon-curso').value;const materia=document.getElementById('tablon-materia').value;
+  const fecha=document.getElementById('tablon-fecha').value;const notif=document.getElementById('tablon-notif').checked;
+  const idEditando=document.getElementById('tablon-id-editando').value;
+  if(!titulo||!texto){alert('Completá el título y la descripción.');return;}
+  if(!curso){alert('Seleccioná un curso destinatario.');return;}
+  const cursosAsignados=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  if(!cursosAsignados.includes(curso)){alert('Solo podés publicar para tus cursos asignados.');return;}
+  const btn=document.querySelector('[onclick="publicarTablon()"]');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
+  const data={titulo,texto,tipo:tipoTablonActivo,curso,materia,docenteEmail,docenteNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),fechaEntrega:fecha||null,leidos:[]};
+  if(tipoTablonActivo==='estudio'){data.tipoQuiz=document.getElementById('tablon-tipoQuiz').value;data.cantMultiple=parseInt(document.getElementById('tablon-cantMultiple').value)||4;data.cantDesarrollo=parseInt(document.getElementById('tablon-cantDesarrollo').value)||1;data.contenidoEstudio=document.getElementById('tablon-contenidoEstudio').value.trim()||texto;}
+  try{
     let docRef;
-    if(idEditando){
-      await db.collection('tablon').doc(idEditando).update(data);
-    } else {
-      docRef = await db.collection('tablon').add(data);
-      // Notificación push → aparece en dot-tablon del alumno
-      if(notif){
-        await db.collection('notificaciones_push').add({
-          tipo: 'tablon',
-          tipoTablon: tipoTablonActivo,
-          titulo,
-          texto: texto.slice(0, 120),
-          curso,
-          materia,
-          tablonId: docRef.id,
-          docenteNombre: docenteData?.nombre || '',
-          creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-          leidos: []
-        });
-      }
+    if(idEditando){await db.collection('tablon').doc(idEditando).update(data);}
+    else{
+      docRef=await db.collection('tablon').add(data);
+      if(notif){await db.collection('notificaciones_push').add({tipo:'tablon',tipoTablon:tipoTablonActivo,titulo,texto:texto.slice(0,120),curso,materia,tablonId:docRef.id,docenteNombre:docenteData?.nombre||'',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),leidos:[]});}
     }
-    alert('✅ Publicado en el tablón de ' + curso + (notif ? ' · Notificación enviada' : '') + '.');
-    cancelarEditarTablon();
-    cargarTablonDocente();
-  } catch(e){ alert('Error: ' + e.message); }
-
-  btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> PUBLICAR EN TABLÓN';
+    alert('✅ Publicado en el tablón de '+curso+(notif?' · Notificación enviada':'')+'.'); cancelarEditarTablon();cargarTablonDocente();
+  }catch(e){alert('Error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> PUBLICAR EN TABLÓN';
 }
-
 async function cargarTablonDocente(){
-  const cont = document.getElementById('lista-tablon-doc');
-  if(!cont) return;
-  cont.innerHTML = '<p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
-  try {
-    let snap;
-    try { snap = await db.collection('tablon').where('docenteEmail','==',docenteEmail).orderBy('creadoEn','desc').limit(30).get(); }
-    catch(e){ snap = await db.collection('tablon').where('docenteEmail','==',docenteEmail).get(); }
-    cont.innerHTML = '';
-    if(snap.empty){ cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste nada en el tablón.</p>'; return; }
-    const tipoIcon = {tarea:'📋',material:'📚',estudio:'🧠',recordatorio:'🔔'};
-    const tipoColor = {tarea:'bg-amber-50 text-amber-700 border-amber-200',material:'bg-blue-50 text-blue-700 border-blue-200',estudio:'bg-violet-50 text-violet-700 border-violet-200',recordatorio:'bg-slate-50 text-slate-600 border-slate-200'};
-    snap.forEach(doc => {
-      const d = doc.data();
-      const fecha = d.creadoEn?.toDate?.();
-      const fechaStr = fecha ? fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
-      const lbl = (tipoIcon[d.tipo]||'📌') + ' ' + (d.tipo||'');
-      const cls = tipoColor[d.tipo] || 'bg-slate-50 text-slate-600 border-slate-200';
+  const cont=document.getElementById('lista-tablon-doc');if(!cont)return;
+  cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  try{
+    let snap;try{snap=await db.collection('tablon').where('docenteEmail','==',docenteEmail).orderBy('creadoEn','desc').limit(30).get();}catch(e){snap=await db.collection('tablon').where('docenteEmail','==',docenteEmail).get();}
+    cont.innerHTML='';if(snap.empty){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Todavía no publicaste nada en el tablón.</p>';return;}
+    const tipoIcon={tarea:'📋',material:'📚',estudio:'🧠',recordatorio:'🔔'};
+    const tipoColor={tarea:'bg-amber-50 text-amber-700 border-amber-200',material:'bg-blue-50 text-blue-700 border-blue-200',estudio:'bg-violet-50 text-violet-700 border-violet-200',recordatorio:'bg-slate-50 text-slate-600 border-slate-200'};
+    snap.forEach(doc=>{
+      const d=doc.data();const fecha=d.creadoEn?.toDate?.();const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'—';
+      const lbl=(tipoIcon[d.tipo]||'📌')+' '+(d.tipo||'');const cls=tipoColor[d.tipo]||'bg-slate-50 text-slate-600 border-slate-200';
+      const leidosPor = d.leidos?.length || 0;
       cont.innerHTML += `<div class="bg-white rounded-2xl border p-4 space-y-2 shadow-sm">
-        <div class="flex items-start justify-between gap-2">
-          <p class="font-bold text-sm flex-1">${d.titulo||'Sin título'}</p>
-          <span class="text-[9px] font-black px-2 py-1 rounded-lg border flex-shrink-0 ${cls}">${lbl}</span>
-        </div>
+        <div class="flex items-start justify-between gap-2"><p class="font-bold text-sm flex-1">${d.titulo||'Sin título'}</p>
+        <span class="text-[9px] font-black px-2 py-1 rounded-lg border flex-shrink-0 ${cls}">${lbl}</span></div>
         <p class="text-xs text-slate-500 line-clamp-2">${d.texto||''}</p>
         <div class="flex items-center justify-between">
           <p class="text-[10px] text-slate-400">📅 ${fechaStr} · ${d.curso||''} · <b>${d.materia||''}</b></p>
           <div class="flex gap-2">
+            <button onclick="abrirDuplicar('${doc.id}')" style="background:#f1f5f9;border:none;border-radius:.4rem;padding:3px 7px;font-size:9px;font-weight:700;color:#64748b;cursor:pointer"><i class="fas fa-copy"></i></button>
+            <button onclick="abrirEntregas('${doc.id}','${d.titulo||''}','${d.curso||''} ')" style="display:${d.tipo==='tarea'?'inline':'none'};background:#f0fdf4;border:none;border-radius:.4rem;padding:3px 7px;font-size:9px;font-weight:700;color:#15803d;cursor:pointer">📥</button>
             <button onclick="editarTablonDocente('${doc.id}')" class="text-blue-400 hover:text-blue-600 p-1"><i class="fas fa-pen text-xs"></i></button>
             <button onclick="eliminarTablonDocente('${doc.id}')" class="text-rose-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button>
           </div>
         </div>
+        <div>
+          <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 mb-1">
+            <span>👁 ${leidosPor} alumno${leidosPor!==1?'s':''} lo leyeron</span>
+            ${leidosPor>0?`<button onclick="verQuienLeyo('${doc.id}','${d.titulo||''}')" class="text-blue-400 font-bold">Ver quiénes →</button>`:''}
+          </div>
+          <div class="lecturas-bar"><div class="lecturas-fill" style="width:${leidosPor>0?Math.min(100,leidosPor*10)+'%':'0%'}"></div></div>
+        </div>
       </div>`;
     });
-  } catch(e){ cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Error al cargar.</p>'; }
+  }catch(e){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-4">Error al cargar.</p>';}
 }
-
 async function editarTablonDocente(id){
-  const doc = await db.collection('tablon').doc(id).get();
-  if(!doc.exists) return;
-  const d = doc.data();
-  document.getElementById('tablon-id-editando').value = id;
-  document.getElementById('tablon-titulo').value = d.titulo||'';
-  document.getElementById('tablon-texto').value = d.texto||'';
-  document.getElementById('tablon-fecha').value = d.fechaEntrega||'';
-  document.getElementById('tablon-contenidoEstudio').value = d.contenidoEstudio||'';
-  if(d.curso){ document.getElementById('tablon-curso').value = d.curso; }
-  if(d.materia){ document.getElementById('tablon-materia').value = d.materia; }
-  selTipoTablon(d.tipo||'tarea');
-  document.getElementById('btn-cancelar-tablon').classList.remove('hidden');
-  document.getElementById('btn-tablon-txt').textContent = 'GUARDAR CAMBIOS';
+  const doc=await db.collection('tablon').doc(id).get();if(!doc.exists)return;const d=doc.data();
+  document.getElementById('tablon-id-editando').value=id;document.getElementById('tablon-titulo').value=d.titulo||'';document.getElementById('tablon-texto').value=d.texto||'';
+  document.getElementById('tablon-fecha').value=d.fechaEntrega||'';document.getElementById('tablon-contenidoEstudio').value=d.contenidoEstudio||'';
+  if(d.curso)document.getElementById('tablon-curso').value=d.curso;if(d.materia)document.getElementById('tablon-materia').value=d.materia;
+  selTipoTablon(d.tipo||'tarea');document.getElementById('btn-cancelar-tablon').classList.remove('hidden');document.getElementById('btn-tablon-txt').textContent='GUARDAR CAMBIOS';
   document.getElementById('tab-tablon').scrollIntoView({behavior:'smooth'});
 }
+async function eliminarTablonDocente(id){if(!confirm('¿Eliminar esta publicación del tablón?'))return;await db.collection('tablon').doc(id).delete();cargarTablonDocente();}
 
-async function eliminarTablonDocente(id){
-  if(!confirm('¿Eliminar esta publicación del tablón?')) return;
-  await db.collection('tablon').doc(id).delete();
-  cargarTablonDocente();
+// ══ TANDA 2: VISTA POR ALUMNO, CSV, PLANTILLAS, PREVIEW, LECTURAS ══
+
+// ── 9: Vista por alumno ──
+let vistaNotaActual = 'grilla';
+function setVistaNota(vista){
+  vistaNotaActual = vista;
+  document.getElementById('btn-vista-grilla').classList.toggle('active', vista==='grilla');
+  document.getElementById('btn-vista-alumno').classList.toggle('active', vista==='alumno');
+  document.getElementById('btn-vista-grilla').classList.toggle('text-slate-500', vista!=='grilla');
+  document.getElementById('btn-vista-alumno').classList.toggle('text-slate-500', vista!=='alumno');
+  document.getElementById('grilla-container').classList.toggle('hidden', vista!=='grilla');
+  document.getElementById('ctrl-examenes').classList.toggle('hidden', vista!=='grilla');
+  document.getElementById('vista-alumno-container').classList.toggle('hidden', vista!=='alumno');
+  document.getElementById('indicadores-container').classList.toggle('hidden', true);
+  if(vista==='alumno') renderVistaAlumno();
 }
 
-// ══ UTILS ══
-window._switchTab = function switchTab(tab){
+async function renderVistaAlumno(){
+  const cont = document.getElementById('vista-alumno-container');
+  cont.innerHTML = '<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  const curso = cursoActivo || document.getElementById('select-curso')?.value || '';
+  if(!alumnosActuales.length){ cont.innerHTML='<p class="text-slate-400 text-center py-8">Sin alumnos en este curso.</p>'; return; }
+  cont.innerHTML = '';
+  for(const al of alumnosActuales){
+    const nd = await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
+    const nData = nd.exists ? nd.data() : {};
+    // Calcular promedio
+    const notaKeys = columnaExamenes.length ? columnaExamenes : [{key:'nota_1',label:'Nota 1'}];
+    let suma=0,cnt=0;
+    notaKeys.forEach(col=>{ const v=parseFloat(nData[col.key]); if(!isNaN(v)){suma+=v;cnt++;} });
+    const prom = cnt>0 ? (suma/cnt).toFixed(1) : null;
+    const promNum = parseFloat(prom);
+    const promColor = prom===null?'#94a3b8':promNum>=6?'#15803d':promNum>=4?'#a16207':'#dc2626';
+    const promBg = prom===null?'#f1f5f9':promNum>=6?'#f0fdf4':promNum>=4?'#fefce8':'#fef2f2';
+    // Notas individuales
+    const notasHTML = notaKeys.map(col => {
+      const v = nData[col.key];
+      const num = parseFloat(v);
+      const bg = v===undefined||v===''?'#f1f5f9':num>=6?'#dcfce7':num>=4?'#fef9c3':'#fee2e2';
+      const clr = v===undefined||v===''?'#94a3b8':num>=6?'#15803d':num>=4?'#a16207':'#dc2626';
+      return `<div style="text-align:center">
+        <p style="font-size:9px;font-weight:700;color:#94a3b8;margin-bottom:3px">${col.label}</p>
+        <div style="background:${bg};color:${clr};border-radius:.5rem;padding:4px 8px;font-weight:900;font-size:13px">${v||'—'}</div>
+      </div>`;
+    }).join('');
+    cont.innerHTML += `<div class="alumno-nota-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:10px;font-weight:900;color:#94a3b8">${al.numero}</span>
+          <p style="font-weight:800;font-size:.9375rem">${al.nombre}</p>
+        </div>
+        <div style="background:${promBg};color:${promColor};border-radius:.75rem;padding:4px 12px;font-weight:900;font-size:15px">${prom||'—'}</div>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">${notasHTML}</div>
+    </div>`;
+  }
+}
+
+// ── 11: Importar CSV de notas ──
+let csvNotasData = [];
+function abrirImportCSV(){ document.getElementById('modal-csv-notas').classList.remove('hidden'); }
+function cerrarImportCSV(){ document.getElementById('modal-csv-notas').classList.add('hidden'); document.getElementById('csv-notas-preview').classList.add('hidden'); csvNotasData=[]; document.getElementById('csv-notas-input').value=''; document.getElementById('csv-notas-nombre').textContent='Sin archivo'; }
+
+function procesarCSVNotas(inp){
+  const file = inp.files[0]; if(!file) return;
+  document.getElementById('csv-notas-nombre').textContent = file.name;
+  const r = new FileReader();
+  r.onload = function(e){
+    const lines = e.target.result.trim().split('\n').filter(l=>l.trim());
+    if(lines.length < 2){ alert('CSV vacío.'); return; }
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h=>h.replace(/"/g,'').trim().toLowerCase());
+    const alumnoIdx = headers.indexOf('alumno') >= 0 ? headers.indexOf('alumno') : 0;
+    const notaHeaders = headers.filter((_,i) => i !== alumnoIdx);
+    csvNotasData = lines.slice(1).map(l => {
+      const cols = l.split(sep).map(v=>v.replace(/"/g,'').trim());
+      const row = { alumno: cols[alumnoIdx] || '' };
+      notaHeaders.forEach((h,i) => { if(i+1 < cols.length) row[h] = cols[headers.indexOf(h)]; });
+      return row;
+    }).filter(r=>r.alumno);
+    // Preview
+    let tabla = `<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f1f5f9">
+      <th style="padding:5px 8px;text-align:left;font-size:10px">Alumno</th>
+      ${notaHeaders.map(h=>`<th style="padding:5px 6px;text-align:center;font-size:10px">${h}</th>`).join('')}
+    </tr></thead><tbody>`;
+    csvNotasData.slice(0,5).forEach(row => {
+      tabla += `<tr style="border-top:1px solid #e2e8f0"><td style="padding:4px 8px;font-weight:700">${row.alumno}</td>
+        ${notaHeaders.map(h=>`<td style="padding:4px 6px;text-align:center;font-weight:700">${row[h]||'—'}</td>`).join('')}</tr>`;
+    });
+    tabla += '</tbody></table>';
+    document.getElementById('csv-notas-tabla').innerHTML = tabla;
+    document.getElementById('csv-notas-info').textContent = `${csvNotasData.length} alumnos encontrados. Se muestran los primeros 5.`;
+    document.getElementById('csv-notas-btn-txt').textContent = `IMPORTAR ${csvNotasData.length} ALUMNOS`;
+    document.getElementById('csv-notas-preview').classList.remove('hidden');
+  };
+  r.readAsText(file, 'UTF-8');
+}
+
+async function ejecutarImportNotas(){
+  if(!csvNotasData.length) return;
+  const btn = document.getElementById('csv-notas-btn-txt');
+  btn.textContent = 'Importando...';
+  let ok=0, err=0;
+  for(const row of csvNotasData){
+    // Buscar alumno por nombre
+    const match = alumnosActuales.find(al => al.nombre.toLowerCase().trim() === row.alumno.toLowerCase().trim());
+    if(!match){ err++; continue; }
+    const notaData = { materia: materiaActiva, periodo: periodoActivo.slug, fechaUpdate: new Date().toLocaleDateString() };
+    Object.entries(row).forEach(([k,v]) => { if(k !== 'alumno' && v) notaData[k] = parseFloat(v) || v; });
+    try{
+      await db.collection('alumnos').doc(match.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).set(notaData, {merge:true});
+      ok++;
+    }catch(e){ err++; }
+  }
+  alert(`✅ Importación completa: ${ok} alumnos actualizados${err?`, ${err} no encontrados`:''}.`);
+  cerrarImportCSV();
+  cargarAlumnos();
+}
+
+// ── 12: Vista previa tablón ──
+function togglePreviewTablon(){
+  const panel = document.getElementById('preview-tablon-panel');
+  panel.classList.toggle('hidden');
+  if(!panel.classList.contains('hidden')) actualizarPreviewTablon();
+}
+function actualizarPreviewTablon(){
+  const tipoIcon = {tarea:'📋',material:'📚',estudio:'🧠',recordatorio:'🔔'};
+  const tipoLabel = {tarea:'Tarea',material:'Material',estudio:'Iosi Study',recordatorio:'Aviso'};
+  const tipoBg = {tarea:'bg-amber-100 text-amber-700',material:'bg-blue-100 text-blue-700',estudio:'bg-violet-100 text-violet-700',recordatorio:'bg-slate-100 text-slate-600'};
+  const t = tipoTablonActivo;
+  document.getElementById('prev-icon').textContent = tipoIcon[t]||'📌';
+  const tipoBadge = document.getElementById('prev-tipo');
+  tipoBadge.textContent = tipoLabel[t]||t;
+  tipoBadge.className = `text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${tipoBg[t]||'bg-slate-100 text-slate-600'}`;
+  document.getElementById('prev-titulo').textContent = document.getElementById('tablon-titulo').value || 'Sin título';
+  document.getElementById('prev-texto').textContent = document.getElementById('tablon-texto').value || '—';
+  document.getElementById('prev-materia').textContent = document.getElementById('tablon-materia')?.value || '';
+  document.getElementById('prev-docente').textContent = docenteData?.nombre || 'Docente';
+  const fechaVal = document.getElementById('tablon-fecha').value;
+  const fechaEl = document.getElementById('prev-fecha');
+  if(fechaVal && t!=='recordatorio'){
+    const [y,m,d] = fechaVal.split('-');
+    fechaEl.textContent = `📅 Entrega: ${d}/${m}/${y}`;
+    fechaEl.classList.remove('hidden');
+  } else { fechaEl.classList.add('hidden'); }
+}
+
+// Auto-actualizar preview al escribir
+['tablon-titulo','tablon-texto','tablon-fecha'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input', ()=>{
+    if(!document.getElementById('preview-tablon-panel')?.classList.contains('hidden')) actualizarPreviewTablon();
+  });
+});
+
+// ── 13: Plantillas rápidas ──
+const PLANTILLAS = {
+  tarea_manana: {
+    tipo: 'tarea',
+    titulo: 'Tarea para mañana',
+    texto: 'Recordá completar la tarea asignada en clase y traerla resuelta para la próxima clase.',
+    fechaOffset: 1
+  },
+  eval_semana: {
+    tipo: 'tarea',
+    titulo: 'Evaluación la próxima semana',
+    texto: 'La semana próxima tenemos evaluación. Repasá los temas vistos en clase y preparate con tiempo.',
+    fechaOffset: 7
+  },
+  materiales: {
+    tipo: 'recordatorio',
+    titulo: 'Recordatorio: traer materiales',
+    texto: 'Para la próxima clase es necesario traer el material indicado. Revisá tu carpeta y preparalo con anticipación.',
+    fechaOffset: 1
+  },
+  recordatorio_fecha: {
+    tipo: 'recordatorio',
+    titulo: 'Recordatorio importante',
+    texto: 'No olvidés la fecha indicada. Organizate con tiempo.',
+    fechaOffset: 3
+  }
+};
+function usarPlantilla(key){
+  const p = PLANTILLAS[key]; if(!p) return;
+  selTipoTablon(p.tipo);
+  document.getElementById('tablon-titulo').value = p.titulo;
+  document.getElementById('tablon-texto').value = p.texto;
+  if(p.fechaOffset){
+    const d = new Date(); d.setDate(d.getDate() + p.fechaOffset);
+    // Skip weekends
+    while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1);
+    document.getElementById('tablon-fecha').value = d.toISOString().slice(0,10);
+  }
+  actualizarPreviewTablon();
+  document.getElementById('preview-tablon-panel').classList.remove('hidden');
+  document.getElementById('tablon-titulo').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── 14: Ver quién leyó ──
+async function verQuienLeyo(id, titulo){
+  const doc = await db.collection('tablon').doc(id).get();
+  if(!doc.exists) return;
+  const leidos = doc.data().leidos || [];
+  if(!leidos.length){ alert('Ningún alumno lo leyó todavía.'); return; }
+  alert(`"${titulo}" — leído por:\n\n${leidos.map((l,i)=>`${i+1}. ${l.nombre||l}`).join('\n')}`);
+}
+
+window.setVistaNota = setVistaNota;
+window.abrirImportCSV = abrirImportCSV;
+window.cerrarImportCSV = cerrarImportCSV;
+window.procesarCSVNotas = procesarCSVNotas;
+window.ejecutarImportNotas = ejecutarImportNotas;
+window.togglePreviewTablon = togglePreviewTablon;
+window.usarPlantilla = usarPlantilla;
+window.verQuienLeyo = verQuienLeyo;
+
+// ══ FIN TANDA 2 ══
+
+// ══ TANDA 3: PDF, GRÁFICO, OBSERVACIONES, FORO DOCENTE ══
+
+// ── Sub-tabs informes ──
+function setSubtabInformes(sub){
+  ['informe','observaciones','grafico','foro'].forEach(s=>{
+    document.getElementById('subtab-'+s).classList.toggle('hidden',s!==sub);
+    const btn=document.getElementById('subtab-btn-'+s);
+    btn.classList.toggle('active',s===sub);
+    btn.classList.toggle('text-slate-500',s!==sub);
+  });
+  if(sub==='grafico')renderGraficoRendimiento();
+  if(sub==='foro')iniciarForoDocente();
+  if(sub==='observaciones')sincObsAlumno();
+}
+window.setSubtabInformes=setSubtabInformes;
+
+// ── 18: Observaciones ──
+let tipoObsActivo='academica';
+function selTipoObs(tipo){
+  tipoObsActivo=tipo;
+  ['academica','conductual','emocional'].forEach(t=>{
+    const btn=document.getElementById('obs-tipo-'+t);
+    if(t===tipo){btn.className='obs-tipo-btn active p-2 rounded-xl text-xs font-black border-2 border-violet-300 bg-violet-50 text-violet-700';}
+    else{btn.className='obs-tipo-btn p-2 rounded-xl text-xs font-black border-2 border-slate-200 bg-slate-50 text-slate-500';}
+  });
+}
+window.selTipoObs=selTipoObs;
+
+function sincObsAlumno(){
+  const selInf=document.getElementById('informe-alumno');
+  const selObs=document.getElementById('obs-alumno');
+  if(!selInf||!selObs)return;
+  selObs.innerHTML=selInf.innerHTML;selObs.value=selInf.value;
+  cargarObservaciones();
+}
+
+async function guardarObservacion(){
+  const alumnoId=document.getElementById('obs-alumno').value;
+  const texto=document.getElementById('obs-texto').value.trim();
+  if(!alumnoId||!texto){alert('Seleccioná un alumno y escribí la observación.');return;}
+  const alumnoNombre=document.getElementById('obs-alumno').selectedOptions[0]?.text||'';
+  const obs={texto,tipo:tipoObsActivo,alumnoId,alumnoNombre,docenteEmail,docenteNombre:docenteData?.nombre||'',materia:materiaActiva,fecha:new Date().toISOString(),origen:'docente'};
+  await db.collection('alumnos').doc(alumnoId).collection('observaciones').add(obs);
+  await db.collection('observaciones_eoe').add(obs);
+  alert('✅ Observación guardada. Visible también para EOE.');
+  document.getElementById('obs-texto').value='';cargarObservaciones();
+}
+window.guardarObservacion=guardarObservacion;
+
+async function cargarObservaciones(){
+  const alumnoId=document.getElementById('obs-alumno')?.value;
+  const cont=document.getElementById('lista-observaciones');
+  if(!cont||!alumnoId)return;
+  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i></p>';
+  const tipoIcon={academica:'📚',conductual:'⚠️',emocional:'💙'};
+  const tipoBg={academica:'bg-blue-50 text-blue-800',conductual:'bg-amber-50 text-amber-800',emocional:'bg-violet-50 text-violet-800'};
+  try{
+    let snap;try{snap=await db.collection('alumnos').doc(alumnoId).collection('observaciones').orderBy('fecha','desc').limit(20).get();}catch(e){snap=await db.collection('alumnos').doc(alumnoId).collection('observaciones').get();}
+    cont.innerHTML='';
+    if(snap.empty){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Sin observaciones registradas.</p>';return;}
+    snap.forEach(doc=>{
+      const o=doc.data();const fecha=new Date(o.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      cont.innerHTML+=`<div class="bg-white rounded-2xl border p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[9px] font-black px-2 py-1 rounded-full ${tipoBg[o.tipo]||'bg-slate-100 text-slate-600'}">${tipoIcon[o.tipo]||'📌'} ${o.tipo||''}</span>
+          <span class="text-[9px] text-slate-400 font-bold">${fecha}</span>
+        </div>
+        <p class="text-sm text-slate-700">${o.texto}</p>
+        <p class="text-[10px] text-slate-400 mt-2">${o.docenteNombre||''} · ${o.materia||''}</p>
+      </div>`;
+    });
+  }catch(e){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Error al cargar.</p>';}
+}
+window.cargarObservaciones=cargarObservaciones;
+
+// ── 16: PDF por alumno ──
+async function generarPDFAlumno(){
+  const alumnoId=document.getElementById('informe-alumno').value;
+  const alumnoNombre=document.getElementById('informe-alumno').selectedOptions[0]?.text||'Alumno';
+  if(!alumnoId){alert('Seleccioná un alumno primero.');return;}
+  const btn=document.querySelector('[onclick="generarPDFAlumno()"]');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+  const [informesSnap,notasSnap,asistSnap]=await Promise.all([
+    db.collection('alumnos').doc(alumnoId).collection('informes').orderBy('fecha','desc').limit(5).get().catch(()=>({docs:[]})),
+    db.collection('alumnos').doc(alumnoId).collection('notas_v2').get().catch(()=>({docs:[]})),
+    db.collection('asistencia').where('alumnoId','==',alumnoId).where('materia','==',materiaActiva).get().catch(()=>({docs:[]}))
+  ]);
+  let totalDias=0,presentes=0;
+  asistSnap.docs.forEach(d=>{totalDias++;if(d.data().estado==='P')presentes++;});
+  const pctAsist=totalDias>0?Math.round((presentes/totalDias)*100):null;
+  let promedio=null;
+  notasSnap.docs.forEach(d=>{
+    if(d.id.startsWith(periodoActivo.slug)){
+      const data=d.data();const vals=Object.entries(data).filter(([k,v])=>k.startsWith('nota_')&&!isNaN(parseFloat(v))).map(([,v])=>parseFloat(v));
+      if(vals.length)promedio=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    }
+  });
+  const informes=informesSnap.docs.map(d=>d.data());
+  const ahora=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;margin:40px;color:#0f172a;font-size:13px}
+    h1{font-size:22px;font-weight:900;margin-bottom:4px}
+    h2{font-size:15px;font-weight:700;margin:24px 0 8px;padding-bottom:4px;border-bottom:2px solid #e2e8f0}
+    .logo{font-size:18px;font-weight:900;color:#2563eb}
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+    .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}
+    .stat-num{font-size:24px;font-weight:900;color:#2563eb}
+    .stat-lbl{font-size:10px;color:#64748b;margin-top:2px}
+    .inf{background:#f8fafc;border-left:4px solid #2563eb;padding:10px 14px;margin-bottom:8px;border-radius:0 8px 8px 0}
+    .footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;display:flex;justify-content:space-between}
+  </style></head><body>
+  <div style="display:flex;justify-content:space-between;margin-bottom:24px">
+    <div><div class="logo">Instituto Iosef Caro</div><h1>${alumnoNombre}</h1>
+    <p style="color:#64748b;font-size:12px">Materia: <b>${materiaActiva}</b> · Período: <b>${periodoActivo.nombre}</b> · Curso: <b>${cursoActivo}</b></p></div>
+    <div style="text-align:right;font-size:11px;color:#94a3b8">Generado: ${ahora}<br>Docente: ${docenteData?.nombre||''}</div>
+  </div>
+  <h2>Resumen del período</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">${promedio||'—'}</div><div class="stat-lbl">Promedio ${materiaActiva}</div></div>
+    <div class="stat"><div class="stat-num">${pctAsist!==null?pctAsist+'%':'—'}</div><div class="stat-lbl">Asistencia</div></div>
+    <div class="stat"><div class="stat-num">${presentes}</div><div class="stat-lbl">Días presente</div></div>
+  </div>
+  ${informes.length?`<h2>Informes pedagógicos</h2>${informes.map(inf=>`<div class="inf"><p style="font-size:10px;color:#64748b;margin-bottom:4px">${new Date(inf.fecha).toLocaleDateString('es-AR')} · ${inf.periodo} · ${inf.materia}</p><p>${inf.texto}</p></div>`).join('')}`:''}
+  <div class="footer"><span>Instituto Iosef Caro — Documento generado automáticamente</span><span>${alumnoNombre} · ${materiaActiva} · ${periodoActivo.nombre}</span></div>
+  </body></html>`;
+  const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>win.print(),500);
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-file-pdf"></i> PDF';
+}
+window.generarPDFAlumno=generarPDFAlumno;
+
+// ── 17: Gráfico de rendimiento ──
+async function renderGraficoRendimiento(){
+  const cont=document.getElementById('grafico-container');
+  const distCont=document.getElementById('distribucion-container');
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
+  if(!curso||!materiaActiva||!alumnosActuales.length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-8">Seleccioná curso y cargá notas primero.</p>';return;}
+  document.getElementById('grafico-curso-label').textContent=`${curso} · ${materiaActiva} · ${periodoActivo.nombre}`;
+  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Calculando...</p>';
+  const notasPorColumna={};const notasPorAlumno={};
+  for(const al of alumnosActuales){
+    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
+    if(!nd.exists)continue;const data=nd.data();let suma=0,cnt=0;
+    columnaExamenes.forEach(col=>{const v=parseFloat(data[col.key]);if(!isNaN(v)){if(!notasPorColumna[col.key]){notasPorColumna[col.key]={label:col.label,vals:[]};}notasPorColumna[col.key].vals.push(v);suma+=v;cnt++;}});
+    if(cnt>0)notasPorAlumno[al.nombre]=(suma/cnt);
+  }
+  if(!Object.keys(notasPorColumna).length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-8">Sin notas cargadas todavía.</p>';return;}
+  const labels=[];const promedios=[];const colores=[];
+  Object.values(notasPorColumna).forEach(col=>{const prom=col.vals.reduce((a,b)=>a+b,0)/col.vals.length;labels.push(col.label);promedios.push(parseFloat(prom.toFixed(1)));colores.push(prom>=6?'#22c55e':prom>=4?'#f59e0b':'#ef4444');});
+  const barWidth=Math.min(56,Math.floor(260/labels.length));const gap=8;const chartW=labels.length*(barWidth+gap)+40;const chartH=180;
+  let svg=`<svg width="100%" height="${chartH+40}" viewBox="0 0 ${Math.max(chartW,300)} ${chartH+40}" style="overflow:visible">`;
+  [4,6,8,10].forEach(v=>{const y=chartH-(v/10*chartH);svg+=`<line x1="30" y1="${y}" x2="${chartW}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/><text x="24" y="${y+4}" font-size="9" fill="#94a3b8" text-anchor="end">${v}</text>`;});
+  const aprobY=chartH-(6/10*chartH);svg+=`<line x1="30" y1="${aprobY}" x2="${chartW}" y2="${aprobY}" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4"/>`;
+  labels.forEach((lbl,i)=>{const x=30+i*(barWidth+gap);const h=(promedios[i]/10)*chartH;const y=chartH-h;svg+=`<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="6" fill="${colores[i]}" opacity="0.9"/><text x="${x+barWidth/2}" y="${y-5}" font-size="10" font-weight="700" fill="${colores[i]}" text-anchor="middle">${promedios[i]}</text><text x="${x+barWidth/2}" y="${chartH+14}" font-size="9" fill="#64748b" text-anchor="middle">${lbl.slice(0,8)}</text>`;});
+  svg+='</svg>';cont.innerHTML=svg;
+  const rangos={aprobados:0,en_proceso:0,insuficientes:0};
+  Object.values(notasPorAlumno).forEach(p=>{if(p>=6)rangos.aprobados++;else if(p>=4)rangos.en_proceso++;else rangos.insuficientes++;});
+  const total=Object.keys(notasPorAlumno).length||1;
+  distCont.innerHTML=[{label:'Aprobados (≥6)',val:rangos.aprobados,color:'#15803d',bg:'#f0fdf4'},{label:'En proceso (4-5)',val:rangos.en_proceso,color:'#a16207',bg:'#fefce8'},{label:'Insuficientes (<4)',val:rangos.insuficientes,color:'#dc2626',bg:'#fef2f2'}].map(r=>`<div style="background:${r.bg};border-radius:.75rem;padding:.625rem .875rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:.75rem;font-weight:700;color:${r.color}">${r.label}</span><span style="font-size:.9375rem;font-weight:900;color:${r.color}">${r.val} <span style="font-size:.625rem">(${Math.round(r.val/total*100)}%)</span></span></div>`).join('');
+}
+window.renderGraficoRendimiento=renderGraficoRendimiento;
+
+// ── 15: Foro del docente ──
+function iniciarForoDocente(){
+  const sel=document.getElementById('foro-doc-curso');if(!sel)return;
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  sel.innerHTML='';curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+  if(curs.length)cargarForoDocente();
+}
+async function cargarForoDocente(){
+  const curso=document.getElementById('foro-doc-curso')?.value;const cont=document.getElementById('lista-foro-doc');
+  if(!curso||!cont)return;
+  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  const cfg=await db.collection('foro_config').doc(curso+'_'+docenteEmail).get().catch(()=>null);
+  const permiteRespuestas=cfg?.exists?cfg.data().permiteRespuestas!==false:true;
+  document.getElementById('foro-permite-respuestas').checked=permiteRespuestas;
+  let snap;try{snap=await db.collection('foro').where('curso','==',curso).orderBy('creadoEn','desc').limit(30).get();}catch(e){snap=await db.collection('foro').where('curso','==',curso).get();}
+  cont.innerHTML='';
+  if(snap.empty){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Sin mensajes en el foro de este curso.</p>';return;}
+  const tipoIcon={pregunta:'❓',comentario:'💬',ayuda:'🆘'};
+  snap.forEach(doc=>{
+    const d=doc.data();const id=doc.id;
+    const fecha=d.creadoEn?.toDate?.();const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const esDocente=d.autorRol==='docente';const respuestas=d.respuestas||[];
+    cont.innerHTML+=`<div style="background:white;border:1px solid #e2e8f0;border-radius:1.25rem;overflow:hidden;margin-bottom:.5rem;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+      <div style="padding:12px 14px;background:${esDocente?'#eff6ff':'white'}">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span>${tipoIcon[d.tipo]||'💬'}</span>
+          <span style="font-size:11px;font-weight:700;color:#475569">${d.autorNombre||'Alumno'}${esDocente?' 👩‍🏫':''}</span>
+          <span style="font-size:9px;color:#94a3b8;margin-left:auto">${fechaStr}</span>
+        </div>
+        <p style="font-size:13px;line-height:1.5">${d.texto||''}</p>
+      </div>
+      ${respuestas.length?`<div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc">${respuestas.map(r=>`<div style="padding:6px 10px;background:white;border-radius:.625rem;border-left:3px solid ${r.rolAutor==='docente'?'#2563eb':'#e2e8f0'};margin-bottom:4px"><p style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:2px">${r.autorNombre||''}${r.rolAutor==='docente'?' 👩‍🏫':''}</p><p style="font-size:12px">${r.texto}</p></div>`).join('')}</div>`:''}
+      <div style="padding:8px 14px;border-top:1px solid #f1f5f9;display:flex;gap:6px">
+        <button onclick="responderForoDocente('${id}')" style="background:#eff6ff;border:none;border-radius:.625rem;padding:5px 12px;font-size:11px;font-weight:700;color:#2563eb;cursor:pointer;font-family:inherit"><i class="fas fa-reply"></i> Responder</button>
+        ${esDocente?`<button onclick="eliminarMsgForo('${id}')" style="background:none;border:none;color:#fca5a5;cursor:pointer;padding:5px 8px;font-size:11px"><i class="fas fa-trash"></i></button>`:''}
+      </div>
+    </div>`;
+  });
+}
+window.cargarForoDocente=cargarForoDocente;
+async function publicarMensajeForo(){
+  const curso=document.getElementById('foro-doc-curso')?.value;const texto=document.getElementById('foro-doc-msg').value.trim();
+  if(!curso||!texto){alert('Escribí un mensaje.');return;}
+  const btn=document.querySelector('[onclick="publicarMensajeForo()"]');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Publicando...';
+  await db.collection('foro').add({texto,tipo:'comentario',curso,autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'Docente',autorRol:'docente',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),respuestas:[]});
+  document.getElementById('foro-doc-msg').value='';btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> PUBLICAR EN FORO';
+  cargarForoDocente();
+}
+window.publicarMensajeForo=publicarMensajeForo;
+async function responderForoDocente(id){
+  const texto=prompt('Tu respuesta:');if(!texto?.trim())return;
+  const resp={texto:texto.trim(),autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'Docente',rolAutor:'docente',fecha:new Date().toISOString()};
+  await db.collection('foro').doc(id).update({respuestas:firebase.firestore.FieldValue.arrayUnion(resp)});
+  cargarForoDocente();
+}
+window.responderForoDocente=responderForoDocente;
+async function eliminarMsgForo(id){if(!confirm('¿Eliminar?'))return;await db.collection('foro').doc(id).delete();cargarForoDocente();}
+window.eliminarMsgForo=eliminarMsgForo;
+async function togglePermiteRespuestas(){
+  const curso=document.getElementById('foro-doc-curso')?.value;const permite=document.getElementById('foro-permite-respuestas').checked;
+  if(!curso)return;
+  await db.collection('foro_config').doc(curso+'_'+docenteEmail).set({permiteRespuestas:permite,curso,docenteEmail},{merge:true});
+}
+window.togglePermiteRespuestas=togglePermiteRespuestas;
+
+// ══ FIN TANDA 3 ══
+window._switchTab=function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
   if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
+  if(tab==='dashboard'){cargarDashboardStats();cargarUltimaActividad();}
   document.getElementById('tab-'+tab)?.classList.add('active');
   document.getElementById('btn-'+tab)?.classList.add('active');
   document.getElementById('btn-guardar-notas').style.display='none';
   document.getElementById('btn-guardar-asis').style.display='none';
-  if(tab==='notas'&&Object.keys(cambiosNotas).length) document.getElementById('btn-guardar-notas').style.display='block';
-  if(tab==='asis'&&Object.keys(cambiosAsis).length) document.getElementById('btn-guardar-asis').style.display='block';
-}
+  if(tab==='notas'&&Object.keys(cambiosNotas).length)document.getElementById('btn-guardar-notas').style.display='block';
+  if(tab==='asis'&&Object.keys(cambiosAsis).length)document.getElementById('btn-guardar-asis').style.display='block';
+};
+window.switchTab=function(t){window._switchTab(t);};
 
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-
-// Auto-login desde index.html
 window.addEventListener('load',()=>{
-  const em=sessionStorage.getItem('iosef_email');
-  const rol=sessionStorage.getItem('iosef_rol');
+  const em=sessionStorage.getItem('iosef_email');const rol=sessionStorage.getItem('iosef_rol');
   if(em&&rol==='eoe'){window.location.href='eoe.html';return;}
-  if(em&&(rol==='docente'||rol==='admin'||rol==='director')){
-    document.getElementById('login-email').value=em;
-    login(em);
-  }
+  if(em&&(rol==='docente'||rol==='admin'||rol==='director')){document.getElementById('login-email').value=em;login(em);}
 });
+
+// ══ MEJORAS FINALES ══
+
+// ── 2: Historial de asistencia por alumno ──
+window.abrirHistorial=async function(id, nombre){
+  document.getElementById('historial-nombre').textContent=nombre;
+  document.getElementById('modal-historial').classList.add('open');
+  const cal=document.getElementById('historial-cal');
+  const stats=document.getElementById('historial-stats');
+  cal.innerHTML='<p style="font-size:11px;color:#94a3b8;grid-column:span 7;text-align:center;padding:.5rem">Cargando...</p>';
+
+  // Calcular últimos 30 días
+  const hoy=new Date();
+  const fechas=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date(hoy);d.setDate(hoy.getDate()-i);
+    fechas.push(d.toISOString().slice(0,10));
+  }
+
+  // Buscar asistencia
+  const snap=await db.collection('asistencia').where('alumnoId','==',id).where('materia','==',materiaActiva).get().catch(()=>null);
+  const mapaAsis={};
+  if(snap)snap.forEach(d=>{mapaAsis[d.data().fecha]=d.data().estado;});
+
+  // Renderizar calendario — alinear primer día con día de semana
+  const primerFecha=new Date(fechas[0]+'T12:00:00');
+  // JS: 0=Dom,1=Lun...6=Sab → queremos Lun=0
+  const primerDia=(primerFecha.getDay()+6)%7; // 0=Lun
+  cal.innerHTML='';
+  // Blancos iniciales
+  for(let i=0;i<primerDia;i++){
+    const d=document.createElement('div');d.className='hcal-dia hcal-x';cal.appendChild(d);
+  }
+  let presentes=0,ausentes=0,tardes=0;
+  fechas.forEach(f=>{
+    const est=mapaAsis[f];
+    const d=document.createElement('div');
+    const dia=f.slice(8);
+    if(est==='P'){d.className='hcal-dia hcal-P';presentes++;}
+    else if(est==='A'){d.className='hcal-dia hcal-A';ausentes++;}
+    else if(est==='T'){d.className='hcal-dia hcal-T';tardes++;}
+    else{d.className='hcal-dia hcal-x';}
+    d.textContent=dia;d.title=f;
+    cal.appendChild(d);
+  });
+  const total=presentes+ausentes+tardes;
+  const pct=total>0?Math.round((presentes/total)*100):null;
+  stats.innerHTML=[
+    {n:presentes,l:'Presentes',c:'#15803d',bg:'#f0fdf4'},
+    {n:ausentes,l:'Ausentes',c:'#dc2626',bg:'#fef2f2'},
+    {n:pct!==null?pct+'%':'—',l:'Asistencia',c:'#2563eb',bg:'#eff6ff'},
+  ].map(s=>`<div style="background:${s.bg};border-radius:.875rem;padding:.625rem;text-align:center">
+    <p style="font-size:1.25rem;font-weight:900;color:${s.c}">${s.n}</p>
+    <p style="font-size:.625rem;font-weight:700;color:#64748b;margin-top:2px">${s.l}</p>
+  </div>`).join('');
+};
+window.cerrarHistorial=function(){document.getElementById('modal-historial').classList.remove('open');};
+
+// ── 4: Duplicar publicación tablón ──
+let _duplicarItem=null;
+window.abrirDuplicar=function(id,titulo){
+  _duplicarItem=id;
+  document.getElementById('duplicar-titulo-ref').textContent='«'+titulo+'»';
+  const cont=document.getElementById('duplicar-cursos');cont.innerHTML='';
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  curs.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:.875rem;padding:.875rem 1rem;font-weight:700;font-size:.875rem;cursor:pointer;font-family:inherit;text-align:left;color:#0f172a;transition:border-color .15s';
+    btn.textContent='📋 Duplicar para '+c;
+    btn.onmouseenter=()=>btn.style.borderColor='#2563eb';
+    btn.onmouseleave=()=>btn.style.borderColor='#e2e8f0';
+    btn.onclick=()=>ejecutarDuplicar(c);
+    cont.appendChild(btn);
+  });
+  if(!curs.length)cont.innerHTML='<p style="font-size:.75rem;color:#94a3b8">Sin otros cursos asignados.</p>';
+  document.getElementById('modal-duplicar').classList.add('open');
+};
+window.cerrarDuplicar=function(){document.getElementById('modal-duplicar').classList.remove('open');_duplicarItem=null;};
+
+async function ejecutarDuplicar(cursoDest){
+  if(!_duplicarItem)return;
+  const doc=await db.collection('tablon').doc(_duplicarItem).get();
+  if(!doc.exists){cerrarDuplicar();return;}
+  const data={...doc.data()};
+  data.curso=cursoDest;
+  data.creadoEn=firebase.firestore.FieldValue.serverTimestamp();
+  data.leidos=[];delete data.id;
+  await db.collection('tablon').add(data);
+  cerrarDuplicar();
+  alert('✅ Publicación duplicada para '+cursoDest+'.');
+  cargarTablonDocente();
+}
+window.ejecutarDuplicar=ejecutarDuplicar;
+
+// ── 1: Marcar entregas de alumnos ──
+let _entregasItem=null;
+window.abrirEntregas=async function(id,titulo,curso){
+  _entregasItem=id;
+  document.getElementById('entregas-titulo').textContent=titulo;
+  document.getElementById('entregas-sub').textContent='Curso: '+curso;
+  document.getElementById('modal-entregas').classList.add('open');
+  const lista=document.getElementById('entregas-lista');
+  lista.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center;padding:1rem">Cargando alumnos...</p>';
+
+  // Cargar entregados de Firebase
+  const entDoc=await db.collection('tablon').doc(id).get().catch(()=>null);
+  const entregados=entDoc?.data()?.entregados||[];
+
+  // Alumnos del curso
+  const aSnap=await db.collection('alumnos').where('curso','==',curso).get().catch(()=>({docs:[]}));
+  const alus=[];aSnap.docs.forEach(d=>alus.push({id:d.id,nombre:d.data().nombre}));
+  alus.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  lista.innerHTML='';
+  if(!alus.length){lista.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center;padding:1rem">Sin alumnos en este curso.</p>';return;}
+
+  const entregadosSet=new Set(entregados);
+  let entregadasCount=0;
+  alus.forEach((al,i)=>{
+    const entrego=entregadosSet.has(al.id);
+    if(entrego)entregadasCount++;
+    const row=document.createElement('div');
+    row.className='entrega-item';
+    row.style.marginBottom='.375rem';
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:.75rem">
+      <span style="font-size:10px;font-weight:900;color:#cbd5e1">${i+1}</span>
+      <p style="font-size:.875rem;font-weight:600">${al.nombre}</p>
+    </div>
+    <button id="ent-btn-${al.id}" onclick="toggleEntrega('${id}','${al.id}',this)"
+      style="border:none;border-radius:.625rem;padding:.375rem .875rem;font-size:.6875rem;font-weight:800;cursor:pointer;font-family:inherit;background:${entrego?'#dcfce7':'#f1f5f9'};color:${entrego?'#15803d':'#94a3b8'}">
+      ${entrego?'✓ Entregó':'Pendiente'}
+    </button>`;
+    lista.appendChild(row);
+  });
+  // Header counter
+  document.getElementById('entregas-sub').textContent=`Curso: ${curso} · ${entregadasCount}/${alus.length} entregaron`;
+};
+window.cerrarEntregas=function(){document.getElementById('modal-entregas').classList.remove('open');_entregasItem=null;cargarTablonDocente();};
+
+window.toggleEntrega=async function(tablonId,alumnoId,btn){
+  const actual=btn.textContent.trim().startsWith('✓');
+  if(actual){
+    await db.collection('tablon').doc(tablonId).update({entregados:firebase.firestore.FieldValue.arrayRemove(alumnoId)});
+    btn.textContent='Pendiente';btn.style.background='#f1f5f9';btn.style.color='#94a3b8';
+  } else {
+    await db.collection('tablon').doc(tablonId).update({entregados:firebase.firestore.FieldValue.arrayUnion(alumnoId)});
+    btn.textContent='✓ Entregó';btn.style.background='#dcfce7';btn.style.color='#15803d';
+  }
+};
+
+// ── Cerrar modales con backdrop ──
+['modal-historial','modal-entregas','modal-duplicar'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('click',e=>{if(e.target===el){el.classList.remove('open');}});
+});
+
+// ══ FIN MEJORAS FINALES ══
+
 } // fin _initDocente
 </script>
+
+<!-- MODAL HISTORIAL ASISTENCIA -->
+<div id="modal-historial">
+  <div class="historial-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <div>
+        <h3 style="font-weight:900;font-size:1.125rem" id="historial-nombre">—</h3>
+        <p style="font-size:.6875rem;color:#94a3b8;font-weight:600" id="historial-sub">Últimos 30 días · </p>
+      </div>
+      <button onclick="cerrarHistorial()" style="width:32px;height:32px;background:#f1f5f9;border:none;border-radius:.625rem;font-size:1.1rem;cursor:pointer;color:#64748b">✕</button>
+    </div>
+    <div style="display:flex;gap:.75rem;margin:.5rem 0 .75rem;font-size:.6875rem;font-weight:700;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:#dcfce7;display:inline-block"></span>Presente</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:#fee2e2;display:inline-block"></span>Ausente</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:#fef9c3;display:inline-block"></span>Tarde</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px">
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">L</div>
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">M</div>
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">X</div>
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">J</div>
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">V</div>
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">S</div>
+      <div style="text-align:center;font-size:8px;font-weight:800;color:#94a3b8">D</div>
+    </div>
+    <div class="hcal-grid" id="historial-cal"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:1rem" id="historial-stats"></div>
+  </div>
+</div>
+
+<!-- MODAL DUPLICAR -->
+<div id="modal-duplicar">
+  <div style="background:white;border-radius:1.5rem;width:100%;max-width:380px;padding:1.5rem">
+    <h3 style="font-weight:900;font-size:1rem;margin-bottom:.25rem">Duplicar publicación</h3>
+    <p style="font-size:.75rem;color:#94a3b8;margin-bottom:1rem" id="duplicar-titulo-ref">—</p>
+    <div id="duplicar-cursos" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem"></div>
+    <button onclick="cerrarDuplicar()" style="width:100%;background:#f1f5f9;border:none;border-radius:.875rem;padding:.75rem;font-weight:700;font-size:.875rem;cursor:pointer;font-family:inherit;color:#64748b">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL ENTREGAS -->
+<div id="modal-entregas">
+  <div style="background:white;border-radius:2rem 2rem 0 0;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;padding:1.5rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <h3 style="font-weight:900;font-size:1rem" id="entregas-titulo">Entregas</h3>
+        <p style="font-size:.6875rem;color:#94a3b8" id="entregas-sub">—</p>
+      </div>
+      <button onclick="cerrarEntregas()" style="width:32px;height:32px;background:#f1f5f9;border:none;border-radius:.625rem;font-size:1.1rem;cursor:pointer;color:#64748b">✕</button>
+    </div>
+    <div id="entregas-lista"></div>
+  </div>
+</div>
+
+</body>
+</html>
