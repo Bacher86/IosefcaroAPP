@@ -860,7 +860,28 @@ window.autorizar = function autorizar(){
   registrarLog('login',`Ingreso al panel admin`,'login');
   refrescarTodo();
 }
-
+window.onload=()=>{
+  // Sesión propia del admin
+  if(sessionStorage.getItem('iosef_admin_session')){
+    adminEmail=sessionStorage.getItem('iosef_admin_email')||sessionStorage.getItem('iosef_email')||'admin';
+    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+    return;
+  }
+  // Sesión desde index.html
+  const em=sessionStorage.getItem('iosef_email');
+  const rol=sessionStorage.getItem('iosef_rol');
+  const nm=sessionStorage.getItem('iosef_nombre');
+  if(em&&(rol==='admin'||rol==='director')){
+    adminEmail=em;adminNombre=nm||em;
+    sessionStorage.setItem('iosef_admin_session','admin');
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+  }
+};
 window.cerrarSesion = function cerrarSesion(){sessionStorage.clear();location.reload();}
 
 // ══════════════════════
@@ -2416,26 +2437,6 @@ window.cargarCiclos = async function cargarCiclos(){
   </div>`).join('');
   poblarSelectoresComparativa(ciclosArr);
 }
-
-// ── Restaurar sesión al terminar de cargar ──
-(function(){
-  const sess = sessionStorage.getItem('iosef_admin_session');
-  const em   = sessionStorage.getItem('iosef_email');
-  const rol  = sessionStorage.getItem('iosef_rol');
-  if(sess){
-    adminEmail = sessionStorage.getItem('iosef_admin_email')||em||'admin';
-    adminNombre= sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
-    document.getElementById('login-overlay').style.display='none';
-    document.getElementById('admin-content').classList.remove('hidden');
-    refrescarTodo();
-  } else if(em && (rol==='admin'||rol==='director')){
-    adminEmail = em;
-    adminNombre= sessionStorage.getItem('iosef_nombre')||'Admin';
-    document.getElementById('login-overlay').style.display='none';
-    document.getElementById('admin-content').classList.remove('hidden');
-    refrescarTodo();
-  }
-})();
 
 } // fin _initAdmin
 </script>
