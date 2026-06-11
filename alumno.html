@@ -1291,6 +1291,32 @@ async function verificarNotifForo(){
 }
 
 
+// ── Exponer funciones al scope global (requerido por onclick= en el HTML) ──
+window.doLogin               = doLogin;
+window.guardarNuevaPass      = guardarNuevaPass;
+window.cerrarSesion          = cerrarSesion;
+window.switchTab             = switchTab;
+window.filtrarTablon         = filtrarTablon;
+window.cerrarModal           = cerrarModal;
+window.abrirStudy            = abrirStudy;
+window.cerrarStudy           = cerrarStudy;
+window.generarQuiz           = generarQuiz;
+window.responderMultiple     = responderMultiple;
+window.responderDesarrollo   = responderDesarrollo;
+window.siguiente             = siguiente;
+// filtrarPeriodo: recarga notas (los períodos se manejan por visibilidad en Firestore)
+function filtrarPeriodo(p){ cargarNotas(); }
+window.filtrarPeriodo        = filtrarPeriodo;
+window.cambiarMes            = cambiarMes;
+window.selDia                = selDia;
+window.abrirNuevoMensajeForo = abrirNuevoMensajeForo;
+window.cerrarNuevoMensajeForo= cerrarNuevoMensajeForo;
+window.enviarMensajeForo     = enviarMensajeForo;
+window.abrirResponderForo    = abrirResponderForo;
+window.cerrarResponderForo   = cerrarResponderForo;
+window.enviarRespuestaForo   = enviarRespuestaForo;
+window.eliminarMensajeForo   = eliminarMensajeForo;
+
 } // end _initApp
 </script>
 </body>
