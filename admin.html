@@ -189,21 +189,21 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 
 <div id="admin-content" class="hidden">
   <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
-    <button onclick="switchTab('stats')"           class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
-    <button onclick="switchTab('boletin-auth')"     class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
-    <button onclick="switchTab('comunicado-admin')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📣 Comunicado</button>
-    <button onclick="switchTab('eventos-aprobacion')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">✅ Eventos</button>
-    <button onclick="switchTab('importar')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
-    <button onclick="switchTab('staff')"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
-    <button onclick="switchTab('materias')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
-    <button onclick="switchTab('periodos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
-    <button onclick="switchTab('ciclo')"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
-    <button onclick="switchTab('docentes')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
-    <button onclick="switchTab('alumnos')"          class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
-    <button onclick="switchTab('familias')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
-    <button onclick="switchTab('notas-vis')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
-    <button onclick="switchTab('permisos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🔐 Permisos</button>
-    <button onclick="switchTab('log')"              class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
+    <button onclick="switchTab('stats',event)"           class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
+    <button onclick="switchTab('boletin-auth',event)"     class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
+    <button onclick="switchTab('comunicado-admin',event)" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📣 Comunicado</button>
+    <button onclick="switchTab('eventos-aprobacion',event)" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">✅ Eventos</button>
+    <button onclick="switchTab('importar',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
+    <button onclick="switchTab('staff',event)"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
+    <button onclick="switchTab('materias',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
+    <button onclick="switchTab('periodos',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
+    <button onclick="switchTab('ciclo',event)"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
+    <button onclick="switchTab('docentes',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
+    <button onclick="switchTab('alumnos',event)"          class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
+    <button onclick="switchTab('familias',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
+    <button onclick="switchTab('notas-vis',event)"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
+    <button onclick="switchTab('permisos',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🔐 Permisos</button>
+    <button onclick="switchTab('log',event)"              class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
     <button onclick="exportarExcel()"               class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
     <button onclick="document.getElementById('modal-backup').classList.remove('hidden')" class="nav-btn text-blue-700 bg-blue-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup</button>
     <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
@@ -225,7 +225,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="st-docentes">—</div><div class="stat-l">Docentes</div></div>
         <div class="stat-card text-center"><div class="stat-n text-pink-600" id="st-familias">—</div><div class="stat-l">Familias</div></div>
         <div class="stat-card text-center"><div class="stat-n text-amber-600" id="st-comunicados">—</div><div class="stat-l">Comunicados</div></div>
-        <div class="stat-card text-center cursor-pointer hover:border-violet-300 transition" onclick="switchTab('notas-vis')">
+        <div class="stat-card text-center cursor-pointer hover:border-violet-300 transition" onclick="switchTab('notas-vis',event)">
           <div class="stat-n text-violet-600" id="st-notas-pend">—</div>
           <div class="stat-l">Notas sin publicar</div>
         </div>
@@ -926,6 +926,8 @@ window.cargarLog = async function cargarLog(){
 // CICLO LECTIVO
 // ══════════════════════
 
+window.cargarCiclosLegacy = async function cargarCiclosLegacy(){
+  const snap=await db.collection('ciclos_lectivos').orderBy('nombre','desc').get();
   const cont=document.getElementById('lista-ciclos');
   const labelActivo=document.getElementById('ciclo-activo-label');
   const nombreActual=document.getElementById('ciclo-nombre-actual');
@@ -952,7 +954,7 @@ window.cargarLog = async function cargarLog(){
     </div>`;
   });
   if(!hayActivo){labelActivo.textContent='Sin ciclo activo';nombreActual.textContent='—';fechasActual.textContent='Creá y activá un ciclo lectivo';}
-
+}
 
 window.crearCiclo = async function crearCiclo(){
   const nombre=document.getElementById('ciclo-nombre').value.trim();
@@ -1664,11 +1666,12 @@ window.eliminarFamiliasSeleccionadas = async function eliminarFamiliasSelecciona
 // ══════════════════════
 // UTILS
 // ══════════════════════
-window.switchTab = function switchTab(t){
+window.switchTab = function switchTab(t,e){
   document.querySelectorAll('.tab-content').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+t)?.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-slate-900','text-white');b.classList.add('text-slate-500');});
-  event.currentTarget?.classList.add('bg-slate-900','text-white');
+  const btn=(e||window.event)?.currentTarget||(e||window.event)?.target;
+  if(btn)btn.classList.add('bg-slate-900','text-white');
   if(t==='stats'){cargarEstadisticas();cargarNotasPendientes();}
   if(t==='periodos')cargarPeriodosAdmin();
   if(t==='boletin-auth')inicializarBoletinAuth().catch(()=>{});
