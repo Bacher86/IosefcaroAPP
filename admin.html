@@ -187,21 +187,23 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 
 <div id="admin-content" class="hidden">
   <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
-    <button onclick="switchTab('stats')"      class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
-    <button onclick="switchTab('boletin-auth')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
-
-
-    <button onclick="switchTab('importar')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
-    <button onclick="switchTab('staff')"      class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
-    <button onclick="switchTab('materias')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
-    <button onclick="switchTab('periodos')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
-    <button onclick="switchTab('ciclo')"      class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
-    <button onclick="switchTab('docentes')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
-    <button onclick="switchTab('alumnos')"    class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
-    <button onclick="switchTab('familias')"   class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
-    <button onclick="switchTab('notas-vis')"  class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
-    <button onclick="switchTab('log')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
-    <button onclick="exportarExcel()"         class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
+    <button onclick="switchTab('stats')"           class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
+    <button onclick="switchTab('boletin-auth')"     class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
+    <button onclick="switchTab('comunicado-admin')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📣 Comunicado</button>
+    <button onclick="switchTab('eventos-aprobacion')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">✅ Eventos</button>
+    <button onclick="switchTab('importar')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
+    <button onclick="switchTab('staff')"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
+    <button onclick="switchTab('materias')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
+    <button onclick="switchTab('periodos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
+    <button onclick="switchTab('ciclo')"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
+    <button onclick="switchTab('docentes')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
+    <button onclick="switchTab('alumnos')"          class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
+    <button onclick="switchTab('familias')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
+    <button onclick="switchTab('notas-vis')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
+    <button onclick="switchTab('permisos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🔐 Permisos</button>
+    <button onclick="switchTab('log')"              class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
+    <button onclick="exportarExcel()"               class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
+    <button onclick="document.getElementById('modal-backup').classList.remove('hidden')" class="nav-btn text-blue-700 bg-blue-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup</button>
     <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
   </nav>
 
@@ -216,11 +218,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
           <span class="font-black text-blue-700 text-sm" id="ciclo-activo-label">Cargando ciclo...</span>
         </div>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div class="stat-card text-center"><div class="stat-n text-blue-600" id="st-alumnos">—</div><div class="stat-l">Alumnos</div></div>
         <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="st-docentes">—</div><div class="stat-l">Docentes</div></div>
         <div class="stat-card text-center"><div class="stat-n text-pink-600" id="st-familias">—</div><div class="stat-l">Familias</div></div>
         <div class="stat-card text-center"><div class="stat-n text-amber-600" id="st-comunicados">—</div><div class="stat-l">Comunicados</div></div>
+        <div class="stat-card text-center cursor-pointer hover:border-violet-300 transition" onclick="switchTab('notas-vis')">
+          <div class="stat-n text-violet-600" id="st-notas-pend">—</div>
+          <div class="stat-l">Notas sin publicar</div>
+        </div>
       </div>
         <div class="bg-white p-6 rounded-3xl border shadow-sm col-span-2 md:col-span-4">
           <h3 class="font-black text-sm mb-3 flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> Confirmaciones de lectura (últimos 5 comunicados)</h3>
@@ -461,10 +467,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
     </section>
 
     <!-- ════ CICLO LECTIVO ════ -->
+    <!-- ════ CICLO LECTIVO ════ -->
     <section id="tab-ciclo" class="tab-content space-y-6">
       <h2 class="text-2xl font-black tracking-tight">Ciclo Lectivo</h2>
-      <p class="text-slate-400 text-xs -mt-3">El ciclo activo se usa para separar datos entre años. Cambiar de ciclo no borra datos anteriores.</p>
+      <p class="text-slate-400 text-xs -mt-3">El ciclo activo separa los datos entre años. Cambiar de ciclo no borra datos anteriores.</p>
 
+      <!-- Ciclo actual -->
       <div class="bg-white p-6 rounded-3xl border shadow-sm">
         <h3 class="font-black text-base mb-4 flex items-center gap-2"><i class="fas fa-calendar-check text-blue-500"></i> Ciclo actual</h3>
         <div id="ciclo-actual-display" class="bg-blue-50 border border-blue-100 p-5 rounded-2xl mb-4">
@@ -474,12 +482,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         </div>
       </div>
 
+      <!-- Crear nuevo ciclo con feriados (mejora 18) -->
       <div class="bg-white p-6 rounded-3xl border shadow-sm">
         <h3 class="font-black text-base mb-4">Crear nuevo ciclo lectivo</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="text-[9px] font-black text-slate-400 uppercase">Año / Nombre</label>
-            <input type="text" id="ciclo-nombre" placeholder="Ej: 2026" class="input-pro mt-1">
+            <input type="text" id="ciclo-nombre" placeholder="Ej: 2027" class="input-pro mt-1">
           </div>
           <div>
             <label class="text-[9px] font-black text-slate-400 uppercase">Inicio del ciclo</label>
@@ -490,12 +499,55 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
             <input type="date" id="ciclo-fin" class="input-pro mt-1">
           </div>
         </div>
+        <!-- Feriados y días no lectivos -->
+        <div class="mt-4">
+          <label class="text-[9px] font-black text-slate-400 uppercase block mb-2">📅 Feriados y días no lectivos</label>
+          <p class="text-[10px] text-slate-400 mb-3">Agregá los feriados y recesos. Se mostrarán en la agenda de familias y alumnos.</p>
+          <div id="lista-feriados-new" class="space-y-2 mb-3"></div>
+          <div class="flex gap-2 flex-wrap">
+            <input type="date" id="feriado-fecha-new" class="input-pro text-sm" style="max-width:160px">
+            <input type="text" id="feriado-desc-new" placeholder="Descripción (ej: Día del Maestro)" class="input-pro text-sm flex-1">
+            <button onclick="agregarFeriado()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 rounded-xl">+ Agregar</button>
+          </div>
+        </div>
         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-4">
-          <p class="text-xs font-bold text-amber-700"><i class="fas fa-exclamation-triangle mr-2"></i>Al activar un ciclo nuevo, los docentes empezarán a cargar notas y asistencia en él. Los datos del ciclo anterior quedan guardados y pueden consultarse filtrando por ciclo.</p>
+          <p class="text-xs font-bold text-amber-700"><i class="fas fa-exclamation-triangle mr-2"></i>Al activar un ciclo nuevo, los docentes empezarán a cargar notas y asistencia en él. Los datos del ciclo anterior quedan guardados.</p>
         </div>
         <button onclick="crearCiclo()" class="mt-4 bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg">Crear Ciclo Lectivo</button>
       </div>
 
+      <!-- PASE DE CICLO — Bonus -->
+      <div class="bg-white p-6 rounded-3xl border-2 border-violet-200 shadow-sm">
+        <h3 class="font-black text-base mb-2 flex items-center gap-2"><i class="fas fa-graduation-cap text-violet-600"></i> Pase de Ciclo — Promoción automática</h3>
+        <p class="text-xs text-slate-500 mb-4">Avanzá a todos los alumnos un año escolar. Sala de 5 → 1° Grado, 7° Grado → 1° Año, 5° Año → Egresados. Podés revisar antes de confirmar.</p>
+        <div class="bg-violet-50 border border-violet-200 rounded-xl p-3 mb-4">
+          <p class="text-xs font-bold text-violet-700">⚠️ Esta acción modifica el campo <b>curso</b> de todos los alumnos. Se registra en el log y es reversible manualmente si hay errores.</p>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="abrirPaseCiclo()" class="bg-violet-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center gap-2">
+            <i class="fas fa-arrow-right"></i> Ver vista previa del pase
+          </button>
+        </div>
+      </div>
+
+      <!-- Comparativa entre ciclos (mejora 22) -->
+      <div class="bg-white p-6 rounded-3xl border shadow-sm">
+        <h3 class="font-black text-base mb-4 flex items-center gap-2"><i class="fas fa-chart-bar text-emerald-500"></i> Comparativa entre ciclos</h3>
+        <div class="flex gap-3 flex-wrap items-end mb-4">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Ciclo A</label>
+            <select id="comp-ciclo-a" class="input-pro mt-1 text-sm" style="max-width:140px"></select>
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Ciclo B</label>
+            <select id="comp-ciclo-b" class="input-pro mt-1 text-sm" style="max-width:140px"></select>
+          </div>
+          <button onclick="ejecutarComparativa()" class="bg-emerald-600 text-white px-5 py-3 rounded-xl font-bold text-sm">Comparar</button>
+        </div>
+        <div id="comparativa-resultado" class="hidden"></div>
+      </div>
+
+      <!-- Historial -->
       <div>
         <h3 class="font-black text-sm text-slate-700 mb-3">Historial de ciclos</h3>
         <div id="lista-ciclos" class="space-y-3"></div>
@@ -639,7 +691,126 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       </div>
     </section>
 
+    <!-- ════ COMUNICADO ADMIN (mejora 11) ════ -->
+    <section id="tab-comunicado-admin" class="tab-content space-y-6">
+      <h2 class="text-2xl font-black tracking-tight">Publicar Comunicado</h2>
+      <p class="text-slate-400 text-xs -mt-3">Enviá comunicados a todas las familias de un nivel o de toda la institución.</p>
+      <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
+          <input type="text" id="com-admin-titulo" placeholder="Título del comunicado" class="input-pro mt-1">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Destinatarios</label>
+            <select id="com-admin-destino" class="input-pro mt-1">
+              <option value="todos">Toda la institución</option>
+              <option value="inicial">Solo Nivel Inicial</option>
+              <option value="primario">Solo Nivel Primario</option>
+              <option value="secundario">Solo Nivel Secundario</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Tipo</label>
+            <select id="com-admin-tipo" class="input-pro mt-1">
+              <option value="general">📢 General</option>
+              <option value="urgente">🔴 Urgente</option>
+              <option value="administrativo">📋 Administrativo</option>
+              <option value="evento">🎭 Evento</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Contenido</label>
+          <textarea id="com-admin-texto" rows="5" placeholder="Escribí el contenido del comunicado..." class="input-pro mt-1 resize-none"></textarea>
+        </div>
+        <button onclick="publicarComunicadoAdmin()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+          <i class="fas fa-paper-plane"></i> PUBLICAR COMUNICADO
+        </button>
+      </div>
+      <div>
+        <h3 class="font-black text-sm mb-3">Comunicados recientes</h3>
+        <div id="lista-com-admin" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- ════ EVENTOS — APROBACIÓN (mejora 14) ════ -->
+    <section id="tab-eventos-aprobacion" class="tab-content space-y-6">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-2xl font-black tracking-tight">Aprobación de Eventos</h2>
+          <p class="text-slate-400 text-xs mt-1">Eventos enviados por secretaría que requieren aprobación de Dirección.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="filtrarEventos('pendiente')" id="ev-fil-pendiente" class="ev-fil-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs">Pendientes</button>
+          <button onclick="filtrarEventos('todos')" id="ev-fil-todos" class="ev-fil-btn bg-slate-100 text-slate-500 px-3 py-2 rounded-xl font-bold text-xs">Todos</button>
+        </div>
+      </div>
+      <div id="lista-eventos-aprobacion" class="space-y-3">
+        <p class="text-slate-400 text-sm text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+      </div>
+    </section>
+
+    <!-- ════ PERMISOS POR ROL (mejora 19) ════ -->
+    <section id="tab-permisos" class="tab-content space-y-6">
+      <h2 class="text-2xl font-black tracking-tight">Permisos por Rol</h2>
+      <p class="text-slate-400 text-xs -mt-3">Referencia de qué puede hacer cada rol en el sistema.</p>
+      <div id="tabla-permisos-cont" class="space-y-4"></div>
+    </section>
+
   </main>
+
+  <!-- ════ MODALES ════ -->
+
+  <!-- Modal pase de ciclo -->
+  <div id="modal-pase-ciclo" class="hidden fixed inset-0 bg-black/60 z-[400] flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl w-full max-w-2xl p-6 space-y-4 shadow-2xl my-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-black text-xl">Vista previa — Pase de Ciclo</h3>
+        <button onclick="cerrarModalPaseCiclo()" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-500 font-bold">✕</button>
+      </div>
+      <p class="text-sm text-slate-500">Así quedarán los cursos de todos los alumnos después del pase. Revisá antes de confirmar.</p>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-bold text-amber-700">
+        <i class="fas fa-info-circle mr-1"></i>
+        Sala de 5 → 1° Grado · 7° Grado → 1° Año Sec. · 5° Año → Egresados · El resto avanza un año automáticamente.
+      </div>
+      <div id="pase-preview-cont" class="max-h-80 overflow-y-auto space-y-2">
+        <p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Calculando...</p>
+      </div>
+      <div id="pase-stats" class="grid grid-cols-3 gap-3 text-center"></div>
+      <div class="flex gap-3">
+        <button onclick="cerrarModalPaseCiclo()" class="flex-1 bg-slate-100 text-slate-600 p-3 rounded-2xl font-bold">Cancelar</button>
+        <button onclick="ejecutarPaseCiclo()" class="flex-1 bg-violet-600 text-white p-3 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+          <i class="fas fa-graduation-cap"></i> CONFIRMAR PASE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal backup -->
+  <div id="modal-backup" class="hidden fixed inset-0 bg-black/60 z-[400] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-black text-lg">Backup del Sistema</h3>
+        <button onclick="cerrarModalBackup()" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-500 font-bold">✕</button>
+      </div>
+      <p class="text-sm text-slate-500">Exportá un JSON completo con los datos críticos del sistema como backup manual.</p>
+      <div class="space-y-2">
+        <label class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl cursor-pointer"><input type="checkbox" id="bk-alumnos" checked class="accent-blue-600 w-4 h-4"> <span class="text-sm font-bold">Alumnos</span></label>
+        <label class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl cursor-pointer"><input type="checkbox" id="bk-usuarios" checked class="accent-blue-600 w-4 h-4"> <span class="text-sm font-bold">Usuarios (docentes, familias, staff)</span></label>
+        <label class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl cursor-pointer"><input type="checkbox" id="bk-cursos" checked class="accent-blue-600 w-4 h-4"> <span class="text-sm font-bold">Cursos, Materias y Períodos</span></label>
+        <label class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl cursor-pointer"><input type="checkbox" id="bk-asistencia" class="accent-blue-600 w-4 h-4"> <span class="text-sm font-bold">Asistencia</span></label>
+        <label class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl cursor-pointer"><input type="checkbox" id="bk-notas" class="accent-blue-600 w-4 h-4"> <span class="text-sm font-bold">Notas</span></label>
+      </div>
+      <div id="backup-progress" class="hidden">
+        <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div id="backup-bar" class="h-full bg-blue-600 rounded-full transition-all" style="width:0%"></div></div>
+        <p id="backup-status" class="text-xs text-slate-400 mt-2 text-center">Preparando...</p>
+      </div>
+      <button onclick="ejecutarBackup()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+        <i class="fas fa-download"></i> DESCARGAR BACKUP
+      </button>
+    </div>
+  </div>
 </div>
 <script>
 // Firebase sequential loader
@@ -762,8 +933,7 @@ window.cargarLog = async function cargarLog(){
 // ══════════════════════
 // CICLO LECTIVO
 // ══════════════════════
-window.cargarCiclos = async function cargarCiclos(){
-  const snap=await db.collection('ciclos_lectivos').orderBy('nombre','desc').get();
+
   const cont=document.getElementById('lista-ciclos');
   const labelActivo=document.getElementById('ciclo-activo-label');
   const nombreActual=document.getElementById('ciclo-nombre-actual');
@@ -1507,11 +1677,14 @@ window.switchTab = function switchTab(t){
   document.getElementById('tab-'+t)?.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-slate-900','text-white');b.classList.add('text-slate-500');});
   event.currentTarget?.classList.add('bg-slate-900','text-white');
-  if(t==='stats')cargarEstadisticas();
+  if(t==='stats'){cargarEstadisticas();cargarNotasPendientes();}
   if(t==='periodos')cargarPeriodosAdmin();
   if(t==='boletin-auth')inicializarBoletinAuth().catch(()=>{});
   if(t==='log')cargarLog();
   if(t==='ciclo')cargarCiclos();
+  if(t==='comunicado-admin')cargarComAdmin();
+  if(t==='eventos-aprobacion'){window._evFiltro='pendiente';cargarEventosAprobacion();}
+  if(t==='permisos')renderTablaPermisos();
 }
 window.eliminarAlumnoConf = async function eliminarAlumnoConf(id,nombre){
   if(!confirm(`¿Eliminar al alumno "${nombre}"?
@@ -1811,9 +1984,459 @@ window.guardarAlumnoData = async function guardarAlumnoData(alu, nivel, cur, fam
   }
 };
 
-window.refrescarTodo = function refrescarTodo(){cargarEstadisticas();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();cargarCursosSelector();}
+// ══ MEJORAS ADMIN ══
+
+// ── 5: Notas pendientes de publicar ──
+window.cargarNotasPendientes = async function(){
+  try{
+    const cursosSnap = await db.collection('cursos').get();
+    const periodosSnap = await db.collection('periodos').get();
+    let sinPublicar = 0;
+    for(const periodo of periodosSnap.docs){
+      const pId = periodo.id;
+      const visDoc = await db.collection('config_visibilidad').doc(pId).get().catch(()=>null);
+      const vis = visDoc?.exists ? visDoc.data() : {};
+      cursosSnap.forEach(cur=>{
+        const key = `${periodo.data().slug||pId}_${cur.data().nombre}`;
+        if(!vis[key]) sinPublicar++;
+      });
+    }
+    const el = document.getElementById('st-notas-pend');
+    if(el) el.textContent = sinPublicar;
+  }catch(e){ const el=document.getElementById('st-notas-pend'); if(el)el.textContent='?'; }
+};
+
+// ── 9: Asignar docente desde vista de curso ──
+window.asignarDocenteDesdeCurso = async function(curso){
+  const docentesSnap = await db.collection('usuarios').where('rol','==','docente').get();
+  const opciones = [];
+  docentesSnap.forEach(d=>opciones.push({id:d.id,nombre:d.data().nombre}));
+  if(!opciones.length){alert('No hay docentes registrados.');return;}
+  const sel = prompt('Escribí el email del docente a asignar:\n'+opciones.map(d=>`${d.nombre} — ${d.id}`).join('\n'));
+  if(!sel)return;
+  const doc = docentesSnap.docs.find(d=>d.id===sel.trim().toLowerCase());
+  if(!doc){alert('Docente no encontrado. Usá el email exacto.');return;}
+  const cursos = doc.data().cursos||[];
+  if(cursos.includes(curso)){alert(`${doc.data().nombre} ya está asignado a ${curso}.`);return;}
+  await db.collection('usuarios').doc(doc.id).update({cursos:[...cursos,curso]});
+  registrarLog('editar',`Docente ${doc.data().nombre} asignado al curso ${curso}`,'docente');
+  alert(`✅ ${doc.data().nombre} asignado a ${curso}.`);
+  cargarDocentes();
+};
+
+// ── 11: Comunicado desde Admin ──
+window.publicarComunicadoAdmin = async function(){
+  const titulo = document.getElementById('com-admin-titulo').value.trim();
+  const texto = document.getElementById('com-admin-texto').value.trim();
+  const destino = document.getElementById('com-admin-destino').value;
+  const tipo = document.getElementById('com-admin-tipo').value;
+  if(!titulo||!texto){alert('Completá título y contenido.');return;}
+  const btn = document.querySelector('[onclick="publicarComunicadoAdmin()"]');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Publicando...';
+  await db.collection('comunicados').add({
+    titulo,texto,tipo,destino,
+    autorEmail,autorNombre:'Dirección',autorRol:'admin',
+    creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+    publicado:true,nivel:destino==='todos'?null:destino
+  });
+  registrarLog('crear',`Comunicado admin: ${titulo}`,'comunicado');
+  alert('✅ Comunicado publicado.');
+  document.getElementById('com-admin-titulo').value='';
+  document.getElementById('com-admin-texto').value='';
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> PUBLICAR COMUNICADO';
+  cargarComAdmin();
+};
+window.cargarComAdmin = async function(){
+  const cont = document.getElementById('lista-com-admin');
+  if(!cont)return;
+  const snap = await db.collection('comunicados').where('autorRol','==','admin').orderBy('creadoEn','desc').limit(10).get().catch(async()=>db.collection('comunicados').get());
+  cont.innerHTML='';
+  snap.forEach(doc=>{
+    const d=doc.data();
+    const fecha = d.creadoEn?.toDate?.()?.toLocaleDateString('es-AR')||'—';
+    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm">
+      <div class="flex items-start justify-between gap-2 mb-1">
+        <p class="font-black text-sm">${d.titulo}</p>
+        <span class="text-[9px] font-bold bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 flex-shrink-0">${fecha}</span>
+      </div>
+      <p class="text-xs text-slate-500 truncate">${d.texto||''}</p>
+      <p class="text-[10px] text-blue-500 font-bold mt-1">→ ${d.destino||'todos'}</p>
+    </div>`;
+  });
+  if(!cont.innerHTML) cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin comunicados publicados desde admin.</p>';
+};
+
+// ── 14: Aprobar eventos de secretaría ──
+let eventosData = [];
+window.cargarEventosAprobacion = async function(){
+  const cont = document.getElementById('lista-eventos-aprobacion');
+  if(!cont)return;
+  cont.innerHTML='<p class="text-slate-400 text-sm text-center py-6"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  const filtro = window._evFiltro||'pendiente';
+  let snap;
+  try{
+    snap = filtro==='pendiente'
+      ? await db.collection('eventos').where('estado','==','pendiente').orderBy('fecha','asc').get()
+      : await db.collection('eventos').orderBy('fecha','desc').limit(30).get();
+  }catch(e){snap=await db.collection('eventos').get();}
+  eventosData=[];
+  snap.forEach(d=>eventosData.push({id:d.id,...d.data()}));
+  const tipoIcon={institucional:'🏫',reunion:'👪',acto:'🎭',no_lectivo:'📅'};
+  const estadoClr={pendiente:'bg-amber-100 text-amber-700',publicado:'bg-emerald-100 text-emerald-700',rechazado:'bg-rose-100 text-rose-600'};
+  cont.innerHTML = eventosData.length
+    ? eventosData.map(ev=>`<div class="bg-white p-5 rounded-2xl border shadow-sm">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2"><span class="text-xl">${tipoIcon[ev.tipo]||'📌'}</span>
+            <div><p class="font-black text-sm">${ev.titulo}</p><p class="text-[10px] text-slate-400">${ev.fecha} · ${ev.tipo} · ${ev.creadoPorNombre||''}</p></div>
+          </div>
+          <span class="text-[9px] font-black px-2 py-0.5 rounded-full ${estadoClr[ev.estado]||'bg-slate-100 text-slate-500'}">${ev.estado||'—'}</span>
+        </div>
+        ${ev.descripcion?`<p class="text-sm text-slate-600 mb-3">${ev.descripcion}</p>`:''}
+        ${ev.estado==='pendiente'?`<div class="flex gap-2">
+          <button onclick="aprobarEvento('${ev.id}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-check mr-1"></i>Aprobar</button>
+          <button onclick="rechazarEvento('${ev.id}')" class="flex-1 bg-rose-500 text-white py-2 rounded-xl text-xs font-black"><i class="fas fa-times mr-1"></i>Rechazar</button>
+        </div>`:''}</div>`).join('')
+    : '<p class="text-slate-400 text-sm text-center py-8">Sin eventos pendientes.</p>';
+};
+window.filtrarEventos = function(f){
+  window._evFiltro=f;
+  document.querySelectorAll('.ev-fil-btn').forEach(b=>b.className='ev-fil-btn bg-slate-100 text-slate-500 px-3 py-2 rounded-xl font-bold text-xs');
+  const btn=document.getElementById('ev-fil-'+f);if(btn)btn.className='ev-fil-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs';
+  cargarEventosAprobacion();
+};
+window.aprobarEvento = async function(id){
+  await db.collection('eventos').doc(id).update({estado:'publicado',aprobadoPor:autorEmail,aprobadoEn:new Date().toISOString()});
+  registrarLog('editar',`Evento aprobado: ${id}`,'evento');
+  cargarEventosAprobacion();
+};
+window.rechazarEvento = async function(id){
+  const motivo = prompt('Motivo del rechazo (opcional):');
+  await db.collection('eventos').doc(id).update({estado:'rechazado',rechazadoPor:autorEmail,motivoRechazo:motivo||'',rechazadoEn:new Date().toISOString()});
+  registrarLog('editar',`Evento rechazado: ${id}`,'evento');
+  cargarEventosAprobacion();
+};
+
+// ── 17: Backup JSON ──
+window.ejecutarBackup = async function(){
+  const progressEl=document.getElementById('backup-progress');
+  const barEl=document.getElementById('backup-bar');
+  const statusEl=document.getElementById('backup-status');
+  progressEl.classList.remove('hidden');
+  const backup={generadoEn:new Date().toISOString(),colecciones:{}};
+  const colecciones=[];
+  if(document.getElementById('bk-alumnos').checked)colecciones.push('alumnos');
+  if(document.getElementById('bk-usuarios').checked)colecciones.push('usuarios');
+  if(document.getElementById('bk-cursos').checked)colecciones.push('cursos','materias','periodos','ciclos_lectivos');
+  if(document.getElementById('bk-asistencia').checked)colecciones.push('asistencia');
+  if(document.getElementById('bk-notas').checked)colecciones.push('notas_v2');
+  for(let i=0;i<colecciones.length;i++){
+    const col=colecciones[i];
+    statusEl.textContent=`Exportando ${col}...`;
+    barEl.style.width=`${Math.round((i/colecciones.length)*100)}%`;
+    try{
+      const snap=await db.collection(col).get();
+      backup.colecciones[col]=[];
+      snap.forEach(d=>backup.colecciones[col].push({id:d.id,...d.data()}));
+    }catch(e){backup.colecciones[col]='error: '+e.message;}
+  }
+  barEl.style.width='100%';statusEl.textContent='Descargando...';
+  const json=JSON.stringify(backup,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`backup_iosefcaro_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+  registrarLog('exportar','Backup manual descargado','backup');
+  progressEl.classList.add('hidden');
+  document.getElementById('modal-backup').classList.add('hidden');
+  alert('✅ Backup descargado correctamente.');
+};
+window.cerrarModalBackup = function(){document.getElementById('modal-backup').classList.add('hidden');};
+
+// ── 18: Feriados en ciclo ──
+let feriadosNuevos=[];
+window.agregarFeriado = function(){
+  const fecha=document.getElementById('feriado-fecha-new').value;
+  const desc=document.getElementById('feriado-desc-new').value.trim();
+  if(!fecha||!desc){alert('Completá fecha y descripción.');return;}
+  feriadosNuevos.push({fecha,descripcion:desc});
+  renderFeriadosList();
+  document.getElementById('feriado-fecha-new').value='';
+  document.getElementById('feriado-desc-new').value='';
+};
+function renderFeriadosList(){
+  const cont=document.getElementById('lista-feriados-new');cont.innerHTML='';
+  feriadosNuevos.forEach((f,i)=>{
+    cont.innerHTML+=`<div class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+      <span class="text-xs font-black text-slate-500">${f.fecha}</span>
+      <span class="flex-1 text-sm">${f.descripcion}</span>
+      <button onclick="eliminarFeriado(${i})" class="text-slate-300 hover:text-rose-400"><i class="fas fa-times text-xs"></i></button>
+    </div>`;
+  });
+}
+window.eliminarFeriado=function(i){feriadosNuevos.splice(i,1);renderFeriadosList();};
+
+// Override crearCiclo to include feriados
+const _origCrearCiclo = window.crearCiclo;
+window.crearCiclo = async function(){
+  const nombre=document.getElementById('ciclo-nombre').value.trim();
+  const inicio=document.getElementById('ciclo-inicio').value;
+  const fin=document.getElementById('ciclo-fin').value;
+  if(!nombre)return alert('El año/nombre del ciclo es obligatorio.');
+  await db.collection('ciclos_lectivos').add({nombre,inicio,fin,activo:false,feriados:feriadosNuevos,creadoEn:new Date().toISOString()});
+  alert(`Ciclo ${nombre} creado con ${feriadosNuevos.length} feriados. Activalo cuando estés listo.`);
+  registrarLog('crear',`Ciclo lectivo ${nombre} creado`,'ciclo');
+  document.getElementById('ciclo-nombre').value='';document.getElementById('ciclo-inicio').value='';document.getElementById('ciclo-fin').value='';
+  feriadosNuevos=[];renderFeriadosList();
+  cargarCiclos();
+};
+
+// ── 19: Tabla de permisos ──
+window.renderTablaPermisos = function(){
+  const cont = document.getElementById('tabla-permisos-cont');
+  if(!cont)return;
+  const roles = [
+    {nombre:'Admin Total',key:'admin',color:'#fee2e2',dot:'#ef4444'},
+    {nombre:'Director',key:'director',color:'#fef3c7',dot:'#f59e0b'},
+    {nombre:'Secretaría',key:'secretaria',color:'#dbeafe',dot:'#2563eb'},
+    {nombre:'Docente',key:'docente',color:'#d1fae5',dot:'#10b981'},
+    {nombre:'EOE',key:'eoe',color:'#ede9fe',dot:'#7c3aed'},
+    {nombre:'Familia',key:'familia',color:'#f1f5f9',dot:'#64748b'},
+    {nombre:'Alumno',key:'alumno',color:'#f0fdf4',dot:'#16a34a'},
+  ];
+  const permisos = [
+    {accion:'Ver estadísticas globales',admin:true,director:true,secretaria:false,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Crear/editar alumnos',admin:true,director:false,secretaria:true,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Ver alumnos del curso',admin:true,director:true,secretaria:true,docente:true,eoe:true,familia:false,alumno:false},
+    {accion:'Cargar asistencia',admin:true,director:false,secretaria:false,docente:true,eoe:false,familia:false,alumno:false},
+    {accion:'Ver asistencia propia',admin:true,director:true,secretaria:true,docente:true,eoe:true,familia:true,alumno:true},
+    {accion:'Cargar notas',admin:true,director:false,secretaria:false,docente:true,eoe:false,familia:false,alumno:false},
+    {accion:'Ver notas publicadas',admin:true,director:true,secretaria:true,docente:true,eoe:true,familia:true,alumno:true},
+    {accion:'Publicar en tablón',admin:true,director:false,secretaria:false,docente:true,eoe:false,familia:false,alumno:false},
+    {accion:'Publicar comunicados',admin:true,director:false,secretaria:true,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Aprobar eventos',admin:true,director:true,secretaria:false,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Ver foro',admin:true,director:true,secretaria:false,docente:true,eoe:false,familia:false,alumno:true},
+    {accion:'Escribir observaciones',admin:true,director:false,secretaria:false,docente:true,eoe:true,familia:false,alumno:false},
+    {accion:'Ver observaciones EOE',admin:true,director:true,secretaria:true,docente:false,eoe:true,familia:false,alumno:false},
+    {accion:'Gestionar justificaciones',admin:true,director:false,secretaria:true,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Enviar justificaciones',admin:false,director:false,secretaria:false,docente:false,eoe:false,familia:true,alumno:false},
+    {accion:'Backup y exportación',admin:true,director:false,secretaria:false,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Cambiar ciclo lectivo',admin:true,director:false,secretaria:false,docente:false,eoe:false,familia:false,alumno:false},
+    {accion:'Crear staff y usuarios',admin:true,director:false,secretaria:false,docente:false,eoe:false,familia:false,alumno:false},
+  ];
+  const keys=['admin','director','secretaria','docente','eoe','familia','alumno'];
+  let html=`<div class="bg-white rounded-3xl border shadow-sm overflow-auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#0f172a;color:white">
+        <th style="padding:10px 14px;text-align:left;font-weight:800;min-width:200px">Acción</th>
+        ${roles.map(r=>`<th style="padding:10px 8px;text-align:center;font-weight:800;white-space:nowrap"><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:${r.dot};display:inline-block"></span>${r.nombre}</span></th>`).join('')}
+      </tr></thead>
+      <tbody>`;
+  permisos.forEach((p,i)=>{
+    html+=`<tr style="background:${i%2===0?'#f8fafc':'white'}">
+      <td style="padding:8px 14px;font-weight:600;color:#334155">${p.accion}</td>
+      ${keys.map(k=>`<td style="text-align:center;padding:6px">${p[k]?'<span style="color:#16a34a;font-size:16px">✓</span>':'<span style="color:#e2e8f0;font-size:14px">—</span>'}</td>`).join('')}
+    </tr>`;
+  });
+  html+=`</tbody></table></div>
+  <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+    <p class="text-xs font-bold text-blue-700"><i class="fas fa-info-circle mr-2"></i>Esta tabla es de referencia. Los permisos están implementados a nivel de código en cada panel. Para modificar permisos editá el rol del usuario en la tab Staff.</p>
+  </div>`;
+  cont.innerHTML=html;
+};
+
+// ── 22: Comparativa entre ciclos ──
+window.ejecutarComparativa = async function(){
+  const idA=document.getElementById('comp-ciclo-a').value;
+  const idB=document.getElementById('comp-ciclo-b').value;
+  const cont=document.getElementById('comparativa-resultado');
+  if(!idA||!idB){alert('Seleccioná dos ciclos para comparar.');return;}
+  if(idA===idB){alert('Seleccioná ciclos distintos.');return;}
+  cont.classList.remove('hidden');
+  cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Calculando...</p>';
+  const [cicloA,cicloB]=await Promise.all([
+    db.collection('ciclos_lectivos').doc(idA).get(),
+    db.collection('ciclos_lectivos').doc(idB).get()
+  ]);
+  const [alA,alB,asA,asB,coA,coB]=await Promise.all([
+    db.collection('alumnos').get(),
+    db.collection('alumnos').get(), // same collection but could be filtered by ciclo in real data
+    db.collection('asistencia').where('cicloId','==',idA).get().catch(()=>({size:0,docs:[]})),
+    db.collection('asistencia').where('cicloId','==',idB).get().catch(()=>({size:0,docs:[]})),
+    db.collection('comunicados').where('cicloId','==',idA).get().catch(()=>({size:0})),
+    db.collection('comunicados').where('cicloId','==',idB).get().catch(()=>({size:0}))
+  ]);
+  // Calc asistencia pct
+  const calcPct=(snap)=>{if(!snap.docs?.length)return null;const P=snap.docs.filter(d=>d.data().estado==='P').length;return Math.round(P/snap.docs.length*100);};
+  const pctA=calcPct(asA);const pctB=calcPct(asB);
+  const nmA=cicloA.data()?.nombre||idA;const nmB=cicloB.data()?.nombre||idB;
+  const row=(label,a,b,unit='')=>{
+    const numA=parseFloat(a)||0;const numB=parseFloat(b)||0;
+    const diff=numB-numA;const diffStr=diff>0?`+${diff}`:diff===0?'=':''+diff;
+    const diffColor=diff>0?'#16a34a':diff<0?'#ef4444':'#94a3b8';
+    return`<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:10px 12px;font-weight:600;color:#334155;font-size:13px">${label}</td>
+      <td style="padding:10px 12px;text-align:center;font-weight:700;font-size:14px">${a!==null?a+unit:'—'}</td>
+      <td style="padding:10px 12px;text-align:center;font-weight:700;font-size:14px">${b!==null?b+unit:'—'}</td>
+      <td style="padding:10px 12px;text-align:center;font-weight:800;color:${diffColor}">${a!==null&&b!==null?diffStr+unit:'—'}</td>
+    </tr>`;
+  };
+  cont.innerHTML=`<div class="bg-white rounded-2xl border overflow-auto shadow-sm">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#0f172a;color:white">
+        <th style="padding:10px 12px;text-align:left;font-weight:700">Métrica</th>
+        <th style="padding:10px 12px;text-align:center;font-weight:700">${nmA}</th>
+        <th style="padding:10px 12px;text-align:center;font-weight:700">${nmB}</th>
+        <th style="padding:10px 12px;text-align:center;font-weight:700">Diferencia</th>
+      </tr></thead>
+      <tbody>
+        ${row('Comunicados publicados',coA.size||0,coB.size||0)}
+        ${row('Asistencia promedio',pctA,pctB,'%')}
+      </tbody>
+    </table>
+    <p class="text-[10px] text-slate-400 p-3">Los datos de asistencia se comparan si tienen el campo cicloId registrado. Comunicados siempre disponibles.</p>
+  </div>`;
+};
+
+// ── BONUS: Pase de Ciclo ──
+let _pasePreview=[];
+
+window.abrirPaseCiclo = async function(){
+  document.getElementById('modal-pase-ciclo').classList.remove('hidden');
+  const cont=document.getElementById('pase-preview-cont');
+  const statsEl=document.getElementById('pase-stats');
+  cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Calculando promociones...</p>';
+  statsEl.innerHTML='';
+  const snap=await db.collection('alumnos').get();
+  _pasePreview=[];
+  let sinCambio=0,egresados=0,cambiados=0;
+  snap.forEach(doc=>{
+    const a=doc.data();
+    const cursoActual=(a.curso||'').trim().toUpperCase();
+    const nuevoCurso=calcularNuevoCurso(cursoActual,a.nivel||'');
+    _pasePreview.push({id:doc.id,nombre:a.nombre,cursoActual,nuevoCurso,nivel:a.nivel||''});
+    if(nuevoCurso==='EGRESADO')egresados++;
+    else if(nuevoCurso!==cursoActual)cambiados++;
+    else sinCambio++;
+  });
+  _pasePreview.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  // Render
+  if(!_pasePreview.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">No hay alumnos registrados.</p>';return;}
+  cont.innerHTML=_pasePreview.map(a=>{
+    const cambio=a.nuevoCurso!==a.cursoActual;
+    const esEgresado=a.nuevoCurso==='EGRESADO';
+    return`<div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;border-radius:.75rem;background:${esEgresado?'#fef3c7':cambio?'#f0fdf4':'#f8fafc'}">
+      <span style="font-size:.875rem;font-weight:700;flex:1;color:#334155">${a.nombre}</span>
+      <span style="font-size:.6875rem;font-weight:800;background:#e2e8f0;color:#64748b;padding:2px 8px;border-radius:99px">${a.cursoActual||'sin curso'}</span>
+      <i class="fas fa-arrow-right" style="color:#94a3b8;font-size:10px"></i>
+      <span style="font-size:.6875rem;font-weight:800;padding:2px 8px;border-radius:99px;background:${esEgresado?'#fef9c3':cambio?'#dcfce7':'#e2e8f0'};color:${esEgresado?'#a16207':cambio?'#15803d':'#94a3b8'}">${a.nuevoCurso||'sin curso'}</span>
+    </div>`;
+  }).join('');
+  statsEl.innerHTML=[
+    {n:cambiados,l:'Promueven',c:'#15803d',bg:'#f0fdf4'},
+    {n:egresados,l:'Egresan',c:'#a16207',bg:'#fef9c3'},
+    {n:sinCambio,l:'Sin cambio',c:'#64748b',bg:'#f8fafc'},
+  ].map(s=>`<div style="background:${s.bg};border-radius:.875rem;padding:.875rem;text-align:center">
+    <p style="font-size:1.5rem;font-weight:900;color:${s.c}">${s.n}</p>
+    <p style="font-size:.625rem;font-weight:700;color:#64748b;margin-top:2px">${s.l}</p>
+  </div>`).join('');
+};
+window.cerrarModalPaseCiclo=function(){document.getElementById('modal-pase-ciclo').classList.add('hidden');_pasePreview=[];};
+
+function calcularNuevoCurso(cursoActual, nivel){
+  if(!cursoActual)return cursoActual;
+  const c=cursoActual.toUpperCase().trim();
+  // Egreso: 5° año secundario
+  if(/^5[°º]?\s*A(ÑO|NO)?/i.test(c)||c==='5TO'||c==='QUINTO AÑO'||c==='5 AÑO')return'EGRESADO';
+  // Sala de 5 → 1° Grado
+  if(/SALA\s*5|SALA\s*DE\s*5|S\.?5|S5/i.test(c))return'1° GRADO';
+  // 7° Grado → 1° Año
+  if(/^7[°º]?\s*G(RADO)?/i.test(c)||c==='7MO'||c==='7 GRADO'||c==='SEPTIMO')return'1° AÑO';
+  // Salas de jardín (3,4): incrementar número
+  const salaMatch=c.match(/SALA\s*(\d)/i);
+  if(salaMatch){const n=parseInt(salaMatch[1]);return`SALA ${n+1}`;}
+  // Grado numerado: 1° → 2°, 2° → 3°, etc.
+  const gradoMatch=c.match(/^(\d)[°º]?\s*G/i);
+  if(gradoMatch){
+    const n=parseInt(gradoMatch[1]);
+    const sufijos=['','1°','2°','3°','4°','5°','6°','7°'];
+    return n<7?(sufijos[n+1]||`${n+1}°`)+' GRADO':c;
+  }
+  // Año secundario: 1° → 2°, 2° → 3°, etc.
+  const anioMatch=c.match(/^(\d)[°º]?\s*(A(ÑO|NO)|AÑO)?/i);
+  if(anioMatch&&nivel==='secundario'){
+    const n=parseInt(anioMatch[1]);
+    const sufijos=['','1°','2°','3°','4°','5°'];
+    return n<5?(sufijos[n+1]||`${n+1}°`)+' AÑO':c;
+  }
+  // Letra de división (1A, 2B, etc.)
+  const divMatch=c.match(/^(\d)[°º]?\s*([A-Z])/i);
+  if(divMatch){
+    const n=parseInt(divMatch[1]);const letra=divMatch[2].toUpperCase();
+    if(nivel==='secundario'&&n<5)return`${n+1}° ${letra}`;
+    if(nivel==='primario'&&n<7)return`${n+1}° ${letra}`;
+    if(nivel==='primario'&&n===7)return`1° ${letra}`;// 7 → sec
+  }
+  return c; // no se pudo determinar, dejar igual
+}
+
+window.ejecutarPaseCiclo = async function(){
+  if(!_pasePreview.length){alert('Calculá la vista previa primero.');return;}
+  const total=_pasePreview.filter(a=>a.nuevoCurso!==a.cursoActual).length;
+  if(!confirm(`¿Confirmar el pase de ciclo?\n\nSe modificará el curso de ${total} alumnos.\nLos egresados quedarán como EGRESADO.\n\nEsta acción se registra en el log.`))return;
+  const btn=document.querySelector('[onclick="ejecutarPaseCiclo()"]');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Ejecutando...';
+  const batch=db.batch();let procesados=0;
+  for(const al of _pasePreview){
+    if(al.nuevoCurso!==al.cursoActual){
+      batch.update(db.collection('alumnos').doc(al.id),{curso:al.nuevoCurso,cursoPrevio:al.cursoActual,pasadoCicloEn:new Date().toISOString()});
+      procesados++;
+      if(procesados%400===0){await batch.commit();}
+    }
+  }
+  await batch.commit();
+  const egresadosN=_pasePreview.filter(a=>a.nuevoCurso==='EGRESADO').length;
+  registrarLog('editar',`Pase de ciclo ejecutado: ${procesados} alumnos promovidos, ${egresadosN} egresaron`,'ciclo');
+  alert(`✅ Pase de ciclo completado.\n${procesados} alumnos promovidos.\n${egresadosN} egresados.`);
+  cerrarModalPaseCiclo();
+  refrescarTodo();
+};
+
+// Poblar selectores de comparativa cuando se carguen ciclos
+function poblarSelectoresComparativa(ciclos){
+  ['comp-ciclo-a','comp-ciclo-b'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const valActual=sel.value;
+    sel.innerHTML='<option value="">— Ciclo —</option>';
+    ciclos.forEach(c=>sel.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`);
+    if(valActual)sel.value=valActual;
+  });
+}
+
+// ══ FIN MEJORAS ══
+
+window.refrescarTodo = function refrescarTodo(){cargarEstadisticas();cargarNotasPendientes();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();cargarCursosSelector();}
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
-} // fin _initAdmin
+
+window.cargarCiclos = async function cargarCiclos(){
+  const snap=await db.collection('ciclos_lectivos').orderBy('nombre','desc').get();
+  const ciclosArr=[];
+  snap.forEach(doc=>ciclosArr.push({id:doc.id,...doc.data()}));
+  const activo=ciclosArr.find(c=>c.activo);
+  if(activo){
+    const el1=document.getElementById('ciclo-nombre-actual');if(el1)el1.textContent=activo.nombre;
+    const el2=document.getElementById('ciclo-fechas-actual');if(el2)el2.textContent=`${activo.inicio||'—'} → ${activo.fin||'—'}`;
+    const el3=document.getElementById('ciclo-activo-label');if(el3)el3.textContent=`Ciclo ${activo.nombre}`;
+  }
+  const cont=document.getElementById('lista-ciclos');
+  if(cont)cont.innerHTML=ciclosArr.map(doc=>`<div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center justify-between gap-3">
+    <div><p class="font-black">${doc.nombre}</p><p class="text-[10px] text-slate-400">${doc.inicio||'—'} → ${doc.fin||'—'}${doc.feriados?.length?` · ${doc.feriados.length} feriados`:''}</p></div>
+    <div class="flex items-center gap-2">
+      ${doc.activo?`<span class="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full">ACTIVO</span>`:`<button onclick="activarCiclo('${doc.id}')" class="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl hover:bg-slate-200">Activar</button>`}
+    </div>
+  </div>`).join('');
+  poblarSelectoresComparativa(ciclosArr);
+}
 </script>
 </body>
 </html>
