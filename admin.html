@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Gestión Maestro - Iosef Caro</title>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -813,18 +815,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
   </div>
 </div>
 <script>
-// Firebase sequential loader
-var _afq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
-var _afqi=0;
-function _loadNextA(){
-  if(_afqi>=_afq.length){_initAdmin();return;}
-  var s=document.createElement('script');
-  s.src=_afq[_afqi++];
-  s.onload=_loadNextA;
-  s.onerror=function(){console.error('Error cargando Firebase '+_afq[_afqi-1]);};
-  document.head.appendChild(s);
-}
-_loadNextA();
+// Firebase cargado desde <head> — llamar _initAdmin directamente
+_initAdmin();
 
 function _initAdmin(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124288",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
