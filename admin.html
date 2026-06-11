@@ -860,35 +860,7 @@ window.autorizar = function autorizar(){
   registrarLog('login',`Ingreso al panel admin`,'login');
   refrescarTodo();
 }
-// Verificar sesión inmediatamente (Firebase carga dinámicamente, onload ya disparó)
-(function verificarSesion(){
-  // Esperar a que el DOM esté listo pero no depender de window.onload
-  function _checkSesion(){
-    if(sessionStorage.getItem('iosef_admin_session')){
-      adminEmail=sessionStorage.getItem('iosef_admin_email')||sessionStorage.getItem('iosef_email')||'admin';
-      adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
-      document.getElementById('login-overlay').style.display='none';
-      document.getElementById('admin-content').classList.remove('hidden');
-      refrescarTodo();
-      return;
-    }
-    const em=sessionStorage.getItem('iosef_email');
-    const rol=sessionStorage.getItem('iosef_rol');
-    if(em&&(rol==='admin'||rol==='director')){
-      adminEmail=em;
-      adminNombre=sessionStorage.getItem('iosef_nombre')||'Admin';
-      document.getElementById('login-overlay').style.display='none';
-      document.getElementById('admin-content').classList.remove('hidden');
-      refrescarTodo();
-    }
-  }
-  // Correr inmediatamente (Firebase ya cargó, _initAdmin ya corrió cuando llegamos acá)
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', _checkSesion);
-  } else {
-    _checkSesion();
-  }
-})();;
+
 window.cerrarSesion = function cerrarSesion(){sessionStorage.clear();location.reload();}
 
 // ══════════════════════
@@ -2444,6 +2416,26 @@ window.cargarCiclos = async function cargarCiclos(){
   </div>`).join('');
   poblarSelectoresComparativa(ciclosArr);
 }
+
+// ── Restaurar sesión al terminar de cargar ──
+(function(){
+  const sess = sessionStorage.getItem('iosef_admin_session');
+  const em   = sessionStorage.getItem('iosef_email');
+  const rol  = sessionStorage.getItem('iosef_rol');
+  if(sess){
+    adminEmail = sessionStorage.getItem('iosef_admin_email')||em||'admin';
+    adminNombre= sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+  } else if(em && (rol==='admin'||rol==='director')){
+    adminEmail = em;
+    adminNombre= sessionStorage.getItem('iosef_nombre')||'Admin';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+  }
+})();
 
 } // fin _initAdmin
 </script>
