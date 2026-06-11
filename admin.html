@@ -2,6 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script>
+(function(){
+  var s=sessionStorage.getItem('iosef_admin_session'),
+      e=sessionStorage.getItem('iosef_email'),
+      r=sessionStorage.getItem('iosef_rol');
+  if(s||(e&&(r==='admin'||r==='director'))){
+    document.write('<style>#login-overlay{display:none!important}#admin-content{display:block!important}</style>');
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Gestión Maestro - Iosef Caro</title>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -189,21 +199,21 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 
 <div id="admin-content" class="hidden">
   <nav class="bg-white border-b p-3 flex gap-1.5 sticky top-0 z-50 overflow-x-auto shadow-sm">
-    <button onclick="switchTab('stats',event)"           class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
-    <button onclick="switchTab('boletin-auth',event)"     class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
-    <button onclick="switchTab('comunicado-admin',event)" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📣 Comunicado</button>
-    <button onclick="switchTab('eventos-aprobacion',event)" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">✅ Eventos</button>
-    <button onclick="switchTab('importar',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
-    <button onclick="switchTab('staff',event)"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
-    <button onclick="switchTab('materias',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
-    <button onclick="switchTab('periodos',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
-    <button onclick="switchTab('ciclo',event)"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
-    <button onclick="switchTab('docentes',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
-    <button onclick="switchTab('alumnos',event)"          class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
-    <button onclick="switchTab('familias',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
-    <button onclick="switchTab('notas-vis',event)"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
-    <button onclick="switchTab('permisos',event)"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🔐 Permisos</button>
-    <button onclick="switchTab('log',event)"              class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
+    <button onclick="switchTab('stats')"           class="nav-btn bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📊 Stats</button>
+    <button onclick="switchTab('boletin-auth')"     class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Boletín</button>
+    <button onclick="switchTab('comunicado-admin')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📣 Comunicado</button>
+    <button onclick="switchTab('eventos-aprobacion')" class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">✅ Eventos</button>
+    <button onclick="switchTab('importar')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Carga CSV</button>
+    <button onclick="switchTab('staff')"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Staff</button>
+    <button onclick="switchTab('materias')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Materias</button>
+    <button onclick="switchTab('periodos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Períodos</button>
+    <button onclick="switchTab('ciclo')"            class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📅 Ciclo</button>
+    <button onclick="switchTab('docentes')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Docentes</button>
+    <button onclick="switchTab('alumnos')"          class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Alumnos</button>
+    <button onclick="switchTab('familias')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">Familias</button>
+    <button onclick="switchTab('notas-vis')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
+    <button onclick="switchTab('permisos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🔐 Permisos</button>
+    <button onclick="switchTab('log')"              class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
     <button onclick="exportarExcel()"               class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
     <button onclick="document.getElementById('modal-backup').classList.remove('hidden')" class="nav-btn text-blue-700 bg-blue-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup</button>
     <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
@@ -225,7 +235,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         <div class="stat-card text-center"><div class="stat-n text-emerald-600" id="st-docentes">—</div><div class="stat-l">Docentes</div></div>
         <div class="stat-card text-center"><div class="stat-n text-pink-600" id="st-familias">—</div><div class="stat-l">Familias</div></div>
         <div class="stat-card text-center"><div class="stat-n text-amber-600" id="st-comunicados">—</div><div class="stat-l">Comunicados</div></div>
-        <div class="stat-card text-center cursor-pointer hover:border-violet-300 transition" onclick="switchTab('notas-vis',event)">
+        <div class="stat-card text-center cursor-pointer hover:border-violet-300 transition" onclick="switchTab('notas-vis')">
           <div class="stat-n text-violet-600" id="st-notas-pend">—</div>
           <div class="stat-l">Notas sin publicar</div>
         </div>
@@ -815,12 +825,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
   </div>
 </div>
 <script>
-// Firebase cargado desde <head> — llamar _initAdmin directamente
+// Firebase cargado desde head
 _initAdmin();
 
 function _initAdmin(){
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124288",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
-firebase.initializeApp(FB);const db=firebase.firestore();
+let db;
+try{
+  if(typeof firebase!=='undefined'&&!firebase.apps?.length){firebase.initializeApp(FB);}
+  else if(typeof firebase!=='undefined'&&firebase.apps?.length){/* already init */}
+  db=typeof firebase!=='undefined'?firebase.firestore():null;
+}catch(e){
+  console.warn('Firebase no disponible:',e.message);
+  // Stub db para que las funciones no rompan
+  db={collection:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{},empty:true,size:0}),add:()=>Promise.resolve({id:'local'}),doc:()=>({get:()=>Promise.resolve({exists:false,data:()=>({})}),set:()=>Promise.resolve(),update:()=>Promise.resolve(),delete:()=>Promise.resolve(),collection:()=>db.collection()}),where:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{},empty:true}),orderBy:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),orderBy:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),batch:()=>({set:()=>{},update:()=>{},delete:()=>{},commit:()=>Promise.resolve()}),FieldValue:{serverTimestamp:()=>new Date(),increment:(n)=>n,arrayUnion:(...a)=>a,arrayRemove:()=>[]}};
+  if(typeof firebase!=='undefined'&&firebase.firestore){try{db=firebase.firestore();}catch(e2){}}
+}
 const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let matSel=[],curSel=[],allCursos=[],allMats=[];
 let cNiv=null,cAsis=null,cCom=null,cMsg=null;
@@ -852,28 +872,7 @@ window.autorizar = function autorizar(){
   registrarLog('login',`Ingreso al panel admin`,'login');
   refrescarTodo();
 }
-window.onload=()=>{
-  // Sesión propia del admin
-  if(sessionStorage.getItem('iosef_admin_session')){
-    adminEmail=sessionStorage.getItem('iosef_admin_email')||sessionStorage.getItem('iosef_email')||'admin';
-    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
-    document.getElementById('login-overlay').style.display='none';
-    document.getElementById('admin-content').classList.remove('hidden');
-    refrescarTodo();
-    return;
-  }
-  // Sesión desde index.html
-  const em=sessionStorage.getItem('iosef_email');
-  const rol=sessionStorage.getItem('iosef_rol');
-  const nm=sessionStorage.getItem('iosef_nombre');
-  if(em&&(rol==='admin'||rol==='director')){
-    adminEmail=em;adminNombre=nm||em;
-    sessionStorage.setItem('iosef_admin_session','admin');
-    document.getElementById('login-overlay').style.display='none';
-    document.getElementById('admin-content').classList.remove('hidden');
-    refrescarTodo();
-  }
-};
+;
 window.cerrarSesion = function cerrarSesion(){sessionStorage.clear();location.reload();}
 
 // ══════════════════════
@@ -885,7 +884,7 @@ window.registrarLog = async function registrarLog(tipo,descripcion,categoria='ge
       tipo,descripcion,categoria,
       usuario:adminEmail,usuarioNombre:adminNombre,
       fecha:new Date().toISOString(),
-      timestamp:firebase.firestore.FieldValue.serverTimestamp()
+      timestamp:(typeof firebase!=='undefined'&&firebase.firestore)?(typeof firebase!=='undefined'&&firebase.firestore?firebase.firestore.FieldValue.serverTimestamp():new Date()):new Date()
     });
   }catch(e){console.warn('Error log:',e);}
 }
@@ -921,41 +920,6 @@ window.cargarLog = async function cargarLog(){
     </div>`;
   }).join('');
 }
-
-// ══════════════════════
-// CICLO LECTIVO
-// ══════════════════════
-
-window.cargarCiclosLegacy = async function cargarCiclosLegacy(){
-  const snap=await db.collection('ciclos_lectivos').orderBy('nombre','desc').get();
-  const cont=document.getElementById('lista-ciclos');
-  const labelActivo=document.getElementById('ciclo-activo-label');
-  const nombreActual=document.getElementById('ciclo-nombre-actual');
-  const fechasActual=document.getElementById('ciclo-fechas-actual');
-  cont.innerHTML='';
-  let hayActivo=false;
-  snap.forEach(doc=>{
-    const c=doc.data(),act=c.activo===true;
-    if(act){
-      hayActivo=true;
-      labelActivo.textContent=`Ciclo ${c.nombre}`;
-      nombreActual.textContent=c.nombre;
-      fechasActual.textContent=`${c.inicio||'—'} → ${c.fin||'—'}`;
-      sessionStorage.setItem('cicloActivo',c.nombre);
-    }
-    cont.innerHTML+=`<div class="bg-white border-2 ${act?'border-blue-400':'border-slate-100'} rounded-2xl p-4 flex items-center gap-4">
-      <div class="flex-1">
-        <p class="font-black text-lg text-slate-900">${c.nombre}</p>
-        <p class="text-xs text-slate-400 font-bold">${c.inicio||''} → ${c.fin||''}</p>
-      </div>
-      ${act?'<span class="text-[9px] font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase">Activo</span>':
-      `<button onclick="activarCiclo('${doc.id}')" class="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl hover:bg-slate-200">Activar</button>`}
-      <button onclick="eliminarDoc('ciclos_lectivos','${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-trash text-sm"></i></button>
-    </div>`;
-  });
-  if(!hayActivo){labelActivo.textContent='Sin ciclo activo';nombreActual.textContent='—';fechasActual.textContent='Creá y activá un ciclo lectivo';}
-}
-
 window.crearCiclo = async function crearCiclo(){
   const nombre=document.getElementById('ciclo-nombre').value.trim();
   const inicio=document.getElementById('ciclo-inicio').value;
@@ -1435,7 +1399,7 @@ window.guardarAlumnoData = async function guardarAlumnoData(alu, nivel, cur, fam
     if(!m||!m.includes('@'))continue;
     await db.collection('usuarios').doc(m).set({
       nombre:fam||'Familia', rol:'familia', nivel:nn,
-      hijos: firebase.firestore.FieldValue.arrayUnion({nombre:alu,curso:cn,nivel:nn})
+      hijos: (typeof firebase!=='undefined'&&firebase.firestore?firebase.firestore.FieldValue.arrayUnion({nombre:alu,curso:cn,nivel:nn}):[{nombre:alu,curso:cn,nivel:nn}])
     },{merge:true});
   }
 }
@@ -1666,12 +1630,11 @@ window.eliminarFamiliasSeleccionadas = async function eliminarFamiliasSelecciona
 // ══════════════════════
 // UTILS
 // ══════════════════════
-window.switchTab = function switchTab(t,e){
+window.switchTab = function switchTab(t){
   document.querySelectorAll('.tab-content').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+t)?.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>{b.classList.remove('bg-slate-900','text-white');b.classList.add('text-slate-500');});
-  const btn=(e||window.event)?.currentTarget||(e||window.event)?.target;
-  if(btn)btn.classList.add('bg-slate-900','text-white');
+  event.currentTarget?.classList.add('bg-slate-900','text-white');
   if(t==='stats'){cargarEstadisticas();cargarNotasPendientes();}
   if(t==='periodos')cargarPeriodosAdmin();
   if(t==='boletin-auth')inicializarBoletinAuth().catch(()=>{});
@@ -1974,7 +1937,7 @@ window.guardarAlumnoData = async function guardarAlumnoData(alu, nivel, cur, fam
     const cn = (cur||'').toUpperCase();
     await db.collection('curso_alumnos').doc(cn).set({
       curso: cn, nivel: (nivel||'primario').toLowerCase(),
-      ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+      ultimaActualizacion: (typeof firebase!=='undefined'&&firebase.firestore?firebase.firestore.FieldValue.serverTimestamp():new Date())
     }, {merge:true});
   }
 };
@@ -2031,7 +1994,7 @@ window.publicarComunicadoAdmin = async function(){
   await db.collection('comunicados').add({
     titulo,texto,tipo,destino,
     autorEmail,autorNombre:'Dirección',autorRol:'admin',
-    creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+    creadoEn:(typeof firebase!=='undefined'&&firebase.firestore?firebase.firestore.FieldValue.serverTimestamp():new Date()),
     publicado:true,nivel:destino==='todos'?null:destino
   });
   registrarLog('crear',`Comunicado admin: ${titulo}`,'comunicado');
@@ -2433,6 +2396,19 @@ window.cargarCiclos = async function cargarCiclos(){
   poblarSelectoresComparativa(ciclosArr);
 }
 
+// ── Restaurar sesión ──
+(function(){
+  var sess=sessionStorage.getItem('iosef_admin_session');
+  var em=sessionStorage.getItem('iosef_email');
+  var rol=sessionStorage.getItem('iosef_rol');
+  if(sess||(em&&(rol==='admin'||rol==='director'))){
+    adminEmail=sessionStorage.getItem('iosef_admin_email')||em||'admin';
+    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('admin-content').classList.remove('hidden');
+    refrescarTodo();
+  }
+})();
 } // fin _initAdmin
 </script>
 </body>
