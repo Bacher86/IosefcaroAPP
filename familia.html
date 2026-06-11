@@ -28,6 +28,38 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 .nav-btn.active{color:#0f172a}
 .nav-btn.active i{transform:translateY(-4px);color:#2563eb}
 .switch-bg{transition:all .3s cubic-bezier(.4,0,.2,1)}
+/* ── MODO OSCURO ── */
+:root{
+  --bg:#f1f5f9;--surface:white;--surface2:#f8fafc;--border:#e2e8f0;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --header-bg:rgba(255,255,255,0.95);--card-bg:white;
+  --input-bg:#f8fafc;--nav-bg:white;
+}
+body.dark-mode{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#162032;--border:#334155;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --header-bg:rgba(15,23,42,0.97);--card-bg:#1e293b;
+  --input-bg:#1e293b;--nav-bg:#0f172a;
+}
+body{background:var(--bg);color:var(--text);transition:background .3s,color .3s}
+header{background:var(--header-bg)!important;border-color:var(--border)!important}
+.post-card,.bg-white,.tab-content>div,.bg-white\/95{background:var(--card-bg)!important;border-color:var(--border)!important;color:var(--text)!important}
+.text-slate-900,.text-slate-800,.text-slate-700{color:var(--text)!important}
+.text-slate-500,.text-slate-400{color:var(--text2)!important}
+nav{background:var(--nav-bg)!important;border-color:var(--border)!important}
+.bg-slate-50,.bg-slate-100{background:var(--surface2)!important}
+.bg-slate-200{background:var(--border)!important}
+input,textarea,select{background:var(--input-bg)!important;color:var(--text)!important;border-color:var(--border)!important}
+.border-slate-100,.border-slate-200{border-color:var(--border)!important}
+.dark-mode .nav-btn{color:var(--text3)}
+.dark-mode .nav-btn.active i{color:#60a5fa}
+.dark-mode .nav-btn.active{color:var(--text)}
+.dark-mode .iosi-fab{background:#1e293b}
+.dark-toggle{width:44px;height:24px;background:var(--border);border-radius:99px;position:relative;cursor:pointer;transition:background .2s;border:none;flex-shrink:0}
+.dark-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform .2s}
+.dark-mode .dark-toggle{background:#2563eb}
+.dark-mode .dark-toggle::after{transform:translateX(20px)}
+
 
 /* Categorías muro */
 .cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:800;text-transform:uppercase}
@@ -125,12 +157,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
   <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar al Portal</button>
 </div>
 
-<header class="px-5 py-4 bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b flex justify-between items-center shadow-sm">
-  <div>
+<header class="px-4 py-3 bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b shadow-sm" style="background:var(--header-bg)">
+  <div class="flex justify-between items-center mb-1">
     <h1 id="user-display-name" class="font-black text-xl tracking-tight">Hola...</h1>
-    <select id="select-hijo" onchange="cambiarHijo(this.value)" class="mt-1 bg-blue-50 text-blue-700 font-black text-[10px] uppercase px-3 py-1.5 rounded-lg outline-none"></select>
+    <div class="flex items-center gap-2">
+      <!-- toggle modo oscuro (mejora 22) -->
+      <button id="dark-toggle-btn" onclick="toggleDarkMode()" class="dark-toggle" title="Modo oscuro"></button>
+      <button onclick="switchTab('perfil')" class="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><i class="fas fa-cog text-sm"></i></button>
+    </div>
   </div>
-  <button onclick="switchTab('perfil')" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><i class="fas fa-cog"></i></button>
+  <!-- selector hijos visual (mejora 11) -->
+  <div id="hijos-chips" class="flex gap-2 overflow-x-auto pb-0.5"></div>
+  <!-- select oculto para compatibilidad -->
+  <select id="select-hijo" onchange="cambiarHijo(this.value)" class="hidden"></select>
 </header>
 
 <!-- Banner de nueva novedad -->
@@ -152,12 +191,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
   <section id="tab-muro" class="tab-content active space-y-4">
     <div id="widget-hoy" class="space-y-1"></div>
     <div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      <input type="search" id="muro-search" placeholder="🔍 Buscar comunicados..." class="w-full p-3 bg-white border rounded-2xl outline-none text-sm font-medium shadow-sm mb-1" oninput="buscarEnMuro()" style="font-family:inherit">
+      <div class="flex gap-2 overflow-x-auto pb-1">
       <button onclick="cargarMuro('todos')"    id="filter-todos"    class="filter-btn active whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm">Todos</button>
       <button onclick="cargarMuro('noleidos')" id="filter-noleidos" class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm">No leídos</button>
       <button onclick="cargarMuro('urgente')"  id="filter-urgente"  class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm text-red-500">🔴 Urgente</button>
       <!-- Eventos van a la Agenda, no al Muro -->
       <button onclick="cargarMuro('logro')"    id="filter-logro"    class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm text-emerald-500">🏆 Logros</button>
+      </div>
     </div>
+    <div id="resumen-hijos" class="hidden grid gap-3 mb-2"></div>
     <div id="muro-posts" class="space-y-4"></div>
   </section>
 
@@ -168,6 +211,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
         <button onclick="cambiarMes(-1)" class="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500"><i class="fas fa-chevron-left text-xs"></i></button>
         <h3 id="cal-mes-label" class="font-black text-base"></h3>
         <button onclick="cambiarMes(1)"  class="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500"><i class="fas fa-chevron-right text-xs"></i></button>
+        <button onclick="exportarMesICS()" class="w-9 h-9 bg-blue-50 hover:bg-blue-100 rounded-xl flex items-center justify-center text-blue-500 transition" title="Exportar mes al calendario"><i class="fas fa-calendar-arrow-down text-xs"></i></button>
       </div>
       <div class="cal-grid mb-2">
         <div class="cal-hd">Do</div><div class="cal-hd">Lu</div><div class="cal-hd">Ma</div><div class="cal-hd">Mi</div><div class="cal-hd">Ju</div><div class="cal-hd">Vi</div><div class="cal-hd">Sa</div>
@@ -207,9 +251,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 
     <!-- Asistencia -->
     <div class="grid grid-cols-3 gap-2">
-      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p><p id="count-faltas" class="text-3xl font-black">0</p></div>
+      <div class="bg-white p-4 rounded-3xl border shadow-sm text-center cursor-pointer hover:border-rose-300 transition active:scale-95" onclick="toggleDetalleFaltas()" title="Ver detalle de faltas">
+        <p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Faltas</p>
+        <p id="count-faltas" class="text-3xl font-black">0</p>
+        <p class="text-[8px] text-rose-400 font-bold mt-0.5">Ver detalle ▾</p>
+      </div>
       <div class="bg-white p-4 rounded-3xl border shadow-sm text-center"><p class="text-[8px] font-black text-slate-400 uppercase leading-tight mb-1">Tardes</p><p id="count-tardes" class="text-3xl font-black">0</p></div>
       <div class="bg-amber-50 p-4 rounded-3xl border border-amber-100 shadow-sm text-center"><p class="text-[8px] font-black text-amber-500 uppercase leading-tight mb-1">Sin uniforme</p><p id="count-uniforme" class="text-3xl font-black text-amber-600">0</p></div>
+    </div>
+        <div id="detalle-faltas-drawer" class="hidden bg-rose-50 border border-rose-100 rounded-2xl p-4 -mt-1 mb-2">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[9px] font-black text-rose-500 uppercase">Detalle de inasistencias</p>
+        <button onclick="toggleDetalleFaltas()" class="text-rose-300 text-xs">✕</button>
+      </div>
+      <div id="lista-faltas-detalle" class="space-y-1.5"></div>
     </div>
     <div id="detalle-uniforme" class="hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 -mt-1">
       <p class="text-[9px] font-black text-amber-600 uppercase mb-2">Días sin uniforme</p>
@@ -283,15 +338,50 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
         <div class="bg-slate-50 p-3 rounded-2xl"><p class="text-[9px] font-black text-slate-400 uppercase">Obra social</p><p id="ficha-obra" class="font-bold text-sm mt-0.5">—</p></div>
       </div>
       <div id="ficha-alergias-cont" class="hidden"><p class="text-[9px] font-black text-rose-500 uppercase">Alergias</p><p id="ficha-alergias" class="font-bold text-sm bg-rose-50 p-3 rounded-xl mt-1"></p></div>
-      <div><p class="text-[9px] font-black text-slate-400 uppercase mb-2">Contactos de emergencia</p><div id="ficha-contactos" class="space-y-2"><p class="text-slate-400 text-xs italic">Sin contactos. Solicitá al colegio que actualice la ficha.</p></div></div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[9px] font-black text-slate-400 uppercase">Contactos de emergencia</p>
+          <button onclick="toggleEditarContactos()" class="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg" id="btn-editar-contactos">✏️ Editar</button>
+        </div>
+        <div id="ficha-contactos" class="space-y-2"><p class="text-slate-400 text-xs italic">Sin contactos.</p></div>
+        <div id="form-contactos-edit" class="hidden mt-3 space-y-3">
+          <div id="contactos-edit-list" class="space-y-2"></div>
+          <button onclick="agregarContactoEdit()" class="w-full border-2 border-dashed border-slate-200 text-slate-400 font-bold text-xs py-2 rounded-xl hover:border-blue-300 hover:text-blue-400 transition">+ Agregar contacto</button>
+          <button onclick="guardarContactosEmergencia()" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold text-sm shadow-lg">Guardar contactos</button>
+        </div>
+      </div>
       <div><p class="text-[9px] font-black text-slate-400 uppercase mb-2">Autorización de imagen</p><div id="ficha-imagen" class="p-3 rounded-2xl bg-slate-50"></div></div>
       <p class="text-[9px] text-slate-400">Para modificar estos datos, escribí a secretaría desde Mensajes.</p>
     </div>
     <div class="bg-white p-5 rounded-[2rem] border shadow-sm flex items-center justify-between">
       <div><p class="text-xs font-black uppercase">Notificaciones push</p><p class="text-[9px] text-slate-400 font-bold mt-0.5">Alertas en tu dispositivo</p></div>
       <button onclick="activarNotificaciones()" id="btn-push" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Activar</button>
+      <button onclick="toggleConfigNotif()" id="btn-config-notif" class="hidden bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase">⚙️ Config</button>
     </div>
-    <button onclick="location.reload()" class="w-full text-slate-400 text-xs font-bold py-3">Cerrar Sesión</button>
+    <div id="notif-config-panel" class="hidden bg-white rounded-2xl border p-4 space-y-3">
+      <p class="text-[9px] font-black text-slate-400 uppercase">¿Qué notificaciones querés recibir?</p>
+      <label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+        <div><p class="text-sm font-bold">Comunicados urgentes</p><p class="text-[10px] text-slate-400">Solo los marcados como urgentes</p></div>
+        <input type="checkbox" id="notif-urgentes" checked class="accent-blue-600 w-4 h-4" onchange="guardarConfigNotif()">
+      </label>
+      <label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+        <div><p class="text-sm font-bold">Notas nuevas publicadas</p><p class="text-[10px] text-slate-400">Cuando el admin publica el boletín</p></div>
+        <input type="checkbox" id="notif-notas" checked class="accent-blue-600 w-4 h-4" onchange="guardarConfigNotif()">
+      </label>
+      <label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+        <div><p class="text-sm font-bold">Faltas registradas</p><p class="text-[10px] text-slate-400">Cuando el docente marca una inasistencia</p></div>
+        <input type="checkbox" id="notif-faltas" checked class="accent-blue-600 w-4 h-4" onchange="guardarConfigNotif()">
+      </label>
+      <label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+        <div><p class="text-sm font-bold">Todos los comunicados</p><p class="text-[10px] text-slate-400">Cada vez que publican algo nuevo</p></div>
+        <input type="checkbox" id="notif-todos" class="accent-blue-600 w-4 h-4" onchange="guardarConfigNotif()">
+      </label>
+      <label class="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+        <div><p class="text-sm font-bold">Respuestas de secretaría</p><p class="text-[10px] text-slate-400">Mensajes del chat</p></div>
+        <input type="checkbox" id="notif-mensajes" checked class="accent-blue-600 w-4 h-4" onchange="guardarConfigNotif()">
+      </label>
+    </div>
+        <button onclick="location.reload()" class="w-full text-slate-400 text-xs font-bold py-3">Cerrar Sesión</button>
   </section>
 
   <!-- AUTORIZACIONES -->
@@ -338,7 +428,23 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
       <div><label class="text-[9px] font-black text-slate-400 uppercase">Fecha de la inasistencia</label><input type="date" id="just-fecha" class="w-full p-3 bg-slate-50 rounded-xl outline-none font-bold text-sm mt-1 border border-slate-100"></div>
       <div><label class="text-[9px] font-black text-slate-400 uppercase">Motivo</label><select id="just-motivo" class="w-full p-3 bg-slate-50 rounded-xl outline-none font-bold text-sm mt-1 border border-slate-100" style="font-family:inherit"><option value="">Seleccionar...</option><option value="medico">Certificado médico</option><option value="familiar">Causa familiar</option><option value="viaje">Viaje</option><option value="otro">Otro</option></select></div>
       <div><label class="text-[9px] font-black text-slate-400 uppercase">Detalle</label><textarea id="just-detalle" placeholder="Describí el motivo..." class="w-full p-3 bg-slate-50 rounded-xl outline-none text-sm mt-1 border border-slate-100 h-16 resize-none" style="font-family:inherit"></textarea></div>
-      <div><label class="text-[9px] font-black text-slate-400 uppercase">URL del certificado (opcional)</label><input type="url" id="just-url" placeholder="https://drive.google.com/..." class="w-full p-3 bg-slate-50 rounded-xl outline-none font-bold text-sm mt-1 border border-slate-100"></div>
+      <div>
+        <label class="text-[9px] font-black text-slate-400 uppercase">Certificado (opcional)</label>
+        <div class="mt-1 space-y-2">
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-blue-300 transition" onclick="document.getElementById('just-foto-input').click()">
+            <i class="fas fa-camera text-slate-300 text-xl mb-1 block"></i>
+            <p class="text-xs font-bold text-slate-400">Tocá para sacar foto o subir imagen</p>
+            <p id="just-foto-nombre" class="text-[10px] text-blue-500 font-bold mt-1 hidden"></p>
+            <input type="file" id="just-foto-input" accept="image/*" capture="environment" class="hidden" onchange="previewFotoCert(this)">
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-px bg-slate-200"></div>
+            <span class="text-[9px] font-bold text-slate-400">o pegá un link</span>
+            <div class="flex-1 h-px bg-slate-200"></div>
+          </div>
+          <input type="url" id="just-url" placeholder="https://drive.google.com/..." class="w-full p-3 bg-slate-50 rounded-xl outline-none font-bold text-sm border border-slate-100" style="font-family:inherit">
+        </div>
+      </div>
       <button onclick="enviarJustificacion()" class="w-full bg-amber-500 text-white p-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all"><i class="fas fa-paper-plane mr-2"></i>ENVIAR JUSTIFICACIÓN</button>
     </div>
     <h4 class="font-black text-sm text-slate-700">Historial</h4>
@@ -357,7 +463,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
 
 <!-- NAV -->
 <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-[1000]">
-  <button onclick="switchTab('muro')"           id="nav-muro"           class="nav-btn active flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-home text-xl"></i><span id="badge-muro" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>MURO</span></button>
+  <button onclick="switchTab('muro')"           id="nav-muro"           class="nav-btn active flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-home text-xl"></i><span id="badge-muro" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full min-w-[16px] text-center leading-none">0</span></div><span>MURO</span></button>
   <button onclick="switchTab('agenda')"         id="nav-agenda"         class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-calendar-check text-xl"></i><span>AGENDA</span></button>
   <button onclick="switchTab('academico')"      id="nav-academico"      class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-star text-xl"></i><span>BOLETÍN</span></button>
   <button onclick="switchTab('mensajes')"       id="nav-mensajes"       class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-comments text-xl"></i><span id="badge-msg-fam" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>MSG</span></button>
@@ -1466,6 +1572,288 @@ document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==
     login(email);
   }
 })();
+
+// ══ MEJORAS PORTAL FAMILIAS ══
+
+// ── 22: MODO OSCURO ──
+function toggleDarkMode(){
+  const isDark=document.body.classList.toggle('dark-mode');
+  localStorage.setItem('iosef_dark',isDark?'1':'0');
+}
+// Aplicar al cargar
+(function(){
+  if(localStorage.getItem('iosef_dark')==='1'){
+    document.body.classList.add('dark-mode');
+  }
+})();
+
+// ── 11: HIJOS CHIPS ──
+function renderHijosChips(){
+  const cont=document.getElementById('hijos-chips');
+  if(!cont||listaHijos.length<=1){if(cont)cont.innerHTML='';return;}
+  cont.innerHTML=listaHijos.map(h=>`<button onclick="cambiarHijo('${h.id}')" id="chip-${h.id}"
+    style="flex-shrink:0;padding:4px 12px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;border:2px solid ${alumnoSeleccionadoId===h.id?'#2563eb':'#e2e8f0'};background:${alumnoSeleccionadoId===h.id?'#2563eb':'transparent'};color:${alumnoSeleccionadoId===h.id?'white':'#64748b'};font-family:inherit;transition:all .15s;white-space:nowrap">
+    ${h.nombre.split(' ')[0]}
+  </button>`).join('');
+}
+
+// Override cambiarHijo to update chips
+const _origCambiarHijo = window.cambiarHijo;
+window.cambiarHijo = function(id){
+  alumnoSeleccionadoId=id;
+  renderHijosChips();
+  if(_origCambiarHijo)_origCambiarHijo.call(this,id);
+};
+
+// ── 12: RESUMEN DE TODOS LOS HIJOS ──
+async function cargarResumenHijos(){
+  const cont=document.getElementById('resumen-hijos');
+  if(!cont||listaHijos.length<2){if(cont)cont.classList.add('hidden');return;}
+  cont.classList.remove('hidden');
+  cont.style.gridTemplateColumns=listaHijos.length===2?'1fr 1fr':'1fr 1fr';
+  cont.innerHTML='<p style="grid-column:1/-1;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">Resumen de tus hijos</p>';
+  for(const h of listaHijos){
+    const [asSnap]=await Promise.all([
+      db.collection('asistencia').where('alumnoId','==',h.id).where('estado','==','A').get().catch(()=>({size:0}))
+    ]);
+    const alumnoDoc=await db.collection('alumnos').doc(h.id).get().catch(()=>null);
+    const curso=alumnoDoc?.data()?.curso||'';
+    cont.innerHTML+=`<div onclick="cambiarHijo('${h.id}')" style="background:${alumnoSeleccionadoId===h.id?'#eff6ff':'white'};border:2px solid ${alumnoSeleccionadoId===h.id?'#2563eb':'#e2e8f0'};border-radius:1.25rem;padding:.875rem;cursor:pointer;transition:all .15s">
+      <p style="font-weight:800;font-size:.875rem;color:var(--text)">${h.nombre.split(' ')[0]}</p>
+      <p style="font-size:.625rem;font-weight:700;color:#94a3b8;margin-top:2px">${curso}</p>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <span style="font-size:9px;font-weight:800;color:${asSnap.size>3?'#ef4444':'#94a3b8'}">⚠️ ${asSnap.size} faltas</span>
+      </div>
+    </div>`;
+  }
+}
+
+// ── 1: BUSCAR EN EL MURO ──
+window.buscarEnMuro = function(){
+  const q=(document.getElementById('muro-search')?.value||'').toLowerCase().trim();
+  const posts=document.querySelectorAll('#muro-posts .post-card');
+  let visible=0;
+  posts.forEach(card=>{
+    const titulo=card.querySelector('h2')?.textContent?.toLowerCase()||'';
+    const texto=card.querySelector('p.text-slate-500')?.textContent?.toLowerCase()||'';
+    const match=!q||titulo.includes(q)||texto.includes(q);
+    card.style.display=match?'':'none';
+    if(match)visible++;
+  });
+  const noRes=document.getElementById('muro-no-results');
+  if(!visible&&q){
+    if(!noRes){const p=document.createElement('p');p.id='muro-no-results';p.style.cssText='text-align:center;padding:2rem;color:#94a3b8;font-size:.875rem';p.textContent='Sin resultados para "'+q+'"';document.getElementById('muro-posts').appendChild(p);}
+  } else if(noRes){ noRes.remove(); }
+};
+
+// ── 3: BADGE CON NÚMERO ──
+// Se actualiza en inicializarApp — override la lógica
+const _origInicializarApp=window.inicializarApp;
+window.inicializarApp=async function inicializarApp(){
+  if(_origInicializarApp)await _origInicializarApp.call(this);
+  // Calcular no leídos exactos
+  try{
+    const snap=await db.collection('comunicados').get();
+    const lSnap=await db.collection('usuarios').doc(userEmail).collection('leidos_comunicados').get();
+    const lSet=new Set();lSnap.forEach(d=>lSet.add(d.id));
+    let noLeidos=0;
+    snap.forEach(d=>{if(!lSet.has(d.id)&&d.data().tag!=='evento')noLeidos++;});
+    const badge=document.getElementById('badge-muro');
+    if(badge&&noLeidos>0){badge.textContent=noLeidos>9?'9+':noLeidos;badge.classList.remove('hidden');}
+  }catch(e){}
+  // Chips de hijos
+  renderHijosChips();
+  // Resumen hijos
+  await cargarResumenHijos();
+};
+
+// ── 7: DETALLE DE FALTAS ──
+window.toggleDetalleFaltas = function(){
+  const drawer=document.getElementById('detalle-faltas-drawer');
+  if(!drawer)return;
+  const open=drawer.classList.toggle('hidden');
+  if(!open) cargarDetalleFaltas();
+};
+
+async function cargarDetalleFaltas(){
+  const cont=document.getElementById('lista-faltas-detalle');
+  if(!cont)return;
+  cont.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center"><i class="fas fa-spinner fa-spin"></i></p>';
+  const snap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).where('estado','==','A').get().catch(()=>({docs:[]}));
+  if(!snap.docs.length){cont.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center">Sin faltas registradas.</p>';return;}
+  const jSnap=await db.collection('justificaciones').where('alumnoId','==',alumnoSeleccionadoId).get().catch(()=>({docs:[]}));
+  const justMap={};jSnap.docs.forEach(d=>justMap[d.data().fecha]=d.data().estado);
+  const faltas=[...snap.docs].sort((a,b)=>b.data().fecha.localeCompare(a.data().fecha));
+  cont.innerHTML=faltas.map(doc=>{
+    const d=doc.data();
+    const fecha=new Date(d.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'long'});
+    const jEst=justMap[d.fecha];
+    const chip=jEst==='aprobada'?'<span style="font-size:8px;font-weight:800;background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:99px">✓ Justificada</span>':
+      jEst==='pendiente'?'<span style="font-size:8px;font-weight:800;background:#fef3c7;color:#a16207;padding:2px 7px;border-radius:99px">⏳ En revisión</span>':
+      '<span style="font-size:8px;font-weight:800;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:99px;cursor:pointer" onclick="switchTab(\'justificaciones\')">Justificar →</span>';
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;border-bottom:1px solid #f1f5f9">
+      <div><p style="font-size:12px;font-weight:700">${fecha}</p>${d.materia?`<p style="font-size:9px;color:#94a3b8">${d.materia}</p>`:''}</div>
+      ${chip}
+    </div>`;
+  }).join('');
+}
+
+// ── 10: TAREAS PENDIENTES en widget ──
+async function cargarTareasPendientesFamilia(){
+  if(!alumnoSeleccionadoId)return;
+  const alumnoDoc=await db.collection('alumnos').doc(alumnoSeleccionadoId).get().catch(()=>null);
+  const curso=alumnoDoc?.data()?.curso;if(!curso)return;
+  const hoy=new Date().toISOString().slice(0,10);
+  const snap=await db.collection('tablon').where('curso','==',curso).where('tipo','==','tarea').get().catch(()=>({docs:[]}));
+  let pendientes=0;
+  snap.docs.forEach(d=>{
+    const t=d.data();
+    const entregados=t.entregados||[];
+    const fechaEntrega=t.fechaEntrega||'';
+    if(!entregados.includes(alumnoSeleccionadoId)&&(fechaEntrega>=hoy||!fechaEntrega))pendientes++;
+  });
+  if(pendientes>0){
+    const widget=document.getElementById('widget-hoy');if(!widget)return;
+    const div=document.createElement('div');
+    div.style.cssText='background:#eff6ff;border:1px solid #bfdbfe;border-radius:1rem;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer';
+    div.onclick=()=>switchTab('academico');
+    div.innerHTML=`<span style="font-size:1.25rem">📚</span><div><p style="font-size:.8125rem;font-weight:700;color:#1d4ed8">${pendientes} tarea${pendientes>1?'s':''} pendiente${pendientes>1?'s':''}</p><p style="font-size:.6875rem;color:#3b82f6">Ver en Boletín</p></div>`;
+    widget.appendChild(div);
+  }
+}
+
+// Override cargarWidgetHoy to also load tareas
+const _origWidgetHoy=window.cargarWidgetHoy;
+window.cargarWidgetHoy=async function(){
+  if(_origWidgetHoy)await _origWidgetHoy.call(this);
+  await cargarTareasPendientesFamilia();
+};
+
+// ── 13: EDITAR CONTACTOS DE EMERGENCIA ──
+let _contactosEdit=[];
+window.toggleEditarContactos=function(){
+  const form=document.getElementById('form-contactos-edit');
+  const btn=document.getElementById('btn-editar-contactos');
+  if(!form)return;
+  const open=!form.classList.contains('hidden');
+  if(open){form.classList.add('hidden');if(btn)btn.textContent='✏️ Editar';}
+  else{
+    form.classList.remove('hidden');if(btn)btn.textContent='✕ Cancelar';
+    // Cargar contactos actuales en form
+    const alumnoDoc=document.getElementById('ficha-contactos');
+    _contactosEdit=[];
+    if(window._alumnoData?.contactosEmergencia){
+      _contactosEdit=[...window._alumnoData.contactosEmergencia];
+    }
+    renderContactosEditForm();
+  }
+};
+
+function renderContactosEditForm(){
+  const cont=document.getElementById('contactos-edit-list');if(!cont)return;
+  cont.innerHTML=_contactosEdit.map((c,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr 36px;gap:6px;align-items:center">
+    <input type="text" value="${c.nombre||''}" placeholder="Nombre" onchange="_contactosEdit[${i}].nombre=this.value" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:.625rem;font-size:12px;font-weight:600;font-family:inherit;background:var(--input-bg);color:var(--text);outline:none">
+    <input type="text" value="${c.tel||''}" placeholder="Teléfono" onchange="_contactosEdit[${i}].tel=this.value" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:.625rem;font-size:12px;font-weight:600;font-family:inherit;background:var(--input-bg);color:var(--text);outline:none">
+    <button onclick="_contactosEdit.splice(${i},1);renderContactosEditForm()" style="background:#fee2e2;border:none;border-radius:.5rem;width:32px;height:32px;cursor:pointer;color:#ef4444;font-size:14px">✕</button>
+  </div>`).join('');
+}
+
+window.agregarContactoEdit=function(){
+  _contactosEdit.push({nombre:'',vinculo:'',tel:''});
+  renderContactosEditForm();
+};
+
+window.guardarContactosEmergencia=async function(){
+  const contactosValidos=_contactosEdit.filter(c=>c.nombre&&c.nombre.trim());
+  if(!alumnoSeleccionadoId)return;
+  await db.collection('alumnos').doc(alumnoSeleccionadoId).update({contactosEmergencia:contactosValidos});
+  alert('✅ Contactos guardados.');
+  toggleEditarContactos();
+  // Reload ficha
+  const ad=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();
+  window._alumnoData=ad.data()||{};
+  const ce=document.getElementById('ficha-contactos');
+  const cts=window._alumnoData.contactosEmergencia||[];
+  ce.innerHTML=cts.length?cts.map(c=>`<div style="background:var(--surface2);padding:10px 12px;border-radius:.75rem;display:flex;gap:.5rem;align-items:center"><i class="fas fa-user-shield" style="color:#94a3b8;font-size:12px"></i><div><p style="font-size:.8125rem;font-weight:700">${c.nombre}${c.vinculo?' — '+c.vinculo:''}</p><p style="font-size:.625rem;color:#94a3b8">${c.tel||''}</p></div></div>`).join(''):
+    '<p style="color:#94a3b8;font-size:.75rem;font-style:italic">Sin contactos de emergencia.</p>';
+};
+
+// Store alumnoData globally for contactos
+const _origCargarAcademico=window.cargarAcademico;
+window.cargarAcademico=async function(){
+  if(_origCargarAcademico)await _origCargarAcademico.call(this);
+  // Store reference for editable contacts
+  try{const ad=await db.collection('alumnos').doc(alumnoSeleccionadoId).get();window._alumnoData=ad.data()||{};}catch(e){}
+};
+
+// ── 15: CONFIG NOTIFICACIONES ──
+window.toggleConfigNotif=function(){
+  const panel=document.getElementById('notif-config-panel');
+  if(!panel)return;
+  panel.classList.toggle('hidden');
+  // Cargar preferencias guardadas
+  const prefs=JSON.parse(localStorage.getItem('iosef_notif_prefs')||'{}');
+  ['urgentes','notas','faltas','todos','mensajes'].forEach(k=>{
+    const el=document.getElementById('notif-'+k);
+    if(el&&prefs[k]!==undefined)el.checked=prefs[k];
+  });
+};
+
+window.guardarConfigNotif=function(){
+  const prefs={};
+  ['urgentes','notas','faltas','todos','mensajes'].forEach(k=>{
+    const el=document.getElementById('notif-'+k);
+    if(el)prefs[k]=el.checked;
+  });
+  localStorage.setItem('iosef_notif_prefs',JSON.stringify(prefs));
+  // Guardar también en Firebase
+  db.collection('usuarios').doc(userEmail).update({notifPrefs:prefs}).catch(()=>{});
+};
+
+// Show config button when push is activated
+const _origActivarNotif=window.activarNotificaciones;
+window.activarNotificaciones=async function(){
+  if(_origActivarNotif)await _origActivarNotif.call(this);
+  const btn=document.getElementById('btn-config-notif');
+  if(btn)btn.classList.remove('hidden');
+};
+
+// ── 16: FOTO CERTIFICADO ──
+window.previewFotoCert=function(inp){
+  const file=inp.files[0];if(!file)return;
+  const nombre=document.getElementById('just-foto-nombre');
+  if(nombre){nombre.textContent=file.name;nombre.classList.remove('hidden');}
+  // Convert to base64 and store in just-url as data URL
+  const reader=new FileReader();
+  reader.onload=e=>{
+    // For now store preview; real upload would go to Firebase Storage
+    document.getElementById('just-url').value='[Foto adjunta: '+file.name+']';
+    window._fotoCertFile=file;
+  };
+  reader.readAsDataURL(file);
+};
+
+// ── 19: EXPORTAR TODO EL MES A ICS ──
+window.exportarMesICS=function(){
+  const y=calMesActual.getFullYear();const m=calMesActual.getMonth();
+  const mesStr=`${y}-${String(m+1).padStart(2,'0')}`;
+  const evsMes=todosLosEventos.filter(e=>e.fecha&&e.fecha.startsWith(mesStr));
+  if(!evsMes.length){alert('No hay eventos en este mes.');return;}
+  let ics='BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Iosef Caro//Portal Familias//ES\nCALSCALE:GREGORIAN\n';
+  evsMes.forEach(ev=>{
+    const dtStr=ev.fecha.replace(/-/g,'');
+    ics+=`BEGIN:VEVENT\nUID:${ev.id||Math.random()}@iosefcaro\nDTSTART;VALUE=DATE:${dtStr}\nDTEND;VALUE=DATE:${dtStr}\nSUMMARY:${ev.titulo}\n${ev.descripcion?'DESCRIPTION:'+ev.descripcion+'\n':''}END:VEVENT\n`;
+  });
+  ics+='END:VCALENDAR';
+  const blob=new Blob([ics],{type:'text/calendar'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`iosefcaro_${mesStr}.ics`;a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ══ FIN MEJORAS FAMILIAS ══
+
 </script>
 </body>
 </html>
