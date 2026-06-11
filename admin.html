@@ -960,7 +960,7 @@ window.cargarLog = async function cargarLog(){
     </div>`;
   });
   if(!hayActivo){labelActivo.textContent='Sin ciclo activo';nombreActual.textContent='—';fechasActual.textContent='Creá y activá un ciclo lectivo';}
-}
+
 
 window.crearCiclo = async function crearCiclo(){
   const nombre=document.getElementById('ciclo-nombre').value.trim();
@@ -2437,6 +2437,8 @@ window.cargarCiclos = async function cargarCiclos(){
   </div>`).join('');
   poblarSelectoresComparativa(ciclosArr);
 }
+
+} // fin _initAdmin
 </script>
 </body>
 </html>
