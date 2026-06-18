@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cargador de datos de prueba — Iosefcaro</title>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg:#f8fafc; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+    --line:#e2e8f0; --blue:#2563eb; --rose:#e11d48; --emerald:#059669; --amber:#d97706;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:32px 16px 64px;
+  }
+  .wrap{max-width:680px; margin:0 auto;}
+  h1{font-size:1.5rem; font-weight:800; margin:0 0 4px;}
+  .sub{color:var(--muted); font-size:.875rem; margin:0 0 28px;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:24px;
+    padding:24px; margin-bottom:20px; box-shadow:0 1px 2px rgba(15,23,42,.04);
+  }
+  .card h2{font-size:1.05rem; font-weight:800; margin:0 0 6px;}
+  .card p{color:var(--muted); font-size:.8125rem; line-height:1.5; margin:0 0 16px;}
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  button{
+    border:none; border-radius:14px; padding:13px 20px; font-weight:700; font-size:.875rem;
+    cursor:pointer; transition:transform .08s ease, opacity .15s ease;
+  }
+  button:active{transform:scale(.98);}
+  button:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-danger{background:#fef2f2; color:var(--rose); border:1px solid #fecdd3;}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px;}
+  .stat{background:#f1f5f9; border-radius:14px; padding:12px; text-align:center;}
+  .stat b{display:block; font-size:1.15rem; font-weight:800;}
+  .stat span{font-size:.6875rem; color:var(--muted); font-weight:700; text-transform:uppercase;}
+  #log{
+    margin-top:16px; background:#0f172a; color:#e2e8f0; border-radius:14px;
+    padding:14px 16px; font-family:"SF Mono",Consolas,monospace; font-size:.75rem;
+    line-height:1.6; max-height:280px; overflow-y:auto; white-space:pre-wrap; display:none;
+  }
+  table{width:100%; border-collapse:collapse; font-size:.75rem;}
+  td{padding:7px 4px; border-bottom:1px solid var(--line);}
+  td:first-child{color:var(--muted); font-weight:700;}
+  td:last-child{text-align:right; font-weight:700;}
+  .ok{color:var(--emerald);}
+  .warn{color:var(--amber); font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧪 Cargador de datos de prueba</h1>
+  <p class="sub">App Iosefcaro — escribe directo en Firestore, sin pasar por la consola del navegador.</p>
+
+  <div class="card">
+    <h2>1. Cargar datos</h2>
+    <p>Crea 12 cursos, 14 materias, 1 ciclo lectivo activo + 2 períodos, 10 docentes,
+    6 usuarios de staff, 50 alumnos y 63 cuentas de familia. Todo queda marcado como
+    dato de prueba para poder borrarlo después.</p>
+    <div class="stats">
+      <div class="stat"><b>50</b><span>Alumnos</span></div>
+      <div class="stat"><b>10</b><span>Docentes</span></div>
+      <div class="stat"><b>12</b><span>Cursos</span></div>
+    </div>
+    <div class="row">
+      <button class="btn-primary" id="btn-cargar" onclick="cargarDatos()">Cargar datos de prueba</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Borrar datos de prueba</h2>
+    <p>Elimina únicamente los documentos creados por este cargador (los que tienen el
+    campo <code>_prueba: true</code>). No toca nada más.</p>
+    <div class="row">
+      <button class="btn-danger" id="btn-borrar" onclick="borrarDatos()">Borrar datos de prueba</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Credenciales para probar</h2>
+    <table>
+      <tr><td>Docente (ej.)</td><td>patricia.ojeda@iosefcaro.org / Prueba2026</td></tr>
+      <tr><td>Director</td><td>director@iosefcaro.org / Prueba2026</td></tr>
+      <tr><td>Secretaría Primario</td><td>secretaria.primario@iosefcaro.org / Prueba2026</td></tr>
+      <tr><td>EOE</td><td>eoe@iosefcaro.org / Prueba2026</td></tr>
+      <tr><td>Comunicación</td><td>comunicacion@iosefcaro.org / Prueba2026</td></tr>
+      <tr><td>Alumno (ej.)</td><td>mateo.castro@iosefcaro.org / Caro2026</td></tr>
+      <tr><td>Familia (ej.)</td><td>familia.mateo.castro@familia.test / lo que sea</td></tr>
+    </table>
+  </div>
+
+  <div id="log"></div>
+</div>
+
+<script>
+const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
+if(!firebase.apps.length) firebase.initializeApp(FB);
+const db = firebase.firestore();
+
+const SEED = {"cursos": [{"nombre": "SALA3", "nivel": "inicial"}, {"nombre": "SALA4", "nivel": "inicial"}, {"nombre": "SALA5", "nivel": "inicial"}, {"nombre": "1A", "nivel": "primario"}, {"nombre": "2A", "nivel": "primario"}, {"nombre": "3A", "nivel": "primario"}, {"nombre": "4A", "nivel": "primario"}, {"nombre": "5A", "nivel": "primario"}, {"nombre": "6A", "nivel": "primario"}, {"nombre": "1ROS", "nivel": "secundario"}, {"nombre": "2DOS", "nivel": "secundario"}, {"nombre": "3ROS", "nivel": "secundario"}], "materias": [{"nombre": "Lengua"}, {"nombre": "Matemática"}, {"nombre": "Ciencias Naturales"}, {"nombre": "Ciencias Sociales"}, {"nombre": "Inglés"}, {"nombre": "Educación Física"}, {"nombre": "Arte"}, {"nombre": "Música"}, {"nombre": "Física"}, {"nombre": "Historia"}, {"nombre": "Geografía"}, {"nombre": "Lengua y Literatura"}, {"nombre": "Estimulación Temprana"}, {"nombre": "Juego Trabajo"}], "docentes": [{"nombre": "Lucía Bianchi", "email": "lucia.bianchi@iosefcaro.org", "nivel": "inicial", "materias": ["Estimulación Temprana"], "cursos": ["SALA3"], "pass": "Prueba2026"}, {"nombre": "Marina Suárez", "email": "marina.suarez@iosefcaro.org", "nivel": "inicial", "materias": ["Juego Trabajo"], "cursos": ["SALA4", "SALA5"], "pass": "Prueba2026"}, {"nombre": "Patricia Ojeda", "email": "patricia.ojeda@iosefcaro.org", "nivel": "primario", "materias": ["Lengua", "Matemática"], "cursos": ["1A", "2A"], "pass": "Prueba2026"}, {"nombre": "Gabriel Lemos", "email": "gabriel.lemos@iosefcaro.org", "nivel": "primario", "materias": ["Lengua", "Matemática"], "cursos": ["3A", "4A"], "pass": "Prueba2026"}, {"nombre": "Verónica Páez", "email": "veronica.paez@iosefcaro.org", "nivel": "primario", "materias": ["Lengua", "Matemática"], "cursos": ["5A", "6A"], "pass": "Prueba2026"}, {"nombre": "Brian Walsh", "email": "brian.walsh@iosefcaro.org", "nivel": "primario", "materias": ["Inglés"], "cursos": ["1A", "2A", "3A", "4A", "5A", "6A", "1ROS", "2DOS", "3ROS"], "pass": "Prueba2026"}, {"nombre": "Diego Farías", "email": "diego.farias@iosefcaro.org", "nivel": "primario", "materias": ["Educación Física"], "cursos": ["1A", "2A", "3A", "4A", "5A", "6A", "1ROS", "2DOS", "3ROS"], "pass": "Prueba2026"}, {"nombre": "Andrea Bustos", "email": "andrea.bustos@iosefcaro.org", "nivel": "secundario", "materias": ["Matemática", "Física"], "cursos": ["1ROS", "2DOS", "3ROS"], "pass": "Prueba2026"}, {"nombre": "Mariano Cisneros", "email": "mariano.cisneros@iosefcaro.org", "nivel": "secundario", "materias": ["Lengua y Literatura"], "cursos": ["1ROS", "2DOS", "3ROS"], "pass": "Prueba2026"}, {"nombre": "Carolina Espósito", "email": "carolina.exposito@iosefcaro.org", "nivel": "secundario", "materias": ["Historia", "Geografía"], "cursos": ["1ROS", "2DOS", "3ROS"], "pass": "Prueba2026"}], "staff": [{"nombre": "Hernán Aguilar", "email": "director@iosefcaro.org", "rol": "director", "niveles": ["inicial", "primario", "secundario"], "pass": "Prueba2026"}, {"nombre": "Romina Castelli", "email": "secretaria.inicial@iosefcaro.org", "rol": "secretaria_inicial", "niveles": ["inicial"], "pass": "Prueba2026"}, {"nombre": "Pablo N. Ferreyra", "email": "secretaria.primario@iosefcaro.org", "rol": "secretaria_primario", "niveles": ["primario"], "pass": "Prueba2026"}, {"nombre": "Eugenia Salto", "email": "secretaria.secundario@iosefcaro.org", "rol": "secretaria_secundario", "niveles": ["secundario"], "pass": "Prueba2026"}, {"nombre": "Lic. Norma Beltrán", "email": "eoe@iosefcaro.org", "rol": "eoe", "niveles": ["inicial", "primario", "secundario"], "pass": "Prueba2026"}, {"nombre": "Julián Mansilla", "email": "comunicacion@iosefcaro.org", "rol": "comunicacion", "niveles": ["inicial", "primario", "secundario"], "pass": "Prueba2026"}], "alumnos": [{"id": "Mateo_Castro_SALA3", "nombre": "Mateo Castro", "curso": "SALA3", "nivel": "inicial", "familiaNombre": "Familia Castro", "email": "mateo.castro@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.mateo.castro@familia.test", "familia.vazquez0@familia.test"]}, {"id": "Sofía_Núñez_SALA3", "nombre": "Sofía Núñez", "curso": "SALA3", "nivel": "inicial", "familiaNombre": "Familia Núñez", "email": "sofia.nunez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.sofia.nunez@familia.test"]}, {"id": "Lucas_Herrera_SALA3", "nombre": "Lucas Herrera", "curso": "SALA3", "nivel": "inicial", "familiaNombre": "Familia Herrera", "email": "lucas.herrera@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.lucas.herrera@familia.test"]}, {"id": "Valentina_Torres_SALA3", "nombre": "Valentina Torres", "curso": "SALA3", "nivel": "inicial", "familiaNombre": "Familia Torres", "email": "valentina.torres@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.valentina.torres@familia.test", "familia.perez3@familia.test"]}, {"id": "Tomás_López_SALA3", "nombre": "Tomás López", "curso": "SALA3", "nivel": "inicial", "familiaNombre": "Familia López", "email": "tomas.lopez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.tomas.lopez@familia.test"]}, {"id": "Martina_Domínguez_SALA4", "nombre": "Martina Domínguez", "curso": "SALA4", "nivel": "inicial", "familiaNombre": "Familia Domínguez", "email": "martina.dominguez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.martina.dominguez@familia.test"]}, {"id": "Benjamín_Ortiz_SALA4", "nombre": "Benjamín Ortiz", "curso": "SALA4", "nivel": "inicial", "familiaNombre": "Familia Ortiz", "email": "benjamin.ortiz@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.benjamin.ortiz@familia.test", "familia.vega6@familia.test"]}, {"id": "Emma_Romero_SALA4", "nombre": "Emma Romero", "curso": "SALA4", "nivel": "inicial", "familiaNombre": "Familia Romero", "email": "emma.romero@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.emma.romero@familia.test"]}, {"id": "Santiago_Cabrera_SALA4", "nombre": "Santiago Cabrera", "curso": "SALA4", "nivel": "inicial", "familiaNombre": "Familia Cabrera", "email": "santiago.cabrera@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.santiago.cabrera@familia.test"]}, {"id": "Camila_Acosta_SALA4", "nombre": "Camila Acosta", "curso": "SALA4", "nivel": "inicial", "familiaNombre": "Familia Acosta", "email": "camila.acosta@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.camila.acosta@familia.test", "familia.diaz9@familia.test"]}, {"id": "Joaquín_Paz_SALA5", "nombre": "Joaquín Paz", "curso": "SALA5", "nivel": "inicial", "familiaNombre": "Familia Paz", "email": "joaquin.paz@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.joaquin.paz@familia.test"]}, {"id": "Mía_Silva_SALA5", "nombre": "Mía Silva", "curso": "SALA5", "nivel": "inicial", "familiaNombre": "Familia Silva", "email": "mia.silva@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.mia.silva@familia.test"]}, {"id": "Bautista_Álvarez_SALA5", "nombre": "Bautista Álvarez", "curso": "SALA5", "nivel": "inicial", "familiaNombre": "Familia Álvarez", "email": "bautista.alvarez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.bautista.alvarez@familia.test", "familia.juarez12@familia.test"]}, {"id": "Catalina_Rodríguez_SALA5", "nombre": "Catalina Rodríguez", "curso": "SALA5", "nivel": "inicial", "familiaNombre": "Familia Rodríguez", "email": "catalina.rodriguez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.catalina.rodriguez@familia.test"]}, {"id": "Thiago_Coria_1A", "nombre": "Thiago Coria", "curso": "1A", "nivel": "primario", "familiaNombre": "Familia Coria", "email": "thiago.coria@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.thiago.coria@familia.test"]}, {"id": "Renata_Peralta_1A", "nombre": "Renata Peralta", "curso": "1A", "nivel": "primario", "familiaNombre": "Familia Peralta", "email": "renata.peralta@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.renata.peralta@familia.test", "familia.medina15@familia.test"]}, {"id": "Agustín_Sosa_1A", "nombre": "Agustín Sosa", "curso": "1A", "nivel": "primario", "familiaNombre": "Familia Sosa", "email": "agustin.sosa@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.agustin.sosa@familia.test"]}, {"id": "Olivia_Vega_1A", "nombre": "Olivia Vega", "curso": "1A", "nivel": "primario", "familiaNombre": "Familia Vega", "email": "olivia.vega@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.olivia.vega@familia.test"]}, {"id": "Ignacio_Vázquez_2A", "nombre": "Ignacio Vázquez", "curso": "2A", "nivel": "primario", "familiaNombre": "Familia Vázquez", "email": "ignacio.vazquez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.ignacio.vazquez@familia.test", "familia.funes18@familia.test"]}, {"id": "Abril_García_2A", "nombre": "Abril García", "curso": "2A", "nivel": "primario", "familiaNombre": "Familia García", "email": "abril.garcia@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.abril.garcia@familia.test"]}, {"id": "Felipe_Bravo_2A", "nombre": "Felipe Bravo", "curso": "2A", "nivel": "primario", "familiaNombre": "Familia Bravo", "email": "felipe.bravo@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.felipe.bravo@familia.test"]}, {"id": "Delfina_Medina_2A", "nombre": "Delfina Medina", "curso": "2A", "nivel": "primario", "familiaNombre": "Familia Medina", "email": "delfina.medina@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.delfina.medina@familia.test", "familia.quiroga21@familia.test"]}, {"id": "Lautaro_Campos_3A", "nombre": "Lautaro Campos", "curso": "3A", "nivel": "primario", "familiaNombre": "Familia Campos", "email": "lautaro.campos@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.lautaro.campos@familia.test"]}, {"id": "Julieta_Godoy_3A", "nombre": "Julieta Godoy", "curso": "3A", "nivel": "primario", "familiaNombre": "Familia Godoy", "email": "julieta.godoy@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.julieta.godoy@familia.test"]}, {"id": "Francisco_Funes_3A", "nombre": "Francisco Funes", "curso": "3A", "nivel": "primario", "familiaNombre": "Familia Funes", "email": "francisco.funes@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.francisco.funes@familia.test", "familia.nunez24@familia.test"]}, {"id": "Lucía_Ibáñez_3A", "nombre": "Lucía Ibáñez", "curso": "3A", "nivel": "primario", "familiaNombre": "Familia Ibáñez", "email": "lucia.ibanez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.lucia.ibanez@familia.test"]}, {"id": "Dante_Molina_4A", "nombre": "Dante Molina", "curso": "4A", "nivel": "primario", "familiaNombre": "Familia Molina", "email": "dante.molina@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.dante.molina@familia.test"]}, {"id": "Pilar_Aguirre_4A", "nombre": "Pilar Aguirre", "curso": "4A", "nivel": "primario", "familiaNombre": "Familia Aguirre", "email": "pilar.aguirre@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.pilar.aguirre@familia.test", "familia.maldonado27@familia.test"]}, {"id": "Simón_Rojas_4A", "nombre": "Simón Rojas", "curso": "4A", "nivel": "primario", "familiaNombre": "Familia Rojas", "email": "simon.rojas@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.simon.rojas@familia.test"]}, {"id": "Victoria_Avalos_4A", "nombre": "Victoria Avalos", "curso": "4A", "nivel": "primario", "familiaNombre": "Familia Avalos", "email": "victoria.avalos@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.victoria.avalos@familia.test"]}, {"id": "Bruno_Escobar_5A", "nombre": "Bruno Escobar", "curso": "5A", "nivel": "primario", "familiaNombre": "Familia Castro", "email": "bruno.escobar@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.mateo.castro@familia.test", "familia.alvarez30@familia.test"]}, {"id": "Zoe_Juárez_5A", "nombre": "Zoe Juárez", "curso": "5A", "nivel": "primario", "familiaNombre": "Familia Juárez", "email": "zoe.juarez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.zoe.juarez@familia.test"]}, {"id": "Nicolás_Luna_5A", "nombre": "Nicolás Luna", "curso": "5A", "nivel": "primario", "familiaNombre": "Familia Luna", "email": "nicolas.luna@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.nicolas.luna@familia.test"]}, {"id": "Isabella_Cardozo_5A", "nombre": "Isabella Cardozo", "curso": "5A", "nivel": "primario", "familiaNombre": "Familia Cardozo", "email": "isabella.cardozo@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.isabella.cardozo@familia.test", "familia.escobar33@familia.test"]}, {"id": "Gael_Ruiz_6A", "nombre": "Gael Ruiz", "curso": "6A", "nivel": "primario", "familiaNombre": "Familia Ruiz", "email": "gael.ruiz@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.gael.ruiz@familia.test"]}, {"id": "Mora_Heredia_6A", "nombre": "Mora Heredia", "curso": "6A", "nivel": "primario", "familiaNombre": "Familia Domínguez", "email": "mora.heredia@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.martina.dominguez@familia.test"]}, {"id": "Maximiliano_Frías_6A", "nombre": "Maximiliano Frías", "curso": "6A", "nivel": "primario", "familiaNombre": "Familia Frías", "email": "maximiliano.frias@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.maximiliano.frias@familia.test", "familia.lopez36@familia.test"]}, {"id": "Guadalupe_Gómez_6A", "nombre": "Guadalupe Gómez", "curso": "6A", "nivel": "primario", "familiaNombre": "Familia Gómez", "email": "guadalupe.gomez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.guadalupe.gomez@familia.test"]}, {"id": "Ciro_Ríos_1ROS", "nombre": "Ciro Ríos", "curso": "1ROS", "nivel": "secundario", "familiaNombre": "Familia Ríos", "email": "ciro.rios@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.ciro.rios@familia.test"]}, {"id": "Luna_Maldonado_1ROS", "nombre": "Luna Maldonado", "curso": "1ROS", "nivel": "secundario", "familiaNombre": "Familia Maldonado", "email": "luna.maldonado@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.luna.maldonado@familia.test", "familia.gomez39@familia.test"]}, {"id": "Emiliano_Díaz_1ROS", "nombre": "Emiliano Díaz", "curso": "1ROS", "nivel": "secundario", "familiaNombre": "Familia Paz", "email": "emiliano.diaz@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.joaquin.paz@familia.test"]}, {"id": "Alma_Correa_1ROS", "nombre": "Alma Correa", "curso": "1ROS", "nivel": "secundario", "familiaNombre": "Familia Correa", "email": "alma.correa@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.alma.correa@familia.test"]}, {"id": "Vicente_Martínez_2DOS", "nombre": "Vicente Martínez", "curso": "2DOS", "nivel": "secundario", "familiaNombre": "Familia Martínez", "email": "vicente.martinez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.vicente.martinez@familia.test", "familia.bravo42@familia.test"]}, {"id": "Malena_Sánchez_2DOS", "nombre": "Malena Sánchez", "curso": "2DOS", "nivel": "secundario", "familiaNombre": "Familia Sánchez", "email": "malena.sanchez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.malena.sanchez@familia.test"]}, {"id": "Franco_Ramírez_2DOS", "nombre": "Franco Ramírez", "curso": "2DOS", "nivel": "secundario", "familiaNombre": "Familia Ramírez", "email": "franco.ramirez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.franco.ramirez@familia.test"]}, {"id": "Paula_Flores_2DOS", "nombre": "Paula Flores", "curso": "2DOS", "nivel": "secundario", "familiaNombre": "Familia Peralta", "email": "paula.flores@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.renata.peralta@familia.test", "familia.ramirez45@familia.test"]}, {"id": "Rodrigo_Benítez_3ROS", "nombre": "Rodrigo Benítez", "curso": "3ROS", "nivel": "secundario", "familiaNombre": "Familia Benítez", "email": "rodrigo.benitez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.rodrigo.benitez@familia.test"]}, {"id": "Daniela_Fernández_3ROS", "nombre": "Daniela Fernández", "curso": "3ROS", "nivel": "secundario", "familiaNombre": "Familia Fernández", "email": "daniela.fernandez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.daniela.fernandez@familia.test"]}, {"id": "Tobías_Pérez_3ROS", "nombre": "Tobías Pérez", "curso": "3ROS", "nivel": "secundario", "familiaNombre": "Familia Pérez", "email": "tobias.perez@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.tobias.perez@familia.test", "familia.herrera48@familia.test"]}, {"id": "Carla_Quiroga_3ROS", "nombre": "Carla Quiroga", "curso": "3ROS", "nivel": "secundario", "familiaNombre": "Familia Quiroga", "email": "carla.quiroga@iosefcaro.org", "pass": "Caro2026", "mailsFamilia": ["familia.carla.quiroga@familia.test"]}], "familias": [{"email": "familia.mateo.castro@familia.test", "nombre": "Familia Castro", "nivel": "inicial", "hijos": [{"nombre": "Mateo Castro", "curso": "SALA3", "nivel": "inicial"}, {"nombre": "Bruno Escobar", "curso": "5A", "nivel": "primario"}]}, {"email": "familia.vazquez0@familia.test", "nombre": "Familia Castro", "nivel": "inicial", "hijos": [{"nombre": "Mateo Castro", "curso": "SALA3", "nivel": "inicial"}]}, {"email": "familia.sofia.nunez@familia.test", "nombre": "Familia Núñez", "nivel": "inicial", "hijos": [{"nombre": "Sofía Núñez", "curso": "SALA3", "nivel": "inicial"}]}, {"email": "familia.lucas.herrera@familia.test", "nombre": "Familia Herrera", "nivel": "inicial", "hijos": [{"nombre": "Lucas Herrera", "curso": "SALA3", "nivel": "inicial"}]}, {"email": "familia.valentina.torres@familia.test", "nombre": "Familia Torres", "nivel": "inicial", "hijos": [{"nombre": "Valentina Torres", "curso": "SALA3", "nivel": "inicial"}]}, {"email": "familia.perez3@familia.test", "nombre": "Familia Torres", "nivel": "inicial", "hijos": [{"nombre": "Valentina Torres", "curso": "SALA3", "nivel": "inicial"}]}, {"email": "familia.tomas.lopez@familia.test", "nombre": "Familia López", "nivel": "inicial", "hijos": [{"nombre": "Tomás López", "curso": "SALA3", "nivel": "inicial"}]}, {"email": "familia.martina.dominguez@familia.test", "nombre": "Familia Domínguez", "nivel": "inicial", "hijos": [{"nombre": "Martina Domínguez", "curso": "SALA4", "nivel": "inicial"}, {"nombre": "Mora Heredia", "curso": "6A", "nivel": "primario"}]}, {"email": "familia.benjamin.ortiz@familia.test", "nombre": "Familia Ortiz", "nivel": "inicial", "hijos": [{"nombre": "Benjamín Ortiz", "curso": "SALA4", "nivel": "inicial"}]}, {"email": "familia.vega6@familia.test", "nombre": "Familia Ortiz", "nivel": "inicial", "hijos": [{"nombre": "Benjamín Ortiz", "curso": "SALA4", "nivel": "inicial"}]}, {"email": "familia.emma.romero@familia.test", "nombre": "Familia Romero", "nivel": "inicial", "hijos": [{"nombre": "Emma Romero", "curso": "SALA4", "nivel": "inicial"}]}, {"email": "familia.santiago.cabrera@familia.test", "nombre": "Familia Cabrera", "nivel": "inicial", "hijos": [{"nombre": "Santiago Cabrera", "curso": "SALA4", "nivel": "inicial"}]}, {"email": "familia.camila.acosta@familia.test", "nombre": "Familia Acosta", "nivel": "inicial", "hijos": [{"nombre": "Camila Acosta", "curso": "SALA4", "nivel": "inicial"}]}, {"email": "familia.diaz9@familia.test", "nombre": "Familia Acosta", "nivel": "inicial", "hijos": [{"nombre": "Camila Acosta", "curso": "SALA4", "nivel": "inicial"}]}, {"email": "familia.joaquin.paz@familia.test", "nombre": "Familia Paz", "nivel": "inicial", "hijos": [{"nombre": "Joaquín Paz", "curso": "SALA5", "nivel": "inicial"}, {"nombre": "Emiliano Díaz", "curso": "1ROS", "nivel": "secundario"}]}, {"email": "familia.mia.silva@familia.test", "nombre": "Familia Silva", "nivel": "inicial", "hijos": [{"nombre": "Mía Silva", "curso": "SALA5", "nivel": "inicial"}]}, {"email": "familia.bautista.alvarez@familia.test", "nombre": "Familia Álvarez", "nivel": "inicial", "hijos": [{"nombre": "Bautista Álvarez", "curso": "SALA5", "nivel": "inicial"}]}, {"email": "familia.juarez12@familia.test", "nombre": "Familia Álvarez", "nivel": "inicial", "hijos": [{"nombre": "Bautista Álvarez", "curso": "SALA5", "nivel": "inicial"}]}, {"email": "familia.catalina.rodriguez@familia.test", "nombre": "Familia Rodríguez", "nivel": "inicial", "hijos": [{"nombre": "Catalina Rodríguez", "curso": "SALA5", "nivel": "inicial"}]}, {"email": "familia.thiago.coria@familia.test", "nombre": "Familia Coria", "nivel": "primario", "hijos": [{"nombre": "Thiago Coria", "curso": "1A", "nivel": "primario"}]}, {"email": "familia.renata.peralta@familia.test", "nombre": "Familia Peralta", "nivel": "primario", "hijos": [{"nombre": "Renata Peralta", "curso": "1A", "nivel": "primario"}, {"nombre": "Paula Flores", "curso": "2DOS", "nivel": "secundario"}]}, {"email": "familia.medina15@familia.test", "nombre": "Familia Peralta", "nivel": "primario", "hijos": [{"nombre": "Renata Peralta", "curso": "1A", "nivel": "primario"}]}, {"email": "familia.agustin.sosa@familia.test", "nombre": "Familia Sosa", "nivel": "primario", "hijos": [{"nombre": "Agustín Sosa", "curso": "1A", "nivel": "primario"}]}, {"email": "familia.olivia.vega@familia.test", "nombre": "Familia Vega", "nivel": "primario", "hijos": [{"nombre": "Olivia Vega", "curso": "1A", "nivel": "primario"}]}, {"email": "familia.ignacio.vazquez@familia.test", "nombre": "Familia Vázquez", "nivel": "primario", "hijos": [{"nombre": "Ignacio Vázquez", "curso": "2A", "nivel": "primario"}]}, {"email": "familia.funes18@familia.test", "nombre": "Familia Vázquez", "nivel": "primario", "hijos": [{"nombre": "Ignacio Vázquez", "curso": "2A", "nivel": "primario"}]}, {"email": "familia.abril.garcia@familia.test", "nombre": "Familia García", "nivel": "primario", "hijos": [{"nombre": "Abril García", "curso": "2A", "nivel": "primario"}]}, {"email": "familia.felipe.bravo@familia.test", "nombre": "Familia Bravo", "nivel": "primario", "hijos": [{"nombre": "Felipe Bravo", "curso": "2A", "nivel": "primario"}]}, {"email": "familia.delfina.medina@familia.test", "nombre": "Familia Medina", "nivel": "primario", "hijos": [{"nombre": "Delfina Medina", "curso": "2A", "nivel": "primario"}]}, {"email": "familia.quiroga21@familia.test", "nombre": "Familia Medina", "nivel": "primario", "hijos": [{"nombre": "Delfina Medina", "curso": "2A", "nivel": "primario"}]}, {"email": "familia.lautaro.campos@familia.test", "nombre": "Familia Campos", "nivel": "primario", "hijos": [{"nombre": "Lautaro Campos", "curso": "3A", "nivel": "primario"}]}, {"email": "familia.julieta.godoy@familia.test", "nombre": "Familia Godoy", "nivel": "primario", "hijos": [{"nombre": "Julieta Godoy", "curso": "3A", "nivel": "primario"}]}, {"email": "familia.francisco.funes@familia.test", "nombre": "Familia Funes", "nivel": "primario", "hijos": [{"nombre": "Francisco Funes", "curso": "3A", "nivel": "primario"}]}, {"email": "familia.nunez24@familia.test", "nombre": "Familia Funes", "nivel": "primario", "hijos": [{"nombre": "Francisco Funes", "curso": "3A", "nivel": "primario"}]}, {"email": "familia.lucia.ibanez@familia.test", "nombre": "Familia Ibáñez", "nivel": "primario", "hijos": [{"nombre": "Lucía Ibáñez", "curso": "3A", "nivel": "primario"}]}, {"email": "familia.dante.molina@familia.test", "nombre": "Familia Molina", "nivel": "primario", "hijos": [{"nombre": "Dante Molina", "curso": "4A", "nivel": "primario"}]}, {"email": "familia.pilar.aguirre@familia.test", "nombre": "Familia Aguirre", "nivel": "primario", "hijos": [{"nombre": "Pilar Aguirre", "curso": "4A", "nivel": "primario"}]}, {"email": "familia.maldonado27@familia.test", "nombre": "Familia Aguirre", "nivel": "primario", "hijos": [{"nombre": "Pilar Aguirre", "curso": "4A", "nivel": "primario"}]}, {"email": "familia.simon.rojas@familia.test", "nombre": "Familia Rojas", "nivel": "primario", "hijos": [{"nombre": "Simón Rojas", "curso": "4A", "nivel": "primario"}]}, {"email": "familia.victoria.avalos@familia.test", "nombre": "Familia Avalos", "nivel": "primario", "hijos": [{"nombre": "Victoria Avalos", "curso": "4A", "nivel": "primario"}]}, {"email": "familia.alvarez30@familia.test", "nombre": "Familia Castro", "nivel": "primario", "hijos": [{"nombre": "Bruno Escobar", "curso": "5A", "nivel": "primario"}]}, {"email": "familia.zoe.juarez@familia.test", "nombre": "Familia Juárez", "nivel": "primario", "hijos": [{"nombre": "Zoe Juárez", "curso": "5A", "nivel": "primario"}]}, {"email": "familia.nicolas.luna@familia.test", "nombre": "Familia Luna", "nivel": "primario", "hijos": [{"nombre": "Nicolás Luna", "curso": "5A", "nivel": "primario"}]}, {"email": "familia.isabella.cardozo@familia.test", "nombre": "Familia Cardozo", "nivel": "primario", "hijos": [{"nombre": "Isabella Cardozo", "curso": "5A", "nivel": "primario"}]}, {"email": "familia.escobar33@familia.test", "nombre": "Familia Cardozo", "nivel": "primario", "hijos": [{"nombre": "Isabella Cardozo", "curso": "5A", "nivel": "primario"}]}, {"email": "familia.gael.ruiz@familia.test", "nombre": "Familia Ruiz", "nivel": "primario", "hijos": [{"nombre": "Gael Ruiz", "curso": "6A", "nivel": "primario"}]}, {"email": "familia.maximiliano.frias@familia.test", "nombre": "Familia Frías", "nivel": "primario", "hijos": [{"nombre": "Maximiliano Frías", "curso": "6A", "nivel": "primario"}]}, {"email": "familia.lopez36@familia.test", "nombre": "Familia Frías", "nivel": "primario", "hijos": [{"nombre": "Maximiliano Frías", "curso": "6A", "nivel": "primario"}]}, {"email": "familia.guadalupe.gomez@familia.test", "nombre": "Familia Gómez", "nivel": "primario", "hijos": [{"nombre": "Guadalupe Gómez", "curso": "6A", "nivel": "primario"}]}, {"email": "familia.ciro.rios@familia.test", "nombre": "Familia Ríos", "nivel": "secundario", "hijos": [{"nombre": "Ciro Ríos", "curso": "1ROS", "nivel": "secundario"}]}, {"email": "familia.luna.maldonado@familia.test", "nombre": "Familia Maldonado", "nivel": "secundario", "hijos": [{"nombre": "Luna Maldonado", "curso": "1ROS", "nivel": "secundario"}]}, {"email": "familia.gomez39@familia.test", "nombre": "Familia Maldonado", "nivel": "secundario", "hijos": [{"nombre": "Luna Maldonado", "curso": "1ROS", "nivel": "secundario"}]}, {"email": "familia.alma.correa@familia.test", "nombre": "Familia Correa", "nivel": "secundario", "hijos": [{"nombre": "Alma Correa", "curso": "1ROS", "nivel": "secundario"}]}, {"email": "familia.vicente.martinez@familia.test", "nombre": "Familia Martínez", "nivel": "secundario", "hijos": [{"nombre": "Vicente Martínez", "curso": "2DOS", "nivel": "secundario"}]}, {"email": "familia.bravo42@familia.test", "nombre": "Familia Martínez", "nivel": "secundario", "hijos": [{"nombre": "Vicente Martínez", "curso": "2DOS", "nivel": "secundario"}]}, {"email": "familia.malena.sanchez@familia.test", "nombre": "Familia Sánchez", "nivel": "secundario", "hijos": [{"nombre": "Malena Sánchez", "curso": "2DOS", "nivel": "secundario"}]}, {"email": "familia.franco.ramirez@familia.test", "nombre": "Familia Ramírez", "nivel": "secundario", "hijos": [{"nombre": "Franco Ramírez", "curso": "2DOS", "nivel": "secundario"}]}, {"email": "familia.ramirez45@familia.test", "nombre": "Familia Peralta", "nivel": "secundario", "hijos": [{"nombre": "Paula Flores", "curso": "2DOS", "nivel": "secundario"}]}, {"email": "familia.rodrigo.benitez@familia.test", "nombre": "Familia Benítez", "nivel": "secundario", "hijos": [{"nombre": "Rodrigo Benítez", "curso": "3ROS", "nivel": "secundario"}]}, {"email": "familia.daniela.fernandez@familia.test", "nombre": "Familia Fernández", "nivel": "secundario", "hijos": [{"nombre": "Daniela Fernández", "curso": "3ROS", "nivel": "secundario"}]}, {"email": "familia.tobias.perez@familia.test", "nombre": "Familia Pérez", "nivel": "secundario", "hijos": [{"nombre": "Tobías Pérez", "curso": "3ROS", "nivel": "secundario"}]}, {"email": "familia.herrera48@familia.test", "nombre": "Familia Pérez", "nivel": "secundario", "hijos": [{"nombre": "Tobías Pérez", "curso": "3ROS", "nivel": "secundario"}]}, {"email": "familia.carla.quiroga@familia.test", "nombre": "Familia Quiroga", "nivel": "secundario", "hijos": [{"nombre": "Carla Quiroga", "curso": "3ROS", "nivel": "secundario"}]}], "ciclo": {"nombre": "Ciclo 2026", "inicio": "2026-03-01", "fin": "2026-12-15"}, "periodos": [{"nombre": "1er Bimestre 2026", "slug": "1BIM", "inicio": "2026-03-01", "fin": "2026-05-08", "orden": 1, "activo": true}, {"nombre": "2do Bimestre 2026", "slug": "2BIM", "inicio": "2026-05-11", "fin": "2026-07-10", "orden": 2, "activo": false}]}
+;
+
+function log(msg, cls){
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function cargarDatos(){
+  const btn = document.getElementById('btn-cargar');
+  btn.disabled = true; btn.textContent = 'Cargando…';
+  document.getElementById('log').innerHTML = '';
+  try{
+    log('Iniciando carga de prueba…');
+    const batch = db.batch();
+    let ops = 0;
+
+    SEED.cursos.forEach(c => { batch.set(db.collection('cursos').doc(c.nombre), {nombre:c.nombre, nivel:c.nivel, _prueba:true}, {merge:true}); ops++; });
+    SEED.materias.forEach(m => { batch.set(db.collection('materias').doc(m.nombre), {nombre:m.nombre, _prueba:true}, {merge:true}); ops++; });
+
+    const cicloRef = db.collection('ciclos_lectivos').doc('ciclo_2026_prueba');
+    batch.set(cicloRef, Object.assign({}, SEED.ciclo, {activo:true, _prueba:true, creadoEn:new Date().toISOString()}), {merge:true}); ops++;
+
+    SEED.periodos.forEach(p => { batch.set(db.collection('periodos').doc('periodo_'+p.slug.toLowerCase()+'_prueba'), Object.assign({}, p, {_prueba:true}), {merge:true}); ops++; });
+
+    SEED.docentes.forEach(d => {
+      batch.set(db.collection('usuarios').doc(d.email), {nombre:d.nombre, rol:'docente', nivel:d.nivel, materias:d.materias, cursos:d.cursos, pass:d.pass, _prueba:true}, {merge:true});
+      ops++;
+    });
+
+    SEED.staff.forEach(s => {
+      batch.set(db.collection('usuarios').doc(s.email), {nombre:s.nombre, rol:s.rol, niveles:s.niveles, permisos:[], pass:s.pass, _prueba:true}, {merge:true});
+      ops++;
+    });
+
+    SEED.alumnos.forEach(a => {
+      batch.set(db.collection('alumnos').doc(a.id), {nombre:a.nombre, curso:a.curso, nivel:a.nivel, familiaNombre:a.familiaNombre, email:a.email, pass:a.pass, _prueba:true}, {merge:true});
+      ops++;
+      batch.set(db.collection('usuarios').doc(a.email), {rol:'alumno', nombre:a.nombre, curso:a.curso, nivel:a.nivel, pass:a.pass, alumnoId:a.id, _prueba:true}, {merge:true});
+      ops++;
+    });
+
+    SEED.familias.forEach(f => {
+      batch.set(db.collection('usuarios').doc(f.email), {nombre:f.nombre, rol:'familia', nivel:f.nivel, hijos:f.hijos, _prueba:true}, {merge:true});
+      ops++;
+    });
+
+    SEED.cursos.forEach(c => {
+      batch.set(db.collection('curso_alumnos').doc(c.nombre), {curso:c.nombre, nivel:c.nivel, _prueba:true, ultimaActualizacion:new Date().toISOString()}, {merge:true});
+      ops++;
+    });
+
+    log('Escribiendo ' + ops + ' documentos en Firestore…');
+    await batch.commit();
+
+    log('✅ Carga de prueba completa.', 'ok');
+    log('• ' + SEED.cursos.length + ' cursos');
+    log('• ' + SEED.materias.length + ' materias');
+    log('• 1 ciclo lectivo activo + ' + SEED.periodos.length + ' períodos');
+    log('• ' + SEED.docentes.length + ' docentes (pass: Prueba2026)');
+    log('• ' + SEED.staff.length + ' usuarios de staff (pass: Prueba2026)');
+    log('• ' + SEED.alumnos.length + ' alumnos (pass: Caro2026, o "alumnos123" como maestra)');
+    log('• ' + SEED.familias.length + ' cuentas de familia (el portal Familias no valida contraseña)');
+  }catch(e){
+    log('❌ Error: ' + e.message, 'warn');
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = 'Cargar datos de prueba';
+}
+
+async function borrarDatos(){
+  const btn = document.getElementById('btn-borrar');
+  btn.disabled = true; btn.textContent = 'Borrando…';
+  document.getElementById('log').innerHTML = '';
+  try{
+    const colecciones = ['cursos','materias','ciclos_lectivos','periodos','usuarios','alumnos','curso_alumnos'];
+    const batch = db.batch();
+    let ops = 0;
+    for(const col of colecciones){
+      const snap = await db.collection(col).where('_prueba','==',true).get();
+      snap.forEach(doc => { batch.delete(doc.ref); ops++; });
+      log(col + ': ' + snap.size + ' documentos marcados para borrar.');
+    }
+    if(ops === 0){ log('No se encontraron datos de prueba. Nada para borrar.'); }
+    else{
+      await batch.commit();
+      log('✅ Borrado completo. ' + ops + ' documentos eliminados.', 'ok');
+    }
+  }catch(e){
+    log('❌ Error: ' + e.message, 'warn');
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = 'Borrar datos de prueba';
+}
+</script>
+</body>
+</html>
