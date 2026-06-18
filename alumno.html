@@ -1016,14 +1016,22 @@ async function cargarNotas(){
     cont.innerHTML='';
     for(const [mat,m] of Object.entries(porMateria)){
       // Check visibility for each period
+      // config_visibilidad se guarda con el Firestore ID del período (no el slug),
+      // así que primero obtenemos el mapa slug → docId de la colección periodos.
+      if(!window._periodosIdMap){
+        window._periodosIdMap={};
+        const pSnap=await db.collection('periodos').get().catch(()=>({docs:[]}));
+        pSnap.docs.forEach(d=>{window._periodosIdMap[d.data().slug]=d.id;});
+      }
       const periodosVisibles=[];
       for(const p of m.periodos){
         const slug=p.periodoSlug;
-        const visDoc=await db.collection('config_visibilidad').doc(slug).get().catch(()=>null);
+        const pid=window._periodosIdMap[slug]||slug; // fallback al slug si no encuentra el ID
+        const visDoc=await db.collection('config_visibilidad').doc(pid).get().catch(()=>null);
         const vis=visDoc?.exists?visDoc.data():{};
-        // Check if notes are visible for this course+period
+        // La clave es ${slug}_${curso} (igual que como guarda el admin)
         const cursoKey=`${slug}_${alumnoCurso}`;
-        const visible=vis[cursoKey]===true||vis['todos']===true;
+        const visible=vis[cursoKey]===true||vis[`${pid}_${alumnoCurso}`]===true||vis['todos']===true;
         if(visible) periodosVisibles.push(p);
       }
 
