@@ -1143,7 +1143,7 @@ window.inicializarBoletinAuth = async function inicializarBoletinAuth(){
   const sel=document.getElementById('auth-periodo-sel');
   snap.forEach(doc=>{
     const p=doc.data();
-    sel.innerHTML+=`<option value="${doc.id}">${p.nombre||p.slug}</option>`;
+    sel.innerHTML+=`<option value="${doc.id}" data-slug="${p.slug||''}">${p.nombre||p.slug}</option>`;
   });
   // Cargar comunicados en selector de lecturas
   const comSnap=await db.collection('comunicados').orderBy('creadoEn','desc').limit(30).get();
@@ -1152,7 +1152,10 @@ window.inicializarBoletinAuth = async function inicializarBoletinAuth(){
 }
 
 window.cargarAuthBoletín = async function cargarAuthBoletín(){
-  const perId=document.getElementById('auth-periodo-sel').value;
+  const selEl=document.getElementById('auth-periodo-sel');
+  const perId=selEl.value;
+  // BUGFIX: usar slug como clave (igual que notas-vis y familia.html)
+  const slug=selEl.options[selEl.selectedIndex]?.dataset?.slug||'';
   if(!perId){document.getElementById('auth-boletin-tabla').innerHTML='<p class="text-slate-400 text-xs text-center py-4">Seleccioná un período.</p>';return;}
   const cont=document.getElementById('auth-boletin-tabla');
   cont.innerHTML='<p class="text-slate-400 text-xs text-center py-2"><i class="fas fa-spinner fa-spin mr-1"></i>Cargando...</p>';
@@ -1163,9 +1166,8 @@ window.cargarAuthBoletín = async function cargarAuthBoletín(){
   cont.innerHTML='';
   cursosSnap.forEach(doc=>{
     const curso=doc.data().nombre;
-    const perDocSnap=document.getElementById('auth-periodo-sel');
-    const slug=perDocSnap.options[perDocSnap.selectedIndex]?.text||perId;
-    const key=`${perId}_${curso}`;
+    // Clave estandarizada: ${slug}_${curso} (igual que notas-vis)
+    const key=`${slug}_${curso}`;
     const activo=!!(vis[key]||vis['todos']);
     cont.innerHTML+=`<div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
       <div>
@@ -1173,34 +1175,40 @@ window.cargarAuthBoletín = async function cargarAuthBoletín(){
         <p class="text-[9px] text-slate-400 font-bold uppercase">${activo?'✅ Visible para familias':'🔒 Oculto'}</p>
       </div>
       <label class="toggle-vis">
-        <input type="checkbox" ${activo?'checked':''} onchange="toggleVisBoletín('${perId}','${curso}',this.checked)">
+        <input type="checkbox" ${activo?'checked':''} onchange="toggleVisBoletín('${perId}','${slug}','${curso}',this.checked)">
         <span class="slider"></span>
       </label>
     </div>`;
   });
 }
 
-window.toggleVisBoletín = async function toggleVisBoletín(perId,curso,visible){
-  const key=`${perId}_${curso}`;
+window.toggleVisBoletín = async function toggleVisBoletín(perId,slug,curso,visible){
+  // Clave estandarizada: ${slug}_${curso}
+  const key=`${slug}_${curso}`;
   await db.collection('config_visibilidad').doc(perId).set({[key]:visible},{merge:true});
 }
 
 window.publicarTodoBoletin = async function publicarTodoBoletin(){
-  const perId=document.getElementById('auth-periodo-sel').value;
+  const selEl=document.getElementById('auth-periodo-sel');
+  const perId=selEl.value;
+  const slug=selEl.options[selEl.selectedIndex]?.dataset?.slug||'';
   if(!perId){alert('Seleccioná un período.');return;}
   const cursosSnap=await db.collection('cursos').get();
   const batch=db.batch();const ref=db.collection('config_visibilidad').doc(perId);
-  const upd={};cursosSnap.forEach(doc=>{upd[`${perId}_${doc.data().nombre}`]=true;});upd['todos']=true;
+  // BUGFIX: claves con slug (consistente con notas-vis y familia.html)
+  const upd={todos:true};cursosSnap.forEach(doc=>{upd[`${slug}_${doc.data().nombre}`]=true;});
   batch.set(ref,upd,{merge:true});await batch.commit();
   await cargarAuthBoletín();alert('✅ Boletín publicado para todos los cursos.');
 }
 
 window.ocultarTodoBoletin = async function ocultarTodoBoletin(){
-  const perId=document.getElementById('auth-periodo-sel').value;
+  const selEl=document.getElementById('auth-periodo-sel');
+  const perId=selEl.value;
+  const slug=selEl.options[selEl.selectedIndex]?.dataset?.slug||'';
   if(!perId){alert('Seleccioná un período.');return;}
   const cursosSnap=await db.collection('cursos').get();
   const batch=db.batch();const ref=db.collection('config_visibilidad').doc(perId);
-  const upd={todos:false};cursosSnap.forEach(doc=>{upd[`${perId}_${doc.data().nombre}`]=false;});
+  const upd={todos:false};cursosSnap.forEach(doc=>{upd[`${slug}_${doc.data().nombre}`]=false;});
   batch.set(ref,upd,{merge:true});await batch.commit();
   await cargarAuthBoletín();alert('🔒 Boletín ocultado para todos los cursos.');
 }
