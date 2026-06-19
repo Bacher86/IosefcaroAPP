@@ -190,6 +190,18 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
         </div>
       </div>
 
+      <!-- Emails de la familia -->
+      <div class="border-t pt-4">
+        <h3 class="font-black text-sm mb-3 flex items-center gap-2"><i class="fas fa-users text-emerald-500"></i> Emails de la familia (Portal Familias)</h3>
+        <div id="fam-emails-cont" class="space-y-2 mb-3">
+          <p class="text-xs text-slate-400 italic">Sin emails registrados.</p>
+        </div>
+        <div class="flex gap-2">
+          <input type="email" id="fam-email-new" placeholder="mail@ejemplo.com" class="input-pro flex-1 text-sm">
+          <button onclick="agregarEmailFamilia()" class="bg-slate-900 text-white font-bold text-xs px-4 rounded-xl flex-shrink-0">+ Agregar</button>
+        </div>
+      </div>
+
       <button onclick="guardarPerfilAlumno()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg mt-2">
         <i class="fas fa-save mr-2"></i> GUARDAR PERFIL DEL ALUMNO
       </button>
@@ -622,8 +634,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       <div id="vista-lista-container">
         <div class="bg-white p-4 rounded-2xl border flex flex-wrap items-center gap-3 shadow-sm">
           <input type="text" onkeyup="buscar('search-alu','lista-alumnos')" id="search-alu" placeholder="Filtrar..." class="input-pro max-w-xs">
-          <select id="filter-alu-nivel" onchange="cargarAlumnosFiltrados()" class="input-pro" style="max-width:160px">
+          <select id="filter-alu-nivel" onchange="onNivelChange()" class="input-pro" style="max-width:160px">
             <option value="">Todos los niveles</option><option value="inicial">Inicial</option><option value="primario">Primario</option><option value="secundario">Secundario</option>
+          </select>
+          <select id="filter-alu-curso" onchange="cargarAlumnosFiltrados()" class="input-pro" style="max-width:140px">
+            <option value="">Todos los cursos</option>
           </select>
         </div>
         <p class="text-xs text-slate-400 px-1"><i class="fas fa-info-circle mr-1"></i>Tocá el nombre para editar el perfil. Seleccioná con la casilla para eliminar múltiples a la vez.</p>
@@ -1017,6 +1032,9 @@ window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
       }
     }
   }catch(e){console.warn(e);}
+  // Cargar emails de familia
+  famEmailsActuales = (d && d.emailsFamilia) ? [...d.emailsFamilia] : [];
+  renderFamEmails();
   document.getElementById('modal-alumno').classList.add('open');
 }
 
@@ -1046,14 +1064,76 @@ window.guardarPerfilAlumno = async function guardarPerfilAlumno(){
     alergias:document.getElementById('alu-alergias').value.trim()||null,
     autorizacionImagen:autImagen,
     contactosEmergencia:contactos,
+    emailsFamilia: famEmailsActuales,
     perfilActualizadoEn:new Date().toISOString(),
     perfilActualizadoPor:adminEmail
   };
   await db.collection('alumnos').doc(alumnoEditandoId).update(datos);
+  // Actualizar/crear usuarios familia
+  if(famEmailsActuales.length){
+    const aluDoc = await db.collection('alumnos').doc(alumnoEditandoId).get();
+    const aluData = aluDoc.data()||{};
+    const FS = (typeof firebase!=='undefined'&&firebase.firestore) ? firebase.firestore : null;
+    for(const mail of famEmailsActuales){
+      const hijoObj = {nombre:aluData.nombre||'',curso:aluData.curso||'',nivel:aluData.nivel||''};
+      await db.collection('usuarios').doc(mail).set({
+        nombre: aluData.familiaNombre||'Familia',
+        rol:'familia', nivel:aluData.nivel||'',
+        hijos: FS ? FS.FieldValue.arrayUnion(hijoObj) : [hijoObj]
+      },{merge:true});
+    }
+  }
   registrarLog('editar',`Perfil de alumno actualizado (${alumnoEditandoId})`,'alumno');
   alert("✅ Perfil del alumno guardado.");
   cerrarModalAlumno();
   cargarAlumnosFiltrados();
+}
+
+
+// ── Filtro doble nivel+curso ──
+window.onNivelChange = function(){
+  const nivel = document.getElementById('filter-alu-nivel').value;
+  const sel = document.getElementById('filter-alu-curso');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">Todos los cursos</option>';
+  const filtrados = nivel
+    ? allCursos.filter(c => !c.nivel || c.nivel === nivel)
+    : allCursos;
+  filtrados.sort((a,b)=>a.nombre.localeCompare(b.nombre,undefined,{numeric:true}))
+    .forEach(c => sel.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`);
+  cargarAlumnosFiltrados();
+};
+
+// ── Emails de familia en modal alumno ──
+let famEmailsActuales = [];
+
+window.agregarEmailFamilia = function(){
+  const inp = document.getElementById('fam-email-new');
+  const email = (inp.value||'').trim().toLowerCase();
+  if(!email || !email.includes('@')){ alert('Ingresá un email válido.'); return; }
+  if(!famEmailsActuales.includes(email)) famEmailsActuales.push(email);
+  renderFamEmails();
+  inp.value = '';
+};
+
+window.quitarEmailFamilia = function(i){
+  famEmailsActuales.splice(i,1);
+  renderFamEmails();
+};
+
+function renderFamEmails(){
+  const cont = document.getElementById('fam-emails-cont');
+  if(!cont) return;
+  if(!famEmailsActuales.length){
+    cont.innerHTML = '<p class="text-xs text-slate-400 italic">Sin emails registrados.</p>';
+    return;
+  }
+  cont.innerHTML = famEmailsActuales.map((m,i) => `
+    <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+      <i class="fas fa-envelope text-[10px] text-slate-400"></i>
+      <span class="flex-1 text-sm font-bold text-slate-700">${m}</span>
+      <button onclick="quitarEmailFamilia(${i})" class="text-slate-300 hover:text-rose-500 transition-colors ml-1"><i class="fas fa-times text-xs"></i></button>
+    </div>`).join('');
 }
 
 window.cerrarModalAlumno = function cerrarModalAlumno(){document.getElementById('modal-alumno').classList.remove('open');alumnoEditandoId=null;}
@@ -1607,7 +1687,11 @@ window.cargarDocentes = async function cargarDocentes(){
 }
 
 window.cargarAlumnosFiltrados = async function cargarAlumnosFiltrados(){
-  const nivel=document.getElementById('filter-alu-nivel').value;let q=db.collection('alumnos');if(nivel)q=q.where('nivel','==',nivel);
+  const nivel=document.getElementById('filter-alu-nivel').value;
+  const curso=document.getElementById('filter-alu-curso')?.value||'';
+  let q=db.collection('alumnos');
+  if(nivel)q=q.where('nivel','==',nivel);
+  if(curso)q=q.where('curso','==',curso);
   const snap=await q.get(),cont=document.getElementById('lista-alumnos');cont.innerHTML='';
   document.getElementById('count-alumnos').innerText=snap.size+' Alumnos';
   snap.forEach(doc=>{
