@@ -922,19 +922,17 @@ async function cargarAcademico(){
     container.innerHTML+=`<div class="bg-slate-100 px-4 py-2 rounded-xl mb-2"><p class="text-[10px] font-black text-slate-500 uppercase">${p.nombre}</p></div>`;
     conNotas.forEach(doc=>{
       const n=doc.data(); brain.notas.push(n);
-      // Leer columnas configuradas para mostrar labels, fallback a claves
+      // La familia solo ve el promedio final por materia (la nota que se publica
+      // en el boletín), no el detalle de cada evaluación (TP1, TP2, Parcial, etc.)
       const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
-      const notasHtml=cols.map(([,v])=>{
-        const nota=parseFloat(v);
-        const cls=nota>=6?'bg-emerald-50 text-emerald-700 border border-emerald-100':'bg-rose-50 text-rose-700 border border-rose-100';
-        return`<div class="${cls} px-4 py-2 rounded-2xl text-center"><p class="font-black text-lg">${nota}</p></div>`;
-      }).join('');
-      const prom=cols.length>1?(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1):null;
-      const promHtml=prom?`<div class="flex items-center gap-1 mt-2 pt-2 border-t border-slate-50"><span class="text-[9px] font-black text-slate-400 uppercase">Promedio</span><span class="font-black text-sm ${parseFloat(prom)>=6?'text-emerald-600':'text-rose-600'}">${prom}</span></div>`:'';
-      container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3">
-        <p class="text-[10px] font-black uppercase mb-3 text-slate-800">${n.materia}</p>
-        <div class="flex flex-wrap gap-2">${notasHtml||'<p class="text-slate-300 text-xs italic">Sin notas cargadas</p>'}</div>
-        ${promHtml}
+      const prom=cols.length?(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1):null;
+      const promColor=prom===null?'text-slate-300':parseFloat(prom)>=6?'text-emerald-600':'text-rose-600';
+      const promBg=prom===null?'bg-slate-50':parseFloat(prom)>=6?'bg-emerald-50':'bg-rose-50';
+      container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3 flex items-center justify-between gap-3">
+        <p class="text-sm font-black text-slate-800">${n.materia}</p>
+        <div class="${promBg} px-4 py-2 rounded-2xl text-center flex-shrink-0">
+          <p class="font-black text-xl ${promColor}">${prom!==null?prom:'—'}</p>
+        </div>
       </div>`;
     });
   }
