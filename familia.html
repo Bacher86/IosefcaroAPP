@@ -190,17 +190,14 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
   <!-- MURO -->
   <section id="tab-muro" class="tab-content active space-y-4">
     <div id="widget-hoy" class="space-y-1"></div>
-    <div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-      <input type="search" id="muro-search" placeholder="🔍 Buscar comunicados..." class="w-full p-3 bg-white border rounded-2xl outline-none text-sm font-medium shadow-sm mb-1" oninput="buscarEnMuro()" style="font-family:inherit">
-      <div class="flex gap-2 overflow-x-auto pb-1">
-      <button onclick="cargarMuro('todos')"    id="filter-todos"    class="filter-btn active whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm">Todos</button>
-      <button onclick="cargarMuro('noleidos')" id="filter-noleidos" class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm">No leídos</button>
-      <button onclick="cargarMuro('urgente')"  id="filter-urgente"  class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm text-red-500">🔴 Urgente</button>
+    <input type="search" id="muro-search" placeholder="🔍 Buscar comunicados..." class="w-full p-3 bg-white border rounded-2xl outline-none text-sm font-medium shadow-sm" oninput="buscarEnMuro()" style="font-family:inherit">
+    <div class="flex flex-wrap gap-2">
+      <button onclick="cargarMuro('todos')"    id="filter-todos"    class="filter-btn active px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm">Todos</button>
+      <button onclick="cargarMuro('noleidos')" id="filter-noleidos" class="filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm">No leídos</button>
+      <button onclick="cargarMuro('urgente')"  id="filter-urgente"  class="filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm text-red-500">🔴 Urgente</button>
       <!-- Eventos van a la Agenda, no al Muro -->
-      <button onclick="cargarMuro('logro')"    id="filter-logro"    class="filter-btn whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm text-emerald-500">🏆 Logros</button>
-      </div>
+      <button onclick="cargarMuro('logro')"    id="filter-logro"    class="filter-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white border shadow-sm text-emerald-500">🏆 Logros</button>
     </div>
-    <div id="resumen-hijos" class="hidden grid gap-3 mb-2"></div>
     <div id="muro-posts" class="space-y-4"></div>
   </section>
 
@@ -538,7 +535,22 @@ let iosiHistorial=[],iosiAprendido=[];
 if('serviceWorker' in navigator)navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
 
 // ─── LOGIN ───
+// BUGFIX duplicados: login() podía dispararse dos veces casi al mismo tiempo
+// (el auto-login al llegar desde index.html + un click manual en "Entrar al Portal").
+// Como listaHijos es una variable global, dos llamadas en paralelo terminaban
+// pisándose y sumando resultados entre sí (Mateo, Bruno x2). Este flag evita
+// que una segunda llamada arranque mientras la primera todavía está en curso.
+let _loginEnCurso=false;
 async function login(emailOverride){
+  if(_loginEnCurso)return; // ya hay un login en progreso, ignorar el duplicado
+  _loginEnCurso=true;
+  try{
+    await _ejecutarLogin(emailOverride);
+  } finally {
+    _loginEnCurso=false;
+  }
+}
+async function _ejecutarLogin(emailOverride){
   userEmail=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
   const doc=await db.collection('usuarios').doc(userEmail).get();
   if(!doc.exists){alert("Acceso denegado.");return;}
@@ -550,7 +562,7 @@ async function login(emailOverride){
   document.getElementById('perfil-tel').value=userData.telefono||"";
   if(userData.fcmTokens?.length>0&&Notification.permission==='granted'){document.getElementById('btn-push').innerText="ACTIVADO";document.getElementById('btn-push').classList.replace('bg-slate-900','bg-emerald-500');}
   const sel=document.getElementById('select-hijo');sel.innerHTML="";listaHijos=[];
-  const hijosVistos=new Set(); // para deduplicar
+  const hijosVistos=new Set(); // para deduplicar dentro de esta misma llamada
   if(userData.hijos?.length>0){
     for(const h of userData.hijos){
       // Si el hijo tiene alumnoId guardado, úsalo directamente (más rápido y sin duplicados)
@@ -560,7 +572,6 @@ async function login(emailOverride){
         if(aDoc.exists){
           hijosVistos.add(h.alumnoId);
           listaHijos.push({id:aDoc.id,nombre:aDoc.data().nombre,curso:aDoc.data().curso});
-          sel.innerHTML+=`<option value="${aDoc.id}">${aDoc.data().nombre}</option>`;
           continue;
         }
       }
@@ -570,7 +581,6 @@ async function login(emailOverride){
         if(!hijosVistos.has(d.id)){
           hijosVistos.add(d.id);
           listaHijos.push({id:d.id,nombre:d.data().nombre,curso:d.data().curso});
-          sel.innerHTML+=`<option value="${d.id}">${d.data().nombre}</option>`;
         }
       });
     }
@@ -579,22 +589,28 @@ async function login(emailOverride){
   if(listaHijos.length===0 && userData.hijos?.length>0){
     for(const h of userData.hijos){
       const snap2=await db.collection('alumnos').where('curso','==',h.curso||'').get();
-      snap2.forEach(d=>{if(d.data().nombre.toLowerCase().includes((h.nombre||'').toLowerCase().split(' ')[0].toLowerCase())){listaHijos.push({id:d.id,nombre:d.data().nombre});sel.innerHTML+=`<option value="${d.id}">${d.data().nombre}</option>`;}});
+      snap2.forEach(d=>{
+        if(!hijosVistos.has(d.id)&&d.data().nombre.toLowerCase().includes((h.nombre||'').toLowerCase().split(' ')[0].toLowerCase())){
+          hijosVistos.add(d.id);
+          listaHijos.push({id:d.id,nombre:d.data().nombre,curso:d.data().curso});
+        }
+      });
     }
   }
   // Último fallback: crear documento de alumno on-the-fly desde los datos del usuario
   if(listaHijos.length===0 && userData.hijos?.length>0){
     for(const h of userData.hijos){
       const aId=(h.nombre+'_'+(h.curso||'')).replace(/\s+/g,'_');
+      if(hijosVistos.has(aId))continue;
       await db.collection('alumnos').doc(aId).set({nombre:h.nombre,curso:h.curso||'',nivel:h.nivel||userData.nivel||'primario',familiaNombre:userData.nombre},{merge:true});
-      listaHijos.push({id:aId,nombre:h.nombre});
-      sel.innerHTML+=`<option value="${aId}">${h.nombre}</option>`;
+      hijosVistos.add(aId);
+      listaHijos.push({id:aId,nombre:h.nombre,curso:h.curso||''});
     }
   }
+  // Reconstruir el <select> oculto desde la lista ya deduplicada
+  sel.innerHTML=listaHijos.map(h=>`<option value="${h.id}">${h.nombre}</option>`).join('')||'<option>Sin alumnos</option>';
   if(listaHijos.length>0){alumnoSeleccionadoId=listaHijos[0].id;await inicializarApp();}
   else{
-    // Sin hijos registrados — mostrar app igual pero vacía
-    document.getElementById('select-hijo').innerHTML='<option>Sin alumnos</option>';
     await inicializarApp();
   }
   await inicializarMensajeria();
@@ -1673,13 +1689,23 @@ function toggleDarkMode(){
 })();
 
 // ── 11: HIJOS CHIPS ──
+// _faltasPorHijo guarda la cantidad de faltas de cada hijo para mostrar
+// un punto rojo sutil en su chip — reemplaza al panel "Resumen de tus hijos"
+// que ocupaba mucho espacio y duplicaba información.
+let _faltasPorHijo={};
+
 function renderHijosChips(){
   const cont=document.getElementById('hijos-chips');
   if(!cont||listaHijos.length<=1){if(cont)cont.innerHTML='';return;}
-  cont.innerHTML=listaHijos.map(h=>`<button onclick="cambiarHijo('${h.id}')" id="chip-${h.id}"
-    style="flex-shrink:0;padding:4px 12px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;border:2px solid ${alumnoSeleccionadoId===h.id?'#2563eb':'#e2e8f0'};background:${alumnoSeleccionadoId===h.id?'#2563eb':'transparent'};color:${alumnoSeleccionadoId===h.id?'white':'#64748b'};font-family:inherit;transition:all .15s;white-space:nowrap">
-    ${h.nombre.split(' ')[0]}
-  </button>`).join('');
+  cont.innerHTML=listaHijos.map(h=>{
+    const activo=alumnoSeleccionadoId===h.id;
+    const faltas=_faltasPorHijo[h.id]||0;
+    const punto=faltas>3?`<span title="${faltas} faltas" style="display:inline-block;width:6px;height:6px;border-radius:99px;background:${activo?'#fecaca':'#ef4444'};margin-left:6px;vertical-align:middle"></span>`:'';
+    return `<button onclick="cambiarHijo('${h.id}')" id="chip-${h.id}"
+      style="flex-shrink:0;display:inline-flex;align-items:center;padding:5px 13px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;border:1.5px solid ${activo?'#2563eb':'#e2e8f0'};background:${activo?'#2563eb':'#fff'};color:${activo?'white':'#475569'};font-family:inherit;transition:all .15s;white-space:nowrap">
+      ${h.nombre.split(' ')[0]}${punto}
+    </button>`;
+  }).join('');
 }
 
 // Override cambiarHijo to update chips
@@ -1690,27 +1716,15 @@ window.cambiarHijo = function(id){
   if(_origCambiarHijo)_origCambiarHijo.call(this,id);
 };
 
-// ── 12: RESUMEN DE TODOS LOS HIJOS ──
+// ── 12: FALTAS POR HIJO (solo para el puntito sutil en los chips) ──
 async function cargarResumenHijos(){
-  const cont=document.getElementById('resumen-hijos');
-  if(!cont||listaHijos.length<2){if(cont)cont.classList.add('hidden');return;}
-  cont.classList.remove('hidden');
-  cont.style.gridTemplateColumns=listaHijos.length===2?'1fr 1fr':'1fr 1fr';
-  cont.innerHTML='<p style="grid-column:1/-1;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">Resumen de tus hijos</p>';
-  for(const h of listaHijos){
-    const [asSnap]=await Promise.all([
-      db.collection('asistencia').where('alumnoId','==',h.id).where('estado','==','A').get().catch(()=>({size:0}))
-    ]);
-    const alumnoDoc=await db.collection('alumnos').doc(h.id).get().catch(()=>null);
-    const curso=alumnoDoc?.data()?.curso||'';
-    cont.innerHTML+=`<div onclick="cambiarHijo('${h.id}')" style="background:${alumnoSeleccionadoId===h.id?'#eff6ff':'white'};border:2px solid ${alumnoSeleccionadoId===h.id?'#2563eb':'#e2e8f0'};border-radius:1.25rem;padding:.875rem;cursor:pointer;transition:all .15s">
-      <p style="font-weight:800;font-size:.875rem;color:var(--text)">${h.nombre.split(' ')[0]}</p>
-      <p style="font-size:.625rem;font-weight:700;color:#94a3b8;margin-top:2px">${curso}</p>
-      <div style="display:flex;gap:.75rem;margin-top:.5rem">
-        <span style="font-size:9px;font-weight:800;color:${asSnap.size>3?'#ef4444':'#94a3b8'}">⚠️ ${asSnap.size} faltas</span>
-      </div>
-    </div>`;
-  }
+  if(listaHijos.length<2){_faltasPorHijo={};return;}
+  const counts=await Promise.all(listaHijos.map(h=>
+    db.collection('asistencia').where('alumnoId','==',h.id).where('estado','==','A').get().catch(()=>({size:0}))
+  ));
+  _faltasPorHijo={};
+  listaHijos.forEach((h,i)=>{_faltasPorHijo[h.id]=counts[i].size;});
+  renderHijosChips(); // re-renderizar para mostrar los puntos ya con datos
 }
 
 // ── 1: BUSCAR EN EL MURO ──
