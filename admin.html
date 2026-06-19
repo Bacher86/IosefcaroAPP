@@ -984,14 +984,15 @@ window.activarCiclo = async function activarCiclo(id){
 // ══════════════════════
 window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
   alumnoEditandoId=alumnoId;
+  famEmailsActuales=[];
   document.getElementById('modal-alu-nombre').textContent=nombre;
-  // Limpiar
-  document.getElementById('alu-fnac').value='';document.getElementById('alu-dni').value='';
-  document.getElementById('alu-obra').value='';document.getElementById('alu-sangre').value='';
+  document.getElementById('alu-fnac').value='';
+  document.getElementById('alu-dni').value='';
+  document.getElementById('alu-obra').value='';
+  document.getElementById('alu-sangre').value='';
   document.getElementById('alu-alergias').value='';
   document.querySelectorAll('input[name="aut-imagen"]').forEach(r=>r.checked=false);
   document.getElementById('img-pend').checked=true;
-  // Limpiar contactos
   const contCE=document.getElementById('contactos-emergencia-cont');
   contCE.innerHTML=`
     <div class="contacto-emergencia grid grid-cols-3 gap-2">
@@ -1004,8 +1005,6 @@ window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
       <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo">
       <input type="tel"  class="ce-tel input-pro text-xs" placeholder="Teléfono">
     </div>`;
-
-  // Cargar datos existentes
   try{
     const doc=await db.collection('alumnos').doc(alumnoId).get();
     if(doc.exists){
@@ -1019,19 +1018,17 @@ window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
         const r=document.querySelector(`input[name="aut-imagen"][value="${d.autorizacionImagen}"]`);
         if(r) r.checked=true;
       }
-      // Contactos de emergencia
       if(d.contactosEmergencia?.length){
         contCE.innerHTML='';
         d.contactosEmergencia.forEach(ce=>{
-          const div=document.createElement('div');div.className='contacto-emergencia grid grid-cols-3 gap-2';
+          const div=document.createElement('div');
+          div.className='contacto-emergencia grid grid-cols-3 gap-2';
           div.innerHTML=`<input type="text" class="ce-nombre input-pro text-xs" placeholder="Nombre" value="${ce.nombre||''}">
             <input type="text" class="ce-vinculo input-pro text-xs" placeholder="Vínculo" value="${ce.vinculo||''}">
             <input type="tel" class="ce-tel input-pro text-xs" placeholder="Teléfono" value="${ce.tel||''}">`;
           contCE.appendChild(div);
         });
       }
-    }
-      // Cargar emails de familia (dentro del try, donde d está disponible)
       famEmailsActuales = d.emailsFamilia ? [...d.emailsFamilia] : [];
     }
   }catch(e){console.warn(e);}
