@@ -1031,9 +1031,10 @@ window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
         });
       }
     }
+      // Cargar emails de familia (dentro del try, donde d está disponible)
+      famEmailsActuales = d.emailsFamilia ? [...d.emailsFamilia] : [];
+    }
   }catch(e){console.warn(e);}
-  // Cargar emails de familia
-  famEmailsActuales = (d && d.emailsFamilia) ? [...d.emailsFamilia] : [];
   renderFamEmails();
   document.getElementById('modal-alumno').classList.add('open');
 }
