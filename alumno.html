@@ -1003,64 +1003,97 @@ async function cargarNotas(){
     const snap=await db.collection('alumnos').doc(alumnoId).collection('notas_v2').get();
     if(snap.empty){cont.innerHTML='<div class="empty">Sin notas registradas todavía.</div>';return;}
 
-    // Verificar visibilidad por período
-    const porMateria={};
+    // Mapear slug → Firestore period ID para chequear visibilidad
+    if(!window._periodosIdMap){
+      window._periodosIdMap={};
+      const pSnap=await db.collection('periodos').get().catch(()=>({docs:[]}));
+      pSnap.docs.forEach(d=>{
+        window._periodosIdMap[d.data().slug]=d.id;
+        window._periodosAnoMap=window._periodosAnoMap||{};
+        const ano=d.data().ciclo||(''+d.data().slug).match(/\d{4}/)?.[0]||'2026';
+        window._periodosAnoMap[d.data().slug]=ano;
+      });
+    }
+
+    // Agrupar por (año, materia)
+    const porAnoMateria={}; // {"2026":{"Lengua":[{slug,notas}]}}
     snap.forEach(doc=>{
       const d=doc.data();
       if(!d.materia)return;
-      if(!porMateria[d.materia])porMateria[d.materia]={periodos:[]};
+      const slug=d.periodo||'GEN';
+      const ano=window._periodosAnoMap?.[slug]||(''+slug).match(/\d{4}/)?.[0]||'2026';
+      if(!porAnoMateria[ano])porAnoMateria[ano]={};
+      if(!porAnoMateria[ano][d.materia])porAnoMateria[ano][d.materia]=[];
       const notas=Object.entries(d).filter(([k])=>k.startsWith('nota_'));
-      porMateria[d.materia].periodos.push({periodo:d.periodo||'—',notas,periodoSlug:d.periodo||'GEN'});
+      porAnoMateria[ano][d.materia].push({periodoSlug:slug,notas});
     });
 
-    cont.innerHTML='';
-    for(const [mat,m] of Object.entries(porMateria)){
-      // Check visibility for each period
-      // config_visibilidad se guarda con el Firestore ID del período (no el slug),
-      // así que primero obtenemos el mapa slug → docId de la colección periodos.
-      if(!window._periodosIdMap){
-        window._periodosIdMap={};
-        const pSnap=await db.collection('periodos').get().catch(()=>({docs:[]}));
-        pSnap.docs.forEach(d=>{window._periodosIdMap[d.data().slug]=d.id;});
-      }
-      const periodosVisibles=[];
-      for(const p of m.periodos){
-        const slug=p.periodoSlug;
-        const pid=window._periodosIdMap[slug]||slug; // fallback al slug si no encuentra el ID
-        const visDoc=await db.collection('config_visibilidad').doc(pid).get().catch(()=>null);
-        const vis=visDoc?.exists?visDoc.data():{};
-        // La clave es ${slug}_${curso} (igual que como guarda el admin)
-        const cursoKey=`${slug}_${alumnoCurso}`;
-        const visible=vis[cursoKey]===true||vis[`${pid}_${alumnoCurso}`]===true||vis['todos']===true;
-        if(visible) periodosVisibles.push(p);
-      }
+    const anos=Object.keys(porAnoMateria).sort((a,b)=>Number(b)-Number(a));
 
-      if(!periodosVisibles.length){
-        // No periods published yet for this materia
-        cont.innerHTML+=`<div class="tablon-card" style="opacity:.6">
-          <div class="tablon-top">
+    // Chequear visibilidad para todos los slugs únicos en un solo pase
+    const slugsUnicos=new Set();
+    snap.forEach(d=>{if(d.data().periodo)slugsUnicos.add(d.data().periodo);});
+    const visCache={};
+    for(const slug of slugsUnicos){
+      const pid=window._periodosIdMap[slug]||slug;
+      const vDoc=await db.collection('config_visibilidad').doc(pid).get().catch(()=>null);
+      const vis=vDoc?.exists?vDoc.data():{};
+      const cursoKey=`${slug}_${alumnoCurso}`;
+      visCache[slug]=vis[cursoKey]===true||vis[`${pid}_${alumnoCurso}`]===true||vis['todos']===true;
+    }
+
+    // Renderizar: tabs de año + tabla de materias
+    let html='';
+    if(anos.length>1){
+      html+=`<div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px">`;
+      anos.forEach((a,i)=>{
+        const activo=i===0;
+        html+=`<button class="nota-ano-tab" data-ano="${a}" onclick="window._notasVerAno('${a}')"
+          style="flex-shrink:0;padding:6px 14px;border-radius:99px;font-size:.7rem;font-weight:800;border:1.5px solid ${activo?'#0f172a':'#e2e8f0'};background:${activo?'#0f172a':'transparent'};color:${activo?'#fff':'#64748b'};cursor:pointer;font-family:inherit">
+          ${a}
+        </button>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`<div id="notas-contenido-ano"></div>`;
+    cont.innerHTML=html;
+
+    window._notasVerAno=function(ano){
+      document.querySelectorAll('.nota-ano-tab').forEach(b=>{
+        const sel=b.dataset.ano===ano;
+        b.style.background=sel?'#0f172a':'transparent';
+        b.style.color=sel?'#fff':'#64748b';
+        b.style.borderColor=sel?'#0f172a':'#e2e8f0';
+      });
+      const cuerpo=document.getElementById('notas-contenido-ano');
+      if(!cuerpo)return;
+      const mats=porAnoMateria[ano]||{};
+      let h='';
+      for(const [mat,periodos] of Object.entries(mats)){
+        const visibles=periodos.filter(p=>visCache[p.periodoSlug]);
+        if(!visibles.length){
+          h+=`<div class="tablon-card" style="opacity:.6"><div class="tablon-top">
             <p class="tablon-title">${mat}</p>
-            <p class="tablon-body" style="font-size:.75rem;color:var(--text3)">Las notas de esta materia aún no están publicadas.</p>
-          </div>
-        </div>`;
-        continue;
-      }
-
-      const todasNotas=periodosVisibles.flatMap(p=>p.notas.map(([,v])=>parseFloat(v))).filter(n=>!isNaN(n));
-      const prom=todasNotas.length?Math.round((todasNotas.reduce((a,b)=>a+b,0)/todasNotas.length)*10)/10:null;
-      const nivelNota=prom===null?'sin':prom>=7?'alta':prom>=6?'media':'baja';
-      const notasHtml=periodosVisibles.flatMap(p=>p.notas.map(([k,v])=>`<span class="nota-mini">${k.replace('nota_','')} <span>${v}</span></span>`)).join('');
-      cont.innerHTML+=`<div class="tablon-card">
-        <div class="tablon-top">
+            <p class="tablon-body" style="font-size:.75rem;color:var(--text3)">Aún no publicado para ${ano}.</p>
+          </div></div>`;
+          continue;
+        }
+        const todas=visibles.flatMap(p=>p.notas.map(([,v])=>parseFloat(v))).filter(n=>!isNaN(n));
+        const prom=todas.length?Math.round((todas.reduce((a,b)=>a+b,0)/todas.length)*10)/10:null;
+        const nivel=prom===null?'sin':prom>=7?'alta':prom>=6?'media':'baja';
+        const detHtml=visibles.flatMap(p=>p.notas.map(([k,v])=>`<span class="nota-mini">${k.replace('nota_','')} <span>${v}</span></span>`)).join('');
+        h+=`<div class="tablon-card"><div class="tablon-top">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem">
             <p class="tablon-title">${mat}</p>
-            <span class="nota-chip ${nivelNota}">${prom!==null?prom:'—'}</span>
+            <span class="nota-chip ${nivel}">${prom!==null?prom:'—'}</span>
           </div>
-          <div class="notas-detalle">${notasHtml||'<span style="font-size:.75rem;color:var(--text3)">Sin notas</span>'}</div>
-        </div>
-      </div>`;
-    }
-    if(!cont.innerHTML) cont.innerHTML='<div class="empty">Sin notas publicadas todavía.</div>';
+          <div class="notas-detalle">${detHtml||'<span style="font-size:.75rem;color:var(--text3)">Sin notas</span>'}</div>
+        </div></div>`;
+      }
+      cuerpo.innerHTML=h||'<div class="empty">Sin notas publicadas para '+ano+'.</div>';
+    };
+
+    window._notasVerAno(anos[0]);
   }catch(e){cont.innerHTML='<div class="empty">No se pudieron cargar las notas.</div>';}
 }
 async function cargarAgenda(){
