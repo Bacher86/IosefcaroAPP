@@ -205,6 +205,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       <button onclick="guardarPerfilAlumno()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg mt-2">
         <i class="fas fa-save mr-2"></i> GUARDAR PERFIL DEL ALUMNO
       </button>
+
+      <!-- ── Historial Académico por año ──────────────────────── -->
+      <div class="border-t pt-4 mt-4">
+        <h3 class="font-black text-sm mb-3 flex items-center gap-2">
+          <i class="fas fa-chart-line text-violet-500"></i> Historial Académico
+        </h3>
+        <div id="admin-legajo-tabs" class="flex gap-2 mb-3 overflow-x-auto pb-1"></div>
+        <div id="admin-legajo-cuerpo" class="space-y-2 min-h-[60px]">
+          <p class="text-slate-400 text-xs text-center py-4 italic">Abrí el perfil de un alumno para ver su historial.</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -876,6 +887,10 @@ try{
   db={collection:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{},empty:true,size:0}),add:()=>Promise.resolve({id:'local'}),doc:()=>({get:()=>Promise.resolve({exists:false,data:()=>({})}),set:()=>Promise.resolve(),update:()=>Promise.resolve(),delete:()=>Promise.resolve(),collection:()=>db.collection()}),where:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{},empty:true}),orderBy:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),orderBy:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),batch:()=>({set:()=>{},update:()=>{},delete:()=>{},commit:()=>Promise.resolve()}),FieldValue:{serverTimestamp:()=>new Date(),increment:(n)=>n,arrayUnion:(...a)=>a,arrayRemove:()=>[]}};
   if(typeof firebase!=='undefined'&&firebase.firestore){try{db=firebase.firestore();}catch(e2){}}
 }
+// ⚠️ SEGURIDAD: estas credenciales maestras están hardcodeadas en el cliente (visible en el navegador).
+// Cualquier persona con acceso al HTML puede verlas. Para producción real, estas
+// deben validarse en el servidor (Firebase Functions + reglas de Firestore).
+// Por ahora funcionan como acceso de emergencia de admin.
 const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let matSel=[],curSel=[],allCursos=[],allMats=[];
 let cNiv=null,cAsis=null,cCom=null,cMsg=null;
@@ -1034,6 +1049,101 @@ window.abrirModalAlumno = async function abrirModalAlumno(alumnoId,nombre){
   }catch(e){console.warn(e);}
   renderFamEmails();
   document.getElementById('modal-alumno').classList.add('open');
+  // Cargar historial académico por año
+  cargarLegajoAdmin(alumnoId);
+}
+
+window.cargarLegajoAdmin = async function cargarLegajoAdmin(alumnoId){
+  const tabsEl=document.getElementById('admin-legajo-tabs');
+  const cuerpoEl=document.getElementById('admin-legajo-cuerpo');
+  if(!tabsEl||!cuerpoEl)return;
+  tabsEl.innerHTML='';
+  cuerpoEl.innerHTML='<p class="text-slate-400 text-xs text-center py-3 italic">Cargando historial...</p>';
+
+  // Leer todos los períodos y agrupar por año
+  let periodosSnap;
+  try{periodosSnap=await db.collection('periodos').orderBy('orden','asc').get();}
+  catch(e){periodosSnap=await db.collection('periodos').get();}
+
+  const anosMap={};
+  periodosSnap.docs.forEach(perDoc=>{
+    const p=perDoc.data();
+    const ano=p.ciclo||(''+p.slug).match(/\d{4}/)?.[0]||'2026';
+    if(!anosMap[ano])anosMap[ano]=[];
+    anosMap[ano].push(perDoc);
+  });
+  const anos=Object.keys(anosMap).sort((a,b)=>Number(b)-Number(a));
+  if(!anos.length){cuerpoEl.innerHTML='<p class="text-slate-400 text-xs">Sin períodos registrados.</p>';return;}
+
+  let anoActivo=anos[0];
+
+  function renderTabsLegajo(){
+    tabsEl.innerHTML=anos.map(a=>`
+      <button onclick="window._legajoVerAno('${a}')" data-ano="${a}"
+        style="flex-shrink:0;padding:5px 14px;border-radius:99px;font-size:.68rem;font-weight:800;
+               border:1.5px solid ${a===anoActivo?'#7c3aed':'#e2e8f0'};cursor:pointer;font-family:inherit;
+               background:${a===anoActivo?'#7c3aed':'transparent'};color:${a===anoActivo?'#fff':'#64748b'}">
+        ${a}
+      </button>`).join('');
+  }
+
+  window._legajoVerAno=async function(ano){
+    anoActivo=ano;
+    renderTabsLegajo();
+    cuerpoEl.innerHTML='<p class="text-slate-400 text-xs text-center py-3 italic">Cargando...</p>';
+
+    const persDosAno=anosMap[ano]||[];
+    const filasMap={}; // materia → {bimestres:[], promedios:[]}
+
+    for(const perDoc of persDosAno){
+      const p=perDoc.data();
+      const nSnap=await db.collection('alumnos').doc(alumnoId).collection('notas_v2')
+        .where('periodo','==',p.slug).get().catch(()=>({docs:[]}));
+      nSnap.docs.forEach(d=>{
+        const n=d.data();
+        if(!n.materia)return;
+        if(!filasMap[n.materia])filasMap[n.materia]={periodos:[]};
+        const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
+        const prom=cols.length?(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1):null;
+        filasMap[n.materia].periodos.push({nombre:p.nombre||p.slug,slug:p.slug,prom});
+      });
+    }
+
+    const mats=Object.keys(filasMap).sort();
+    if(!mats.length){
+      cuerpoEl.innerHTML='<p class="text-slate-400 text-xs text-center py-3">Sin notas registradas para '+ano+'.</p>';
+      return;
+    }
+
+    // Tabla compacta: materia × bimestre
+    const allPers=[...new Set(Object.values(filasMap).flatMap(v=>v.periodos.map(p=>p.nombre)))];
+    let html=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.72rem">
+      <thead><tr>
+        <th style="text-align:left;padding:4px 6px;font-weight:800;color:#64748b;border-bottom:1px solid #e2e8f0">Materia</th>
+        ${allPers.map(n=>`<th style="text-align:center;padding:4px 6px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap;font-size:.65rem">${n}</th>`).join('')}
+      </tr></thead><tbody>`;
+
+    mats.forEach(mat=>{
+      const filaData=filasMap[mat];
+      const cols=allPers.map(pNombre=>{
+        const entry=filaData.periodos.find(p=>p.nombre===pNombre);
+        const prom=entry?.prom;
+        const color=prom===null||prom===undefined?'#94a3b8':parseFloat(prom)>=6?'#059669':'#e11d48';
+        const bg=prom===null||prom===undefined?'':'background:'+((parseFloat(prom)||0)>=6?'#f0fdf4':'#fff1f2');
+        return `<td style="text-align:center;padding:4px 6px;${bg}"><span style="font-weight:800;color:${color}">${prom!==null&&prom!==undefined?prom:'—'}</span></td>`;
+      });
+      html+=`<tr style="border-bottom:1px solid #f1f5f9">
+        <td style="padding:4px 6px;font-weight:700;color:#0f172a">${mat}</td>
+        ${cols.join('')}
+      </tr>`;
+    });
+
+    html+=`</tbody></table></div>`;
+    cuerpoEl.innerHTML=html;
+  };
+
+  renderTabsLegajo();
+  await window._legajoVerAno(anoActivo);
 }
 
 window.agregarContactoEmergencia = function agregarContactoEmergencia(){
