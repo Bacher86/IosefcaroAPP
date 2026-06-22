@@ -259,7 +259,7 @@ async function login(emailOverride){
     const doc=await db.collection('usuarios').doc(email).get();
     if(!doc.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
     const d=doc.data();
-    if(!['eoe','admin','docente'].includes(d.rol)){errEl.textContent='Sin permisos para el panel EOE.';errEl.classList.remove('hidden');return;}
+    if(!['eoe','admin'].includes(d.rol)){errEl.textContent='Sin permisos para el panel EOE.';errEl.classList.remove('hidden');return;}
     eoeData=d;eoeEmail=email;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('eoe-nom').textContent=d.nombre;
