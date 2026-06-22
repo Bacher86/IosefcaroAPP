@@ -783,6 +783,13 @@ async function cargarMuro(filtro='todos'){
   const lSnap=await db.collection('usuarios').doc(userEmail).collection('leidos_comunicados').get();
   const lSet=new Set();lSnap.forEach(d=>lSet.add(d.id));
   container.innerHTML="";brain.noticias=[];
+  // Obtener todos los cursos de los hijos de esta familia
+  const cursosDeHijos=new Set();
+  (userData?.hijos||[]).forEach(h=>{if(h.curso)cursosDeHijos.add(h.curso);});
+  // También agregar el curso del alumno seleccionado actual
+  if(listaHijos.find(h=>h.id===alumnoSeleccionadoId)?.curso)
+    cursosDeHijos.add(listaHijos.find(h=>h.id===alumnoSeleccionadoId).curso);
+
   for(const doc of snap.docs){
     const p=doc.data(),id=doc.id;const isRead=lSet.has(id);
     const cat=(p.tag||p.categoria||'info').toLowerCase();
@@ -790,6 +797,12 @@ async function cargarMuro(filtro='todos'){
     if(filtro==='urgente'&&cat!=='urgente')continue;
     if(filtro==='logro'&&cat!=='logro')continue;
     if(cat==='evento')continue;
+    // FILTRO DE PRIVACIDAD: mostrar solo comunicados dirigidos a los cursos
+    // de los hijos de esta familia, o comunicados para TODOS.
+    const destinatarios=(p.cursos||p.destinatarios||['TODOS']);
+    const esPara_TODOS=destinatarios.includes('TODOS')||destinatarios.includes('todos');
+    const esPara_nivel=destinatarios.some(d=>cursosDeHijos.has(d));
+    if(!esPara_TODOS&&!esPara_nivel)continue;
     brain.noticias.push({id,...p});
     const likesSnap=await db.collection('comunicados').doc(id).collection('likes').get();const totalLikes=likesSnap.size;const yaDioLike=likesSnap.docs.some(d=>d.id===userEmail);
     const catMap={urgente:{cls:'cat-urgente',emoji:'🔴',label:'Urgente'},evento:{cls:'cat-evento',emoji:'📅',label:'Evento'},logro:{cls:'cat-logro',emoji:'🏆',label:'Logro'},tramite:{cls:'cat-tramite',emoji:'📋',label:'Trámite'},info:{cls:'cat-info',emoji:'📣',label:'Info'}};
@@ -902,41 +915,86 @@ async function cargarAcademico(){
   const cursoAlu=alumnoDoc.data()?.curso||'';
   container.innerHTML='';brain.notas=[];
 
+  // ── Agrupar períodos por año ─────────────────────────────────
+  const anosMap={};
   for(const perDoc of periodosSnap.docs){
     const p=perDoc.data();
-    const visDoc=await db.collection('config_visibilidad').doc(perDoc.id).get();
-    const visData=visDoc.exists?visDoc.data():{};
-    if(!visData[`${p.slug}_${cursoAlu}`]&&!visData[p.slug]&&!visData['todos'])continue;
-
-    // Solo documentos con notas numéricas (nota_*)
-    const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();
-    if(nSnap.empty) continue;
-
-    // Filtrar solo los que tienen al menos un campo nota_*
-    const conNotas=nSnap.docs.filter(d=>{
-      const dd=d.data();
-      return Object.keys(dd).some(k=>k.startsWith('nota_')&&dd[k]!=='');
-    });
-    if(!conNotas.length) continue;
-
-    container.innerHTML+=`<div class="bg-slate-100 px-4 py-2 rounded-xl mb-2"><p class="text-[10px] font-black text-slate-500 uppercase">${p.nombre}</p></div>`;
-    conNotas.forEach(doc=>{
-      const n=doc.data(); brain.notas.push(n);
-      // La familia solo ve el promedio final por materia (la nota que se publica
-      // en el boletín), no el detalle de cada evaluación (TP1, TP2, Parcial, etc.)
-      const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
-      const prom=cols.length?(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1):null;
-      const promColor=prom===null?'text-slate-300':parseFloat(prom)>=6?'text-emerald-600':'text-rose-600';
-      const promBg=prom===null?'bg-slate-50':parseFloat(prom)>=6?'bg-emerald-50':'bg-rose-50';
-      container.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm mb-3 flex items-center justify-between gap-3">
-        <p class="text-sm font-black text-slate-800">${n.materia}</p>
-        <div class="${promBg} px-4 py-2 rounded-2xl text-center flex-shrink-0">
-          <p class="font-black text-xl ${promColor}">${prom!==null?prom:'—'}</p>
-        </div>
-      </div>`;
-    });
+    const ano=p.ciclo||(''+p.slug).match(/\d{4}/)?.[0]||'2026';
+    if(!anosMap[ano])anosMap[ano]=[];
+    anosMap[ano].push(perDoc);
   }
-  if(!brain.notas.length) container.innerHTML=`<div class="bg-white p-8 rounded-3xl border shadow-sm text-center"><i class="fas fa-lock text-3xl text-slate-200 mb-3 block"></i><p class="font-bold text-slate-400">Las calificaciones numéricas no están disponibles todavía.</p></div>`;
+  const anosOrdenados=Object.keys(anosMap).sort((a,b)=>Number(b)-Number(a));
+  let anoActivo=anosOrdenados[0]||'2026';
+
+  // ── Función interna para renderizar el año seleccionado ──────
+  async function renderNotasDeAno(ano){
+    anoActivo=ano;
+    // Actualizar visual de tabs
+    container.querySelectorAll('.tab-ano').forEach(btn=>{
+      const sel=btn.dataset.ano===ano;
+      btn.style.background=sel?'#0f172a':'';
+      btn.style.color=sel?'#fff':'#64748b';
+      btn.style.borderColor=sel?'#0f172a':'#e2e8f0';
+    });
+    // Limpiar contenido previo pero conservar el header de tabs
+    let cuerpo=container.querySelector('#notas-cuerpo');
+    if(!cuerpo){cuerpo=document.createElement('div');cuerpo.id='notas-cuerpo';container.appendChild(cuerpo);}
+    cuerpo.innerHTML='<p style="text-align:center;color:#94a3b8;font-size:.8rem;padding:16px">Cargando...</p>';
+    brain.notas=[];
+
+    const persDosAno=anosMap[ano]||[];
+    let notasHtml='';
+    for(const perDoc of persDosAno){
+      const p=perDoc.data();
+      const visDoc=await db.collection('config_visibilidad').doc(perDoc.id).get();
+      const visData=visDoc.exists?visDoc.data():{};
+      if(!visData[`${p.slug}_${cursoAlu}`]&&!visData[p.slug]&&!visData['todos'])continue;
+      const nSnap=await db.collection('alumnos').doc(alumnoSeleccionadoId).collection('notas_v2').where('periodo','==',p.slug).get();
+      if(nSnap.empty) continue;
+      const conNotas=nSnap.docs.filter(d=>{
+        const dd=d.data();
+        return Object.keys(dd).some(k=>k.startsWith('nota_')&&dd[k]!=='');
+      });
+      if(!conNotas.length) continue;
+      notasHtml+=`<div class="bg-slate-100 px-4 py-2 rounded-xl mb-2"><p class="text-[10px] font-black text-slate-500 uppercase">${p.nombre}</p></div>`;
+      conNotas.forEach(doc=>{
+        const n=doc.data(); brain.notas.push(n);
+        const cols=Object.entries(n).filter(([k,v])=>k.startsWith('nota_')&&v!=='');
+        const prom=cols.length?(cols.reduce((s,[,v])=>s+(parseFloat(v)||0),0)/cols.length).toFixed(1):null;
+        const promColor=prom===null?'color:#cbd5e1':parseFloat(prom)>=6?'color:#059669':'color:#e11d48';
+        const promBg=prom===null?'background:#f8fafc':parseFloat(prom)>=6?'background:#f0fdf4':'background:#fff1f2';
+        notasHtml+=`<div style="background:#fff;padding:16px 20px;border-radius:24px;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a;margin:0">${n.materia}</p>
+          <div style="${promBg};padding:8px 16px;border-radius:16px;text-align:center;flex-shrink:0">
+            <p style="font-size:1.25rem;font-weight:900;margin:0;${promColor}">${prom!==null?prom:'—'}</p>
+          </div>
+        </div>`;
+      });
+    }
+    if(!brain.notas.length)notasHtml=`<div style="background:#fff;padding:32px;border-radius:24px;border:1px solid #e2e8f0;text-align:center"><span style="font-size:2rem;display:block;margin-bottom:8px">🔒</span><p style="font-weight:700;color:#94a3b8">Las calificaciones de ${ano} no están disponibles todavía.</p></div>`;
+    cuerpo.innerHTML=notasHtml;
+  }
+
+  // ── Renderizar tabs de año (solo si hay más de uno) ──────────
+  if(anosOrdenados.length>1){
+    let tabsHtml=`<div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">`;
+    anosOrdenados.forEach(ano=>{
+      tabsHtml+=`<button class="tab-ano" data-ano="${ano}" onclick="window._cambiarAnoNotas('${ano}')"
+        style="flex-shrink:0;padding:8px 16px;border-radius:99px;font-size:.7rem;font-weight:800;
+               border:1.5px solid ${ano===anoActivo?'#0f172a':'#e2e8f0'};
+               background:${ano===anoActivo?'#0f172a':'transparent'};
+               color:${ano===anoActivo?'#fff':'#64748b'};cursor:pointer;font-family:inherit">
+        ${ano}
+      </button>`;
+    });
+    tabsHtml+=`</div>`;
+    container.innerHTML=tabsHtml;
+    const cuerpo=document.createElement('div');cuerpo.id='notas-cuerpo';container.appendChild(cuerpo);
+    window._cambiarAnoNotas=async(ano)=>{await renderNotasDeAno(ano);};
+  }
+
+  await renderNotasDeAno(anoActivo);
+  if(!brain.notas.length && anosOrdenados.length===1) container.innerHTML=`<div style="background:#fff;padding:32px;border-radius:24px;border:1px solid #e2e8f0;text-align:center"><span style="font-size:2rem;display:block;margin-bottom:8px">🔒</span><p style="font-weight:700;color:#94a3b8">Las calificaciones numéricas no están disponibles todavía.</p></div>`;
 
   // Asistencia
   const aSnap=await db.collection('asistencia').where('alumnoId','==',alumnoSeleccionadoId).get();
