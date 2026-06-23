@@ -2384,24 +2384,50 @@ async function cargarCursosParaSolicitud(){
   if(!grid)return;
   grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">Cargando...</p>';
   try{
-    const snap=await db.collection('cursos').where('nivel','==','secundario').get();
+    // Obtener el nivel del docente. Puede ser un string o array si dicta en varios niveles.
+    const nivelDoc=docenteData?.nivel;
+    const nivelArr=Array.isArray(nivelDoc)?nivelDoc:(nivelDoc?[nivelDoc]:[]);
+
+    // Traer TODOS los cursos y filtrar por nivel del docente.
+    // Si no hay nivel definido o no matchea nada, mostramos todos.
+    const allSnap=await db.collection('cursos').orderBy('nombre','asc').get().catch(async()=>{
+      // Fallback sin orderBy si no hay índice
+      return db.collection('cursos').get();
+    });
+
+    let docs=allSnap.docs;
+    // Filtrar por nivel si el docente tiene nivel definido
+    if(nivelArr.length){
+      const porNivel=docs.filter(d=>nivelArr.includes(d.data().nivel));
+      // Solo filtrar si encontramos cursos de su nivel; si no, mostrar todos
+      if(porNivel.length>0)docs=porNivel;
+    }
+    // Ordenar: primero por nivel, luego por nombre
+    docs.sort((a,b)=>{
+      const na=a.data().nombre||'', nb=b.data().nombre||'';
+      return na.localeCompare(nb, 'es', {numeric:true});
+    });
+
     const asignados=new Set(Array.isArray(docenteData?.cursos)?docenteData.cursos:[]);
-    if(snap.empty){
-      grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">Sin cursos de secundario creados.</p>';
+    if(!docs.length){
+      grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">No hay cursos creados aún. Pedile al admin que los cree desde el panel.</p>';
       return;
     }
     grid.innerHTML='';
-    snap.docs.sort((a,b)=>a.data().nombre.localeCompare(b.data().nombre)).forEach(doc=>{
-      const c=doc.data().nombre;
+    docs.forEach(doc=>{
+      const d=doc.data();
+      const c=d.nombre;
       const yaAsignado=asignados.has(c);
+      const nivelLabel=d.nivel?`<span style="font-size:.6rem;color:#94a3b8;margin-left:4px">${d.nivel}</span>`:'';
       grid.innerHTML+=`<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid ${yaAsignado?'#86efac':'#e2e8f0'};border-radius:12px;cursor:${yaAsignado?'default':'pointer'};background:${yaAsignado?'#f0fdf4':'#fff'}">
-        <input type="checkbox" value="${c}" ${yaAsignado?'disabled checked':''} style="accent-color:#0f172a;width:16px;height:16px">
-        <span style="font-weight:700;font-size:.8rem;color:${yaAsignado?'#15803d':'#0f172a'}">${c}</span>
-        ${yaAsignado?'<span style="font-size:.6rem;color:#15803d;margin-left:auto">✓</span>':''}
+        <input type="checkbox" value="${c}" ${yaAsignado?'disabled checked':''} style="accent-color:#0f172a;width:16px;height:16px;flex-shrink:0">
+        <span style="font-weight:700;font-size:.8rem;color:${yaAsignado?'#15803d':'#0f172a'}">${c}${nivelLabel}</span>
+        ${yaAsignado?'<span style="font-size:.6rem;color:#15803d;margin-left:auto;flex-shrink:0">✓</span>':''}
       </label>`;
     });
   }catch(e){
-    grid.innerHTML='<p style="color:#ef4444;font-size:.75rem;grid-column:1/-1">Error al cargar cursos.</p>';
+    grid.innerHTML='<p style="color:#ef4444;font-size:.75rem;grid-column:1/-1">Error al cargar cursos: '+e.message+'</p>';
+    console.error('cargarCursosParaSolicitud:', e);
   }
 }
 
