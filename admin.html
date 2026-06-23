@@ -1815,10 +1815,88 @@ window.cargarStaff = async function cargarStaff(){
 
 window.cargarDocentes = async function cargarDocentes(){
   const snap=await db.collection('usuarios').where('rol','==','docente').get(),cont=document.getElementById('lista-docentes');cont.innerHTML='';
-  snap.forEach(doc=>{const d=doc.data(),mats=d.materias?d.materias.join(', '):(d.materia||'---'),curs=d.cursos?d.cursos.join(', '):(d.curso||'---');const nbc=d.nivel==='inicial'?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';
-    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm shadow-sm"><span><b>${d.nombre}</b>${d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:''}<br><small class="text-blue-600 font-bold uppercase text-[9px]">MATS: ${mats}</small><br><small class="text-emerald-600 font-bold uppercase text-[9px]">CURSOS: ${curs}</small><br><small class="text-slate-400 text-[9px]">${doc.id}</small></span><button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-200 hover:text-rose-500"><i class="fas fa-user-minus"></i></button></div>`;
+  // Traer todos los cursos disponibles para el selector de edición
+  const cursosSnap=await db.collection('cursos').get().catch(()=>({docs:[]}));
+  const todosCursos=cursosSnap.docs.map(d=>d.data()).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'','es',{numeric:true}));
+
+  snap.forEach(doc=>{
+    const d=doc.data();
+    const mats=d.materias?d.materias.join(', '):(d.materia||'---');
+    const cursActuales=Array.isArray(d.cursos)?d.cursos:(d.curso?[d.curso]:[]);
+    const cursStr=cursActuales.length?cursActuales.join(', '):'Sin cursos asignados';
+    const nbc=d.nivel==='inicial'?'nb-i':d.nivel==='secundario'?'nb-s':'nb-p';
+    const solPend=d.cursosEstado==='pendiente';
+
+    // Construir los checkboxes de cursos filtrados por nivel del docente
+    const cursosFiltrados=todosCursos.filter(c=>!d.nivel||c.nivel===d.nivel||todosCursos.filter(x=>x.nivel===d.nivel).length===0);
+    const cursosHTML=cursosFiltrados.map(c=>{
+      const checked=cursActuales.includes(c.nombre)?'checked':'';
+      return `<label class="flex items-center gap-1.5 cursor-pointer">
+        <input type="checkbox" value="${c.nombre}" ${checked} class="curs-check-${doc.id} accent-blue-600 w-3.5 h-3.5">
+        <span class="text-xs font-bold">${c.nombre}</span>
+      </label>`;
+    }).join('');
+
+    cont.innerHTML+=`<div class="bg-white p-4 rounded-2xl border shadow-sm text-sm" id="doc-card-${doc.id}">
+      <div class="flex justify-between items-start gap-2">
+        <div class="flex-1 min-w-0">
+          <p class="font-black truncate">${d.nombre}${d.nivel?`<span class="nb ${nbc} ml-1">${d.nivel}</span>`:''}</p>
+          <p class="text-slate-400 text-[10px] truncate">${doc.id}</p>
+          <p class="text-blue-600 font-bold text-[9px] uppercase mt-1">MATS: ${mats}</p>
+          <p class="text-emerald-600 font-bold text-[9px] uppercase">CURSOS: ${cursStr}${solPend?'<span class="ml-1 text-amber-500">⏳ solicitud pendiente</span>':''}</p>
+        </div>
+        <div class="flex flex-col gap-1.5 flex-shrink-0">
+          <button onclick="toggleEditarCursos('${doc.id}')"
+            class="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 hover:bg-blue-100">
+            ✏️ Cursos
+          </button>
+          <button onclick="eliminarDoc('usuarios','${doc.id}')" class="text-rose-200 hover:text-rose-500 text-xs">
+            <i class="fas fa-user-minus"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Panel de edición de cursos (oculto por defecto) -->
+      <div id="edit-cursos-${doc.id}" class="hidden mt-3 pt-3 border-t border-slate-100">
+        <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Asignar / quitar cursos</p>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          ${cursosHTML||'<p class="text-slate-400 text-xs col-span-3 italic">Sin cursos disponibles. Creá cursos en la pestaña Materias.</p>'}
+        </div>
+        <button onclick="guardarCursosDocente('${doc.id}')"
+          class="w-full bg-slate-900 text-white px-3 py-2 rounded-xl font-bold text-xs">
+          💾 Guardar cursos
+        </button>
+      </div>
+    </div>`;
   });
 }
+
+window.toggleEditarCursos = function toggleEditarCursos(docId){
+  const panel=document.getElementById('edit-cursos-'+docId);
+  if(!panel)return;
+  panel.classList.toggle('hidden');
+};
+
+window.guardarCursosDocente = async function guardarCursosDocente(docId){
+  const checks=Array.from(document.querySelectorAll('.curs-check-'+docId+':checked')).map(cb=>cb.value);
+  const btn=document.querySelector(`#doc-card-${docId} button[onclick*="guardarCursosDocente"]`);
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  try{
+    await db.collection('usuarios').doc(docId).update({
+      cursos:checks,
+      cursosEstado:checks.length?'aprobado':'sin_asignar',
+    });
+    await registrarLog('editar',`Cursos actualizados para ${docId}: ${checks.join(', ')||'ninguno'}`,'docentes');
+    // Cerrar el panel y refrescar la tarjeta visualmente
+    document.getElementById('edit-cursos-'+docId)?.classList.add('hidden');
+    // Refrescar la línea de cursos en la tarjeta sin recargar toda la lista
+    const cursLine=document.querySelector(`#doc-card-${docId} .text-emerald-600`);
+    if(cursLine)cursLine.textContent=`CURSOS: ${checks.length?checks.join(', '):'Sin cursos asignados'}`;
+    alert('✅ Cursos guardados.');
+  }catch(e){
+    alert('Error: '+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='💾 Guardar cursos';}
+};
 
 window.cargarAlumnosFiltrados = async function cargarAlumnosFiltrados(){
   const nivel=document.getElementById('filter-alu-nivel').value;
