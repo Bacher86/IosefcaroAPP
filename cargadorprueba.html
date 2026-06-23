@@ -32,6 +32,15 @@
   #log{margin-top:14px;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:12px 14px;
     font-family:monospace;font-size:.72rem;line-height:1.65;max-height:280px;overflow-y:auto;white-space:pre-wrap;display:none;}
   .ok{color:#4ade80;} .warn{color:#fbbf24;} .err{color:#f87171;}
+  #log-doc{margin-top:14px;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:12px 14px;
+    font-family:monospace;font-size:.72rem;line-height:1.65;max-height:240px;overflow-y:auto;
+    white-space:pre-wrap;display:none;}
+  .badge-violet{background:#f5f3ff;color:#6d28d9;}
+  .preview-table{width:100%;border-collapse:collapse;font-size:.72rem;margin-top:8px;}
+  .preview-table th{text-align:left;padding:5px 4px;border-bottom:2px solid var(--line);font-size:.6rem;color:var(--muted);text-transform:uppercase;font-weight:800;}
+  .preview-table td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:top;}
+  details summary{cursor:pointer;font-size:.8rem;font-weight:700;color:var(--muted);padding:6px 0;}
+  details[open] summary{color:var(--ink);}
   table{width:100%;border-collapse:collapse;font-size:.75rem;}
   td{padding:6px 2px;border-bottom:1px solid var(--line);}
   td:first-child{color:var(--muted);font-weight:700;width:45%;}
@@ -99,6 +108,32 @@
       <tr><td>Familia con 3 hijos</td><td>mama.gonzalez@familia.test / (cualquier texto)</td></tr>
     </table>
   </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DOCENTES SECUNDARIO (33 del Excel)
+       ══════════════════════════════════════════════════════ -->
+  <div class="card" style="border-top:3px solid #7c3aed">
+    <h2>🎓 Docentes Secundario — del Excel</h2>
+    <p>33 docentes reales de nivel secundario con sus materias. Los cursos quedan en blanco para que cada docente los solicite desde su panel (o los asignes vos desde el admin). Contraseña inicial: <code>Docente2026</code>.</p>
+
+    <details style="margin-bottom:12px">
+      <summary>Ver los 33 docentes <span style="color:#7c3aed;font-size:.65rem;background:#f5f3ff;padding:2px 8px;border-radius:99px;margin-left:6px">expandir</span></summary>
+      <table class="preview-table">
+        <thead><tr><th>Nombre</th><th>Email</th><th>Cargo</th><th>Materias</th></tr></thead>
+        <tbody id="doc-preview-tbody"></tbody>
+      </table>
+    </details>
+
+    <div class="progress-wrap" id="progress-wrap-doc" style="display:none">
+      <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar-doc" style="background:#7c3aed"></div></div>
+      <div class="progress-label" id="progress-label-doc">Preparando…</div>
+    </div>
+    <button class="btn-primary" id="btn-cargar-doc" onclick="cargarDocentes()" style="background:#7c3aed">
+      ⬆️ Cargar 33 docentes secundario
+    </button>
+    <div id="log-doc"></div>
+  </div>
+
 </div>
 
 <script>
@@ -246,6 +281,87 @@ async function borrarDatos(){
     log('✅ Borrado completo. '+ops.length+' documentos eliminados.','ok');
   }catch(e){log('❌ Error: '+e.message,'err');console.error(e);}
   btn.disabled=false;btn.textContent='🗑️ Borrar datos de prueba';
+}
+
+// ══════════════════════════════════════════════════════════
+// DOCENTES SECUNDARIO
+// ══════════════════════════════════════════════════════════
+const DOCENTES_SEC = [{"nombre": "Abraham, Federico Ernesto", "email": "federicoabraham@iosefcaro.org", "cargo": "PRECEPTOR", "nivel": "secundario", "materias": [], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Acuña Alvarez, Leonardo Andres", "email": "leonardoacunia@iosefcaro.org", "cargo": "Rector", "nivel": "secundario", "materias": [], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Agis Gaston", "email": "gastonagis@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Ed. Fisica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Antelo, Natalia", "email": "nataliaantelo@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["FEC", "Filosofia"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Aranda, Oscar", "email": "oscararanda@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Ed. tecnologica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Ballesteros Oviedo, Walter", "email": "walterballesteros@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Geo", "Historia", "Historia Orientada"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Barbosa, Mariela Noemi", "email": "marielabarbosa@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Derecho", "FEC"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Blazquez, Soledad", "email": "soledadblazquez@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Contabilidad", "Economia", "Organizaciones", "Proyecto", "SAC", "SIC"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Casal Victoria", "email": "victoriacasal@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Geo", "Historia"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Del Valle Diaz, Analia", "email": "analiadiaz@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Biologia"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Dragonetti, Melina", "email": "melinadragonetti@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Fisico quimica", "Quimica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Figueiras, Sabrina Cecilia", "email": "sabrinafigueiras@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Leng. Adic", "Lengua Ad"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Galano, Maria Victoria", "email": "victoriagalano@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Ed. Fisica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Goldberg, Hadasa", "email": "hadasagoldberg@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Tecnologia de la información"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Gonzalez Alan", "email": "alangonzalez@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Lengua Ad"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Graziano, Fernando Martin", "email": "fernandograziano@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["FEC", "Lengua"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Hugue Lajous, María Soledad", "email": "soledadhuguelajous@iosefcaro.org", "cargo": "DIRECTORA DE ESTUDIOS . REF ACAP", "nivel": "secundario", "materias": ["ACAPS"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Junge, Marianela", "email": "marianelajunge@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Historia", "Historia Orientada"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Martinez, Sofia", "email": "sofiamartinez@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Geografia"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Martucci, Ana Cielo", "email": "anamartucci@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Artes Visuales"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Merguin, Mirta Susana", "email": "mirtamerguin@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Fisica", "Matematica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Messina, Carla", "email": "carlamessina@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Lengua y Literatura"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Nuñez, Fernando Sebastián", "email": "fernandonunez@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Lengua y Literatura"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Paula Papeo", "email": "paulapapeo@iosefcaro.org", "cargo": "PRECEPTORA y profesora", "nivel": "secundario", "materias": ["Artes Visuales"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Pighin, Sabina", "email": "sabrinapighin@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Musica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Raineri, Maria Belen", "email": "belenraineri@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Matematica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Reynoso Sebastian", "email": "sebastianreynoso@iosefcaro.org", "cargo": "PROSECRETARIO", "nivel": "secundario", "materias": [], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Sanchez, Marìa Laura", "email": "marialaurasanchez@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Biologia", "Fisico quimica", "Quimica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Santos Aiza, Ana María", "email": "anasantosaiza@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Contabilidad", "Economia", "Organizaciones"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Somoza, Carolina", "email": "carolinasomoza@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Matematica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Tarica, Leonor", "email": "leonortarica@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["EDI", "Tutoria"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Torres, Daniel", "email": "danieltorres@iosefcaro.org", "cargo": "Profesor/a", "nivel": "secundario", "materias": ["Ed. Fisica"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}, {"nombre": "Tulic Analia", "email": "analiatulic@iosefcaro.org", "cargo": "SECRETARIA Y PROFESORA", "nivel": "secundario", "materias": ["Artes Visuales"], "cursos": [], "cursosPendientes": [], "cursosEstado": "sin_asignar"}];
+
+// Poblar la preview table
+(function(){
+  const tbody=document.getElementById('doc-preview-tbody');
+  if(!tbody)return;
+  DOCENTES_SEC.forEach(d=>{
+    const mats=d.materias.length
+      ? d.materias.map(m=>`<span class="badge badge-violet" style="font-size:.6rem">${m}</span>`).join('')
+      : '<span style="color:#94a3b8;font-style:italic">sin materia</span>';
+    tbody.innerHTML+=`<tr>
+      <td><b style="font-size:.75rem">${d.nombre}</b><br><span style="font-size:.62rem;color:#94a3b8">${d.cargo}</span></td>
+      <td style="font-size:.68rem;color:#3b82f6">${d.email}</td>
+      <td style="font-size:.68rem">${d.cargo}</td>
+      <td>${mats}</td>
+    </tr>`;
+  });
+})();
+
+function logDoc(msg,cls){
+  const el=document.getElementById('log-doc');el.style.display='block';
+  const d=document.createElement('div');if(cls)d.className=cls;
+  d.textContent=msg;el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+function setPDoc(pct,lbl){
+  document.getElementById('progress-wrap-doc').style.display='block';
+  document.getElementById('progress-bar-doc').style.width=pct+'%';
+  document.getElementById('progress-label-doc').textContent=lbl;
+}
+
+async function cargarDocentes(){
+  const btn=document.getElementById('btn-cargar-doc');
+  btn.disabled=true;btn.textContent='Cargando docentes…';
+  document.getElementById('log-doc').innerHTML='';
+  let creados=0,actualizados=0,errores=0;
+  try{
+    for(let i=0;i<DOCENTES_SEC.length;i++){
+      const d=DOCENTES_SEC[i];
+      setPDoc(Math.round((i/DOCENTES_SEC.length)*95),`${i+1}/${DOCENTES_SEC.length} — ${d.nombre}`);
+      try{
+        const ref=db.collection('usuarios').doc(d.email);
+        const snap=await ref.get();
+        if(snap.exists){
+          // Ya existe: solo agrega materias nuevas, respeta cursos y demás datos
+          const ex=snap.data();
+          const matsSet=new Set(ex.materias||[]);
+          d.materias.forEach(m=>matsSet.add(m));
+          await ref.update({materias:Array.from(matsSet),nivel:'secundario'});
+          actualizados++;
+          logDoc(`↻ Actualizado: ${d.nombre}`);
+        }else{
+          await ref.set({
+            nombre:d.nombre, email:d.email, cargo:d.cargo,
+            rol:'docente', nivel:'secundario',
+            materias:d.materias, cursos:[],
+            cursosPendientes:[], cursosEstado:'sin_asignar',
+            pass:'Docente2026', _prueba:true,
+          });
+          creados++;
+          logDoc(`✅ Creado: ${d.nombre}`);
+        }
+      }catch(e){
+        errores++;
+        logDoc(`❌ ${d.email}: ${e.message}`,'err');
+      }
+    }
+    setPDoc(100,'¡Listo!');
+    logDoc('','');
+    logDoc(`=== Docentes cargados ===`,'ok');
+    logDoc(`Nuevos: ${creados} | Actualizados: ${actualizados} | Errores: ${errores}`);
+    logDoc(`Pass inicial para nuevos: Docente2026`);
+    logDoc(`Los cursos quedan vacíos — los solicita el docente desde su panel o los asignás desde Admin → Solicitudes.`);
+  }catch(e){
+    logDoc('❌ Error: '+e.message,'err');
+  }
+  btn.disabled=false;btn.textContent='⬆️ Cargar 33 docentes secundario';
 }
 </script>
 </body>
