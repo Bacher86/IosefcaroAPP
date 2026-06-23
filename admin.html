@@ -237,6 +237,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
     <button onclick="switchTab('notas-vis')"        class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">👁 Notas</button>
     <button onclick="switchTab('permisos')"         class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">🔐 Permisos</button>
     <button onclick="switchTab('log')"              class="nav-btn text-slate-500 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📋 Log</button>
+    <button onclick="switchTab('solicitudes-cursos')" id="nav-sol-cursos" class="nav-btn text-violet-700 bg-violet-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap" style="position:relative">
+      📋 Solicitudes
+      <span id="badge-sol-admin" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#ef4444"></span>
+    </button>
     <button onclick="exportarExcel()"               class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
     <button onclick="document.getElementById('modal-backup').classList.remove('hidden')" class="nav-btn text-blue-700 bg-blue-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup</button>
     <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
@@ -814,6 +818,28 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       <h2 class="text-2xl font-black tracking-tight">Permisos por Rol</h2>
       <p class="text-slate-400 text-xs -mt-3">Referencia de qué puede hacer cada rol en el sistema.</p>
       <div id="tabla-permisos-cont" class="space-y-4"></div>
+    </section>
+
+    <!-- ══ SOLICITUDES DE CURSOS ══ -->
+    <section id="tab-solicitudes-cursos" class="tab-content space-y-6">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-2xl font-black tracking-tight">Solicitudes de Cursos</h2>
+          <p class="text-slate-400 text-xs mt-0.5">Docentes que pidieron ser asignados a nuevos cursos</p>
+        </div>
+        <div class="flex gap-2">
+          <select id="filtro-sol-estado" onchange="cargarSolicitudesCursos()" class="input-pro text-xs">
+            <option value="pendiente">Pendientes</option>
+            <option value="aprobada">Aprobadas</option>
+            <option value="rechazada">Rechazadas</option>
+            <option value="">Todas</option>
+          </select>
+          <button onclick="cargarSolicitudesCursos()" class="bg-violet-600 text-white px-4 py-2 rounded-xl font-bold text-xs">↻ Actualizar</button>
+        </div>
+      </div>
+      <div id="lista-solicitudes-cursos" class="space-y-4">
+        <p class="text-slate-400 text-sm text-center py-8">Cargando solicitudes...</p>
+      </div>
     </section>
 
   </main>
@@ -1867,6 +1893,7 @@ window.switchTab = function switchTab(t){
   if(t==='familias')cargarFamilias();
   if(t==='alumnos'){cargarAlumnosFiltrados();cargarCursosSelector();}
   if(t==='staff')cargarStaff();
+  if(t==='solicitudes-cursos')cargarSolicitudesCursos();
 }
 window.eliminarAlumnoConf = async function eliminarAlumnoConf(id,nombre){
   if(!confirm(`¿Eliminar al alumno "${nombre}"?
@@ -2654,6 +2681,157 @@ window.importarPadronInicial = async function(){
   btn.classList.replace('bg-violet-600','bg-emerald-600');
   refrescarTodo();
 };
+
+// ══════════════════════════════════════════════════
+// SOLICITUDES DE CURSOS — Panel admin
+// ══════════════════════════════════════════════════
+
+window.cargarSolicitudesCursos = async function cargarSolicitudesCursos(){
+  const cont=document.getElementById('lista-solicitudes-cursos');
+  if(!cont)return;
+  cont.innerHTML='<p class="text-slate-400 text-sm text-center py-8">Cargando...</p>';
+  const estadoFiltro=document.getElementById('filtro-sol-estado')?.value||'pendiente';
+
+  try{
+    let q=db.collection('solicitudes_cursos');
+    if(estadoFiltro)q=q.where('estado','==',estadoFiltro);
+    let snap;
+    try{snap=await q.orderBy('creadoEn','desc').get();}
+    catch(e){snap=await q.get();}
+
+    // Badge en el nav
+    const pendSnap=await db.collection('solicitudes_cursos').where('estado','==','pendiente').get().catch(()=>({size:0}));
+    const badge=document.getElementById('badge-sol-admin');
+    if(badge)badge.style.display=pendSnap.size>0?'block':'none';
+
+    if(snap.empty){
+      cont.innerHTML=`<div class="bg-white p-8 rounded-3xl border text-center shadow-sm">
+        <p class="font-bold text-slate-400">${estadoFiltro==='pendiente'?'Sin solicitudes pendientes ✅':'Sin solicitudes en este estado.'}</p>
+      </div>`;
+      return;
+    }
+
+    cont.innerHTML='';
+    snap.forEach(doc=>{
+      const s=doc.data();const id=doc.id;
+      const cursosStr=(s.cursos||[]).join(', ');
+      const estadoColor=s.estado==='aprobada'?'text-emerald-700 bg-emerald-50':s.estado==='rechazada'?'text-rose-700 bg-rose-50':'text-amber-700 bg-amber-50';
+      const estadoLabel=s.estado==='aprobada'?'✅ Aprobada':s.estado==='rechazada'?'❌ Rechazada':'⏳ Pendiente';
+      const fecha=s.creadoEn?.toDate?.()?.toLocaleDateString('es-AR')||'—';
+      const esPendiente=s.estado==='pendiente';
+
+      cont.innerHTML+=`<div class="bg-white p-5 rounded-3xl border shadow-sm">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div class="flex-1">
+            <p class="font-black text-lg">${s.docenteNombre||s.docenteEmail}</p>
+            <p class="text-xs text-slate-400">${s.docenteEmail}</p>
+          </div>
+          <span class="flex-shrink-0 text-xs font-black px-3 py-1.5 rounded-full ${estadoColor}">${estadoLabel}</span>
+        </div>
+
+        <div class="space-y-2 mb-4">
+          <div class="flex gap-3 flex-wrap">
+            <div class="bg-slate-50 px-4 py-2 rounded-xl">
+              <p class="text-[9px] font-black text-slate-400 uppercase">Materia</p>
+              <p class="font-bold text-sm mt-0.5">${s.materia||'—'}</p>
+            </div>
+            <div class="bg-slate-50 px-4 py-2 rounded-xl flex-1">
+              <p class="text-[9px] font-black text-slate-400 uppercase">Cursos solicitados</p>
+              <p class="font-bold text-sm mt-0.5">${cursosStr||'—'}</p>
+            </div>
+          </div>
+          ${s.nota?`<div class="bg-blue-50 px-4 py-2 rounded-xl"><p class="text-[9px] font-black text-blue-400 uppercase">Nota del docente</p><p class="text-sm text-blue-800 mt-0.5 italic">"${s.nota}"</p></div>`:''}
+          ${s.observacionAdmin?`<div class="bg-slate-50 px-4 py-2 rounded-xl"><p class="text-[9px] font-black text-slate-400 uppercase">Observación admin</p><p class="text-sm mt-0.5">${s.observacionAdmin}</p></div>`:''}
+          <p class="text-[10px] text-slate-400">Enviada: ${fecha}</p>
+        </div>
+
+        ${esPendiente?`
+        <div class="space-y-2">
+          <div>
+            <label class="text-[9px] font-black text-slate-400 uppercase">Observación (opcional)</label>
+            <input type="text" id="obs-${id}" class="input-pro mt-1 w-full text-sm" placeholder="Ej: Aprobado para el 2° bimestre, revisar disponibilidad horaria...">
+          </div>
+          <div class="flex gap-2">
+            <button onclick="aprobarSolicitud('${id}','${(s.cursos||[]).join('|')}','${s.docenteEmail}','${s.materia||''}')"
+              class="flex-1 bg-emerald-600 text-white px-4 py-3 rounded-2xl font-bold text-sm shadow-sm">
+              ✅ Aprobar y asignar cursos
+            </button>
+            <button onclick="rechazarSolicitud('${id}','${s.docenteEmail}')"
+              class="bg-rose-50 text-rose-600 border border-rose-200 px-4 py-3 rounded-2xl font-bold text-sm">
+              ❌ Rechazar
+            </button>
+          </div>
+        </div>`:''}
+      </div>`;
+    });
+  }catch(e){
+    cont.innerHTML=`<p class="text-rose-500 text-sm text-center py-8">Error al cargar solicitudes: ${e.message}</p>`;
+  }
+};
+
+window.aprobarSolicitud = async function aprobarSolicitud(solicitudId,cursosRaw,docenteEmail,materia){
+  const cursos=cursosRaw.split('|').filter(Boolean);
+  if(!cursos.length){alert('Sin cursos en la solicitud.');return;}
+  const obs=document.getElementById('obs-'+solicitudId)?.value.trim()||'';
+  if(!confirm(`Aprobar y asignar los cursos: ${cursos.join(', ')} para ${docenteEmail}?`))return;
+  try{
+    const batch=db.batch();
+
+    // 1. Actualizar la solicitud
+    batch.update(db.collection('solicitudes_cursos').doc(solicitudId),{
+      estado:'aprobada',observacionAdmin:obs,
+      aprobadaPor:adminEmail||'admin',aprobadaEn:firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 2. Agregar los cursos al docente (merge con cursos existentes)
+    const docenteRef=db.collection('usuarios').doc(docenteEmail);
+    const docenteSnap=await docenteRef.get();
+    const cursosActuales=new Set(docenteSnap.data()?.cursos||[]);
+    cursos.forEach(c=>cursosActuales.add(c));
+    batch.update(docenteRef,{cursos:Array.from(cursosActuales),cursosEstado:'aprobado'});
+
+    await batch.commit();
+
+    // 3. Notificación al docente
+    await db.collection('notificaciones_docentes').add({
+      mensaje:`✅ Tu solicitud de cursos fue aprobada: ${cursos.join(', ')} — ${materia}${obs?'. '+obs:''}`,
+      nivel:'secundario',tipo:'solicitud_cursos_aprobada',fecha:new Date().toISOString(),leida:false
+    }).catch(()=>{});
+
+    registrarLog('aprobar',`Solicitud de cursos aprobada: ${docenteEmail} → ${cursos.join(', ')} en ${materia}`,'docentes');
+    alert(`✅ Cursos asignados a ${docenteEmail}`);
+    cargarSolicitudesCursos();
+    cargarDocentes();
+  }catch(e){alert('Error: '+e.message);}
+};
+
+window.rechazarSolicitud = async function rechazarSolicitud(solicitudId,docenteEmail){
+  const obs=document.getElementById('obs-'+solicitudId)?.value.trim()||'';
+  if(!confirm('¿Rechazar esta solicitud?'))return;
+  try{
+    await db.collection('solicitudes_cursos').doc(solicitudId).update({
+      estado:'rechazada',observacionAdmin:obs,
+      rechazadaPor:adminEmail||'admin',rechazadaEn:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Notificación al docente
+    await db.collection('notificaciones_docentes').add({
+      mensaje:`❌ Tu solicitud de cursos fue rechazada.${obs?' Motivo: '+obs:''}`,
+      nivel:'secundario',tipo:'solicitud_cursos_rechazada',fecha:new Date().toISOString(),leida:false
+    }).catch(()=>{});
+    registrarLog('rechazar',`Solicitud de cursos rechazada: ${docenteEmail}`,'docentes');
+    alert('Solicitud rechazada.');
+    cargarSolicitudesCursos();
+  }catch(e){alert('Error: '+e.message);}
+};
+
+// Al cargar la página, verificar si hay solicitudes pendientes
+(async function chequearBadgeSolicitudes(){
+  try{
+    const snap=await db.collection('solicitudes_cursos').where('estado','==','pendiente').get();
+    const badge=document.getElementById('badge-sol-admin');
+    if(badge)badge.style.display=snap.size>0?'block':'none';
+  }catch(e){}
+})();
 
 window.refrescarTodo = function refrescarTodo(){cargarEstadisticas();cargarNotasPendientes();cargarStaff();cargarDocentes();cargarAlumnosFiltrados();cargarFamilias();cargarMaestros('materias','lista-materias');cargarMaestros('cursos','lista-cursos');cargarPeriodosAdmin();cargarCiclos();cargarCursosSelector();}
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')validarIngreso();});
