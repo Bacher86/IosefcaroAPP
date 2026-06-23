@@ -716,6 +716,55 @@ body.app-ready nav.app-nav{display:flex}
     <div id="lista-com-doc" class="space-y-2"></div>
   </section>
 
+  <!-- ══ MIS CURSOS ══ -->
+  <section id="tab-mis-cursos" class="tab-content space-y-4 pb-24">
+    <div>
+      <h2 class="font-black text-xl">Mis Cursos</h2>
+      <p class="text-slate-400 text-xs mt-0.5">Cursos asignados y solicitud de nuevos</p>
+    </div>
+
+    <!-- Cursos aprobados -->
+    <div class="bg-white border rounded-2xl p-4 shadow-sm">
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-3">✅ Cursos asignados</p>
+      <div id="mis-cursos-aprobados">
+        <p class="text-slate-400 text-xs text-center py-3 italic">Sin cursos asignados todavía.</p>
+      </div>
+    </div>
+
+    <!-- Solicitudes pendientes -->
+    <div class="bg-white border rounded-2xl p-4 shadow-sm">
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-3">⏳ Solicitudes enviadas</p>
+      <div id="mis-cursos-pendientes">
+        <p class="text-slate-400 text-xs text-center py-2 italic">Sin solicitudes pendientes.</p>
+      </div>
+    </div>
+
+    <!-- Formulario de solicitud -->
+    <div class="bg-white border rounded-2xl p-4 shadow-sm">
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-3">➕ Solicitar nuevos cursos</p>
+      <p class="text-xs text-slate-500 mb-3">Seleccioná la materia y los cursos donde dictás. El admin recibirá la solicitud.</p>
+      <div class="mb-3">
+        <label class="text-[9px] font-black text-slate-400 uppercase">Materia</label>
+        <select id="sol-materia" class="input-pro mt-1 w-full" onchange="cargarCursosParaSolicitud()">
+          <option value="">Seleccionar materia...</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="text-[9px] font-black text-slate-400 uppercase">Cursos</label>
+        <div id="sol-cursos-grid" class="grid grid-cols-3 gap-2 mt-2">
+          <p class="text-slate-400 text-xs col-span-3 italic">Seleccioná una materia primero.</p>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="text-[9px] font-black text-slate-400 uppercase">Nota opcional</label>
+        <textarea id="sol-nota" class="input-pro mt-1 w-full h-14 resize-none" placeholder="Ej: Reemplaza a docente anterior, turno tarde..."></textarea>
+      </div>
+      <button onclick="enviarSolicitudCursos()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">
+        <i class="fas fa-paper-plane mr-2"></i> Enviar solicitud
+      </button>
+    </div>
+  </section>
+
 </main>
 
 <!-- NAV BOTTOM -->
@@ -728,6 +777,10 @@ body.app-ready nav.app-nav{display:flex}
   <button onclick="switchTab('comunicados')" id="btn-comunicados" class="nav-btn"><i class="fas fa-bullhorn"></i>Avisos</button>
   <button onclick="switchTab('informes')"  id="btn-informes"  class="nav-btn"><i class="fas fa-file-alt"></i>Informes</button>
   <button onclick="switchTab('calendario')" id="btn-calendario" class="nav-btn"><i class="fas fa-calendar-alt"></i>Agenda</button>
+  <button onclick="switchTab('mis-cursos')" id="btn-mis-cursos" class="nav-btn" style="position:relative">
+    <i class="fas fa-chalkboard-teacher"></i>Cursos
+    <span id="badge-cursos-pend" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#ef4444"></span>
+  </button>
 </nav>
 
 <script>
@@ -2227,6 +2280,7 @@ window.togglePermiteRespuestas=togglePermiteRespuestas;
 // ══ FIN TANDA 3 ══
 window._switchTab=function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  if(tab==='mis-cursos'){cargarMisCursos().catch(()=>{}); cargarCursosParaSolicitud().catch(()=>{});}
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
   if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
@@ -2253,6 +2307,138 @@ window._switchTab=function switchTab(tab){
   if(tab==='asis'&&Object.keys(cambiosAsis).length)document.getElementById('btn-guardar-asis').style.display='block';
 };
 window.switchTab=function(t){window._switchTab(t);};
+
+// ══════════════════════════════════════════════════
+// MIS CURSOS — Solicitud y visualización
+// ══════════════════════════════════════════════════
+
+async function cargarMisCursos(){
+  // Poblar selector de materias del docente
+  const selMat=document.getElementById('sol-materia');
+  if(selMat){
+    selMat.innerHTML='<option value="">Seleccionar materia...</option>';
+    const mats=Array.isArray(docenteData?.materias)?docenteData.materias:[];
+    mats.forEach(m=>selMat.innerHTML+=`<option value="${m}">${m}</option>`);
+  }
+
+  // Cursos aprobados actuales
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  const divAprobados=document.getElementById('mis-cursos-aprobados');
+  if(divAprobados){
+    if(curs.length){
+      divAprobados.innerHTML=curs.map(c=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f0fdf4;border-radius:14px;margin-bottom:6px">
+          <span style="font-weight:800;font-size:.875rem">${c}</span>
+          <span style="font-size:.65rem;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:99px">✓ Asignado</span>
+        </div>`).join('');
+    }else{
+      divAprobados.innerHTML='<p style="color:#94a3b8;font-size:.8rem;text-align:center;padding:12px;font-style:italic">Sin cursos asignados todavía. Enviá una solicitud abajo.</p>';
+    }
+  }
+
+  // Solicitudes pendientes del docente
+  const divPend=document.getElementById('mis-cursos-pendientes');
+  if(divPend){
+    try{
+      const snap=await db.collection('solicitudes_cursos')
+        .where('docenteEmail','==',docenteEmail)
+        .orderBy('creadoEn','desc').limit(10).get().catch(async()=>{
+          // Fallback sin orderBy si falta índice
+          return db.collection('solicitudes_cursos').where('docenteEmail','==',docenteEmail).get();
+        });
+      if(snap.empty){
+        divPend.innerHTML='<p style="color:#94a3b8;font-size:.8rem;text-align:center;padding:8px;font-style:italic">Sin solicitudes enviadas.</p>';
+        document.getElementById('badge-cursos-pend').style.display='none';
+      }else{
+        const hasPend=snap.docs.some(d=>d.data().estado==='pendiente');
+        document.getElementById('badge-cursos-pend').style.display=hasPend?'block':'none';
+        divPend.innerHTML=snap.docs.map(doc=>{
+          const s=doc.data();
+          const estadoColor=s.estado==='aprobada'?'#15803d':s.estado==='rechazada'?'#b91c1c':'#92400e';
+          const estadoBg=s.estado==='aprobada'?'#dcfce7':s.estado==='rechazada'?'#fee2e2':'#fef3c7';
+          const estadoLabel=s.estado==='aprobada'?'✅ Aprobada':s.estado==='rechazada'?'❌ Rechazada':'⏳ Pendiente';
+          const cursosStr=(s.cursos||[]).join(', ');
+          const fechaStr=s.creadoEn?.toDate?.()?.toLocaleDateString('es-AR')||s.creadoEn||'';
+          return `<div style="padding:12px 14px;background:#f8fafc;border-radius:14px;margin-bottom:8px;border:1px solid #e2e8f0">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div>
+                <p style="font-weight:800;font-size:.8rem;margin:0 0 2px">${s.materia||'(sin materia)'}</p>
+                <p style="font-size:.7rem;color:#64748b;margin:0">Cursos: ${cursosStr||'—'}</p>
+                ${s.nota?`<p style="font-size:.68rem;color:#94a3b8;margin:4px 0 0;font-style:italic">"${s.nota}"</p>`:''}
+                ${fechaStr?`<p style="font-size:.62rem;color:#94a3b8;margin:2px 0 0">${fechaStr}</p>`:''}
+                ${s.observacionAdmin?`<p style="font-size:.7rem;color:#64748b;margin:4px 0 0;padding:4px 8px;background:#fff;border-radius:8px">💬 ${s.observacionAdmin}</p>`:''}
+              </div>
+              <span style="flex-shrink:0;font-size:.65rem;font-weight:800;padding:3px 10px;border-radius:99px;background:${estadoBg};color:${estadoColor}">${estadoLabel}</span>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }catch(e){
+      divPend.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">No se pudieron cargar las solicitudes.</p>';
+    }
+  }
+}
+
+async function cargarCursosParaSolicitud(){
+  const grid=document.getElementById('sol-cursos-grid');
+  if(!grid)return;
+  grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">Cargando...</p>';
+  try{
+    const snap=await db.collection('cursos').where('nivel','==','secundario').get();
+    const asignados=new Set(Array.isArray(docenteData?.cursos)?docenteData.cursos:[]);
+    if(snap.empty){
+      grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">Sin cursos de secundario creados.</p>';
+      return;
+    }
+    grid.innerHTML='';
+    snap.docs.sort((a,b)=>a.data().nombre.localeCompare(b.data().nombre)).forEach(doc=>{
+      const c=doc.data().nombre;
+      const yaAsignado=asignados.has(c);
+      grid.innerHTML+=`<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid ${yaAsignado?'#86efac':'#e2e8f0'};border-radius:12px;cursor:${yaAsignado?'default':'pointer'};background:${yaAsignado?'#f0fdf4':'#fff'}">
+        <input type="checkbox" value="${c}" ${yaAsignado?'disabled checked':''} style="accent-color:#0f172a;width:16px;height:16px">
+        <span style="font-weight:700;font-size:.8rem;color:${yaAsignado?'#15803d':'#0f172a'}">${c}</span>
+        ${yaAsignado?'<span style="font-size:.6rem;color:#15803d;margin-left:auto">✓</span>':''}
+      </label>`;
+    });
+  }catch(e){
+    grid.innerHTML='<p style="color:#ef4444;font-size:.75rem;grid-column:1/-1">Error al cargar cursos.</p>';
+  }
+}
+
+window.enviarSolicitudCursos=async function enviarSolicitudCursos(){
+  const materia=document.getElementById('sol-materia')?.value;
+  if(!materia){alert('Seleccioná una materia.');return;}
+  const cursosSelec=Array.from(document.querySelectorAll('#sol-cursos-grid input[type=checkbox]:checked:not(:disabled)'))
+    .map(cb=>cb.value);
+  if(!cursosSelec.length){alert('Seleccioná al menos un curso nuevo (los ya asignados no se pueden volver a solicitar).');return;}
+  const nota=document.getElementById('sol-nota')?.value.trim()||'';
+
+  const btn=event?.target||document.querySelector('[onclick="enviarSolicitudCursos()"]');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+  try{
+    await db.collection('solicitudes_cursos').add({
+      docenteEmail, docenteNombre:docenteData?.nombre||'',
+      materia, cursos:cursosSelec, nota,
+      estado:'pendiente',
+      nivel:'secundario',
+      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    // Notificar al admin
+    await db.collection('notificaciones_admin').add({
+      tipo:'solicitud_cursos', docenteEmail, docenteNombre:docenteData?.nombre||'',
+      mensaje:`${docenteData?.nombre||docenteEmail} solicitó cursos en ${materia}: ${cursosSelec.join(', ')}`,
+      leida:false, creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+    }).catch(()=>{});
+    alert('✅ Solicitud enviada. El administrador la revisará y te notificará.');
+    document.getElementById('sol-materia').value='';
+    document.getElementById('sol-cursos-grid').innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">Seleccioná una materia primero.</p>';
+    document.getElementById('sol-nota').value='';
+    await cargarMisCursos(); // Refrescar
+  }catch(e){
+    alert('Error al enviar solicitud: '+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='📩 Enviar solicitud';}
+};
 
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 window.addEventListener('load',()=>{
