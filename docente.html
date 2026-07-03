@@ -781,7 +781,6 @@ body.app-ready nav.app-nav{display:flex}
     </div>
     <div class="header-user">
       <span class="header-name" id="header-name">—</span>
-      <button class="btn-salir" onclick="doLogout()">Salir</button>
     </div>
   </div>
 </header>
@@ -797,24 +796,15 @@ body.app-ready nav.app-nav{display:flex}
   </div>
 </div>
 
-<!-- LOGIN (cuando no está logueado) -->
-<div class="login-wrap" id="login-section">
+<!-- Fallback: solo se muestra si por algún motivo no hay sesión del panel docente -->
+<div class="login-wrap" id="login-section" style="display:none">
   <div class="login-box">
     <div class="login-logo">
       <div class="star">✡</div>
       <h1>Portal Docente</h1>
       <p>Revista Institucional · Iosef Caro</p>
     </div>
-    <div class="field">
-      <label class="lbl">Email institucional</label>
-      <input class="ai" type="email" id="rv-login-email" placeholder="tu@iosefcaro.edu.ar" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div class="field">
-      <label class="lbl">Contraseña</label>
-      <input class="ai" type="password" id="rv-login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div id="login-err" style="font-size:12px;color:var(--err);display:none;padding:8px 12px;background:var(--err)22;border-radius:6px;margin-bottom:12px"></div>
-    <button class="btn btn-gold btn-full" onclick="doLogin()" id="login-btn">Ingresar →</button>
+    <div style="font-size:12px;color:var(--muted);text-align:center">Iniciá sesión en el panel docente primero.</div>
   </div>
 </div>
 
@@ -1047,6 +1037,7 @@ window._doLogin=async function login(emailOverride){
     docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};
     docenteEmail=email;document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
     document.getElementById('doc-nom').innerText='Administrador';
+    window.docenteEmail=docenteEmail;window.docenteNombre='Administrador';
     poblarCursosTablon();poblarMateriasTablon();poblarCursosEnComunicados();
     await cargarPeriodos();iniciarDashboard();return;
   }
@@ -1060,6 +1051,7 @@ window._doLogin=async function login(emailOverride){
     docenteData=data;docenteEmail=email;
     document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
     document.getElementById('doc-nom').innerText=data.nombre;
+    window.docenteEmail=docenteEmail;window.docenteNombre=data.nombre;
     const sMat=document.getElementById('select-materia');sMat.innerHTML='';
     const mats=Array.isArray(data.materias)?data.materias:(data.materia?[data.materia]:[]);
     mats.forEach(m=>sMat.innerHTML+=`<option value="${m}">${m}</option>`);
@@ -3091,7 +3083,7 @@ import {
   getDocs, query, where, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+  getAuth, signInAnonymously, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL
@@ -3128,15 +3120,47 @@ let previewTimer   = null;
 let ultimoGuardado = null;
 
 // ══ AUTH ════════════════════════════════════════════════════
+// La Revista ya NO pide login propio: reutiliza la sesión del panel
+// docente principal (window.docenteEmail / window.docenteNombre) y
+// usa autenticación anónima de Firebase solo para satisfacer las
+// reglas de seguridad de Firestore (request.auth != null).
+let rvAuthIniciado = false;
+
+function nombreAmigableDesdeEmail(email){
+  return (email||'').split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+window.initRevista = async function(){
+  if (rvAuthIniciado) return;
+  rvAuthIniciado = true;
+  const emailDocente = window.docenteEmail || '';
+  if (!emailDocente) {
+    // No debería pasar (la pestaña solo es visible ya logueado en el panel),
+    // pero por las dudas mostramos un aviso en vez de dejar la pantalla vacía.
+    document.getElementById('login-section').style.display = 'flex';
+    document.getElementById('login-section').innerHTML =
+      '<div class="login-box"><div class="login-logo"><div class="star">✡</div>' +
+      '<h1>Portal Docente</h1><p>Revista Institucional · Iosef Caro</p></div>' +
+      '<div style="font-size:12px;color:var(--muted);text-align:center">Iniciá sesión en el panel docente primero.</div></div>';
+    return;
+  }
+  try {
+    await signInAnonymously(auth);
+  } catch(e) {
+    console.error('Error de autenticación en Revista:', e);
+  }
+};
+
 onAuthStateChanged(auth, user => {
   if (user) {
-    currentUser = user;
+    const emailDocente = window.docenteEmail || '';
+    currentUser = { uid: user.uid, email: emailDocente };
     document.getElementById('login-section').style.display  = 'none';
     document.getElementById('site-header').style.display    = 'flex';
     document.getElementById('tabs-bar').style.display       = 'block';
     document.getElementById('app-section').style.display    = 'block';
     // Nombre amigable
-    const nombre = user.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    const nombre = window.docenteNombre || nombreAmigableDesdeEmail(emailDocente);
     document.getElementById('header-name').textContent = nombre;
     document.getElementById('art-autor').value = nombre;
     // Inicializar editor
@@ -3148,27 +3172,8 @@ onAuthStateChanged(auth, user => {
   } else {
     currentUser = null;
     ['site-header','tabs-bar','app-section'].forEach(id => document.getElementById(id).style.display='none');
-    document.getElementById('login-section').style.display = 'flex';
   }
 });
-
-window.doLogin = async function() {
-  const email = document.getElementById('rv-login-email').value.trim();
-  const pass  = document.getElementById('rv-login-pass').value;
-  const btn   = document.getElementById('login-btn');
-  const err   = document.getElementById('login-err');
-  if (!email || !pass) { err.textContent='Completá email y contraseña'; err.style.display='block'; return; }
-  btn.textContent = 'Ingresando…'; btn.disabled = true; err.style.display = 'none';
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e) {
-    const msgs = {'auth/invalid-credential':'Email o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Esperá.'};
-    err.textContent = msgs[e.code] || 'Error: '+e.message;
-    err.style.display = 'block';
-    btn.textContent = 'Ingresar →'; btn.disabled = false;
-  }
-};
-window.doLogout = async function() { await signOut(auth); };
 
 // ══ TABS ════════════════════════════════════════════════════
 window.setTab = function(tab) {
@@ -3817,9 +3822,6 @@ window.toast = function(msg, type='ok') {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>el.style.display='none',3200);
 };
-
-// Compatibilidad: el módulo ahora se autoinicializa vía onAuthStateChanged.
-window.initRevista = window.initRevista || function(){};
 
 </script>
 
