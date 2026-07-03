@@ -770,7 +770,211 @@ body.app-ready nav.app-nav{display:flex}
        TAB REVISTA — Portal de envío de artículos
   ══════════════════════════════════════════ -->
   <section id="tab-revista" class="tab-content space-y-4 pb-24" style="padding:0;min-height:80vh">
-    <div id="revista-mount" style="min-height:80vh"></div>
+    <div id="revista-mount" style="min-height:80vh">
+
+<!-- HEADER (visible solo cuando está logueado) -->
+<header class="site-header" id="site-header" style="display:none">
+  <div class="header-inner">
+    <div class="header-brand">
+      <img src="https://i.ibb.co/hF7Sqzw5/Logo-blanco.png" alt="Logo" onerror="this.style.display='none'">
+      <span class="header-brand-name">Colegio Rabino Iosef Caro</span>
+    </div>
+    <div class="header-user">
+      <span class="header-name" id="header-name">—</span>
+      <button class="btn-salir" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+</header>
+
+<!-- TABS (visible cuando está logueado) -->
+<div class="tabs-bar" id="tabs-bar" style="display:none">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="setTab('nuevo')" id="tab-nuevo">✏️ Nuevo artículo</button>
+    <button class="tab-btn" onclick="setTab('borradores')" id="tab-borradores">
+      📝 Mis borradores <span class="tab-notif" id="notif-borradores" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" onclick="setTab('enviados')" id="tab-enviados">📤 Artículos enviados</button>
+  </div>
+</div>
+
+<!-- LOGIN (cuando no está logueado) -->
+<div class="login-wrap" id="login-section">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="star">✡</div>
+      <h1>Portal Docente</h1>
+      <p>Revista Institucional · Iosef Caro</p>
+    </div>
+    <div class="field">
+      <label class="lbl">Email institucional</label>
+      <input class="ai" type="email" id="rv-login-email" placeholder="tu@iosefcaro.edu.ar" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="field">
+      <label class="lbl">Contraseña</label>
+      <input class="ai" type="password" id="rv-login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-err" style="font-size:12px;color:var(--err);display:none;padding:8px 12px;background:var(--err)22;border-radius:6px;margin-bottom:12px"></div>
+    <button class="btn btn-gold btn-full" onclick="doLogin()" id="login-btn">Ingresar →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-section" style="display:none">
+
+  <div class="page">
+
+    <!-- ── TAB: NUEVO ARTÍCULO ── -->
+    <div class="tab-content active" id="content-nuevo">
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+
+        <!-- FORMULARIO -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--white)">Nuevo artículo</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Lo revisará el equipo editorial antes de publicarse.</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="setTab('borradores')">Ver borradores →</button>
+          </div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header"><span class="card-title">Información general</span></div>
+            <div class="card-body">
+              <div class="grid2">
+                <div class="field">
+                  <label class="lbl lbl-req">Nivel educativo</label>
+                  <select class="ai" id="art-nivel" onchange="actualizarPreview()">
+                    <option value="institucional">■ Institucional</option>
+                    <option value="inicial">✦ Nivel Inicial</option>
+                    <option value="primaria">◆ Nivel Primario</option>
+                    <option value="secundaria">▲ Nivel Secundario</option>
+                    <option value="reshit">✡ Reshit</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="lbl lbl-req">Tipo de contenido</label>
+                  <select class="ai" id="art-tipo">
+                    <option value="noticia">📰 Noticia</option>
+                    <option value="evento">🎉 Evento / Acto</option>
+                    <option value="proyecto">🔬 Proyecto pedagógico</option>
+                    <option value="galeria">📸 Galería de fotos</option>
+                    <option value="comunicado">📢 Comunicado</option>
+                    <option value="aviso">📌 Aviso</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label class="lbl lbl-req">Título</label>
+                <input class="ai" id="art-titulo" placeholder="Ej: Semana de la Naturaleza en el Huerto Escolar" oninput="actualizarPreview();marcarCambio()">
+              </div>
+              <div class="field">
+                <label class="lbl">Bajada (frase de presentación)</label>
+                <textarea class="ai" id="art-bajada" rows="2" placeholder="Una frase breve que resume el artículo…" oninput="actualizarPreview();marcarCambio()"></textarea>
+                <span class="ai-help">Aparece en itálica debajo del título. Opcional pero recomendado.</span>
+              </div>
+              <div class="grid2">
+                <div class="field">
+                  <label class="lbl">Tu nombre</label>
+                  <input class="ai" id="art-autor" placeholder="Ej: Maestra Daniela R.">
+                </div>
+                <div class="field">
+                  <label class="lbl">Sala / Grado / Grupo</label>
+                  <input class="ai" id="art-sala" placeholder="Ej: Sala Azul · 3.° Grado A">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EDITOR DE CONTENIDO -->
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header">
+              <span class="card-title">Contenido</span>
+              <span style="font-size:10px;color:var(--muted)">Combiná texto, fotos y videos</span>
+            </div>
+            <div class="card-body" style="padding:12px">
+              <div class="bloques-list" id="bloques-editor"></div>
+              <div class="bloque-add-row">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="agregarBloque('texto')">＋ Texto</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="agregarBloque('imagen')">⬆ Foto</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="agregarBloque('video')">▶ Video</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="agregarBloque('separador')">— Separador</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ÉXITO -->
+          <div class="exito-box" id="exito-box">
+            <h3>✅ ¡Artículo enviado!</h3>
+            <p>El equipo editorial lo revisará y te avisarán cuando esté publicado.<br>Podés ver el estado en la pestaña "Artículos enviados".</p>
+            <button class="btn btn-ghost" onclick="resetForm()" style="margin-top:16px">✏️ Escribir otro artículo</button>
+          </div>
+
+          <!-- STATUS BAR -->
+          <div class="status-bar" id="status-bar">
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="autosave-dot" id="autosave-dot"></div>
+              <span id="autosave-lbl">Sin guardar</span>
+            </div>
+            <div style="display:flex;gap:14px">
+              <span id="word-count">0 palabras</span>
+              <span id="read-time">0 min lectura</span>
+            </div>
+          </div>
+
+          <!-- ACCIONES -->
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="guardarBorrador()" id="btn-borrador">💾 Guardar borrador</button>
+            <button class="btn btn-gold" onclick="enviarArticulo()" id="btn-enviar" style="flex:1;justify-content:center">
+              Enviar para revisión →
+            </button>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--muted);text-align:center">
+            Una vez enviado, el admin lo revisará antes de publicarlo en la revista.
+          </div>
+        </div>
+
+        <!-- PREVIEW EN TIEMPO REAL -->
+        <div>
+          <div class="preview-panel">
+            <div class="preview-header">
+              <span>Vista previa</span>
+              <span style="font-size:9px">Se actualiza al escribir</span>
+            </div>
+            <div class="preview-body" id="preview-live">
+              <div style="color:#aaa;font-style:italic;font-size:12px;text-align:center;padding:20px 10px">Empezá a escribir para ver la previsualización…</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── TAB: BORRADORES ── -->
+    <div class="tab-content" id="content-borradores">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--white)">Mis borradores</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Artículos guardados que todavía no enviaste.</div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="setTab('nuevo');resetForm()">＋ Nuevo artículo</button>
+      </div>
+      <div id="lista-borradores"><div class="spin"></div></div>
+    </div>
+
+    <!-- ── TAB: ENVIADOS ── -->
+    <div class="tab-content" id="content-enviados">
+      <div style="margin-bottom:20px">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--white)">Artículos enviados</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Estado de todo lo que enviaste para revisión.</div>
+      </div>
+      <div id="lista-enviados"><div class="spin"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+    </div>
   </section>
 </main>
 
@@ -2646,109 +2850,254 @@ window.toggleEntrega=async function(tablonId,alumnoId,btn){
 // ── IOSI STUDY: CARGA DE MATERIAL ──
 } // fin _initDocente
 </script>
-<!-- ══════════════════════════════════════════════════════════
-     REVISTA MODULE — Firebase Modular paralelo al compat
-═══════════════════════════════════════════════════════════ -->
 <style>
-/* ── ESTILOS DEL PORTAL REVISTA dentro de la app ── */
-#revista-mount {
-  font-family:'Plus Jakarta Sans',sans-serif;
-  background:#f0f4f8;
-  padding: 1rem;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Lato:wght@300;400;700;900&family=EB+Garamond:ital,wght@0,400;1,400&display=swap');
+
+
+#revista-mount{
+  --bg:#0E1628; --navy:#1A2848; --card:#1E3060;
+  --gold:#C9A84C; --gold-pale:#E8D5A0;
+  --white:#fff; --ink:#F0EDE6; --muted:#8888AA;
+  --rule:#2A3A6A; --dim:#1E2D52;
+  --ok:#3AB07A; --err:#C84C4C; --warn:#C89A4C;
 }
-.rv-card{background:white;border-radius:1.25rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.rv-title{font-size:1.1rem;font-weight:900;color:#0f172a;margin-bottom:.25rem}
-.rv-sub{font-size:.75rem;color:#94a3b8;margin-bottom:1rem}
-.rv-label{font-size:.6875rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.375rem;display:block}
-.rv-input{width:100%;padding:.75rem;background:#f1f5f9;border-radius:.875rem;border:none;outline:none;font-size:.875rem;font-family:inherit;font-weight:600;color:#0f172a;transition:box-shadow .2s;margin-bottom:.75rem}
-.rv-input:focus{box-shadow:0 0 0 3px rgba(37,99,235,.15);background:#fff}
-.rv-textarea{width:100%;padding:.75rem;background:#f1f5f9;border-radius:.875rem;border:none;outline:none;font-size:.875rem;font-family:inherit;font-weight:500;color:#0f172a;resize:vertical;min-height:120px;line-height:1.6;margin-bottom:.75rem}
-.rv-textarea:focus{box-shadow:0 0 0 3px rgba(37,99,235,.15);background:#fff}
-.rv-select{width:100%;padding:.75rem;background:#f1f5f9;border-radius:.875rem;border:none;outline:none;font-size:.875rem;font-family:inherit;font-weight:600;color:#0f172a;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;margin-bottom:.75rem}
-.rv-btn{width:100%;padding:.875rem;border-radius:1rem;border:none;font-size:.9375rem;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s}
-.rv-btn-primary{background:#0f172a;color:white}
-.rv-btn-primary:hover{background:#1e293b}
-.rv-btn-primary:disabled{background:#cbd5e1;cursor:not-allowed}
-.rv-btn-secondary{background:#f1f5f9;color:#475569}
-.rv-btn-secondary:hover{background:#e2e8f0}
-.rv-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .625rem;border-radius:99px;font-size:.6875rem;font-weight:800}
-.rv-badge-rev{background:#fef3c7;color:#d97706}
-.rv-badge-pub{background:#dcfce7;color:#16a34a}
-.rv-badge-bor{background:#f1f5f9;color:#64748b}
-.rv-badge-rej{background:#fee2e2;color:#dc2626}
-
-/* RTE */
-.rv-toolbar{display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:.5rem .75rem;background:#f8fafc;border-radius:.875rem .875rem 0 0;border-bottom:1.5px solid #e2e8f0}
-.rv-toolbar button{width:28px;height:28px;border:none;background:none;border-radius:.5rem;cursor:pointer;font-size:13px;color:#64748b;display:flex;align-items:center;justify-content:center;transition:all .12s}
-.rv-toolbar button:hover{background:#e2e8f0;color:#0f172a}
-.rv-toolbar .sep{width:1px;height:18px;background:#e2e8f0;margin:0 2px;flex-shrink:0}
-.rv-toolbar select{background:#f1f5f9;border:none;border-radius:.5rem;padding:3px 6px;font-size:11px;cursor:pointer;color:#64748b;outline:none;height:26px}
-.rv-rte{min-height:160px;padding:.875rem;background:#f1f5f9;border-radius:0 0 .875rem .875rem;outline:none;font-size:.875rem;line-height:1.75;color:#0f172a;font-family:'Plus Jakarta Sans',sans-serif}
-.rv-rte:empty::before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
-.rv-rte p{margin-bottom:4px}
-.rv-rte h2{font-size:1.125rem;font-weight:800;margin:12px 0 4px}
-.rv-rte h3{font-size:1rem;font-weight:700;margin:9px 0 3px}
-.rv-rte blockquote{border-left:3px solid #2563eb;padding-left:.75rem;color:#475569;font-style:italic;margin:8px 0}
-.rv-rte ul,.rv-rte ol{padding-left:1.25rem;margin:4px 0}
-
-/* bloques */
-.rv-bloque{background:white;border:1.5px solid #e2e8f0;border-radius:1rem;overflow:hidden;margin-bottom:.625rem}
-.rv-bloque-head{display:flex;align-items:center;justify-content:space-between;padding:.5rem .875rem;background:#f8fafc;border-bottom:1px solid #e2e8f0}
-.rv-bloque-tag{font-size:.6875rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8}
-.rv-bloque-ctrls{display:flex;gap:3px}
-.rv-bloque-ctrls button{width:22px;height:22px;border:none;background:#f1f5f9;border-radius:.375rem;cursor:pointer;font-size:11px;color:#64748b;transition:all .12s}
-.rv-bloque-ctrls button:hover{background:#e2e8f0;color:#0f172a}
-.rv-bloque-ctrls button.del:hover{background:#fee2e2;color:#dc2626}
-.rv-bloque-ctrls button:disabled{opacity:.3;cursor:not-allowed}
-.rv-add-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
-.rv-add-btn{padding:.5rem .875rem;border:1.5px solid #e2e8f0;border-radius:.875rem;background:white;font-size:.6875rem;font-weight:700;font-family:inherit;cursor:pointer;color:#475569;transition:all .12s}
-.rv-add-btn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
-
-/* upload */
-.rv-drop{border:2px dashed #e2e8f0;border-radius:.875rem;padding:1.25rem;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa}
-.rv-drop:hover,.rv-drop.drag{border-color:#2563eb;background:#eff6ff}
-.rv-prog{height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin-top:.5rem;display:none}
-.rv-prog-fill{height:100%;background:#2563eb;transition:width .2s;width:0}
-
-/* status bar */
-.rv-status{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#f8fafc;border-radius:.875rem;font-size:.6875rem;color:#94a3b8;margin-top:.5rem}
-.rv-dot{width:7px;height:7px;border-radius:50%;background:#94a3b8;transition:background .3s;flex-shrink:0}
-.rv-dot.saving{background:#f59e0b;animation:pulse .6s infinite}
-.rv-dot.saved{background:#22c55e}
-
-/* articulo card */
-.rv-art-card{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:1rem;padding:.875rem;margin-bottom:.625rem}
-.rv-art-titulo{font-size:.875rem;font-weight:800;color:#0f172a;margin-bottom:.375rem}
-.rv-art-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.6875rem;color:#94a3b8}
-
-/* tabs internos */
-.rv-tabs{display:flex;background:#f1f5f9;border-radius:1rem;padding:3px;margin-bottom:1rem}
-.rv-tab{flex:1;padding:.5rem;border:none;background:none;border-radius:.75rem;font-size:.6875rem;font-weight:800;font-family:inherit;color:#94a3b8;cursor:pointer;transition:all .15s;text-align:center}
-.rv-tab.on{background:white;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.1)}
-
-/* preview */
-.rv-preview{background:#FAF7F1;border-radius:1rem;padding:1rem;font-family:Georgia,serif;font-size:.8125rem;line-height:1.75;color:#1A1A2E;min-height:120px;max-height:320px;overflow-y:auto}
-.rv-preview .pk{font-family:'Plus Jakarta Sans',sans-serif;font-size:.625rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.375rem}
-.rv-preview .pt{font-size:1rem;font-weight:900;line-height:1.15;margin-bottom:.375rem;font-family:Georgia,serif}
-.rv-preview .pb{font-size:.8125rem;font-style:italic;color:#38385A;border-bottom:1px solid #D4C9A8;padding-bottom:.625rem;margin-bottom:.75rem}
-.rv-preview blockquote{border-left:2.5px solid #C9A84C;padding-left:.5rem;margin:6px 0;font-style:italic;color:#38385A}
-.rv-preview h2{font-size:.9375rem;font-weight:900;margin:10px 0 3px}
-
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#revista-mount *{box-sizing:border-box;margin:0;padding:0}
+#revista-mount{min-height:100%;font-family:'Lato',sans-serif;background:var(--bg);color:var(--ink)}
+#revista-mount ::-webkit-scrollbar{width:5px}
+#revista-mount ::-webkit-scrollbar-thumb{background:var(--rule);border-radius:4px}
+#revista-mount .site-header{
+  background:linear-gradient(160deg,var(--bg) 0%,var(--navy) 60%,#1E3060 100%);
+  border-bottom:1px solid rgba(201,168,76,.2);
+  position:sticky;top:0;z-index:100;
+}
+#revista-mount .header-inner{
+  max-width:900px;margin:0 auto;padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+#revista-mount .header-brand{display:flex;align-items:center;gap:10px}
+#revista-mount .header-brand img{height:28px}
+#revista-mount .header-brand-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;font-style:italic;color:rgba(255,255,255,.9)}
+#revista-mount .header-user{display:flex;align-items:center;gap:10px}
+#revista-mount .header-name{font-size:12px;color:var(--muted)}
+#revista-mount .btn-salir{background:none;border:1px solid var(--rule);color:var(--muted);font-family:inherit;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .15s}
+#revista-mount .btn-salir:hover{border-color:var(--err);color:var(--err)}
+#revista-mount .tabs-bar{
+  background:rgba(255,255,255,.03);border-bottom:1px solid rgba(201,168,76,.1);
+  position:sticky;top:56px;z-index:99;
+}
+#revista-mount .tabs-inner{max-width:900px;margin:0 auto;padding:0 20px;display:flex;gap:0}
+#revista-mount .tab-btn{
+  background:none;border:none;cursor:pointer;font-family:'Lato',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);padding:14px 18px;border-bottom:2px solid transparent;
+  transition:all .15s;display:flex;align-items:center;gap:6px;
+}
+#revista-mount .tab-btn:hover{color:var(--white)}
+#revista-mount .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+#revista-mount .tab-notif{
+  background:var(--err);color:#fff;border-radius:50%;
+  width:16px;height:16px;font-size:9px;font-weight:900;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+#revista-mount .page{max-width:900px;margin:0 auto;padding:28px 20px 60px}
+#revista-mount .tab-content{display:none}
+#revista-mount .tab-content.active{display:block}
+#revista-mount .login-wrap{
+  min-height:80vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;
+}
+#revista-mount .login-box{
+  background:var(--navy);border:1px solid var(--rule);border-radius:16px;
+  padding:36px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.5);
+}
+#revista-mount .login-logo{text-align:center;margin-bottom:28px}
+#revista-mount .login-logo .star{font-size:34px;color:var(--gold)}
+#revista-mount .login-logo h1{font-family:'Playfair Display',serif;font-size:20px;color:var(--white);margin-top:8px}
+#revista-mount .login-logo p{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+#revista-mount .field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+#revista-mount .lbl{font-size:8.5px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+#revista-mount .lbl-req::after{content:' *';color:var(--gold)}
+#revista-mount .ai{
+  width:100%;padding:9px 11px;background:var(--bg);border:1px solid var(--rule);
+  border-radius:6px;color:var(--ink);font-size:14px;outline:none;
+  transition:border-color .15s;font-family:inherit;
+}
+#revista-mount .ai:focus{border-color:var(--gold)88}
+#revista-mount .ai-help{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5}
+#revista-mount .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){#revista-mount .grid2{grid-template-columns:1fr}
+}
+#revista-mount .card{background:var(--navy);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+#revista-mount .card-header{
+  padding:12px 16px;background:var(--card);border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+#revista-mount .card-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--white)}
+#revista-mount .card-body{padding:18px 16px}
+#revista-mount .btn{
+  display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;
+  border-radius:4px;font-weight:900;font-size:11px;letter-spacing:1px;
+  text-transform:uppercase;padding:9px 20px;transition:all .15s;font-family:inherit;
+}
+#revista-mount .btn-gold{background:var(--gold);color:var(--bg)}
+#revista-mount .btn-gold:hover{background:var(--gold-pale)}
+#revista-mount .btn-ghost{background:none;border:1px solid var(--rule);color:var(--muted)}
+#revista-mount .btn-ghost:hover{border-color:var(--gold)55;color:var(--gold)}
+#revista-mount .btn-ok{background:var(--ok)22;color:var(--ok);border:1px solid var(--ok)44}
+#revista-mount .btn-danger{background:var(--err)22;color:var(--err);border:1px solid var(--err)44}
+#revista-mount .btn-sm{padding:5px 11px;font-size:10px}
+#revista-mount .btn-full{width:100%;justify-content:center}
+#revista-mount .btn:disabled{opacity:.5;cursor:not-allowed}
+#revista-mount .rte-toolbar{
+  display:flex;align-items:center;gap:2px;flex-wrap:wrap;
+  padding:7px 10px;background:var(--card);border-bottom:1px solid var(--rule);
+}
+#revista-mount .rte-toolbar button{
+  width:28px;height:28px;border-radius:4px;border:1px solid transparent;
+  background:none;color:var(--muted);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;transition:all .12s;padding:0;
+}
+#revista-mount .rte-toolbar button:hover{background:var(--navy);color:var(--white);border-color:var(--rule)}
+#revista-mount .rte-toolbar .rte-sep{width:1px;height:20px;background:var(--rule);margin:0 3px;flex-shrink:0}
+#revista-mount .rte-toolbar select{
+  background:var(--navy);border:1px solid var(--rule);color:var(--muted);
+  border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer;height:28px;outline:none;
+}
+#revista-mount .rte-toolbar select:hover{border-color:var(--gold)55;color:var(--white)}
+#revista-mount .rte-toolbar .color-btn{position:relative;overflow:hidden}
+#revista-mount .rte-toolbar .color-btn input[type=color]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:none;
+}
+#revista-mount .rte-body{
+  min-height:200px;padding:16px;outline:none;
+  font-family:'EB Garamond',serif;font-size:15px;line-height:1.78;color:#1A1A2E;
+  background:#FAF7F1;
+}
+#revista-mount .rte-body:empty::before{content:attr(data-placeholder);color:#aaa;pointer-events:none}
+#revista-mount .rte-body p{margin-bottom:6px}
+#revista-mount .rte-body h2{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#1A1A2E;margin:14px 0 6px}
+#revista-mount .rte-body h3{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#1A1A2E;margin:10px 0 4px}
+#revista-mount .rte-body blockquote{border-left:3px solid #C9A84C;padding-left:12px;margin:10px 0;font-style:italic;color:#38385A}
+#revista-mount .rte-body ul, #revista-mount .rte-body ol{padding-left:20px;margin:6px 0}
+#revista-mount .rte-body li{margin-bottom:3px}
+#revista-mount .rte-body a{color:#C9A84C;text-decoration:underline}
+#revista-mount .status-bar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  padding:6px 12px;background:var(--dim);border-top:1px solid var(--rule);
+  font-size:10px;color:var(--muted);gap:8px;
+}
+#revista-mount .autosave-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--muted);
+  flex-shrink:0;transition:background .3s;
+}
+#revista-mount .autosave-dot.saving{background:var(--warn);animation:rv-pulse .6s infinite}
+#revista-mount .autosave-dot.saved{background:var(--ok)}
+@keyframes rv-pulse{0%,100%{opacity:1}
+50%{opacity:.3}
+}
+@keyframes rv-spin{to{transform:rotate(360deg)}
+}
+#revista-mount .bloques-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+#revista-mount .bloque-item{background:var(--bg);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+#revista-mount .bloque-item:focus-within{border-color:var(--gold)55}
+#revista-mount .bloque-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;background:var(--card);border-bottom:1px solid var(--rule);
+}
+#revista-mount .bloque-tag{font-size:9.5px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--gold-pale)}
+#revista-mount .bloque-ctrls{display:flex;gap:4px}
+#revista-mount .bloque-ctrls button{
+  width:22px;height:22px;border-radius:4px;border:1px solid var(--rule);
+  background:var(--navy);color:var(--ink);cursor:pointer;font-size:11px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;
+}
+#revista-mount .bloque-ctrls button:hover:not(:disabled){border-color:var(--gold)88;color:var(--gold)}
+#revista-mount .bloque-ctrls button:disabled{opacity:.3;cursor:not-allowed}
+#revista-mount .bloque-ctrls button.del:hover:not(:disabled){border-color:var(--err);color:var(--err)}
+#revista-mount .bloque-add-row{display:flex;gap:7px;flex-wrap:wrap}
+#revista-mount .bloques-empty{
+  padding:18px;text-align:center;color:var(--muted);font-size:12px;
+  border:1px dashed var(--rule);border-radius:8px;line-height:1.6;
+}
+#revista-mount .upload-zone{
+  border:2px dashed var(--rule);border-radius:8px;padding:18px;
+  text-align:center;cursor:pointer;transition:all .18s;background:var(--bg);
+}
+#revista-mount .upload-zone:hover, #revista-mount .upload-zone.drag{border-color:var(--gold);background:rgba(201,168,76,.06)}
+#revista-mount .upload-progress{height:4px;background:var(--rule);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
+#revista-mount .upload-progress-fill{height:100%;background:var(--gold);transition:width .2s;width:0}
+#revista-mount .img-thumb{max-width:100%;max-height:130px;object-fit:cover;border-radius:5px;margin-top:8px;display:block}
+#revista-mount .art-card{
+  background:var(--navy);border:1px solid var(--rule);border-radius:10px;
+  padding:16px 18px;margin-bottom:10px;
+}
+#revista-mount .art-card-titulo{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:6px}
+#revista-mount .art-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+#revista-mount .bdg{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-size:9.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+#revista-mount .bdg-pub{background:var(--ok)22;color:var(--ok);border:1px solid var(--ok)44}
+#revista-mount .bdg-rev{background:var(--warn)22;color:var(--warn);border:1px solid var(--warn)44}
+#revista-mount .bdg-bor{background:var(--rule)33;color:var(--muted);border:1px solid var(--rule)}
+#revista-mount .bdg-rej{background:var(--err)22;color:var(--err);border:1px solid var(--err)44}
+#revista-mount .preview-panel{
+  background:var(--card);border:1px solid var(--rule);border-radius:10px;
+  overflow:hidden;position:sticky;top:112px;
+}
+#revista-mount .preview-header{
+  padding:10px 14px;border-bottom:1px solid var(--rule);
+  font-size:8px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;justify-content:space-between;
+}
+#revista-mount .preview-body{
+  padding:16px;font-family:'EB Garamond',serif;font-size:13px;
+  line-height:1.75;color:#1A1A2E;background:#FAF7F1;min-height:200px;max-height:480px;overflow-y:auto;
+}
+#revista-mount .preview-body .pk{font-family:'Lato',sans-serif;font-size:8px;font-weight:900;letter-spacing:3px;text-transform:uppercase;margin-bottom:7px}
+#revista-mount .preview-body .pt{font-family:'Playfair Display',serif;font-weight:900;font-size:17px;line-height:1.1;margin-bottom:7px;color:#1A1A2E}
+#revista-mount .preview-body .pb{font-family:'EB Garamond',serif;font-style:italic;font-size:12.5px;color:#38385A;border-bottom:1px solid #D4C9A8;padding-bottom:9px;margin-bottom:11px}
+#revista-mount .preview-body .pc{font-family:'EB Garamond',serif;font-size:13px;line-height:1.75;color:#1A1A2E}
+#revista-mount .preview-body .pc::first-letter{font-family:'Playfair Display',serif;font-size:3em;font-weight:900;float:left;line-height:.76;margin-right:4px;margin-top:3px;color:#C9A84C}
+#revista-mount .preview-body blockquote{border-left:2.5px solid #C9A84C;padding-left:10px;margin:9px 0;font-style:italic;color:#38385A;font-size:12px}
+#revista-mount .preview-body h2{font-family:'Playfair Display',serif;font-size:16px;font-weight:900;margin:11px 0 4px;color:#1A1A2E}
+#revista-mount .preview-body h3{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;margin:9px 0 3px;color:#1A1A2E}
+#revista-mount .preview-body img{max-width:100%;border-radius:4px;margin:7px 0}
+#revista-mount .preview-body .pw{font-size:9px;color:var(--muted);border-top:1px solid var(--rule);padding-top:8px;margin-top:10px;font-family:'Lato',sans-serif}
+#revista-mount .exito-box{
+  background:var(--ok)18;border:1px solid var(--ok)44;border-radius:12px;
+  padding:28px;text-align:center;margin-top:20px;display:none;
+}
+#revista-mount .exito-box h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--ok);margin-bottom:8px}
+#revista-mount .exito-box p{font-size:13px;color:var(--muted);line-height:1.6}
+#revista-mount .borrador-card{
+  background:var(--bg);border:1px dashed var(--rule);border-radius:8px;
+  padding:13px 15px;margin-bottom:8px;cursor:pointer;transition:all .15s;
+}
+#revista-mount .borrador-card:hover{border-color:var(--gold)55;background:rgba(201,168,76,.04)}
+#revista-mount .borrador-titulo{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+#revista-mount .borrador-meta{font-size:10px;color:var(--muted)}
+#revista-mount .toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  z-index:9999;padding:11px 22px;border-radius:24px;font-size:13px;font-weight:700;
+  white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.5);animation:rv-tIn .2s ease;display:none;
+}
+@keyframes rv-tIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}
+to{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+#revista-mount .spin{width:28px;height:28px;border:2px solid var(--rule);border-top-color:var(--gold);border-radius:50%;animation:rv-spin .8s linear infinite;margin:24px auto}
 </style>
 
 <script type="module">
-// ── Firebase MODULAR para la revista (paralelo al compat de asistencia) ──
-import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+  getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
   getDocs, query, where, orderBy, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  getStorage, ref as sRef, uploadBytesResumable, getDownloadURL
-} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-const RVCFG = {
+const FC = {
   apiKey:"AIzaSyDGGYTx7Hj4G2IbYxkxm5rx25sVKDy4DYA",
   authDomain:"revista-1ac1c.firebaseapp.com",
   projectId:"revista-1ac1c",
@@ -2756,665 +3105,722 @@ const RVCFG = {
   messagingSenderId:"137545616566",
   appId:"1:137545616566:web:f74736d93682e2727dea17"
 };
-const rvApp  = initializeApp(RVCFG, 'revista-module');
-const rvDb   = getFirestore(rvApp);
-const rvSt   = getStorage(rvApp);
+const fbApp   = initializeApp(FC);
+const db      = getFirestore(fbApp);
+const auth    = getAuth(fbApp);
+const storage = getStorage(fbApp);
 
 const NIVELES = {
   institucional:{label:'Institucional',color:'#C9A84C'},
-  inicial:      {label:'Nivel Inicial',color:'#C07030'},
-  primaria:     {label:'Nivel Primario',color:'#2A7A50'},
-  secundaria:   {label:'Nivel Secundario',color:'#2A50A0'},
-  reshit:       {label:'Reshit',color:'#7030A0'},
+  inicial:{label:'Nivel Inicial',color:'#C07030'},
+  primaria:{label:'Nivel Primario',color:'#2A7A50'},
+  secundaria:{label:'Nivel Secundario',color:'#2A50A0'},
+  reshit:{label:'Reshit',color:'#7030A0'},
 };
 
-// ══ ESTADO ══════════════════════════════════════════
-let rvUser       = null;
-let rvBloques    = [];
-let rvBorradorId = null;
-let rvCambios    = false;
-let rvAutoTimer  = null;
-let rvPrevTimer  = null;
-let rvUltimoSave = null;
-let rvTabActual  = 'nuevo';
-let rvIniciado   = false;
+// ══ ESTADO ══════════════════════════════════════════════════
+let currentUser    = null;
+let bloques        = [];
+let borradorId     = null; // ID del borrador actual en Firestore
+let cambiosPend    = false;
+let autosaveTimer  = null;
+let previewTimer   = null;
+let ultimoGuardado = null;
 
-function bid(){ return 'rv'+Math.random().toString(36).slice(2,8); }
-
-// ── INIT (llamado cuando se activa el tab Revista) ──
-window.initRevista = function() {
-  if (rvIniciado) return;
-  rvIniciado = true;
-  // Obtener usuario de la app principal (ya logueado vía Firebase compat)
-  const firebaseUser = firebase.auth().currentUser;
-  if (!firebaseUser) {
-    document.getElementById('revista-mount').innerHTML =
-      '<div style="padding:2rem;text-align:center;color:#94a3b8">Necesitás estar logueado para acceder a la Revista.</div>';
-    return;
+// ══ AUTH ════════════════════════════════════════════════════
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('login-section').style.display  = 'none';
+    document.getElementById('site-header').style.display    = 'flex';
+    document.getElementById('tabs-bar').style.display       = 'block';
+    document.getElementById('app-section').style.display    = 'block';
+    // Nombre amigable
+    const nombre = user.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    document.getElementById('header-name').textContent = nombre;
+    document.getElementById('art-autor').value = nombre;
+    // Inicializar editor
+    bloques = [{ id: bid(), tipo:'texto', html:'<p></p>' }];
+    renderBloques();
+    // Cargar datos
+    cargarBorradores();
+    cargarEnviados();
+  } else {
+    currentUser = null;
+    ['site-header','tabs-bar','app-section'].forEach(id => document.getElementById(id).style.display='none');
+    document.getElementById('login-section').style.display = 'flex';
   }
-  rvUser = firebaseUser;
-  rvRenderShell();
-  rvInitBloques();
-  rvCargarBorradores();
-  rvCargarEnviados();
-  rvAutoSaveLoop();
+});
+
+window.doLogin = async function() {
+  const email = document.getElementById('rv-login-email').value.trim();
+  const pass  = document.getElementById('rv-login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  if (!email || !pass) { err.textContent='Completá email y contraseña'; err.style.display='block'; return; }
+  btn.textContent = 'Ingresando…'; btn.disabled = true; err.style.display = 'none';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    const msgs = {'auth/invalid-credential':'Email o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Esperá.'};
+    err.textContent = msgs[e.code] || 'Error: '+e.message;
+    err.style.display = 'block';
+    btn.textContent = 'Ingresar →'; btn.disabled = false;
+  }
+};
+window.doLogout = async function() { await signOut(auth); };
+
+// ══ TABS ════════════════════════════════════════════════════
+window.setTab = function(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('content-'+tab).classList.add('active');
 };
 
-// ── SHELL PRINCIPAL ─────────────────────────────────
-function rvRenderShell() {
-  const nombreRaw = (rvUser.displayName || rvUser.email.split('@')[0])
-    .replace(/\./g,' ').replace(/\w/g,c=>c.toUpperCase());
+// ══ BLOQUES - IDs ═══════════════════════════════════════════
+function bid() { return 'b_'+Math.random().toString(36).slice(2,9); }
 
-  document.getElementById('revista-mount').innerHTML = `
-    <div style="padding:1rem;background:#f0f4f8;min-height:80vh">
-
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <div>
-          <div style="font-size:.6875rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">Portal Revista</div>
-          <div style="font-size:1.0625rem;font-weight:900;color:#0f172a">Hola, ${nombreRaw} 👋</div>
-        </div>
-        <div style="font-size:.6875rem;color:#94a3b8;text-align:right">Revista Institucional<br>Iosef Caro</div>
-      </div>
-
-      <!-- Tabs internos -->
-      <div class="rv-tabs" id="rv-tabs">
-        <button class="rv-tab on" onclick="rvSetTab('nuevo')"    id="rvtab-nuevo">✏️ Nuevo</button>
-        <button class="rv-tab"    onclick="rvSetTab('borradores')" id="rvtab-borradores">
-          📝 Borradores <span id="rv-pill-bor" style="display:none;background:#f59e0b;color:#fff;padding:0 5px;border-radius:99px;font-size:9px;margin-left:2px">0</span>
-        </button>
-        <button class="rv-tab"    onclick="rvSetTab('enviados')"  id="rvtab-enviados">📤 Enviados</button>
-      </div>
-
-      <!-- Tab: NUEVO -->
-      <div id="rvtc-nuevo">
-
-        <!-- Metadatos -->
-        <div class="rv-card">
-          <div class="rv-title">Nuevo artículo</div>
-          <div class="rv-sub">Lo revisará el equipo editorial antes de publicarse en la revista.</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem">
-            <div>
-              <label class="rv-label">Nivel *</label>
-              <select class="rv-select" id="rv-nivel" onchange="rvActPrev()">
-                <option value="institucional">■ Institucional</option>
-                <option value="inicial">✦ Nivel Inicial</option>
-                <option value="primaria">◆ Nivel Primario</option>
-                <option value="secundaria">▲ Nivel Secundario</option>
-                <option value="reshit">✡ Reshit</option>
-              </select>
-            </div>
-            <div>
-              <label class="rv-label">Tipo *</label>
-              <select class="rv-select" id="rv-tipo">
-                <option value="noticia">📰 Noticia</option>
-                <option value="evento">🎉 Evento/Acto</option>
-                <option value="proyecto">🔬 Proyecto</option>
-                <option value="galeria">📸 Galería</option>
-                <option value="comunicado">📢 Comunicado</option>
-                <option value="aviso">📌 Aviso</option>
-              </select>
-            </div>
-          </div>
-          <label class="rv-label">Título *</label>
-          <input class="rv-input" id="rv-titulo" placeholder="Ej: Semana de la Naturaleza en el Huerto Escolar" oninput="rvMarcaCambio();rvActPrev()">
-          <label class="rv-label">Bajada (frase de presentación)</label>
-          <textarea class="rv-input" id="rv-bajada" rows="2" placeholder="Una frase breve que resume el artículo…" style="resize:vertical;min-height:60px;line-height:1.5" oninput="rvMarcaCambio();rvActPrev()"></textarea>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem">
-            <div>
-              <label class="rv-label">Tu nombre</label>
-              <input class="rv-input" id="rv-autor" placeholder="Maestra Daniela R." oninput="rvMarcaCambio()">
-            </div>
-            <div>
-              <label class="rv-label">Sala / Grado</label>
-              <input class="rv-input" id="rv-sala" placeholder="3.° Grado A" oninput="rvMarcaCambio()">
-            </div>
-          </div>
-        </div>
-
-        <!-- Editor de contenido -->
-        <div class="rv-card">
-          <div style="font-size:.875rem;font-weight:800;color:#0f172a;margin-bottom:.25rem">Contenido</div>
-          <div style="font-size:.6875rem;color:#94a3b8;margin-bottom:.75rem">Combiná texto, fotos y videos. Arrastrá para reordenar.</div>
-          <div id="rv-bloques-list"></div>
-          <div class="rv-add-row">
-            <button class="rv-add-btn" onclick="rvAgregarBloque('texto')">＋ Texto</button>
-            <button class="rv-add-btn" onclick="rvAgregarBloque('imagen')">⬆ Foto</button>
-            <button class="rv-add-btn" onclick="rvAgregarBloque('video')">▶ Video</button>
-            <button class="rv-add-btn" onclick="rvAgregarBloque('separador')">— Separador</button>
-          </div>
-        </div>
-
-        <!-- Vista previa -->
-        <div class="rv-card" id="rv-prev-card" style="display:none">
-          <div style="font-size:.75rem;font-weight:800;color:#0f172a;margin-bottom:.5rem">Vista previa</div>
-          <div class="rv-preview" id="rv-preview">
-            <div style="color:#94a3b8;font-style:italic;font-size:.75rem;text-align:center;padding:1rem">Empezá a escribir para ver la previsualización…</div>
-          </div>
-        </div>
-
-        <!-- Éxito -->
-        <div id="rv-exito" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:1.25rem;padding:1.5rem;text-align:center;margin-bottom:1rem">
-          <div style="font-size:2rem;margin-bottom:.5rem">✅</div>
-          <div style="font-size:1rem;font-weight:900;color:#15803d;margin-bottom:.375rem">¡Artículo enviado!</div>
-          <div style="font-size:.75rem;color:#4ade80;margin-bottom:1rem">El equipo editorial lo revisará antes de publicarlo.</div>
-          <button class="rv-btn rv-btn-secondary" onclick="rvResetForm()" style="max-width:200px;margin:0 auto">✏️ Escribir otro</button>
-        </div>
-
-        <!-- Status bar -->
-        <div class="rv-status">
-          <div style="display:flex;align-items:center;gap:.375rem">
-            <div class="rv-dot" id="rv-dot"></div>
-            <span id="rv-dot-lbl">Sin guardar</span>
-          </div>
-          <div style="display:flex;gap:.875rem">
-            <span id="rv-wc">0 palabras</span>
-            <span id="rv-rt">0 min</span>
-          </div>
-        </div>
-
-        <!-- Acciones -->
-        <div style="display:flex;gap:.625rem;margin-top:.875rem">
-          <button class="rv-btn rv-btn-secondary" style="flex:.8" onclick="rvGuardarBorrador(false)" id="rv-btn-bor">💾 Borrador</button>
-          <button class="rv-btn rv-btn-primary"   style="flex:1.4" onclick="rvEnviar()" id="rv-btn-env">Enviar para revisión →</button>
-        </div>
-      </div>
-
-      <!-- Tab: BORRADORES -->
-      <div id="rvtc-borradores" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem">
-          <div style="font-size:.9375rem;font-weight:900;color:#0f172a">Mis borradores</div>
-          <button class="rv-btn rv-btn-primary" onclick="rvSetTab('nuevo');rvResetForm()" style="width:auto;padding:.5rem 1rem;font-size:.6875rem">＋ Nuevo</button>
-        </div>
-        <div id="rv-lista-bor"><div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.8125rem">Cargando…</div></div>
-      </div>
-
-      <!-- Tab: ENVIADOS -->
-      <div id="rvtc-enviados" style="display:none">
-        <div style="font-size:.9375rem;font-weight:900;color:#0f172a;margin-bottom:.875rem">Artículos enviados</div>
-        <div id="rv-lista-env"><div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.8125rem">Cargando…</div></div>
-      </div>
-
-    </div>
-  `;
-
-  // Cargar nombre del autor desde la app de asistencia si está disponible
-  const nombreDocente = document.getElementById('docente-nombre-display')?.textContent
-    || nombreRaw;
-  const autorInput = document.getElementById('rv-autor');
-  if (autorInput && nombreDocente) autorInput.value = nombreDocente;
+// ══ TOOLBAR RICH TEXT ════════════════════════════════════════
+function htmlToolbar(bloqueId) {
+  return `
+  <div class="rte-toolbar">
+    <select onchange="rteBlock('${bloqueId}',this.value);this.value=''" title="Estilo">
+      <option value="">Estilo…</option>
+      <option value="p">Párrafo</option>
+      <option value="h2">Título grande</option>
+      <option value="h3">Título mediano</option>
+      <option value="blockquote">Cita destacada</option>
+    </select>
+    <select onchange="rteFuente('${bloqueId}',this.value);this.value=''" title="Fuente">
+      <option value="">Fuente…</option>
+      <option value="'EB Garamond',serif">Garamond</option>
+      <option value="'Playfair Display',serif">Playfair</option>
+      <option value="'Lato',sans-serif">Lato</option>
+    </select>
+    <select onchange="rteTam(this.value);this.value=''" title="Tamaño">
+      <option value="">Tamaño…</option>
+      <option value="11px">Pequeño</option>
+      <option value="14px">Normal</option>
+      <option value="18px">Grande</option>
+      <option value="22px">Muy grande</option>
+    </select>
+    <div class="rte-sep"></div>
+    <button onclick="rteCmd('bold')"         title="Negrita"><b style="font-size:12px">B</b></button>
+    <button onclick="rteCmd('italic')"       title="Cursiva"><i style="font-size:12px">I</i></button>
+    <button onclick="rteCmd('underline')"    title="Subrayado"><u style="font-size:11px">S</u></button>
+    <button onclick="rteCmd('strikeThrough')" title="Tachado"><s style="font-size:11px">T</s></button>
+    <div class="rte-sep"></div>
+    <button class="color-btn" title="Color de texto">
+      <span style="font-size:11px;font-weight:900;pointer-events:none">A</span>
+      <input type="color" value="#C9A84C" onchange="rteCmd('foreColor',this.value)">
+    </button>
+    <button class="color-btn" title="Resaltado">
+      <span style="font-size:10px;font-weight:900;background:#fff3b0;color:#333;padding:1px 2px;border-radius:2px;pointer-events:none">A</span>
+      <input type="color" value="#fff3b0" onchange="rteCmd('hiliteColor',this.value)">
+    </button>
+    <div class="rte-sep"></div>
+    <button onclick="rteCmd('insertUnorderedList')" title="Lista">☰</button>
+    <button onclick="rteCmd('insertOrderedList')"   title="Lista numerada">1.</button>
+    <div class="rte-sep"></div>
+    <button onclick="rteCmd('justifyLeft')"   title="Izquierda" style="font-size:11px">⇤</button>
+    <button onclick="rteCmd('justifyCenter')" title="Centrar"   style="font-size:11px">≡</button>
+    <button onclick="rteCmd('justifyRight')"  title="Derecha"   style="font-size:11px">⇥</button>
+    <button onclick="rteCmd('justifyFull')"   title="Justificar" style="font-size:11px">▤</button>
+    <div class="rte-sep"></div>
+    <button onclick="rteLink('${bloqueId}')" title="Enlace">🔗</button>
+    <button onclick="rtePQ('${bloqueId}')" title="Cita destacada (seleccioná texto primero)" style="font-size:10px;width:auto;padding:0 6px;font-style:italic;color:var(--gold-pale)">« Cita »</button>
+    <button onclick="rteCmd('removeFormat')" title="Limpiar formato" style="font-size:9px;width:auto;padding:0 5px">✕fmt</button>
+    <div class="rte-sep"></div>
+    <button onclick="rteCmd('undo')" title="Deshacer">↩</button>
+    <button onclick="rteCmd('redo')" title="Rehacer">↪</button>
+  </div>`;
 }
 
-// ── TABS INTERNOS ────────────────────────────────────
-window.rvSetTab = function(tab) {
-  rvTabActual = tab;
-  ['nuevo','borradores','enviados'].forEach(t => {
-    document.getElementById('rvtab-'+t)?.classList.toggle('on', t===tab);
-    document.getElementById('rvtc-'+t) && (document.getElementById('rvtc-'+t).style.display = t===tab?'':'none');
+// ── Comandos RTE ──
+window.rteCmd    = (cmd, val)  => document.execCommand(cmd, false, val||null);
+window.rteBlock  = (bid, tag)  => { if(!tag) return; document.getElementById('rte-'+bid)?.focus(); document.execCommand('formatBlock',false,tag); };
+window.rteFuente = (bid, font) => { if(!font) return; document.getElementById('rte-'+bid)?.focus(); document.execCommand('fontName',false,font); };
+window.rteTam    = size => {
+  if (!size) return;
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+    const span = document.createElement('span');
+    span.style.fontSize = size;
+    try { sel.getRangeAt(0).surroundContents(span); } catch {}
+  }
+};
+window.rteLink = bid => {
+  const url = prompt('URL del enlace:','https://');
+  if (!url) return;
+  document.getElementById('rte-'+bid)?.focus();
+  document.execCommand('createLink',false,url);
+};
+window.rtePQ = bid => {
+  document.getElementById('rte-'+bid)?.focus();
+  document.execCommand('formatBlock',false,'blockquote');
+};
+
+// ── Pegado limpio ──
+function setupPaste(el) {
+  el.addEventListener('paste', e => {
+    e.preventDefault();
+    const html  = e.clipboardData.getData('text/html');
+    const texto = e.clipboardData.getData('text/plain');
+    if (html) {
+      const parser = new DOMParser();
+      const d2 = parser.parseFromString(html,'text/html');
+      d2.querySelectorAll('[style]').forEach(node => {
+        const s = node.getAttribute('style');
+        const keep = [];
+        if (/font-weight:\s*(bold|[6-9]\d\d)/.test(s)) keep.push('font-weight:bold');
+        if (/font-style:\s*italic/.test(s))            keep.push('font-style:italic');
+        if (/text-decoration:\s*underline/.test(s))    keep.push('text-decoration:underline');
+        keep.length ? node.setAttribute('style',keep.join(';')) : node.removeAttribute('style');
+      });
+      d2.querySelectorAll('[class]').forEach(n => n.removeAttribute('class'));
+      d2.querySelectorAll('span:not([style])').forEach(n => n.replaceWith(...n.childNodes));
+      const limpio = d2.body.innerHTML
+        .replace(/<!--[\s\S]*?-->/g,'')
+        .replace(/<o:p>.*?<\/o:p>/gi,'');
+      document.execCommand('insertHTML',false,limpio);
+    } else {
+      const ps = texto.split('\n').filter(l=>l.trim()).map(l=>`<p>${l}</p>`).join('');
+      document.execCommand('insertHTML',false,ps||texto);
+    }
+    marcarCambio();
   });
-  if (tab==='borradores') rvCargarBorradores();
-  if (tab==='enviados')   rvCargarEnviados();
-};
-
-// ── BLOQUES ──────────────────────────────────────────
-function rvInitBloques() {
-  rvBloques = [{ id:bid(), tipo:'texto', html:'<p></p>' }];
-  rvRenderBloques();
 }
 
-window.rvAgregarBloque = function(tipo) {
+// ══ BLOQUES CRUD ════════════════════════════════════════════
+function agregarBloque(tipo) {
   const b = { id:bid(), tipo };
   if (tipo==='texto')     b.html = '<p></p>';
   if (tipo==='imagen')    { b.url=''; b.caption=''; b.layout='full'; }
   if (tipo==='video')     { b.url=''; b.caption=''; }
-  if (tipo==='separador') b.estilo = 'simple';
-  rvBloques.push(b);
-  rvRenderBloques();
-  if (tipo==='texto') setTimeout(()=>document.getElementById('rvrte-'+b.id)?.focus(),60);
+  if (tipo==='separador') b.estilo = 'doble';
+  bloques.push(b);
+  renderBloques();
+  if (tipo==='texto') setTimeout(()=>document.getElementById('rte-'+b.id)?.focus(),60);
+}
+window.agregarBloque = agregarBloque;
+
+window.eliminarBloque = id => {
+  bloques = bloques.filter(b=>b.id!==id);
+  if (!bloques.length) bloques = [{id:bid(),tipo:'texto',html:'<p></p>'}];
+  renderBloques(); marcarCambio();
+};
+window.moverBloque = (id, dir) => {
+  const i=bloques.findIndex(b=>b.id===id), j=i+dir;
+  if(i<0||j<0||j>=bloques.length) return;
+  [bloques[i],bloques[j]]=[bloques[j],bloques[i]];
+  renderBloques(); marcarCambio();
+};
+window.duplicarBloque = id => {
+  const i=bloques.findIndex(b=>b.id===id);
+  if(i<0) return;
+  bloques.splice(i+1,0,{...bloques[i],id:bid()});
+  renderBloques(); marcarCambio();
 };
 
-window.rvEliminarBloque = function(id) {
-  rvBloques = rvBloques.filter(b=>b.id!==id);
-  if (!rvBloques.length) rvBloques = [{id:bid(),tipo:'texto',html:'<p></p>'}];
-  rvRenderBloques(); rvMarcaCambio();
-};
-
-window.rvMoverBloque = function(id, dir) {
-  const i=rvBloques.findIndex(b=>b.id===id), j=i+dir;
-  if(i<0||j<0||j>=rvBloques.length) return;
-  [rvBloques[i],rvBloques[j]]=[rvBloques[j],rvBloques[i]];
-  rvRenderBloques(); rvMarcaCambio();
-};
-
-function rvSincronizar() {
-  rvBloques.forEach(b => {
-    if(b.tipo==='texto'){ const el=document.getElementById('rvrte-'+b.id);if(el)b.html=el.innerHTML; }
-    if(b.tipo==='imagen'){
-      const u=document.getElementById('rviu-'+b.id);
-      const c=document.getElementById('rvic-'+b.id);
-      if(u)b.url=u.value.trim();if(c)b.caption=c.value.trim();
+function sincronizarBloques() {
+  bloques.forEach(b => {
+    if(b.tipo==='texto') { const el=document.getElementById('rte-'+b.id); if(el) b.html=el.innerHTML; }
+    if(b.tipo==='imagen') {
+      const u=document.getElementById('img-url-'+b.id);
+      const c=document.getElementById('img-cap-'+b.id);
+      const l=document.getElementById('img-lay-'+b.id);
+      if(u) b.url=u.value.trim(); if(c) b.caption=c.value.trim(); if(l) b.layout=l.value;
     }
-    if(b.tipo==='video'){
-      const u=document.getElementById('rvvu-'+b.id);
-      const c=document.getElementById('rvvc-'+b.id);
-      if(u)b.url=u.value.trim();if(c)b.caption=c.value.trim();
+    if(b.tipo==='video') {
+      const u=document.getElementById('vid-url-'+b.id);
+      const c=document.getElementById('vid-cap-'+b.id);
+      if(u) b.url=u.value.trim(); if(c) b.caption=c.value.trim();
     }
   });
 }
 
-function rvToolbar(bid) {
-  return `<div class="rv-toolbar">
-    <select onchange="rvCmd('formatBlock',this.value);this.value=''" title="Estilo">
-      <option value="">Estilo…</option><option value="p">Párrafo</option>
-      <option value="h2">Título grande</option><option value="h3">Título mediano</option>
-      <option value="blockquote">Cita destacada</option>
-    </select>
-    <div class="sep"></div>
-    <button onclick="rvCmd('bold')"   title="Negrita"><b style="font-size:12px">B</b></button>
-    <button onclick="rvCmd('italic')" title="Cursiva"><i style="font-size:12px">I</i></button>
-    <button onclick="rvCmd('underline')" title="Subrayado"><u style="font-size:11px">S</u></button>
-    <div class="sep"></div>
-    <button onclick="rvCmd('insertUnorderedList')" title="Lista">☰</button>
-    <button onclick="rvCmd('insertOrderedList')"   title="Numerada">1.</button>
-    <div class="sep"></div>
-    <button onclick="rvCmd('justifyLeft')"   title="Izq" style="font-size:11px">⇤</button>
-    <button onclick="rvCmd('justifyCenter')" title="Centro" style="font-size:11px">≡</button>
-    <button onclick="rvCmd('justifyRight')"  title="Der" style="font-size:11px">⇥</button>
-    <div class="sep"></div>
-    <button onclick="rvPQ('${bid}')" title="Cita destacada" style="font-size:10px;width:auto;padding:0 5px;font-style:italic;color:#2563eb">«cita»</button>
-    <button onclick="rvCmd('removeFormat')" title="Limpiar" style="font-size:9px;width:auto;padding:0 4px;color:#94a3b8">✕fmt</button>
-    <button onclick="rvCmd('undo')" title="Deshacer">↩</button>
-    <button onclick="rvCmd('redo')" title="Rehacer">↪</button>
-  </div>`;
-}
-
-window.rvCmd = cmd => document.execCommand(cmd, false, null);
-window.rvPQ  = bid => { document.getElementById('rvrte-'+bid)?.focus(); document.execCommand('formatBlock',false,'blockquote'); };
-
-function rvHtmlBloque(b, i, total) {
-  const ctrl = `<div class="rv-bloque-ctrls">
-    <button onclick="rvMoverBloque('${b.id}',-1)" ${i===0?'disabled':''} title="Subir">↑</button>
-    <button onclick="rvMoverBloque('${b.id}',1)"  ${i===total-1?'disabled':''} title="Bajar">↓</button>
-    <button class="del" onclick="rvEliminarBloque('${b.id}')" title="Eliminar">✕</button>
-  </div>`;
+function htmlBloque(b, i, total) {
+  const ctrls = `
+    <div class="bloque-ctrls">
+      <button type="button" onclick="moverBloque('${b.id}',-1)" ${i===0?'disabled':''} title="Subir">↑</button>
+      <button type="button" onclick="moverBloque('${b.id}',1)"  ${i===total-1?'disabled':''} title="Bajar">↓</button>
+      <button type="button" onclick="duplicarBloque('${b.id}')" title="Duplicar">⎘</button>
+      <button type="button" class="del" onclick="eliminarBloque('${b.id}')" title="Eliminar">✕</button>
+    </div>`;
 
   if (b.tipo==='texto') return `
-    <div class="rv-bloque" id="rvb-${b.id}">
-      <div class="rv-bloque-head"><span class="rv-bloque-tag">📝 Texto</span>${ctrl}</div>
-      ${rvToolbar(b.id)}
-      <div id="rvrte-${b.id}" class="rv-rte" contenteditable="true"
-        data-placeholder="Escribí acá…"
-        oninput="rvBloques.find(x=>x.id==='${b.id}').html=this.innerHTML;rvMarcaCambio()"
+    <div class="bloque-item" id="bloque-${b.id}">
+      <div class="bloque-head"><span class="bloque-tag">📝 Texto</span>${ctrls}</div>
+      ${htmlToolbar(b.id)}
+      <div id="rte-${b.id}" class="rte-body" contenteditable="true"
+        data-placeholder="Escribí tu artículo acá…"
+        oninput="bloques.find(x=>x.id==='${b.id}').html=this.innerHTML;marcarCambio()"
         onkeydown="if(event.key==='Tab'){event.preventDefault();document.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;')}"
-        onpaste="rvPasteLimpio(event)"
       >${b.html||'<p></p>'}</div>
     </div>`;
 
-  if (b.tipo==='imagen') return `
-    <div class="rv-bloque" id="rvb-${b.id}">
-      <div class="rv-bloque-head"><span class="rv-bloque-tag">🖼️ Imagen</span>${ctrl}</div>
-      <div style="padding:.875rem;display:flex;flex-direction:column;gap:.625rem">
-        <div class="rv-drop" id="rvdrop-${b.id}"
-          onclick="document.getElementById('rvfile-${b.id}').click()"
+  if (b.tipo==='imagen') {
+    const prev = b.url ? driveUrl(b.url) : '';
+    return `
+    <div class="bloque-item" id="bloque-${b.id}">
+      <div class="bloque-head"><span class="bloque-tag">🖼️ Imagen</span>${ctrls}</div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:9px;background:var(--bg)">
+        <!-- Subida directa -->
+        <div class="upload-zone" id="zone-${b.id}"
+          onclick="document.getElementById('file-${b.id}').click()"
           ondragover="event.preventDefault();this.classList.add('drag')"
           ondragleave="this.classList.remove('drag')"
-          ondrop="event.preventDefault();this.classList.remove('drag');rvHandleDrop(event,'${b.id}')">
-          <input type="file" id="rvfile-${b.id}" accept="image/*" style="display:none" onchange="rvHandleFile(this,'${b.id}')">
-          <div style="font-size:1.5rem;margin-bottom:.375rem">⬆</div>
-          <div style="font-size:.75rem;font-weight:700;color:#64748b">Tocá para subir una foto</div>
-          <div style="font-size:.625rem;color:#94a3b8;margin-top:2px">JPG, PNG · Máx 10 MB</div>
-          <div class="rv-prog" id="rvprog-${b.id}"><div class="rv-prog-fill" id="rvprogf-${b.id}"></div></div>
-          <div id="rvpstat-${b.id}" style="font-size:.6875rem;color:#22c55e;margin-top:4px"></div>
+          ondrop="event.preventDefault();this.classList.remove('drag');handleDrop(event,'${b.id}')">
+          <input type="file" id="file-${b.id}" accept="image/*" style="display:none" onchange="handleFile(this,'${b.id}')">
+          <div style="font-size:24px;margin-bottom:6px">⬆</div>
+          <div style="font-size:12px;font-weight:700;color:var(--muted)">Hacé clic o arrastrá una foto aquí</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">JPG, PNG, WebP · Máx. 10 MB</div>
+          <div class="upload-progress" id="prog-${b.id}">
+            <div class="upload-progress-fill" id="prog-fill-${b.id}"></div>
+          </div>
+          <div id="upload-status-${b.id}" style="font-size:10px;color:var(--ok);margin-top:5px"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:.5rem">
-          <div style="flex:1;height:1px;background:#e2e8f0"></div>
-          <span style="font-size:.625rem;color:#94a3b8">o pegá un link</span>
-          <div style="flex:1;height:1px;background:#e2e8f0"></div>
+        <!-- O link -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:1px;background:var(--rule)"></div>
+          <span style="font-size:10px;color:var(--muted)">o pegá un link de Google Drive</span>
+          <div style="flex:1;height:1px;background:var(--rule)"></div>
         </div>
-        <input class="rv-input" style="margin-bottom:.375rem" id="rviu-${b.id}" value="${esc(b.url||'')}"
-          placeholder="https://drive.google.com/…" oninput="rvBloques.find(x=>x.id==='${b.id}').url=this.value;rvMarcaCambio()">
-        ${b.url?`<img src="${driveU(b.url)}" style="max-width:100%;max-height:120px;object-fit:cover;border-radius:.75rem" onerror="this.style.display='none'" id="rvprev-${b.id}">`:
-                 `<img id="rvprev-${b.id}" style="display:none;max-width:100%;max-height:120px;object-fit:cover;border-radius:.75rem">`}
-        <input class="rv-input" style="margin-bottom:0" id="rvic-${b.id}" value="${esc(b.caption||'')}"
-          placeholder="Pie de foto (opcional)" oninput="rvBloques.find(x=>x.id==='${b.id}').caption=this.value;rvMarcaCambio()">
+        <input class="ai" id="img-url-${b.id}" value="${esc(b.url||'')}"
+          placeholder="https://drive.google.com/file/d/…/view"
+          oninput="bloques.find(x=>x.id==='${b.id}').url=this.value;marcarCambio()">
+        ${prev?`<img class="img-thumb" src="${prev}" onerror="this.style.display='none'" id="img-prev-${b.id}">`:
+               `<img class="img-thumb" id="img-prev-${b.id}" style="display:none">`}
+        <div class="field" style="margin-bottom:0">
+          <label class="lbl">Pie de foto</label>
+          <input class="ai" id="img-cap-${b.id}" value="${esc(b.caption||'')}" placeholder="Descripción de la imagen…"
+            oninput="bloques.find(x=>x.id==='${b.id}').caption=this.value;marcarCambio()">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label class="lbl">Posición</label>
+          <select class="ai" id="img-lay-${b.id}" onchange="bloques.find(x=>x.id==='${b.id}').layout=this.value;marcarCambio()">
+            <option value="full"  ${(b.layout||'full')==='full' ?'selected':''}>Ancho completo</option>
+            <option value="left"  ${b.layout==='left' ?'selected':''}>Izquierda (texto a la derecha)</option>
+            <option value="right" ${b.layout==='right'?'selected':''}>Derecha (texto a la izquierda)</option>
+          </select>
+        </div>
       </div>
     </div>`;
+  }
 
   if (b.tipo==='video') return `
-    <div class="rv-bloque" id="rvb-${b.id}">
-      <div class="rv-bloque-head"><span class="rv-bloque-tag">▶ Video</span>${ctrl}</div>
-      <div style="padding:.875rem;display:flex;flex-direction:column;gap:.5rem">
-        <input class="rv-input" style="margin-bottom:.375rem" id="rvvu-${b.id}" value="${esc(b.url||'')}"
-          placeholder="YouTube, Vimeo, Google Drive o .mp4" oninput="rvBloques.find(x=>x.id==='${b.id}').url=this.value;rvMarcaCambio()">
-        <input class="rv-input" style="margin-bottom:0" id="rvvc-${b.id}" value="${esc(b.caption||'')}"
-          placeholder="Descripción del video" oninput="rvBloques.find(x=>x.id==='${b.id}').caption=this.value;rvMarcaCambio()">
-        <div style="font-size:.625rem;color:#94a3b8">YouTube y Google Drive se incrustan automáticamente en la revista.</div>
+    <div class="bloque-item" id="bloque-${b.id}">
+      <div class="bloque-head"><span class="bloque-tag">▶ Video</span>${ctrls}</div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)">
+        <div class="field" style="margin-bottom:0">
+          <label class="lbl">Link del video</label>
+          <input class="ai" id="vid-url-${b.id}" value="${esc(b.url||'')}"
+            placeholder="YouTube, Vimeo, Google Drive o .mp4"
+            oninput="bloques.find(x=>x.id==='${b.id}').url=this.value;marcarCambio()">
+          <span class="ai-help">YouTube y Google Drive se incrustan automáticamente en la revista.</span>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label class="lbl">Descripción</label>
+          <input class="ai" id="vid-cap-${b.id}" value="${esc(b.caption||'')}" placeholder="Ej: Acto de fin de año"
+            oninput="bloques.find(x=>x.id==='${b.id}').caption=this.value;marcarCambio()">
+        </div>
       </div>
     </div>`;
 
   if (b.tipo==='separador') return `
-    <div class="rv-bloque" id="rvb-${b.id}">
-      <div class="rv-bloque-head"><span class="rv-bloque-tag">— Separador</span>${ctrl}</div>
-      <div style="padding:.75rem">
-        <select class="rv-select" style="margin-bottom:0" onchange="rvBloques.find(x=>x.id==='${b.id}').estilo=this.value">
-          <option value="simple" ${(b.estilo||'simple')==='simple'?'selected':''}>Línea simple</option>
-          <option value="doble"  ${b.estilo==='doble' ?'selected':''}>Línea doble</option>
-          <option value="ornamental" ${b.estilo==='ornamental'?'selected':''}>✦ Ornamental ✦</option>
+    <div class="bloque-item" id="bloque-${b.id}">
+      <div class="bloque-head"><span class="bloque-tag">— Separador</span>${ctrls}</div>
+      <div style="padding:10px 12px;background:var(--bg)">
+        <select class="ai" onchange="bloques.find(x=>x.id==='${b.id}').estilo=this.value;marcarCambio()">
+          <option value="simple"     ${(b.estilo||'doble')==='simple'    ?'selected':''}>Línea simple</option>
+          <option value="doble"      ${b.estilo==='doble'                ?'selected':''}>Línea doble</option>
+          <option value="ornamental" ${b.estilo==='ornamental'           ?'selected':''}>Ornamental (✦ ✦ ✦)</option>
         </select>
       </div>
     </div>`;
   return '';
 }
 
-function rvRenderBloques() {
-  const cont = document.getElementById('rv-bloques-list'); if (!cont) return;
-  cont.innerHTML = rvBloques.map((b,i)=>rvHtmlBloque(b,i,rvBloques.length)).join('');
-  rvActPrev();
-  rvActContadores();
-  // Mostrar preview card si hay contenido
-  const prevCard = document.getElementById('rv-prev-card');
-  const titulo = document.getElementById('rv-titulo')?.value?.trim();
-  if (prevCard) prevCard.style.display = (titulo||rvBloques.some(b=>b.tipo==='texto'&&(b.html||'').replace(/<[^>]*>/g,'').trim())) ? '' : 'none';
+function renderBloques() {
+  const cont = document.getElementById('bloques-editor');
+  if (!cont) return;
+  if (!bloques.length) {
+    cont.innerHTML = '<div class="bloques-empty">Usá los botones de abajo para agregar texto, fotos o videos.</div>';
+    return;
+  }
+  cont.innerHTML = bloques.map((b,i)=>htmlBloque(b,i,bloques.length)).join('');
+  cont.querySelectorAll('.rte-body').forEach(el => setupPaste(el));
+  actualizarPreview();
+  actualizarContadores();
 }
 
-// ── PASTE LIMPIO ─────────────────────────────────────
-window.rvPasteLimpio = function(e) {
-  e.preventDefault();
-  const html  = e.clipboardData.getData('text/html');
-  const texto = e.clipboardData.getData('text/plain');
-  if (html) {
-    const d2 = new DOMParser().parseFromString(html,'text/html');
-    d2.querySelectorAll('[style]').forEach(n=>{
-      const s=n.getAttribute('style'),k=[];
-      if(/font-weight:\s*(bold|[6-9]\d\d)/.test(s))k.push('font-weight:bold');
-      if(/font-style:\s*italic/.test(s))k.push('font-style:italic');
-      if(/text-decoration:\s*underline/.test(s))k.push('text-decoration:underline');
-      k.length?n.setAttribute('style',k.join(';')):n.removeAttribute('style');
-    });
-    d2.querySelectorAll('[class]').forEach(n=>n.removeAttribute('class'));
-    d2.querySelectorAll('span:not([style])').forEach(n=>n.replaceWith(...n.childNodes));
-    document.execCommand('insertHTML',false,d2.body.innerHTML.replace(/<!--[\s\S]*?-->/g,'').replace(/<o:p>.*?<\/o:p>/gi,''));
-  } else {
-    const ps = texto.split('
-').filter(l=>l.trim()).map(l=>`<p>${l}</p>`).join('');
-    document.execCommand('insertHTML',false,ps||texto);
-  }
-  rvMarcaCambio();
+// ══ UPLOAD DE IMÁGENES ═══════════════════════════════════════
+function driveUrl(url) {
+  if (!url) return '';
+  const m = url.match(/\/d\/([^/?#]+)/);
+  return m ? `https://drive.google.com/uc?export=view&id=${m[1]}` : url;
+}
+
+window.handleFile = (input, bloqueId) => {
+  const file = input.files[0];
+  if (file) subirImagen(file, bloqueId);
+};
+window.handleDrop = (e, bloqueId) => {
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) subirImagen(file, bloqueId);
 };
 
-// ── UPLOAD ───────────────────────────────────────────
-window.rvHandleFile = (inp,bid) => { if(inp.files[0]) rvSubirImg(inp.files[0],bid); };
-window.rvHandleDrop = (e,bid)  => { const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/'))rvSubirImg(f,bid); };
+async function subirImagen(file, bloqueId) {
+  if (file.size > 10 * 1024 * 1024) { toast('La imagen supera los 10 MB','err'); return; }
+  const prog   = document.getElementById('prog-'+bloqueId);
+  const fill   = document.getElementById('prog-fill-'+bloqueId);
+  const status = document.getElementById('upload-status-'+bloqueId);
+  const urlInp = document.getElementById('img-url-'+bloqueId);
+  const prevEl = document.getElementById('img-prev-'+bloqueId);
 
-async function rvSubirImg(file, bloqueId) {
-  if (file.size > 10*1024*1024) { rvToast('La imagen supera 10 MB','err'); return; }
-  const prog=document.getElementById('rvprog-'+bloqueId);
-  const fill=document.getElementById('rvprogf-'+bloqueId);
-  const stat=document.getElementById('rvpstat-'+bloqueId);
-  const urlI=document.getElementById('rviu-'+bloqueId);
-  const prev=document.getElementById('rvprev-'+bloqueId);
-  if(prog)prog.style.display='block';
-  if(stat)stat.textContent='Subiendo…';
-  const ext=file.name.split('.').pop().toLowerCase();
-  const ref=sRef(rvSt,`revista/imagenes/${Date.now()}_${Math.random().toString(36).slice(2,5)}.${ext}`);
-  const task=uploadBytesResumable(ref,file);
+  if (prog) prog.style.display = 'block';
+  if (status) status.textContent = 'Subiendo…';
+
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `revista/imagenes/${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+  const ref  = storageRef(storage, path);
+  const task = uploadBytesResumable(ref, file);
+
   task.on('state_changed',
-    s=>{const p=Math.round(s.bytesTransferred/s.totalBytes*100);if(fill)fill.style.width=p+'%';if(stat)stat.textContent=p+'%';},
-    err=>{if(stat)stat.textContent='❌ Error';rvToast('Error: '+err.message,'err');},
-    async ()=>{
-      const url=await getDownloadURL(task.snapshot.ref);
-      if(urlI)urlI.value=url;
-      const b=rvBloques.find(x=>x.id===bloqueId);if(b)b.url=url;
-      if(prog)prog.style.display='none';
-      if(stat)stat.textContent='✓ Subida exitosa';
-      if(prev){prev.src=url;prev.style.display='block';}
-      rvToast('Foto subida ✓'); rvMarcaCambio();
+    snap => {
+      const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+      if (fill)   fill.style.width   = pct+'%';
+      if (status) status.textContent = pct+'%';
+    },
+    err => {
+      if (status) status.textContent = '❌ Error al subir';
+      toast('Error: '+err.message,'err');
+    },
+    async () => {
+      const url = await getDownloadURL(task.snapshot.ref);
+      if (urlInp) urlInp.value = url;
+      const b = bloques.find(x=>x.id===bloqueId);
+      if (b) b.url = url;
+      if (prog)   prog.style.display  = 'none';
+      if (status) status.textContent  = '✓ Subida exitosa';
+      if (prevEl) { prevEl.src = url; prevEl.style.display = 'block'; }
+      toast('Foto subida ✓');
+      marcarCambio();
     }
   );
 }
 
-// ── PREVIEW EN TIEMPO REAL ───────────────────────────
-function rvActPrev() {
-  clearTimeout(rvPrevTimer);
-  rvPrevTimer = setTimeout(()=>{
-    const prev=document.getElementById('rv-preview');if(!prev)return;
-    const nivel=document.getElementById('rv-nivel')?.value||'institucional';
-    const titulo=document.getElementById('rv-titulo')?.value?.trim()||'';
-    const bajada=document.getElementById('rv-bajada')?.value?.trim()||'';
-    const niv=NIVELES[nivel]||{label:nivel,color:'#C9A84C'};
-    const cuerpo=rvBloques.map(b=>{
-      if(b.tipo==='texto')return`<div>${b.html||''}</div>`;
-      if(b.tipo==='separador'){
-        if(b.estilo==='ornamental')return`<div style="text-align:center;color:#C9A84C;font-size:12px;margin:8px 0;letter-spacing:6px">✦ ✦ ✦</div>`;
-        return`<hr style="border:none;border-top:1px solid #D4C9A8;margin:10px 0">`;
-      }
-      if(b.tipo==='imagen'&&b.url)return`<img src="${driveU(b.url)}" style="max-width:100%;border-radius:.5rem;margin:6px 0" onerror="this.style.display='none'">`;
-      return'';
-    }).join('');
-    prev.innerHTML=`
-      <div class="pk" style="color:${niv.color}">${niv.label}</div>
-      <div class="pt">${esc(titulo)||'<span style="color:#94a3b8">Título…</span>'}</div>
-      ${bajada?`<div class="pb">${esc(bajada)}</div>`:''}
-      ${cuerpo||'<div style="color:#94a3b8;font-size:.75rem;font-style:italic;text-align:center;padding:.75rem">El contenido aparecerá acá…</div>'}
-    `;
-    const prevCard=document.getElementById('rv-prev-card');
-    if(prevCard)prevCard.style.display=(titulo||cuerpo.replace(/<[^>]*>/g,'').trim())?'':'none';
-  },280);
-}
-window.rvActPrev = rvActPrev;
+// ══ PREVIEW EN TIEMPO REAL ═══════════════════════════════════
+function actualizarPreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    const prev   = document.getElementById('preview-live');
+    if (!prev) return;
+    const nivel  = document.getElementById('art-nivel')?.value || 'institucional';
+    const titulo = document.getElementById('art-titulo')?.value?.trim() || '';
+    const bajada = document.getElementById('art-bajada')?.value?.trim() || '';
+    const niv    = NIVELES[nivel] || {label:nivel,color:'#C9A84C'};
 
-function rvActContadores() {
-  const w=rvBloques.filter(b=>b.tipo==='texto').reduce((t,b)=>{
+    const cuerpoHTML = bloques.map(b => {
+      if (b.tipo==='texto') return `<div class="pc">${b.html||''}</div>`;
+      if (b.tipo==='imagen' && b.url) {
+        return `<img src="${driveUrl(b.url)}" style="max-width:100%;border-radius:4px;margin:7px 0" onerror="this.style.display='none'">
+          ${b.caption?`<div style="font-size:9px;color:#8888AA;font-style:italic;margin-bottom:6px">${b.caption}</div>`:''}`;
+      }
+      if (b.tipo==='separador') {
+        if (b.estilo==='ornamental') return `<div style="text-align:center;color:#C9A84C;font-size:13px;margin:10px 0;letter-spacing:8px">✦ ✦ ✦</div>`;
+        if (b.estilo==='doble')     return `<div style="border-top:2px solid #1A1A2E;height:4px;border-bottom:1px solid #1A1A2E;margin:12px 0"></div>`;
+        return `<hr style="border:none;border-top:1px solid #D4C9A8;margin:12px 0">`;
+      }
+      return '';
+    }).join('');
+
+    const words = contarPalabras();
+    prev.innerHTML = `
+      <div class="pk" style="color:${niv.color}">${niv.label}</div>
+      <div class="pt">${esc(titulo)||'<span style="color:#aaa">Título…</span>'}</div>
+      ${bajada?`<div class="pb">${esc(bajada)}</div>`:''}
+      ${cuerpoHTML||'<div style="color:#aaa;font-style:italic;font-size:12px;padding:10px 0">El contenido aparecerá acá…</div>'}
+      <div class="pw">${words} palabras · ~${Math.max(1,Math.round(words/200))} min de lectura</div>
+    `;
+  }, 280);
+}
+
+function contarPalabras() {
+  return bloques.filter(b=>b.tipo==='texto').reduce((t,b)=>{
     const txt=(b.html||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
     return t+(txt?txt.split(' ').length:0);
   },0);
-  const wc=document.getElementById('rv-wc');if(wc)wc.textContent=w+' palabras';
-  const rt=document.getElementById('rv-rt');if(rt)rt.textContent=Math.max(1,Math.round(w/200))+' min';
 }
 
-// ── AUTOGUARDADO ─────────────────────────────────────
-function rvMarcaCambio() {
-  rvCambios=true;rvSetDot('pending');rvActPrev();rvActContadores();
+function actualizarContadores() {
+  const w = contarPalabras();
+  const wc = document.getElementById('word-count');
+  const rt = document.getElementById('read-time');
+  if (wc) wc.textContent = w.toLocaleString()+' palabras';
+  if (rt) rt.textContent = Math.max(1,Math.round(w/200))+' min lectura';
 }
-window.rvMarcaCambio = rvMarcaCambio;
+window.actualizarPreview = actualizarPreview;
 
-function rvSetDot(s) {
-  const dot=document.getElementById('rv-dot');const lbl=document.getElementById('rv-dot-lbl');
-  if(!dot||!lbl)return;
-  dot.className='rv-dot'+(s==='saving'?' saving':s==='saved'?' saved':'');
-  if(s==='saving')lbl.textContent='Guardando…';
-  else if(s==='saved')lbl.textContent='Guardado '+(rvUltimoSave?rvUltimoSave.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'');
-  else lbl.textContent='Con cambios sin guardar';
+// ══ AUTOGUARDADO ═════════════════════════════════════════════
+function marcarCambio() {
+  cambiosPend = true;
+  setDot('pending');
+  actualizarContadores();
+  actualizarPreview();
+}
+window.marcarCambio = marcarCambio;
+
+function setDot(estado) {
+  const dot = document.getElementById('autosave-dot');
+  const lbl = document.getElementById('autosave-lbl');
+  if (!dot || !lbl) return;
+  dot.className = 'autosave-dot'+(estado==='saving'?' saving':estado==='saved'?' saved':'');
+  if (estado==='saving') lbl.textContent = 'Guardando…';
+  else if (estado==='saved') lbl.textContent = 'Guardado '+(ultimoGuardado?ultimoGuardado.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'');
+  else lbl.textContent = 'Con cambios sin guardar';
 }
 
-function rvAutoSaveLoop() {
-  rvAutoTimer=setInterval(async()=>{
-    if(!rvCambios||!rvUser||rvTabActual!=='nuevo') return;
-    await rvGuardarBorrador(true);
-  },30000);
-}
+// Autoguardado cada 30 segundos
+setInterval(async () => {
+  if (!cambiosPend || !currentUser) return;
+  await guardarBorrador(true);
+}, 30000);
 
-// ── GUARDAR BORRADOR ─────────────────────────────────
-window.rvGuardarBorrador = async function(silencioso=false) {
-  if(!rvUser)return;
-  rvSincronizar();
-  rvSetDot('saving');
-  const data=rvDatos('borrador');
+// ══ GUARDAR BORRADOR ══════════════════════════════════════════
+window.guardarBorrador = async function(silencioso = false) {
+  if (!currentUser) return;
+  sincronizarBloques();
+  setDot('saving');
+  const data = recopilarDatos('borrador');
   try {
-    if(rvBorradorId){
-      await updateDoc(doc(rvDb,'articulos',rvBorradorId),{...data,actualizadoEn:serverTimestamp()});
+    if (borradorId) {
+      await updateDoc(doc(db,'articulos',borradorId), {...data, actualizadoEn:serverTimestamp()});
     } else {
-      data.creadoEn=serverTimestamp();
-      const r=await addDoc(collection(rvDb,'articulos'),data);
-      rvBorradorId=r.id;
+      data.creadoEn = serverTimestamp();
+      const ref = await addDoc(collection(db,'articulos'), data);
+      borradorId = ref.id;
     }
-    rvCambios=false;rvUltimoSave=new Date();rvSetDot('saved');
-    if(!silencioso){rvToast('Borrador guardado ✓');rvCargarBorradores();}
-  } catch(e){rvSetDot('');if(!silencioso)rvToast('Error: '+e.message,'err');}
+    cambiosPend    = false;
+    ultimoGuardado = new Date();
+    setDot('saved');
+    if (!silencioso) { toast('Borrador guardado ✓'); cargarBorradores(); }
+  } catch(e) {
+    setDot('error');
+    if (!silencioso) toast('Error al guardar: '+e.message, 'err');
+  }
 };
 
-// ── ENVIAR ───────────────────────────────────────────
-window.rvEnviar = async function() {
-  rvSincronizar();
-  const titulo=document.getElementById('rv-titulo')?.value?.trim();
-  const hayTxt=rvBloques.some(b=>b.tipo==='texto'&&(b.html||'').replace(/<[^>]*>/g,'').trim());
-  if(!titulo){rvToast('El título es obligatorio','err');return;}
-  if(!hayTxt){rvToast('Escribí al menos un párrafo de contenido','err');return;}
-  const btn=document.getElementById('rv-btn-env');
-  btn.disabled=true;btn.textContent='Enviando…';
+// ══ ENVIAR ARTÍCULO ══════════════════════════════════════════
+window.enviarArticulo = async function() {
+  sincronizarBloques();
+  const titulo  = document.getElementById('art-titulo')?.value?.trim();
+  const hayContenido = bloques.some(b => b.tipo==='texto' && (b.html||'').replace(/<[^>]*>/g,'').trim());
+  if (!titulo)       { toast('El título es obligatorio','err'); return; }
+  if (!hayContenido) { toast('Escribí al menos un párrafo de contenido','err'); return; }
+
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.textContent = 'Enviando…';
   try {
-    const data=rvDatos('revision');
-    if(rvBorradorId){
-      await updateDoc(doc(rvDb,'articulos',rvBorradorId),{...data,actualizadoEn:serverTimestamp()});
+    const data = recopilarDatos('revision');
+    if (borradorId) {
+      await updateDoc(doc(db,'articulos',borradorId), {...data, actualizadoEn:serverTimestamp()});
     } else {
-      data.creadoEn=serverTimestamp();
-      await addDoc(collection(rvDb,'articulos'),data);
+      data.creadoEn = serverTimestamp();
+      await addDoc(collection(db,'articulos'), data);
     }
-    rvBorradorId=null;rvCambios=false;
-    document.getElementById('rv-exito').style.display='';
-    document.getElementById('rv-lista-bor') && rvCargarBorradores();
-    rvCargarEnviados();
-    // Actualizar pill del nav
-    const pill=document.getElementById('pill-revista');
-    if(pill){pill.textContent='✓';pill.style.display='flex';setTimeout(()=>pill.style.display='none',4000);}
-  } catch(e){rvToast('Error: '+e.message,'err');}
-  finally{btn.disabled=false;btn.textContent='Enviar para revisión →';}
+    borradorId  = null;
+    cambiosPend = false;
+    document.getElementById('exito-box').style.display = 'block';
+    document.getElementById('status-bar').style.display = 'none';
+    cargarBorradores();
+    cargarEnviados();
+  } catch(e) {
+    toast('Error al enviar: '+e.message,'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar para revisión →';
+  }
 };
 
-// ── RESET FORM ───────────────────────────────────────
-window.rvResetForm = function() {
-  rvBorradorId=null;rvCambios=false;
-  ['rv-titulo','rv-bajada','rv-autor','rv-sala'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('rv-nivel')?.['value'] && (document.getElementById('rv-nivel').value='institucional');
-  document.getElementById('rv-tipo')?.['value']  && (document.getElementById('rv-tipo').value='noticia');
-  document.getElementById('rv-exito').style.display='none';
-  rvBloques=[{id:bid(),tipo:'texto',html:'<p></p>'}];
-  rvRenderBloques();rvSetDot('');
-  const lbl=document.getElementById('rv-dot-lbl');if(lbl)lbl.textContent='Sin guardar';
-  // Restaurar nombre
-  const autorInput=document.getElementById('rv-autor');
-  const nombreRaw=(rvUser.displayName||rvUser.email.split('@')[0]).replace(/\./g,' ').replace(/\w/g,c=>c.toUpperCase());
-  if(autorInput)autorInput.value=nombreRaw;
-};
-
-// ── DATOS ────────────────────────────────────────────
-function rvDatos(estado) {
-  const bv=rvBloques.filter(b=>{
-    if(b.tipo==='texto')return(b.html||'').replace(/<[^>]*>/g,'').trim();
-    if(b.tipo==='separador')return true;
-    return b.url&&b.url.trim();
+function recopilarDatos(estado) {
+  const bloquesValidos = bloques.filter(b => {
+    if (b.tipo==='texto')     return (b.html||'').replace(/<[^>]*>/g,'').trim();
+    if (b.tipo==='separador') return true;
+    return b.url && b.url.trim();
   });
-  const cuerpo=bv.filter(b=>b.tipo==='texto').map(b=>(b.html||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()).join('
-
-');
-  const priImg=bv.find(b=>b.tipo==='imagen');
-  return{
-    nivel:   document.getElementById('rv-nivel')?.value||'',
-    tipo:    document.getElementById('rv-tipo')?.value||'',
-    titulo:  document.getElementById('rv-titulo')?.value?.trim()||'',
-    bajada:  document.getElementById('rv-bajada')?.value?.trim()||'',
-    autor:   document.getElementById('rv-autor')?.value?.trim()||'',
-    sala:    document.getElementById('rv-sala')?.value?.trim()||'',
-    fecha:   new Date().toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}),
-    cuerpo, bloques:bv,
-    imagenUrl:priImg?.url?.trim()||'',
-    docenteEmail:rvUser?.email||'',
-    docenteNombre:document.getElementById('rv-autor')?.value?.trim()||rvUser?.email||'',
+  const cuerpo = bloquesValidos.filter(b=>b.tipo==='texto')
+    .map(b=>(b.html||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()).join('\n\n');
+  const primeraImg = bloquesValidos.find(b=>b.tipo==='imagen');
+  return {
+    nivel:         document.getElementById('art-nivel')?.value  || '',
+    tipo:          document.getElementById('art-tipo')?.value   || '',
+    titulo:        document.getElementById('art-titulo')?.value?.trim()  || '',
+    bajada:        document.getElementById('art-bajada')?.value?.trim()  || '',
+    autor:         document.getElementById('art-autor')?.value?.trim()   || '',
+    sala:          document.getElementById('art-sala')?.value?.trim()    || '',
+    fecha:         new Date().toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}),
+    cuerpo, bloques: bloquesValidos,
+    imagenUrl:     primeraImg?.url?.trim() || '',
+    docenteEmail:  currentUser?.email || '',
+    docenteNombre: document.getElementById('art-autor')?.value?.trim() || currentUser?.email || '',
     estado, edicionId:'', orden:99,
   };
 }
 
-// ── BORRADORES ───────────────────────────────────────
-async function rvCargarBorradores() {
-  const cont=document.getElementById('rv-lista-bor');if(!cont||!rvUser)return;
-  try {
-    const sn=await getDocs(query(collection(rvDb,'articulos'),where('docenteEmail','==',rvUser.email),where('estado','==','borrador'),orderBy('actualizadoEn','desc')));
-    const bors=sn.docs.map(d=>({id:d.id,...d.data()}));
-    const pill=document.getElementById('rv-pill-bor');
-    if(pill){pill.textContent=bors.length;pill.style.display=bors.length?'inline':'none';}
-    if(!bors.length){cont.innerHTML='<div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.8125rem;font-style:italic">Sin borradores guardados</div>';return;}
-    cont.innerHTML=bors.map(b=>`
-      <div class="rv-art-card" onclick="rvCargarBorrador('${b.id}')" style="cursor:pointer;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(37,99,235,.1)'" onmouseout="this.style.boxShadow=''">
-        <div class="rv-art-titulo">${b.titulo||'<em style="color:#94a3b8">Sin título</em>'}</div>
-        <div class="rv-art-meta">
-          <span class="rv-badge rv-badge-bor">${b.tipo||''}</span>
-          <span>${b.actualizadoEn?rvFecha(b.actualizadoEn):''}</span>
-          <span style="margin-left:auto;color:#2563eb;font-weight:700;font-size:.625rem">Toca para editar →</span>
-        </div>
-      </div>`).join('');
-  } catch(e){cont.innerHTML=`<div style="color:#dc2626;padding:1rem;font-size:.75rem">Error: ${e.message}</div>`;}
-}
-
-window.rvCargarBorrador = async function(artId) {
-  const {getDoc:gd} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const sn=await gd(doc(rvDb,'articulos',artId));
-  if(!sn.exists())return;
-  const art=sn.data();
-  rvBorradorId=artId;
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
-  set('rv-titulo',art.titulo);set('rv-bajada',art.bajada);set('rv-autor',art.autor);set('rv-sala',art.sala);
-  if(art.nivel)document.getElementById('rv-nivel').value=art.nivel;
-  if(art.tipo) document.getElementById('rv-tipo').value=art.tipo;
-  if(Array.isArray(art.bloques)&&art.bloques.length){
-    rvBloques=art.bloques.map(b=>({...b,id:bid()}));
-  } else if(art.cuerpo){
-    rvBloques=[{id:bid(),tipo:'texto',html:art.cuerpo.split('
-').filter(l=>l.trim()).map(l=>`<p>${l}</p>`).join('')}];
-  } else {
-    rvBloques=[{id:bid(),tipo:'texto',html:'<p></p>'}];
+// ══ RESET ════════════════════════════════════════════════════
+window.resetForm = function() {
+  borradorId = null; cambiosPend = false;
+  ['art-titulo','art-bajada','art-autor','art-sala'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('art-nivel').value = 'institucional';
+  document.getElementById('art-tipo').value  = 'noticia';
+  // Restaurar nombre
+  if (currentUser) {
+    const nombre = currentUser.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    document.getElementById('art-autor').value = nombre;
   }
-  rvRenderBloques();rvSetDot('saved');rvCambios=false;
-  rvSetTab('nuevo');rvToast('Borrador cargado ✓');
+  bloques = [{id:bid(),tipo:'texto',html:'<p></p>'}];
+  renderBloques();
+  document.getElementById('exito-box').style.display = 'none';
+  document.getElementById('status-bar').style.display = '';
+  setDot('');
+  document.getElementById('autosave-lbl').textContent = 'Sin guardar';
+  const prev = document.getElementById('preview-live');
+  if (prev) prev.innerHTML = '<div style="color:#aaa;font-style:italic;font-size:12px;text-align:center;padding:20px 10px">Empezá a escribir para ver la previsualización…</div>';
 };
 
-// ── ENVIADOS ─────────────────────────────────────────
-async function rvCargarEnviados() {
-  const cont=document.getElementById('rv-lista-env');if(!cont||!rvUser)return;
+// ══ CARGAR BORRADORES ════════════════════════════════════════
+async function cargarBorradores() {
+  const cont = document.getElementById('lista-borradores');
+  if (!cont || !currentUser) return;
   try {
-    const sn=await getDocs(query(collection(rvDb,'articulos'),where('docenteEmail','==',rvUser.email),orderBy('creadoEn','desc')));
-    const arts=sn.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.estado!=='borrador');
-    if(!arts.length){cont.innerHTML='<div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.8125rem;font-style:italic">Todavía no enviaste artículos</div>';return;}
-    const ELBL={publicado:'✅ Publicado',revision:'⏳ En revisión',rechazado:'❌ Rechazado'};
-    const ECLS={publicado:'rv-badge-pub',revision:'rv-badge-rev',rechazado:'rv-badge-rej'};
-    cont.innerHTML=arts.map(a=>`
-      <div class="rv-art-card">
-        <div class="rv-art-titulo">${a.titulo||'Sin título'}</div>
-        <div class="rv-art-meta">
-          <span class="rv-badge ${ECLS[a.estado]||'rv-badge-bor'}">${ELBL[a.estado]||a.estado}</span>
-          <span>${a.tipo||''}</span>${a.sala?`<span>· ${a.sala}</span>`:''}
-          ${a.creadoEn?`<span>${rvFecha(a.creadoEn)}</span>`:''}
+    const sn = await getDocs(query(
+      collection(db,'articulos'),
+      where('docenteEmail','==',currentUser.email),
+      where('estado','==','borrador'),
+      orderBy('actualizadoEn','desc')
+    ));
+    const bors = sn.docs.map(d=>({id:d.id,...d.data()}));
+    // Actualizar notif badge
+    const nb = document.getElementById('notif-borradores');
+    if (nb) { nb.textContent=bors.length; nb.style.display=bors.length?'inline-flex':'none'; }
+
+    if (!bors.length) {
+      cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;font-style:italic">No tenés borradores guardados.</div>';
+      return;
+    }
+    cont.innerHTML = bors.map(b=>`
+      <div class="borrador-card" onclick="cargarBorrador('${b.id}')">
+        <div class="borrador-titulo">${b.titulo||'<em style="color:var(--muted)">Sin título</em>'}</div>
+        <div class="borrador-meta">
+          ${b.nivel?NIVELES[b.nivel]?.label||b.nivel:''} · ${b.tipo||''}
+          ${b.actualizadoEn?'· Editado '+formatFecha(b.actualizadoEn):''}
+          <span style="margin-left:auto;color:var(--warn);font-weight:700">Clic para editar →</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    cont.innerHTML = `<div style="color:var(--err);padding:20px;font-size:12px">Error: ${e.message}</div>`;
+  }
+}
+
+window.cargarBorrador = async function(artId) {
+  // Cargar borrador en el editor
+  const sn = await (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")).getDoc(doc(db,'articulos',artId));
+  if (!sn.exists()) return;
+  const art = sn.data();
+  borradorId = artId;
+  // Llenar campos
+  const set = (id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  set('art-titulo', art.titulo);
+  set('art-bajada', art.bajada);
+  set('art-autor',  art.autor);
+  set('art-sala',   art.sala);
+  if(art.nivel) document.getElementById('art-nivel').value=art.nivel;
+  if(art.tipo)  document.getElementById('art-tipo').value=art.tipo;
+  // Cargar bloques
+  if (Array.isArray(art.bloques) && art.bloques.length) {
+    bloques = art.bloques.map(b=>({...b,id:b.id||bid()}));
+  } else if (art.cuerpo) {
+    bloques = [{id:bid(),tipo:'texto',html:art.cuerpo.split('\n').filter(l=>l.trim()).map(l=>`<p>${l}</p>`).join('')}];
+  } else {
+    bloques = [{id:bid(),tipo:'texto',html:'<p></p>'}];
+  }
+  renderBloques();
+  setDot('saved'); ultimoGuardado=new Date(); cambiosPend=false;
+  setTab('nuevo');
+  toast('Borrador cargado ✓');
+};
+
+// ══ CARGAR ENVIADOS ══════════════════════════════════════════
+async function cargarEnviados() {
+  const cont = document.getElementById('lista-enviados');
+  if (!cont || !currentUser) return;
+  try {
+    const sn = await getDocs(query(
+      collection(db,'articulos'),
+      where('docenteEmail','==',currentUser.email),
+      orderBy('creadoEn','desc')
+    ));
+    const arts = sn.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.estado!=='borrador');
+    if (!arts.length) {
+      cont.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;font-style:italic">Todavía no enviaste artículos.</div>';
+      return;
+    }
+    const ELBL = {publicado:'✅ Publicado',revision:'⏳ En revisión',rechazado:'❌ Rechazado'};
+    const ECLS = {publicado:'bdg-pub',revision:'bdg-rev',rechazado:'bdg-rej'};
+    cont.innerHTML = arts.map(a=>`
+      <div class="art-card">
+        <div class="art-card-titulo">${a.titulo||'Sin título'}</div>
+        <div class="art-card-meta">
+          <span class="bdg ${ECLS[a.estado]||'bdg-bor'}">${ELBL[a.estado]||a.estado}</span>
+          <span>${a.tipo||''}</span>
+          ${a.sala?`<span>· ${a.sala}</span>`:''}
+          ${a.creadoEn?`<span>Enviado: ${formatFecha(a.creadoEn)}</span>`:''}
         </div>
         ${a.estado==='rechazado'?`
-          <div style="margin-top:.625rem;padding:.625rem .75rem;background:#fef2f2;border-radius:.75rem;font-size:.6875rem;color:#dc2626;line-height:1.5">
-            El equipo editorial revisó este artículo y no fue incluido en esta edición.
-            <button onclick="rvReenviar('${a.id}')" style="display:block;margin-top:.5rem;background:#fecaca;border:none;border-radius:.5rem;padding:.375rem .875rem;font-size:.625rem;font-weight:800;color:#dc2626;cursor:pointer;font-family:inherit">Editar y reenviar</button>
+          <div style="margin-top:10px;font-size:11.5px;color:var(--err);background:var(--err)11;border-radius:6px;padding:8px 11px;line-height:1.5">
+            ❌ El equipo editorial revisó este artículo y no fue publicado en esta edición.<br>
+            <button class="btn btn-ghost btn-sm" onclick="reenviarRechazado('${a.id}')" style="margin-top:8px">Editar y reenviar</button>
           </div>`:''}
-        ${a.estado==='publicado'?`<div style="margin-top:.5rem;font-size:.6875rem;color:#16a34a;font-weight:700">🎉 ¡Ya está publicado en la revista!</div>`:''}
-      </div>`).join('');
-  } catch(e){cont.innerHTML=`<div style="color:#dc2626;padding:1rem;font-size:.75rem">Error: ${e.message}</div>`;}
+        ${a.estado==='publicado'?`<div style="margin-top:8px;font-size:11px;color:var(--ok)">🎉 ¡Tu artículo ya está en la revista!</div>`:''}
+      </div>
+    `).join('');
+  } catch(e) {
+    cont.innerHTML=`<div style="color:var(--err);padding:20px;font-size:12px">Error: ${e.message}</div>`;
+  }
 }
 
-window.rvReenviar = async function(artId) {
-  await rvCargarBorrador(artId);
-  try { await updateDoc(doc(rvDb,'articulos',artId),{estado:'borrador',actualizadoEn:serverTimestamp()}); } catch{}
-  rvToast('Listo para editar y reenviar');
+window.reenviarRechazado = async function(artId) {
+  await cargarBorrador(artId);
+  // Cambiar estado a borrador para poder reenviar
+  try {
+    await updateDoc(doc(db,'articulos',artId),{estado:'borrador',actualizadoEn:serverTimestamp()});
+    toast('Artículo listo para editar y reenviar');
+  } catch(e) {}
 };
 
-// ── HELPERS ──────────────────────────────────────────
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-function driveU(url){if(!url)return'';const m=url.match(/\/d\/([^/?#]+)/);return m?`https://drive.google.com/uc?export=view&id=${m[1]}`:url;}
-function rvFecha(ts){try{const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});}catch{return'';}}
+// ══ HELPERS ══════════════════════════════════════════════════
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
 
-let rvToastTimer;
-function rvToast(msg,tipo='ok'){
-  const bg=tipo==='err'?'#ef4444':tipo==='warn'?'#f59e0b':'#22c55e';
-  let el=document.getElementById('rv-toast-el');
-  if(!el){el=document.createElement('div');el.id='rv-toast-el';
-    el.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;padding:.625rem 1.25rem;border-radius:1rem;font-size:.8125rem;font-weight:800;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.2);font-family:"Plus Jakarta Sans",sans-serif;color:#fff;display:none';
-    document.body.appendChild(el);}
-  el.textContent=msg;el.style.background=bg;el.style.display='block';
-  clearTimeout(rvToastTimer);rvToastTimer=setTimeout(()=>el.style.display='none',3000);
+function formatFecha(ts) {
+  try{const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});}catch{return '';}
 }
+
+let toastTimer;
+window.toast = function(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type==='err'?'#C84C4C':type==='warn'?'#C89A4C':'#3AB07A';
+  el.style.color = '#fff';
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.style.display='none',3200);
+};
+
+// Compatibilidad: el módulo ahora se autoinicializa vía onAuthStateChanged.
+window.initRevista = window.initRevista || function(){};
+
 </script>
 
 
