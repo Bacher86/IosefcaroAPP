@@ -2187,6 +2187,465 @@ async function generarPDFAlumno(){
   ${informes.length?`<h2>Informes pedagógicos</h2>${informes.map(inf=>`<div class="inf"><p style="font-size:10px;color:#64748b;margin-bottom:4px">${new Date(inf.fecha).toLocaleDateString('es-AR')} · ${inf.periodo} · ${inf.materia}</p><p>${inf.texto}</p></div>`).join('')}`:''}
   <div class="footer"><span>Instituto Iosef Caro — Documento generado automáticamente</span><span>${alumnoNombre} · ${materiaActiva} · ${periodoActivo.nombre}</span></div>
   
+</body></html>`;
+  const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>win.print(),500);
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-file-pdf"></i> PDF';
+}
+window.generarPDFAlumno=generarPDFAlumno;
+
+// ── 17: Gráfico de rendimiento ──
+async function renderGraficoRendimiento(){
+  const cont=document.getElementById('grafico-container');
+  const distCont=document.getElementById('distribucion-container');
+  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
+  if(!curso||!materiaActiva||!alumnosActuales.length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-8">Seleccioná curso y cargá notas primero.</p>';return;}
+  document.getElementById('grafico-curso-label').textContent=`${curso} · ${materiaActiva} · ${periodoActivo.nombre}`;
+  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Calculando...</p>';
+  const notasPorColumna={};const notasPorAlumno={};
+  for(const al of alumnosActuales){
+    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
+    if(!nd.exists)continue;const data=nd.data();let suma=0,cnt=0;
+    columnaExamenes.forEach(col=>{const v=parseFloat(data[col.key]);if(!isNaN(v)){if(!notasPorColumna[col.key]){notasPorColumna[col.key]={label:col.label,vals:[]};}notasPorColumna[col.key].vals.push(v);suma+=v;cnt++;}});
+    if(cnt>0)notasPorAlumno[al.nombre]=(suma/cnt);
+  }
+  if(!Object.keys(notasPorColumna).length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-8">Sin notas cargadas todavía.</p>';return;}
+  const labels=[];const promedios=[];const colores=[];
+  Object.values(notasPorColumna).forEach(col=>{const prom=col.vals.reduce((a,b)=>a+b,0)/col.vals.length;labels.push(col.label);promedios.push(parseFloat(prom.toFixed(1)));colores.push(prom>=6?'#22c55e':prom>=4?'#f59e0b':'#ef4444');});
+  const barWidth=Math.min(56,Math.floor(260/labels.length));const gap=8;const chartW=labels.length*(barWidth+gap)+40;const chartH=180;
+  let svg=`<svg width="100%" height="${chartH+40}" viewBox="0 0 ${Math.max(chartW,300)} ${chartH+40}" style="overflow:visible">`;
+  [4,6,8,10].forEach(v=>{const y=chartH-(v/10*chartH);svg+=`<line x1="30" y1="${y}" x2="${chartW}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/><text x="24" y="${y+4}" font-size="9" fill="#94a3b8" text-anchor="end">${v}</text>`;});
+  const aprobY=chartH-(6/10*chartH);svg+=`<line x1="30" y1="${aprobY}" x2="${chartW}" y2="${aprobY}" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4"/>`;
+  labels.forEach((lbl,i)=>{const x=30+i*(barWidth+gap);const h=(promedios[i]/10)*chartH;const y=chartH-h;svg+=`<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="6" fill="${colores[i]}" opacity="0.9"/><text x="${x+barWidth/2}" y="${y-5}" font-size="10" font-weight="700" fill="${colores[i]}" text-anchor="middle">${promedios[i]}</text><text x="${x+barWidth/2}" y="${chartH+14}" font-size="9" fill="#64748b" text-anchor="middle">${lbl.slice(0,8)}</text>`;});
+  svg+='</svg>';cont.innerHTML=svg;
+  const rangos={aprobados:0,en_proceso:0,insuficientes:0};
+  Object.values(notasPorAlumno).forEach(p=>{if(p>=6)rangos.aprobados++;else if(p>=4)rangos.en_proceso++;else rangos.insuficientes++;});
+  const total=Object.keys(notasPorAlumno).length||1;
+  distCont.innerHTML=[{label:'Aprobados (≥6)',val:rangos.aprobados,color:'#15803d',bg:'#f0fdf4'},{label:'En proceso (4-5)',val:rangos.en_proceso,color:'#a16207',bg:'#fefce8'},{label:'Insuficientes (<4)',val:rangos.insuficientes,color:'#dc2626',bg:'#fef2f2'}].map(r=>`<div style="background:${r.bg};border-radius:.75rem;padding:.625rem .875rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:.75rem;font-weight:700;color:${r.color}">${r.label}</span><span style="font-size:.9375rem;font-weight:900;color:${r.color}">${r.val} <span style="font-size:.625rem">(${Math.round(r.val/total*100)}%)</span></span></div>`).join('');
+}
+window.renderGraficoRendimiento=renderGraficoRendimiento;
+
+// ── 15: Foro del docente ──
+function iniciarForoDocente(){
+  const sel=document.getElementById('foro-doc-curso');if(!sel)return;
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  sel.innerHTML='';curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+  if(curs.length)cargarForoDocente();
+}
+async function cargarForoDocente(){
+  const curso=document.getElementById('foro-doc-curso')?.value;const cont=document.getElementById('lista-foro-doc');
+  if(!curso||!cont)return;
+  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
+  const cfg=await db.collection('foro_config').doc(curso+'_'+docenteEmail).get().catch(()=>null);
+  const permiteRespuestas=cfg?.exists?cfg.data().permiteRespuestas!==false:true;
+  document.getElementById('foro-permite-respuestas').checked=permiteRespuestas;
+  let snap;try{snap=await db.collection('foro').where('curso','==',curso).orderBy('creadoEn','desc').limit(30).get();}catch(e){snap=await db.collection('foro').where('curso','==',curso).get();}
+  cont.innerHTML='';
+  if(snap.empty){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Sin mensajes en el foro de este curso.</p>';return;}
+  const tipoIcon={pregunta:'❓',comentario:'💬',ayuda:'🆘'};
+  snap.forEach(doc=>{
+    const d=doc.data();const id=doc.id;
+    const fecha=d.creadoEn?.toDate?.();const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const esDocente=d.autorRol==='docente';const respuestas=d.respuestas||[];
+    cont.innerHTML+=`<div style="background:white;border:1px solid #e2e8f0;border-radius:1.25rem;overflow:hidden;margin-bottom:.5rem;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+      <div style="padding:12px 14px;background:${esDocente?'#eff6ff':'white'}">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span>${tipoIcon[d.tipo]||'💬'}</span>
+          <span style="font-size:11px;font-weight:700;color:#475569">${d.autorNombre||'Alumno'}${esDocente?' 👩‍🏫':''}</span>
+          <span style="font-size:9px;color:#94a3b8;margin-left:auto">${fechaStr}</span>
+        </div>
+        <p style="font-size:13px;line-height:1.5">${d.texto||''}</p>
+      </div>
+      ${respuestas.length?`<div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc">${respuestas.map(r=>`<div style="padding:6px 10px;background:white;border-radius:.625rem;border-left:3px solid ${r.rolAutor==='docente'?'#2563eb':'#e2e8f0'};margin-bottom:4px"><p style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:2px">${r.autorNombre||''}${r.rolAutor==='docente'?' 👩‍🏫':''}</p><p style="font-size:12px">${r.texto}</p></div>`).join('')}</div>`:''}
+      <div style="padding:8px 14px;border-top:1px solid #f1f5f9;display:flex;gap:6px">
+        <button onclick="responderForoDocente('${id}')" style="background:#eff6ff;border:none;border-radius:.625rem;padding:5px 12px;font-size:11px;font-weight:700;color:#2563eb;cursor:pointer;font-family:inherit"><i class="fas fa-reply"></i> Responder</button>
+        ${esDocente?`<button onclick="eliminarMsgForo('${id}')" style="background:none;border:none;color:#fca5a5;cursor:pointer;padding:5px 8px;font-size:11px"><i class="fas fa-trash"></i></button>`:''}
+      </div>
+    </div>`;
+  });
+}
+window.cargarForoDocente=cargarForoDocente;
+async function publicarMensajeForo(){
+  const curso=document.getElementById('foro-doc-curso')?.value;const texto=document.getElementById('foro-doc-msg').value.trim();
+  if(!curso||!texto){alert('Escribí un mensaje.');return;}
+  const btn=document.querySelector('[onclick="publicarMensajeForo()"]');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Publicando...';
+  await db.collection('foro').add({texto,tipo:'comentario',curso,autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'Docente',autorRol:'docente',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),respuestas:[]});
+  document.getElementById('foro-doc-msg').value='';btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> PUBLICAR EN FORO';
+  cargarForoDocente();
+}
+window.publicarMensajeForo=publicarMensajeForo;
+async function responderForoDocente(id){
+  const texto=prompt('Tu respuesta:');if(!texto?.trim())return;
+  const resp={texto:texto.trim(),autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'Docente',rolAutor:'docente',fecha:new Date().toISOString()};
+  await db.collection('foro').doc(id).update({respuestas:firebase.firestore.FieldValue.arrayUnion(resp)});
+  cargarForoDocente();
+}
+window.responderForoDocente=responderForoDocente;
+async function eliminarMsgForo(id){if(!confirm('¿Eliminar?'))return;await db.collection('foro').doc(id).delete();cargarForoDocente();}
+window.eliminarMsgForo=eliminarMsgForo;
+async function togglePermiteRespuestas(){
+  const curso=document.getElementById('foro-doc-curso')?.value;const permite=document.getElementById('foro-permite-respuestas').checked;
+  if(!curso)return;
+  await db.collection('foro_config').doc(curso+'_'+docenteEmail).set({permiteRespuestas:permite,curso,docenteEmail},{merge:true});
+}
+window.togglePermiteRespuestas=togglePermiteRespuestas;
+
+// ══ FIN TANDA 3 ══
+window._switchTab=function switchTab(tab){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  if(tab==='mis-cursos'){cargarMisCursos().catch(()=>{}); cargarCursosParaSolicitud().catch(()=>{});}
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
+  if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
+  if(tab==='dashboard'){cargarDashboardStats();cargarUltimaActividad();}
+  if(tab==='informes'){poblarCursosSelectorInforme();}
+  if(tab==='notas'){
+    // Sync modo buttons with current select-modalidad value
+    const modalidad = document.getElementById('select-modalidad')?.value || 'NUMERICO';
+    const toggleWrap = document.getElementById('toggle-vista-wrap');
+    if(toggleWrap) toggleWrap.style.display = modalidad === 'NUMERICO' ? 'flex' : 'none';
+    ['NUMERICO','INDICADORES'].forEach(m => {
+      const btn = document.getElementById('modo-btn-'+m);
+      if(!btn) return;
+      btn.classList.toggle('active', m===modalidad);
+      btn.style.borderColor = m===modalidad ? '#2563eb' : '#e2e8f0';
+      btn.style.background = m===modalidad ? '#eff6ff' : '#f8fafc';
+    });
+  }
+  document.getElementById('tab-'+tab)?.classList.add('active');
+  document.getElementById('btn-'+tab)?.classList.add('active');
+  if(tab==='revista'){ initRevista(); }
+  document.getElementById('btn-guardar-notas').style.display='none';
+  document.getElementById('btn-guardar-asis').style.display='none';
+  if(tab==='notas'&&Object.keys(cambiosNotas).length)document.getElementById('btn-guardar-notas').style.display='block';
+  if(tab==='asis'&&Object.keys(cambiosAsis).length)document.getElementById('btn-guardar-asis').style.display='block';
+};
+window.switchTab=function(t){window._switchTab(t);};
+
+// ══════════════════════════════════════════════════
+// MIS CURSOS — Solicitud y visualización
+// ══════════════════════════════════════════════════
+
+async function cargarMisCursos(){
+  // Poblar selector de materias del docente
+  const selMat=document.getElementById('sol-materia');
+  if(selMat){
+    selMat.innerHTML='<option value="">Seleccionar materia...</option>';
+    const mats=Array.isArray(docenteData?.materias)?docenteData.materias:[];
+    mats.forEach(m=>selMat.innerHTML+=`<option value="${m}">${m}</option>`);
+  }
+
+  // Cursos aprobados actuales
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  const divAprobados=document.getElementById('mis-cursos-aprobados');
+  if(divAprobados){
+    if(curs.length){
+      divAprobados.innerHTML=curs.map(c=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f0fdf4;border-radius:14px;margin-bottom:6px">
+          <span style="font-weight:800;font-size:.875rem">${c}</span>
+          <span style="font-size:.65rem;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:99px">✓ Asignado</span>
+        </div>`).join('');
+    }else{
+      divAprobados.innerHTML='<p style="color:#94a3b8;font-size:.8rem;text-align:center;padding:12px;font-style:italic">Sin cursos asignados todavía. Enviá una solicitud abajo.</p>';
+    }
+  }
+
+  // Solicitudes pendientes del docente
+  const divPend=document.getElementById('mis-cursos-pendientes');
+  if(divPend){
+    try{
+      const snap=await db.collection('solicitudes_cursos')
+        .where('docenteEmail','==',docenteEmail)
+        .orderBy('creadoEn','desc').limit(10).get().catch(async()=>{
+          // Fallback sin orderBy si falta índice
+          return db.collection('solicitudes_cursos').where('docenteEmail','==',docenteEmail).get();
+        });
+      if(snap.empty){
+        divPend.innerHTML='<p style="color:#94a3b8;font-size:.8rem;text-align:center;padding:8px;font-style:italic">Sin solicitudes enviadas.</p>';
+        document.getElementById('badge-cursos-pend').style.display='none';
+      }else{
+        const hasPend=snap.docs.some(d=>d.data().estado==='pendiente');
+        document.getElementById('badge-cursos-pend').style.display=hasPend?'block':'none';
+        divPend.innerHTML=snap.docs.map(doc=>{
+          const s=doc.data();
+          const estadoColor=s.estado==='aprobada'?'#15803d':s.estado==='rechazada'?'#b91c1c':'#92400e';
+          const estadoBg=s.estado==='aprobada'?'#dcfce7':s.estado==='rechazada'?'#fee2e2':'#fef3c7';
+          const estadoLabel=s.estado==='aprobada'?'✅ Aprobada':s.estado==='rechazada'?'❌ Rechazada':'⏳ Pendiente';
+          const cursosStr=(s.cursos||[]).join(', ');
+          const fechaStr=s.creadoEn?.toDate?.()?.toLocaleDateString('es-AR')||s.creadoEn||'';
+          return `<div style="padding:12px 14px;background:#f8fafc;border-radius:14px;margin-bottom:8px;border:1px solid #e2e8f0">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div>
+                <p style="font-weight:800;font-size:.8rem;margin:0 0 2px">${s.materia||'(sin materia)'}</p>
+                <p style="font-size:.7rem;color:#64748b;margin:0">Cursos: ${cursosStr||'—'}</p>
+                ${s.nota?`<p style="font-size:.68rem;color:#94a3b8;margin:4px 0 0;font-style:italic">"${s.nota}"</p>`:''}
+                ${fechaStr?`<p style="font-size:.62rem;color:#94a3b8;margin:2px 0 0">${fechaStr}</p>`:''}
+                ${s.observacionAdmin?`<p style="font-size:.7rem;color:#64748b;margin:4px 0 0;padding:4px 8px;background:#fff;border-radius:8px">💬 ${s.observacionAdmin}</p>`:''}
+              </div>
+              <span style="flex-shrink:0;font-size:.65rem;font-weight:800;padding:3px 10px;border-radius:99px;background:${estadoBg};color:${estadoColor}">${estadoLabel}</span>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }catch(e){
+      divPend.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">No se pudieron cargar las solicitudes.</p>';
+    }
+  }
+}
+
+async function cargarCursosParaSolicitud(){
+  const grid=document.getElementById('sol-cursos-grid');
+  if(!grid)return;
+  grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">Cargando...</p>';
+  try{
+    // Obtener el nivel del docente. Puede ser un string o array si dicta en varios niveles.
+    const nivelDoc=docenteData?.nivel;
+    const nivelArr=Array.isArray(nivelDoc)?nivelDoc:(nivelDoc?[nivelDoc]:[]);
+
+    // Traer TODOS los cursos y filtrar por nivel del docente.
+    // Si no hay nivel definido o no matchea nada, mostramos todos.
+    const allSnap=await db.collection('cursos').orderBy('nombre','asc').get().catch(async()=>{
+      // Fallback sin orderBy si no hay índice
+      return db.collection('cursos').get();
+    });
+
+    let docs=allSnap.docs;
+    // Filtrar por nivel si el docente tiene nivel definido
+    if(nivelArr.length){
+      const porNivel=docs.filter(d=>nivelArr.includes(d.data().nivel));
+      // Solo filtrar si encontramos cursos de su nivel; si no, mostrar todos
+      if(porNivel.length>0)docs=porNivel;
+    }
+    // Ordenar: primero por nivel, luego por nombre
+    docs.sort((a,b)=>{
+      const na=a.data().nombre||'', nb=b.data().nombre||'';
+      return na.localeCompare(nb, 'es', {numeric:true});
+    });
+
+    const asignados=new Set(Array.isArray(docenteData?.cursos)?docenteData.cursos:[]);
+    if(!docs.length){
+      grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">No hay cursos creados aún. Pedile al admin que los cree desde el panel.</p>';
+      return;
+    }
+    grid.innerHTML='';
+    docs.forEach(doc=>{
+      const d=doc.data();
+      const c=d.nombre;
+      const yaAsignado=asignados.has(c);
+      const nivelLabel=d.nivel?`<span style="font-size:.6rem;color:#94a3b8;margin-left:4px">${d.nivel}</span>`:'';
+      grid.innerHTML+=`<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid ${yaAsignado?'#86efac':'#e2e8f0'};border-radius:12px;cursor:${yaAsignado?'default':'pointer'};background:${yaAsignado?'#f0fdf4':'#fff'}">
+        <input type="checkbox" value="${c}" ${yaAsignado?'disabled checked':''} style="accent-color:#0f172a;width:16px;height:16px;flex-shrink:0">
+        <span style="font-weight:700;font-size:.8rem;color:${yaAsignado?'#15803d':'#0f172a'}">${c}${nivelLabel}</span>
+        ${yaAsignado?'<span style="font-size:.6rem;color:#15803d;margin-left:auto;flex-shrink:0">✓</span>':''}
+      </label>`;
+    });
+  }catch(e){
+    grid.innerHTML='<p style="color:#ef4444;font-size:.75rem;grid-column:1/-1">Error al cargar cursos: '+e.message+'</p>';
+    console.error('cargarCursosParaSolicitud:', e);
+  }
+}
+
+window.enviarSolicitudCursos=async function enviarSolicitudCursos(){
+  const materia=document.getElementById('sol-materia')?.value;
+  if(!materia){alert('Seleccioná una materia.');return;}
+  const cursosSelec=Array.from(document.querySelectorAll('#sol-cursos-grid input[type=checkbox]:checked:not(:disabled)'))
+    .map(cb=>cb.value);
+  if(!cursosSelec.length){alert('Seleccioná al menos un curso nuevo (los ya asignados no se pueden volver a solicitar).');return;}
+  const nota=document.getElementById('sol-nota')?.value.trim()||'';
+
+  const btn=event?.target||document.querySelector('[onclick="enviarSolicitudCursos()"]');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+  try{
+    await db.collection('solicitudes_cursos').add({
+      docenteEmail, docenteNombre:docenteData?.nombre||'',
+      materia, cursos:cursosSelec, nota,
+      estado:'pendiente',
+      nivel:'secundario',
+      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    // Notificar al admin
+    await db.collection('notificaciones_admin').add({
+      tipo:'solicitud_cursos', docenteEmail, docenteNombre:docenteData?.nombre||'',
+      mensaje:`${docenteData?.nombre||docenteEmail} solicitó cursos en ${materia}: ${cursosSelec.join(', ')}`,
+      leida:false, creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
+    }).catch(()=>{});
+    alert('✅ Solicitud enviada. El administrador la revisará y te notificará.');
+    document.getElementById('sol-materia').value='';
+    document.getElementById('sol-cursos-grid').innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">Seleccioná una materia primero.</p>';
+    document.getElementById('sol-nota').value='';
+    await cargarMisCursos(); // Refrescar
+  }catch(e){
+    alert('Error al enviar solicitud: '+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='📩 Enviar solicitud';}
+};
+
+document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+window.addEventListener('load',()=>{
+  const em=sessionStorage.getItem('iosef_email');const rol=sessionStorage.getItem('iosef_rol');
+  if(em&&rol==='eoe'){window.location.href='eoe.html';return;}
+  if(em&&(rol==='docente'||rol==='admin'||rol==='director')){document.getElementById('login-email').value=em;login(em);}
+});
+
+// ══ MEJORAS FINALES ══
+
+// ── 2: Historial de asistencia por alumno ──
+window.abrirHistorial=async function(id, nombre){
+  document.getElementById('historial-nombre').textContent=nombre;
+  document.getElementById('modal-historial').classList.add('open');
+  const cal=document.getElementById('historial-cal');
+  const stats=document.getElementById('historial-stats');
+  cal.innerHTML='<p style="font-size:11px;color:#94a3b8;grid-column:span 7;text-align:center;padding:.5rem">Cargando...</p>';
+
+  // Calcular últimos 30 días
+  const hoy=new Date();
+  const fechas=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date(hoy);d.setDate(hoy.getDate()-i);
+    fechas.push(d.toISOString().slice(0,10));
+  }
+
+  // Buscar asistencia
+  const snap=await db.collection('asistencia').where('alumnoId','==',id).where('materia','==',materiaActiva).get().catch(()=>null);
+  const mapaAsis={};
+  if(snap)snap.forEach(d=>{mapaAsis[d.data().fecha]=d.data().estado;});
+
+  // Renderizar calendario — alinear primer día con día de semana
+  const primerFecha=new Date(fechas[0]+'T12:00:00');
+  // JS: 0=Dom,1=Lun...6=Sab → queremos Lun=0
+  const primerDia=(primerFecha.getDay()+6)%7; // 0=Lun
+  cal.innerHTML='';
+  // Blancos iniciales
+  for(let i=0;i<primerDia;i++){
+    const d=document.createElement('div');d.className='hcal-dia hcal-x';cal.appendChild(d);
+  }
+  let presentes=0,ausentes=0,tardes=0;
+  fechas.forEach(f=>{
+    const est=mapaAsis[f];
+    const d=document.createElement('div');
+    const dia=f.slice(8);
+    if(est==='P'){d.className='hcal-dia hcal-P';presentes++;}
+    else if(est==='A'){d.className='hcal-dia hcal-A';ausentes++;}
+    else if(est==='T'){d.className='hcal-dia hcal-T';tardes++;}
+    else{d.className='hcal-dia hcal-x';}
+    d.textContent=dia;d.title=f;
+    cal.appendChild(d);
+  });
+  const total=presentes+ausentes+tardes;
+  const pct=total>0?Math.round((presentes/total)*100):null;
+  stats.innerHTML=[
+    {n:presentes,l:'Presentes',c:'#15803d',bg:'#f0fdf4'},
+    {n:ausentes,l:'Ausentes',c:'#dc2626',bg:'#fef2f2'},
+    {n:pct!==null?pct+'%':'—',l:'Asistencia',c:'#2563eb',bg:'#eff6ff'},
+  ].map(s=>`<div style="background:${s.bg};border-radius:.875rem;padding:.625rem;text-align:center">
+    <p style="font-size:1.25rem;font-weight:900;color:${s.c}">${s.n}</p>
+    <p style="font-size:.625rem;font-weight:700;color:#64748b;margin-top:2px">${s.l}</p>
+  </div>`).join('');
+};
+window.cerrarHistorial=function(){document.getElementById('modal-historial').classList.remove('open');};
+
+// ── 4: Duplicar publicación tablón ──
+let _duplicarItem=null;
+window.abrirDuplicar=function(id,titulo){
+  _duplicarItem=id;
+  document.getElementById('duplicar-titulo-ref').textContent='«'+titulo+'»';
+  const cont=document.getElementById('duplicar-cursos');cont.innerHTML='';
+  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
+  curs.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:.875rem;padding:.875rem 1rem;font-weight:700;font-size:.875rem;cursor:pointer;font-family:inherit;text-align:left;color:#0f172a;transition:border-color .15s';
+    btn.textContent='📋 Duplicar para '+c;
+    btn.onmouseenter=()=>btn.style.borderColor='#2563eb';
+    btn.onmouseleave=()=>btn.style.borderColor='#e2e8f0';
+    btn.onclick=()=>ejecutarDuplicar(c);
+    cont.appendChild(btn);
+  });
+  if(!curs.length)cont.innerHTML='<p style="font-size:.75rem;color:#94a3b8">Sin otros cursos asignados.</p>';
+  document.getElementById('modal-duplicar').classList.add('open');
+};
+window.cerrarDuplicar=function(){document.getElementById('modal-duplicar').classList.remove('open');_duplicarItem=null;};
+
+async function ejecutarDuplicar(cursoDest){
+  if(!_duplicarItem)return;
+  const doc=await db.collection('tablon').doc(_duplicarItem).get();
+  if(!doc.exists){cerrarDuplicar();return;}
+  const data={...doc.data()};
+  data.curso=cursoDest;
+  data.creadoEn=firebase.firestore.FieldValue.serverTimestamp();
+  data.leidos=[];delete data.id;
+  await db.collection('tablon').add(data);
+  cerrarDuplicar();
+  alert('✅ Publicación duplicada para '+cursoDest+'.');
+  cargarTablonDocente();
+}
+window.ejecutarDuplicar=ejecutarDuplicar;
+
+// ── 1: Marcar entregas de alumnos ──
+let _entregasItem=null;
+window.abrirEntregas=async function(id,titulo,curso){
+  _entregasItem=id;
+  document.getElementById('entregas-titulo').textContent=titulo;
+  document.getElementById('entregas-sub').textContent='Curso: '+curso;
+  document.getElementById('modal-entregas').classList.add('open');
+  const lista=document.getElementById('entregas-lista');
+  lista.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center;padding:1rem">Cargando alumnos...</p>';
+
+  // Cargar entregados de Firebase
+  const entDoc=await db.collection('tablon').doc(id).get().catch(()=>null);
+  const entregados=entDoc?.data()?.entregados||[];
+
+  // Alumnos del curso
+  const aSnap=await db.collection('alumnos').where('curso','==',curso).get().catch(()=>({docs:[]}));
+  const alus=[];aSnap.docs.forEach(d=>alus.push({id:d.id,nombre:d.data().nombre}));
+  alus.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  lista.innerHTML='';
+  if(!alus.length){lista.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center;padding:1rem">Sin alumnos en este curso.</p>';return;}
+
+  const entregadosSet=new Set(entregados);
+  let entregadasCount=0;
+  alus.forEach((al,i)=>{
+    const entrego=entregadosSet.has(al.id);
+    if(entrego)entregadasCount++;
+    const row=document.createElement('div');
+    row.className='entrega-item';
+    row.style.marginBottom='.375rem';
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:.75rem">
+      <span style="font-size:10px;font-weight:900;color:#cbd5e1">${i+1}</span>
+      <p style="font-size:.875rem;font-weight:600">${al.nombre}</p>
+    </div>
+    <button id="ent-btn-${al.id}" onclick="toggleEntrega('${id}','${al.id}',this)"
+      style="border:none;border-radius:.625rem;padding:.375rem .875rem;font-size:.6875rem;font-weight:800;cursor:pointer;font-family:inherit;background:${entrego?'#dcfce7':'#f1f5f9'};color:${entrego?'#15803d':'#94a3b8'}">
+      ${entrego?'✓ Entregó':'Pendiente'}
+    </button>`;
+    lista.appendChild(row);
+  });
+  // Header counter
+  document.getElementById('entregas-sub').textContent=`Curso: ${curso} · ${entregadasCount}/${alus.length} entregaron`;
+};
+window.cerrarEntregas=function(){document.getElementById('modal-entregas').classList.remove('open');_entregasItem=null;cargarTablonDocente();};
+
+window.toggleEntrega=async function(tablonId,alumnoId,btn){
+  const actual=btn.textContent.trim().startsWith('✓');
+  if(actual){
+    await db.collection('tablon').doc(tablonId).update({entregados:firebase.firestore.FieldValue.arrayRemove(alumnoId)});
+    btn.textContent='Pendiente';btn.style.background='#f1f5f9';btn.style.color='#94a3b8';
+  } else {
+    await db.collection('tablon').doc(tablonId).update({entregados:firebase.firestore.FieldValue.arrayUnion(alumnoId)});
+    btn.textContent='✓ Entregó';btn.style.background='#dcfce7';btn.style.color='#15803d';
+  }
+};
+
+// ── Cerrar modales con backdrop ──
+['modal-historial','modal-entregas','modal-duplicar'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('click',e=>{if(e.target===el){el.classList.remove('open');}});
+});
+
+// ══ FIN MEJORAS FINALES ══
+
+// ── IOSI STUDY: CARGA DE MATERIAL ──
+} // fin _initDocente
+</script>
 <!-- ══════════════════════════════════════════════════════════
      REVISTA MODULE — Firebase Modular paralelo al compat
 ═══════════════════════════════════════════════════════════ -->
@@ -2958,465 +3417,6 @@ function rvToast(msg,tipo='ok'){
 }
 </script>
 
-</body></html>`;
-  const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>win.print(),500);
-  btn.disabled=false;btn.innerHTML='<i class="fas fa-file-pdf"></i> PDF';
-}
-window.generarPDFAlumno=generarPDFAlumno;
-
-// ── 17: Gráfico de rendimiento ──
-async function renderGraficoRendimiento(){
-  const cont=document.getElementById('grafico-container');
-  const distCont=document.getElementById('distribucion-container');
-  const curso=cursoActivo||document.getElementById('select-curso')?.value||'';
-  if(!curso||!materiaActiva||!alumnosActuales.length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-8">Seleccioná curso y cargá notas primero.</p>';return;}
-  document.getElementById('grafico-curso-label').textContent=`${curso} · ${materiaActiva} · ${periodoActivo.nombre}`;
-  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Calculando...</p>';
-  const notasPorColumna={};const notasPorAlumno={};
-  for(const al of alumnosActuales){
-    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
-    if(!nd.exists)continue;const data=nd.data();let suma=0,cnt=0;
-    columnaExamenes.forEach(col=>{const v=parseFloat(data[col.key]);if(!isNaN(v)){if(!notasPorColumna[col.key]){notasPorColumna[col.key]={label:col.label,vals:[]};}notasPorColumna[col.key].vals.push(v);suma+=v;cnt++;}});
-    if(cnt>0)notasPorAlumno[al.nombre]=(suma/cnt);
-  }
-  if(!Object.keys(notasPorColumna).length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-8">Sin notas cargadas todavía.</p>';return;}
-  const labels=[];const promedios=[];const colores=[];
-  Object.values(notasPorColumna).forEach(col=>{const prom=col.vals.reduce((a,b)=>a+b,0)/col.vals.length;labels.push(col.label);promedios.push(parseFloat(prom.toFixed(1)));colores.push(prom>=6?'#22c55e':prom>=4?'#f59e0b':'#ef4444');});
-  const barWidth=Math.min(56,Math.floor(260/labels.length));const gap=8;const chartW=labels.length*(barWidth+gap)+40;const chartH=180;
-  let svg=`<svg width="100%" height="${chartH+40}" viewBox="0 0 ${Math.max(chartW,300)} ${chartH+40}" style="overflow:visible">`;
-  [4,6,8,10].forEach(v=>{const y=chartH-(v/10*chartH);svg+=`<line x1="30" y1="${y}" x2="${chartW}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/><text x="24" y="${y+4}" font-size="9" fill="#94a3b8" text-anchor="end">${v}</text>`;});
-  const aprobY=chartH-(6/10*chartH);svg+=`<line x1="30" y1="${aprobY}" x2="${chartW}" y2="${aprobY}" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4"/>`;
-  labels.forEach((lbl,i)=>{const x=30+i*(barWidth+gap);const h=(promedios[i]/10)*chartH;const y=chartH-h;svg+=`<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="6" fill="${colores[i]}" opacity="0.9"/><text x="${x+barWidth/2}" y="${y-5}" font-size="10" font-weight="700" fill="${colores[i]}" text-anchor="middle">${promedios[i]}</text><text x="${x+barWidth/2}" y="${chartH+14}" font-size="9" fill="#64748b" text-anchor="middle">${lbl.slice(0,8)}</text>`;});
-  svg+='</svg>';cont.innerHTML=svg;
-  const rangos={aprobados:0,en_proceso:0,insuficientes:0};
-  Object.values(notasPorAlumno).forEach(p=>{if(p>=6)rangos.aprobados++;else if(p>=4)rangos.en_proceso++;else rangos.insuficientes++;});
-  const total=Object.keys(notasPorAlumno).length||1;
-  distCont.innerHTML=[{label:'Aprobados (≥6)',val:rangos.aprobados,color:'#15803d',bg:'#f0fdf4'},{label:'En proceso (4-5)',val:rangos.en_proceso,color:'#a16207',bg:'#fefce8'},{label:'Insuficientes (<4)',val:rangos.insuficientes,color:'#dc2626',bg:'#fef2f2'}].map(r=>`<div style="background:${r.bg};border-radius:.75rem;padding:.625rem .875rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:.75rem;font-weight:700;color:${r.color}">${r.label}</span><span style="font-size:.9375rem;font-weight:900;color:${r.color}">${r.val} <span style="font-size:.625rem">(${Math.round(r.val/total*100)}%)</span></span></div>`).join('');
-}
-window.renderGraficoRendimiento=renderGraficoRendimiento;
-
-// ── 15: Foro del docente ──
-function iniciarForoDocente(){
-  const sel=document.getElementById('foro-doc-curso');if(!sel)return;
-  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
-  sel.innerHTML='';curs.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
-  if(curs.length)cargarForoDocente();
-}
-async function cargarForoDocente(){
-  const curso=document.getElementById('foro-doc-curso')?.value;const cont=document.getElementById('lista-foro-doc');
-  if(!curso||!cont)return;
-  cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>';
-  const cfg=await db.collection('foro_config').doc(curso+'_'+docenteEmail).get().catch(()=>null);
-  const permiteRespuestas=cfg?.exists?cfg.data().permiteRespuestas!==false:true;
-  document.getElementById('foro-permite-respuestas').checked=permiteRespuestas;
-  let snap;try{snap=await db.collection('foro').where('curso','==',curso).orderBy('creadoEn','desc').limit(30).get();}catch(e){snap=await db.collection('foro').where('curso','==',curso).get();}
-  cont.innerHTML='';
-  if(snap.empty){cont.innerHTML='<p class="text-xs text-slate-400 text-center py-4">Sin mensajes en el foro de este curso.</p>';return;}
-  const tipoIcon={pregunta:'❓',comentario:'💬',ayuda:'🆘'};
-  snap.forEach(doc=>{
-    const d=doc.data();const id=doc.id;
-    const fecha=d.creadoEn?.toDate?.();const fechaStr=fecha?fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
-    const esDocente=d.autorRol==='docente';const respuestas=d.respuestas||[];
-    cont.innerHTML+=`<div style="background:white;border:1px solid #e2e8f0;border-radius:1.25rem;overflow:hidden;margin-bottom:.5rem;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-      <div style="padding:12px 14px;background:${esDocente?'#eff6ff':'white'}">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <span>${tipoIcon[d.tipo]||'💬'}</span>
-          <span style="font-size:11px;font-weight:700;color:#475569">${d.autorNombre||'Alumno'}${esDocente?' 👩‍🏫':''}</span>
-          <span style="font-size:9px;color:#94a3b8;margin-left:auto">${fechaStr}</span>
-        </div>
-        <p style="font-size:13px;line-height:1.5">${d.texto||''}</p>
-      </div>
-      ${respuestas.length?`<div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc">${respuestas.map(r=>`<div style="padding:6px 10px;background:white;border-radius:.625rem;border-left:3px solid ${r.rolAutor==='docente'?'#2563eb':'#e2e8f0'};margin-bottom:4px"><p style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:2px">${r.autorNombre||''}${r.rolAutor==='docente'?' 👩‍🏫':''}</p><p style="font-size:12px">${r.texto}</p></div>`).join('')}</div>`:''}
-      <div style="padding:8px 14px;border-top:1px solid #f1f5f9;display:flex;gap:6px">
-        <button onclick="responderForoDocente('${id}')" style="background:#eff6ff;border:none;border-radius:.625rem;padding:5px 12px;font-size:11px;font-weight:700;color:#2563eb;cursor:pointer;font-family:inherit"><i class="fas fa-reply"></i> Responder</button>
-        ${esDocente?`<button onclick="eliminarMsgForo('${id}')" style="background:none;border:none;color:#fca5a5;cursor:pointer;padding:5px 8px;font-size:11px"><i class="fas fa-trash"></i></button>`:''}
-      </div>
-    </div>`;
-  });
-}
-window.cargarForoDocente=cargarForoDocente;
-async function publicarMensajeForo(){
-  const curso=document.getElementById('foro-doc-curso')?.value;const texto=document.getElementById('foro-doc-msg').value.trim();
-  if(!curso||!texto){alert('Escribí un mensaje.');return;}
-  const btn=document.querySelector('[onclick="publicarMensajeForo()"]');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Publicando...';
-  await db.collection('foro').add({texto,tipo:'comentario',curso,autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'Docente',autorRol:'docente',creadoEn:firebase.firestore.FieldValue.serverTimestamp(),respuestas:[]});
-  document.getElementById('foro-doc-msg').value='';btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> PUBLICAR EN FORO';
-  cargarForoDocente();
-}
-window.publicarMensajeForo=publicarMensajeForo;
-async function responderForoDocente(id){
-  const texto=prompt('Tu respuesta:');if(!texto?.trim())return;
-  const resp={texto:texto.trim(),autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'Docente',rolAutor:'docente',fecha:new Date().toISOString()};
-  await db.collection('foro').doc(id).update({respuestas:firebase.firestore.FieldValue.arrayUnion(resp)});
-  cargarForoDocente();
-}
-window.responderForoDocente=responderForoDocente;
-async function eliminarMsgForo(id){if(!confirm('¿Eliminar?'))return;await db.collection('foro').doc(id).delete();cargarForoDocente();}
-window.eliminarMsgForo=eliminarMsgForo;
-async function togglePermiteRespuestas(){
-  const curso=document.getElementById('foro-doc-curso')?.value;const permite=document.getElementById('foro-permite-respuestas').checked;
-  if(!curso)return;
-  await db.collection('foro_config').doc(curso+'_'+docenteEmail).set({permiteRespuestas:permite,curso,docenteEmail},{merge:true});
-}
-window.togglePermiteRespuestas=togglePermiteRespuestas;
-
-// ══ FIN TANDA 3 ══
-window._switchTab=function switchTab(tab){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  if(tab==='mis-cursos'){cargarMisCursos().catch(()=>{}); cargarCursosParaSolicitud().catch(()=>{});}
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
-  if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
-  if(tab==='dashboard'){cargarDashboardStats();cargarUltimaActividad();}
-  if(tab==='informes'){poblarCursosSelectorInforme();}
-  if(tab==='notas'){
-    // Sync modo buttons with current select-modalidad value
-    const modalidad = document.getElementById('select-modalidad')?.value || 'NUMERICO';
-    const toggleWrap = document.getElementById('toggle-vista-wrap');
-    if(toggleWrap) toggleWrap.style.display = modalidad === 'NUMERICO' ? 'flex' : 'none';
-    ['NUMERICO','INDICADORES'].forEach(m => {
-      const btn = document.getElementById('modo-btn-'+m);
-      if(!btn) return;
-      btn.classList.toggle('active', m===modalidad);
-      btn.style.borderColor = m===modalidad ? '#2563eb' : '#e2e8f0';
-      btn.style.background = m===modalidad ? '#eff6ff' : '#f8fafc';
-    });
-  }
-  document.getElementById('tab-'+tab)?.classList.add('active');
-  document.getElementById('btn-'+tab)?.classList.add('active');
-  if(tab==='revista'){ initRevista(); }
-  document.getElementById('btn-guardar-notas').style.display='none';
-  document.getElementById('btn-guardar-asis').style.display='none';
-  if(tab==='notas'&&Object.keys(cambiosNotas).length)document.getElementById('btn-guardar-notas').style.display='block';
-  if(tab==='asis'&&Object.keys(cambiosAsis).length)document.getElementById('btn-guardar-asis').style.display='block';
-};
-window.switchTab=function(t){window._switchTab(t);};
-
-// ══════════════════════════════════════════════════
-// MIS CURSOS — Solicitud y visualización
-// ══════════════════════════════════════════════════
-
-async function cargarMisCursos(){
-  // Poblar selector de materias del docente
-  const selMat=document.getElementById('sol-materia');
-  if(selMat){
-    selMat.innerHTML='<option value="">Seleccionar materia...</option>';
-    const mats=Array.isArray(docenteData?.materias)?docenteData.materias:[];
-    mats.forEach(m=>selMat.innerHTML+=`<option value="${m}">${m}</option>`);
-  }
-
-  // Cursos aprobados actuales
-  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
-  const divAprobados=document.getElementById('mis-cursos-aprobados');
-  if(divAprobados){
-    if(curs.length){
-      divAprobados.innerHTML=curs.map(c=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f0fdf4;border-radius:14px;margin-bottom:6px">
-          <span style="font-weight:800;font-size:.875rem">${c}</span>
-          <span style="font-size:.65rem;font-weight:800;color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:99px">✓ Asignado</span>
-        </div>`).join('');
-    }else{
-      divAprobados.innerHTML='<p style="color:#94a3b8;font-size:.8rem;text-align:center;padding:12px;font-style:italic">Sin cursos asignados todavía. Enviá una solicitud abajo.</p>';
-    }
-  }
-
-  // Solicitudes pendientes del docente
-  const divPend=document.getElementById('mis-cursos-pendientes');
-  if(divPend){
-    try{
-      const snap=await db.collection('solicitudes_cursos')
-        .where('docenteEmail','==',docenteEmail)
-        .orderBy('creadoEn','desc').limit(10).get().catch(async()=>{
-          // Fallback sin orderBy si falta índice
-          return db.collection('solicitudes_cursos').where('docenteEmail','==',docenteEmail).get();
-        });
-      if(snap.empty){
-        divPend.innerHTML='<p style="color:#94a3b8;font-size:.8rem;text-align:center;padding:8px;font-style:italic">Sin solicitudes enviadas.</p>';
-        document.getElementById('badge-cursos-pend').style.display='none';
-      }else{
-        const hasPend=snap.docs.some(d=>d.data().estado==='pendiente');
-        document.getElementById('badge-cursos-pend').style.display=hasPend?'block':'none';
-        divPend.innerHTML=snap.docs.map(doc=>{
-          const s=doc.data();
-          const estadoColor=s.estado==='aprobada'?'#15803d':s.estado==='rechazada'?'#b91c1c':'#92400e';
-          const estadoBg=s.estado==='aprobada'?'#dcfce7':s.estado==='rechazada'?'#fee2e2':'#fef3c7';
-          const estadoLabel=s.estado==='aprobada'?'✅ Aprobada':s.estado==='rechazada'?'❌ Rechazada':'⏳ Pendiente';
-          const cursosStr=(s.cursos||[]).join(', ');
-          const fechaStr=s.creadoEn?.toDate?.()?.toLocaleDateString('es-AR')||s.creadoEn||'';
-          return `<div style="padding:12px 14px;background:#f8fafc;border-radius:14px;margin-bottom:8px;border:1px solid #e2e8f0">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <div>
-                <p style="font-weight:800;font-size:.8rem;margin:0 0 2px">${s.materia||'(sin materia)'}</p>
-                <p style="font-size:.7rem;color:#64748b;margin:0">Cursos: ${cursosStr||'—'}</p>
-                ${s.nota?`<p style="font-size:.68rem;color:#94a3b8;margin:4px 0 0;font-style:italic">"${s.nota}"</p>`:''}
-                ${fechaStr?`<p style="font-size:.62rem;color:#94a3b8;margin:2px 0 0">${fechaStr}</p>`:''}
-                ${s.observacionAdmin?`<p style="font-size:.7rem;color:#64748b;margin:4px 0 0;padding:4px 8px;background:#fff;border-radius:8px">💬 ${s.observacionAdmin}</p>`:''}
-              </div>
-              <span style="flex-shrink:0;font-size:.65rem;font-weight:800;padding:3px 10px;border-radius:99px;background:${estadoBg};color:${estadoColor}">${estadoLabel}</span>
-            </div>
-          </div>`;
-        }).join('');
-      }
-    }catch(e){
-      divPend.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">No se pudieron cargar las solicitudes.</p>';
-    }
-  }
-}
-
-async function cargarCursosParaSolicitud(){
-  const grid=document.getElementById('sol-cursos-grid');
-  if(!grid)return;
-  grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic">Cargando...</p>';
-  try{
-    // Obtener el nivel del docente. Puede ser un string o array si dicta en varios niveles.
-    const nivelDoc=docenteData?.nivel;
-    const nivelArr=Array.isArray(nivelDoc)?nivelDoc:(nivelDoc?[nivelDoc]:[]);
-
-    // Traer TODOS los cursos y filtrar por nivel del docente.
-    // Si no hay nivel definido o no matchea nada, mostramos todos.
-    const allSnap=await db.collection('cursos').orderBy('nombre','asc').get().catch(async()=>{
-      // Fallback sin orderBy si no hay índice
-      return db.collection('cursos').get();
-    });
-
-    let docs=allSnap.docs;
-    // Filtrar por nivel si el docente tiene nivel definido
-    if(nivelArr.length){
-      const porNivel=docs.filter(d=>nivelArr.includes(d.data().nivel));
-      // Solo filtrar si encontramos cursos de su nivel; si no, mostrar todos
-      if(porNivel.length>0)docs=porNivel;
-    }
-    // Ordenar: primero por nivel, luego por nombre
-    docs.sort((a,b)=>{
-      const na=a.data().nombre||'', nb=b.data().nombre||'';
-      return na.localeCompare(nb, 'es', {numeric:true});
-    });
-
-    const asignados=new Set(Array.isArray(docenteData?.cursos)?docenteData.cursos:[]);
-    if(!docs.length){
-      grid.innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">No hay cursos creados aún. Pedile al admin que los cree desde el panel.</p>';
-      return;
-    }
-    grid.innerHTML='';
-    docs.forEach(doc=>{
-      const d=doc.data();
-      const c=d.nombre;
-      const yaAsignado=asignados.has(c);
-      const nivelLabel=d.nivel?`<span style="font-size:.6rem;color:#94a3b8;margin-left:4px">${d.nivel}</span>`:'';
-      grid.innerHTML+=`<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid ${yaAsignado?'#86efac':'#e2e8f0'};border-radius:12px;cursor:${yaAsignado?'default':'pointer'};background:${yaAsignado?'#f0fdf4':'#fff'}">
-        <input type="checkbox" value="${c}" ${yaAsignado?'disabled checked':''} style="accent-color:#0f172a;width:16px;height:16px;flex-shrink:0">
-        <span style="font-weight:700;font-size:.8rem;color:${yaAsignado?'#15803d':'#0f172a'}">${c}${nivelLabel}</span>
-        ${yaAsignado?'<span style="font-size:.6rem;color:#15803d;margin-left:auto;flex-shrink:0">✓</span>':''}
-      </label>`;
-    });
-  }catch(e){
-    grid.innerHTML='<p style="color:#ef4444;font-size:.75rem;grid-column:1/-1">Error al cargar cursos: '+e.message+'</p>';
-    console.error('cargarCursosParaSolicitud:', e);
-  }
-}
-
-window.enviarSolicitudCursos=async function enviarSolicitudCursos(){
-  const materia=document.getElementById('sol-materia')?.value;
-  if(!materia){alert('Seleccioná una materia.');return;}
-  const cursosSelec=Array.from(document.querySelectorAll('#sol-cursos-grid input[type=checkbox]:checked:not(:disabled)'))
-    .map(cb=>cb.value);
-  if(!cursosSelec.length){alert('Seleccioná al menos un curso nuevo (los ya asignados no se pueden volver a solicitar).');return;}
-  const nota=document.getElementById('sol-nota')?.value.trim()||'';
-
-  const btn=event?.target||document.querySelector('[onclick="enviarSolicitudCursos()"]');
-  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
-  try{
-    await db.collection('solicitudes_cursos').add({
-      docenteEmail, docenteNombre:docenteData?.nombre||'',
-      materia, cursos:cursosSelec, nota,
-      estado:'pendiente',
-      nivel:'secundario',
-      creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    // Notificar al admin
-    await db.collection('notificaciones_admin').add({
-      tipo:'solicitud_cursos', docenteEmail, docenteNombre:docenteData?.nombre||'',
-      mensaje:`${docenteData?.nombre||docenteEmail} solicitó cursos en ${materia}: ${cursosSelec.join(', ')}`,
-      leida:false, creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
-    }).catch(()=>{});
-    alert('✅ Solicitud enviada. El administrador la revisará y te notificará.');
-    document.getElementById('sol-materia').value='';
-    document.getElementById('sol-cursos-grid').innerHTML='<p style="color:#94a3b8;font-size:.75rem;font-style:italic;grid-column:1/-1">Seleccioná una materia primero.</p>';
-    document.getElementById('sol-nota').value='';
-    await cargarMisCursos(); // Refrescar
-  }catch(e){
-    alert('Error al enviar solicitud: '+e.message);
-  }
-  if(btn){btn.disabled=false;btn.textContent='📩 Enviar solicitud';}
-};
-
-document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-window.addEventListener('load',()=>{
-  const em=sessionStorage.getItem('iosef_email');const rol=sessionStorage.getItem('iosef_rol');
-  if(em&&rol==='eoe'){window.location.href='eoe.html';return;}
-  if(em&&(rol==='docente'||rol==='admin'||rol==='director')){document.getElementById('login-email').value=em;login(em);}
-});
-
-// ══ MEJORAS FINALES ══
-
-// ── 2: Historial de asistencia por alumno ──
-window.abrirHistorial=async function(id, nombre){
-  document.getElementById('historial-nombre').textContent=nombre;
-  document.getElementById('modal-historial').classList.add('open');
-  const cal=document.getElementById('historial-cal');
-  const stats=document.getElementById('historial-stats');
-  cal.innerHTML='<p style="font-size:11px;color:#94a3b8;grid-column:span 7;text-align:center;padding:.5rem">Cargando...</p>';
-
-  // Calcular últimos 30 días
-  const hoy=new Date();
-  const fechas=[];
-  for(let i=29;i>=0;i--){
-    const d=new Date(hoy);d.setDate(hoy.getDate()-i);
-    fechas.push(d.toISOString().slice(0,10));
-  }
-
-  // Buscar asistencia
-  const snap=await db.collection('asistencia').where('alumnoId','==',id).where('materia','==',materiaActiva).get().catch(()=>null);
-  const mapaAsis={};
-  if(snap)snap.forEach(d=>{mapaAsis[d.data().fecha]=d.data().estado;});
-
-  // Renderizar calendario — alinear primer día con día de semana
-  const primerFecha=new Date(fechas[0]+'T12:00:00');
-  // JS: 0=Dom,1=Lun...6=Sab → queremos Lun=0
-  const primerDia=(primerFecha.getDay()+6)%7; // 0=Lun
-  cal.innerHTML='';
-  // Blancos iniciales
-  for(let i=0;i<primerDia;i++){
-    const d=document.createElement('div');d.className='hcal-dia hcal-x';cal.appendChild(d);
-  }
-  let presentes=0,ausentes=0,tardes=0;
-  fechas.forEach(f=>{
-    const est=mapaAsis[f];
-    const d=document.createElement('div');
-    const dia=f.slice(8);
-    if(est==='P'){d.className='hcal-dia hcal-P';presentes++;}
-    else if(est==='A'){d.className='hcal-dia hcal-A';ausentes++;}
-    else if(est==='T'){d.className='hcal-dia hcal-T';tardes++;}
-    else{d.className='hcal-dia hcal-x';}
-    d.textContent=dia;d.title=f;
-    cal.appendChild(d);
-  });
-  const total=presentes+ausentes+tardes;
-  const pct=total>0?Math.round((presentes/total)*100):null;
-  stats.innerHTML=[
-    {n:presentes,l:'Presentes',c:'#15803d',bg:'#f0fdf4'},
-    {n:ausentes,l:'Ausentes',c:'#dc2626',bg:'#fef2f2'},
-    {n:pct!==null?pct+'%':'—',l:'Asistencia',c:'#2563eb',bg:'#eff6ff'},
-  ].map(s=>`<div style="background:${s.bg};border-radius:.875rem;padding:.625rem;text-align:center">
-    <p style="font-size:1.25rem;font-weight:900;color:${s.c}">${s.n}</p>
-    <p style="font-size:.625rem;font-weight:700;color:#64748b;margin-top:2px">${s.l}</p>
-  </div>`).join('');
-};
-window.cerrarHistorial=function(){document.getElementById('modal-historial').classList.remove('open');};
-
-// ── 4: Duplicar publicación tablón ──
-let _duplicarItem=null;
-window.abrirDuplicar=function(id,titulo){
-  _duplicarItem=id;
-  document.getElementById('duplicar-titulo-ref').textContent='«'+titulo+'»';
-  const cont=document.getElementById('duplicar-cursos');cont.innerHTML='';
-  const curs=Array.isArray(docenteData?.cursos)?docenteData.cursos:[];
-  curs.forEach(c=>{
-    const btn=document.createElement('button');
-    btn.style.cssText='width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:.875rem;padding:.875rem 1rem;font-weight:700;font-size:.875rem;cursor:pointer;font-family:inherit;text-align:left;color:#0f172a;transition:border-color .15s';
-    btn.textContent='📋 Duplicar para '+c;
-    btn.onmouseenter=()=>btn.style.borderColor='#2563eb';
-    btn.onmouseleave=()=>btn.style.borderColor='#e2e8f0';
-    btn.onclick=()=>ejecutarDuplicar(c);
-    cont.appendChild(btn);
-  });
-  if(!curs.length)cont.innerHTML='<p style="font-size:.75rem;color:#94a3b8">Sin otros cursos asignados.</p>';
-  document.getElementById('modal-duplicar').classList.add('open');
-};
-window.cerrarDuplicar=function(){document.getElementById('modal-duplicar').classList.remove('open');_duplicarItem=null;};
-
-async function ejecutarDuplicar(cursoDest){
-  if(!_duplicarItem)return;
-  const doc=await db.collection('tablon').doc(_duplicarItem).get();
-  if(!doc.exists){cerrarDuplicar();return;}
-  const data={...doc.data()};
-  data.curso=cursoDest;
-  data.creadoEn=firebase.firestore.FieldValue.serverTimestamp();
-  data.leidos=[];delete data.id;
-  await db.collection('tablon').add(data);
-  cerrarDuplicar();
-  alert('✅ Publicación duplicada para '+cursoDest+'.');
-  cargarTablonDocente();
-}
-window.ejecutarDuplicar=ejecutarDuplicar;
-
-// ── 1: Marcar entregas de alumnos ──
-let _entregasItem=null;
-window.abrirEntregas=async function(id,titulo,curso){
-  _entregasItem=id;
-  document.getElementById('entregas-titulo').textContent=titulo;
-  document.getElementById('entregas-sub').textContent='Curso: '+curso;
-  document.getElementById('modal-entregas').classList.add('open');
-  const lista=document.getElementById('entregas-lista');
-  lista.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center;padding:1rem">Cargando alumnos...</p>';
-
-  // Cargar entregados de Firebase
-  const entDoc=await db.collection('tablon').doc(id).get().catch(()=>null);
-  const entregados=entDoc?.data()?.entregados||[];
-
-  // Alumnos del curso
-  const aSnap=await db.collection('alumnos').where('curso','==',curso).get().catch(()=>({docs:[]}));
-  const alus=[];aSnap.docs.forEach(d=>alus.push({id:d.id,nombre:d.data().nombre}));
-  alus.sort((a,b)=>a.nombre.localeCompare(b.nombre));
-
-  lista.innerHTML='';
-  if(!alus.length){lista.innerHTML='<p style="font-size:11px;color:#94a3b8;text-align:center;padding:1rem">Sin alumnos en este curso.</p>';return;}
-
-  const entregadosSet=new Set(entregados);
-  let entregadasCount=0;
-  alus.forEach((al,i)=>{
-    const entrego=entregadosSet.has(al.id);
-    if(entrego)entregadasCount++;
-    const row=document.createElement('div');
-    row.className='entrega-item';
-    row.style.marginBottom='.375rem';
-    row.innerHTML=`<div style="display:flex;align-items:center;gap:.75rem">
-      <span style="font-size:10px;font-weight:900;color:#cbd5e1">${i+1}</span>
-      <p style="font-size:.875rem;font-weight:600">${al.nombre}</p>
-    </div>
-    <button id="ent-btn-${al.id}" onclick="toggleEntrega('${id}','${al.id}',this)"
-      style="border:none;border-radius:.625rem;padding:.375rem .875rem;font-size:.6875rem;font-weight:800;cursor:pointer;font-family:inherit;background:${entrego?'#dcfce7':'#f1f5f9'};color:${entrego?'#15803d':'#94a3b8'}">
-      ${entrego?'✓ Entregó':'Pendiente'}
-    </button>`;
-    lista.appendChild(row);
-  });
-  // Header counter
-  document.getElementById('entregas-sub').textContent=`Curso: ${curso} · ${entregadasCount}/${alus.length} entregaron`;
-};
-window.cerrarEntregas=function(){document.getElementById('modal-entregas').classList.remove('open');_entregasItem=null;cargarTablonDocente();};
-
-window.toggleEntrega=async function(tablonId,alumnoId,btn){
-  const actual=btn.textContent.trim().startsWith('✓');
-  if(actual){
-    await db.collection('tablon').doc(tablonId).update({entregados:firebase.firestore.FieldValue.arrayRemove(alumnoId)});
-    btn.textContent='Pendiente';btn.style.background='#f1f5f9';btn.style.color='#94a3b8';
-  } else {
-    await db.collection('tablon').doc(tablonId).update({entregados:firebase.firestore.FieldValue.arrayUnion(alumnoId)});
-    btn.textContent='✓ Entregó';btn.style.background='#dcfce7';btn.style.color='#15803d';
-  }
-};
-
-// ── Cerrar modales con backdrop ──
-['modal-historial','modal-entregas','modal-duplicar'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('click',e=>{if(e.target===el){el.classList.remove('open');}});
-});
-
-// ══ FIN MEJORAS FINALES ══
-
-// ── IOSI STUDY: CARGA DE MATERIAL ──
-} // fin _initDocente
-</script>
 
 <!-- MODAL HISTORIAL ASISTENCIA -->
 <div id="modal-historial">
