@@ -3144,34 +3144,48 @@ window.initRevista = async function(){
       '<div style="font-size:12px;color:var(--muted);text-align:center">Iniciá sesión en el panel docente primero.</div></div>';
     return;
   }
+  // Mostramos la interfaz YA, sin esperar a que termine la autenticación anónima.
+  // Si Firestore rechaza las lecturas/escrituras por falta de auth, el error va
+  // a aparecer visiblemente en "Borradores"/"Enviados" en vez de dejar todo negro.
+  currentUser = { email: emailDocente };
+  mostrarAppRevista(emailDocente);
   try {
     await signInAnonymously(auth);
   } catch(e) {
     console.error('Error de autenticación en Revista:', e);
+    avisarErrorAuth(e);
   }
 };
+
+function mostrarAppRevista(emailDocente){
+  document.getElementById('login-section').style.display  = 'none';
+  document.getElementById('site-header').style.display    = 'flex';
+  document.getElementById('tabs-bar').style.display       = 'block';
+  document.getElementById('app-section').style.display    = 'block';
+  const nombre = window.docenteNombre || nombreAmigableDesdeEmail(emailDocente);
+  document.getElementById('header-name').textContent = nombre;
+  document.getElementById('art-autor').value = nombre;
+  bloques = [{ id: bid(), tipo:'texto', html:'<p></p>' }];
+  renderBloques();
+  cargarBorradores();
+  cargarEnviados();
+}
+
+function avisarErrorAuth(e){
+  const detalle = (e && (e.code || e.message)) || 'desconocido';
+  const html = '<div style="color:var(--err);padding:16px;font-size:12px;line-height:1.6">' +
+    'No se pudo conectar con el servidor de la Revista (' + detalle + ').<br>' +
+    'Avisá al administrador del sitio para que revise la configuración de Firebase.</div>';
+  const cb = document.getElementById('lista-borradores'); if (cb) cb.innerHTML = html;
+  const ce = document.getElementById('lista-enviados');   if (ce) ce.innerHTML = html;
+}
 
 onAuthStateChanged(auth, user => {
   if (user) {
     const emailDocente = window.docenteEmail || '';
     currentUser = { uid: user.uid, email: emailDocente };
-    document.getElementById('login-section').style.display  = 'none';
-    document.getElementById('site-header').style.display    = 'flex';
-    document.getElementById('tabs-bar').style.display       = 'block';
-    document.getElementById('app-section').style.display    = 'block';
-    // Nombre amigable
-    const nombre = window.docenteNombre || nombreAmigableDesdeEmail(emailDocente);
-    document.getElementById('header-name').textContent = nombre;
-    document.getElementById('art-autor').value = nombre;
-    // Inicializar editor
-    bloques = [{ id: bid(), tipo:'texto', html:'<p></p>' }];
-    renderBloques();
-    // Cargar datos
-    cargarBorradores();
-    cargarEnviados();
   } else {
-    currentUser = null;
-    ['site-header','tabs-bar','app-section'].forEach(id => document.getElementById(id).style.display='none');
+    currentUser = window.docenteEmail ? { email: window.docenteEmail } : null;
   }
 });
 
