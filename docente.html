@@ -1884,7 +1884,7 @@ function poblarMateriasTablon(){
 }
 function cancelarEditarTablon(){
   document.getElementById('tablon-id-editando').value='';document.getElementById('tablon-titulo').value='';document.getElementById('tablon-texto').value='';
-  document.getElementById('tablon-fecha').value='';document.getElementById('tablon-contenidoEstudio').value='';
+  document.getElementById('tablon-fecha').value='';
   document.getElementById('btn-cancelar-tablon').classList.add('hidden');document.getElementById('btn-tablon-txt').textContent='PUBLICAR EN TABLÓN';
   selTipoTablon('tarea');
 }
@@ -1949,7 +1949,7 @@ async function cargarTablonDocente(){
 async function editarTablonDocente(id){
   const doc=await db.collection('tablon').doc(id).get();if(!doc.exists)return;const d=doc.data();
   document.getElementById('tablon-id-editando').value=id;document.getElementById('tablon-titulo').value=d.titulo||'';document.getElementById('tablon-texto').value=d.texto||'';
-  document.getElementById('tablon-fecha').value=d.fechaEntrega||'';document.getElementById('tablon-contenidoEstudio').value=d.contenidoEstudio||'';
+  document.getElementById('tablon-fecha').value=d.fechaEntrega||'';
   if(d.curso)document.getElementById('tablon-curso').value=d.curso;if(d.materia)document.getElementById('tablon-materia').value=d.materia;
   selTipoTablon(d.tipo||'tarea');document.getElementById('btn-cancelar-tablon').classList.remove('hidden');document.getElementById('btn-tablon-txt').textContent='GUARDAR CAMBIOS';
   document.getElementById('tab-tablon').scrollIntoView({behavior:'smooth'});
@@ -2839,7 +2839,6 @@ window.toggleEntrega=async function(tablonId,alumnoId,btn){
 
 // ══ FIN MEJORAS FINALES ══
 
-// ── IOSI STUDY: CARGA DE MATERIAL ──
 } // fin _initDocente
 </script>
 <style>
