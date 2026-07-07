@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Lato:wght@300;400;700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 *{box-sizing:border-box}
 body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-bottom:120px;overflow-x:hidden}
 .tab-content{display:none}.tab-content.active{display:block}
@@ -144,6 +145,221 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
 /* Informe */
 .informe-card{background:white;border:1px solid #e2e8f0;border-radius:1.5rem;padding:1.2rem}
 .filter-btn.active{background:#0f172a;color:white;border-color:#0f172a}
+
+/* ══ REVISTA INSTITUCIONAL (escopado bajo #revista-overlay) ══ */
+#revista-overlay{
+  --navy:#1A2848; --navy-dk:#0E1628;
+  --gold:#C9A84C; --gold-dk:#8A6420; --gold-lt:#F5EDD0;
+  --paper:#FAF7F1; --paper-dk:#F0E8D8; --paper-rule:#D4C9A8;
+  --ink:#1A1A2E; --ink-mid:#38385A; --muted:#6B6B8A;
+  --white:#fff;
+}#revista-overlay *{box-sizing:border-box;margin:0;padding:0}#revista-overlay{height:100%;overflow:hidden;background:var(--navy-dk);font-family:'Lato',sans-serif}#revista-overlay img{display:block;object-fit:cover}#revista-overlay #loading{
+  position:fixed;inset:0;background:var(--navy-dk);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;z-index:9999;transition:opacity .5s;
+}#revista-overlay #loading .spin{width:42px;height:42px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:rv-spin .9s linear infinite}@keyframes rv-spin{to{transform:rotate(360deg)}}#revista-overlay #loading p{font-family:'Playfair Display',serif;font-style:italic;color:var(--gold);font-size:15px}#revista-overlay #empty{
+  display:none;position:fixed;inset:0;
+  align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-style:italic;font-size:17px;color:rgba(255,255,255,.35);
+  text-align:center;padding:40px;
+}#revista-overlay .preview-banner{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:#C89A4C;color:#0E1628;font-family:'Lato',sans-serif;
+  font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;
+  text-align:center;padding:9px 14px;
+}#revista-overlay .topbar{
+  position:fixed;top:0;left:0;right:0;z-index:500;height:52px;
+  background:rgba(14,22,40,.96);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(201,168,76,.2);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;gap:12px;
+}#revista-overlay .topbar-brand{display:flex;align-items:center;gap:10px;flex-shrink:0}#revista-overlay .topbar-brand img{height:28px}#revista-overlay .topbar-brand-name{
+  font-family:'Playfair Display',serif;font-size:13px;font-weight:700;
+  font-style:italic;color:rgba(255,255,255,.9);
+}#revista-overlay .topbar-center{
+  flex:1;display:flex;justify-content:center;
+}#revista-overlay .ed-select{
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);
+  border:1px solid rgba(201,168,76,.3);border-radius:20px;
+  padding:7px 18px;font-family:'Lato',sans-serif;
+  font-size:10.5px;font-weight:700;cursor:pointer;max-width:280px;width:100%;
+}#revista-overlay .ed-select option{background:var(--navy)}#revista-overlay .topbar-nav{display:flex;align-items:center;gap:6px;flex-shrink:0}#revista-overlay .topbar-btn{
+  background:none;border:1px solid rgba(201,168,76,.3);color:var(--gold);
+  font-family:'Lato',sans-serif;font-size:9.5px;font-weight:900;letter-spacing:1.5px;
+  text-transform:uppercase;padding:6px 14px;border-radius:20px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}#revista-overlay .topbar-btn:hover{background:var(--gold);color:var(--navy-dk)}#revista-overlay .stage{
+  position:fixed;top:52px;left:0;right:0;bottom:56px;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px 12px;gap:10px;
+}#revista-overlay .nav-arrow{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  border:1px solid rgba(201,168,76,.3);background:rgba(255,255,255,.04);
+  color:var(--gold);font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;user-select:none;z-index:10;
+}#revista-overlay .nav-arrow:hover:not(:disabled){background:var(--gold);color:var(--navy-dk)}#revista-overlay .nav-arrow:disabled{opacity:.18;cursor:default}#revista-overlay .book-wrap{
+  position:relative;flex:1;max-width:900px;height:100%;
+  display:flex;align-items:center;justify-content:center;
+}#revista-overlay .book{
+  position:relative;
+  box-shadow:0 40px 80px rgba(0,0,0,.65),0 0 0 1px rgba(201,168,76,.12);
+}#revista-overlay .book::after{
+  content:'';position:absolute;bottom:-18px;left:5%;right:5%;height:22px;
+  background:radial-gradient(ellipse,rgba(0,0,0,.55) 0%,transparent 75%);
+  pointer-events:none;
+}#revista-overlay .book-spine{
+  position:absolute;top:0;bottom:0;width:10px;
+  left:50%;transform:translateX(-50%);z-index:30;
+  background:linear-gradient(to right,rgba(0,0,0,.25) 0%,rgba(201,168,76,.8) 30%,rgba(245,237,208,.9) 50%,rgba(201,168,76,.8) 70%,rgba(0,0,0,.15) 100%);
+  box-shadow:0 0 14px rgba(201,168,76,.35);
+}#revista-overlay .page-shadow-l{
+  position:absolute;top:0;bottom:0;left:50%;width:28px;margin-left:5px;
+  background:linear-gradient(to right,rgba(0,0,0,.22),transparent);
+  pointer-events:none;z-index:25;
+}#revista-overlay .page-shadow-r{
+  position:absolute;top:0;bottom:0;right:50%;width:28px;margin-right:5px;
+  background:linear-gradient(to left,rgba(0,0,0,.18),transparent);
+  pointer-events:none;z-index:25;
+}#revista-overlay .pages-container{
+  display:flex;width:100%;height:100%;
+  perspective:2000px;
+}#revista-overlay .page-pair{
+  display:flex;width:100%;height:100%;flex-shrink:0;
+}#revista-overlay .pg{
+  width:50%;height:100%;overflow:hidden;position:relative;
+  background:var(--paper);
+}#revista-overlay .pg-inner{
+  padding:28px 26px 36px;height:100%;display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;
+  /* scroll suave para artículos largos */
+  -webkit-overflow-scrolling:touch;
+}#revista-overlay .pg-inner::-webkit-scrollbar{width:3px}#revista-overlay .pg-inner::-webkit-scrollbar-thumb{background:var(--paper-rule);border-radius:2px}#revista-overlay .folio{
+  position:absolute;bottom:10px;
+  font-family:'Lato',sans-serif;font-size:7px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+}#revista-overlay .folio-l{left:26px}#revista-overlay .folio-r{right:26px}#revista-overlay .pg::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+}#revista-overlay .pg > *{position:relative;z-index:1}@keyframes rv-flipL{
+  0%  {transform:rotateY(0deg)}
+  100%{transform:rotateY(-180deg)}
+}@keyframes rv-flipR{
+  0%  {transform:rotateY(0deg)}
+  100%{transform:rotateY(180deg)}
+}#revista-overlay .flipping-out-l{
+  animation:rv-flipL var(--flip-dur,.55s) cubic-bezier(.645,.045,.355,1) forwards;
+  transform-origin:right center;transform-style:preserve-3d;
+  position:absolute;left:0;width:50%;height:100%;z-index:50;
+  backface-visibility:hidden;
+}#revista-overlay .flipping-out-r{
+  animation:rv-flipR var(--flip-dur,.55s) cubic-bezier(.645,.045,.355,1) forwards;
+  transform-origin:left center;transform-style:preserve-3d;
+  position:absolute;right:0;width:50%;height:100%;z-index:50;
+  backface-visibility:hidden;
+}#revista-overlay .footbar{
+  position:fixed;bottom:0;left:0;right:0;height:56px;
+  background:rgba(14,22,40,.96);backdrop-filter:blur(12px);
+  border-top:1px solid rgba(201,168,76,.15);
+  display:flex;align-items:center;justify-content:center;gap:20px;padding:0 16px;
+}#revista-overlay .foot-btn{
+  background:none;border:1px solid rgba(201,168,76,.25);color:rgba(201,168,76,.75);
+  font-family:'Lato',sans-serif;font-size:9.5px;font-weight:900;letter-spacing:1.5px;
+  text-transform:uppercase;padding:7px 16px;border-radius:20px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}#revista-overlay .foot-btn:hover{background:var(--gold);color:var(--navy-dk);border-color:var(--gold)}#revista-overlay .progress-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:120px}#revista-overlay .progress-bar{width:160px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}#revista-overlay .progress-fill{height:100%;background:var(--gold);transition:width .4s}#revista-overlay .page-num{font-family:'Lato',sans-serif;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.4)}#revista-overlay .kicker{
+  font-family:'Lato',sans-serif;font-size:8px;font-weight:900;letter-spacing:3px;
+  text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;
+}#revista-overlay .kicker::after{content:'';flex:1;max-width:32px;height:1px;background:currentColor;opacity:.35}#revista-overlay .headline{
+  font-family:'Playfair Display',serif;font-weight:900;line-height:1.06;
+  color:var(--ink);letter-spacing:-.3px;
+}#revista-overlay .deck{
+  font-family:'EB Garamond',serif;font-style:italic;line-height:1.58;color:var(--ink-mid);
+}#revista-overlay .byline{
+  font-family:'Lato',sans-serif;font-size:7.5px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);
+}#revista-overlay .rule-double{
+  border:none;border-top:2.5px solid var(--ink);
+  height:5px;border-bottom:1px solid var(--ink);margin:10px 0;
+}#revista-overlay .rule-thin{border:none;border-top:1px solid var(--paper-rule);margin:8px 0}#revista-overlay .rule-gold{border:none;border-top:1px solid rgba(201,168,76,.5);margin:8px 0}#revista-overlay .body-text{
+  font-family:'EB Garamond',serif;font-size:13.5px;line-height:1.82;
+  color:var(--ink);text-align:justify;
+}#revista-overlay .body-text p+p{text-indent:1.2em}#revista-overlay .drop-cap::first-letter{
+  font-family:'Playfair Display',serif;font-size:3.6em;font-weight:900;
+  float:left;line-height:.76;margin-right:5px;margin-top:4px;color:var(--gold);
+}#revista-overlay .pq{
+  border-left:2.5px solid var(--gold);padding:4px 0 4px 12px;
+  margin:12px 0;font-family:'Playfair Display',serif;font-size:11px;
+  font-style:italic;line-height:1.42;color:var(--ink-mid);
+}#revista-overlay .pq-attr{
+  display:block;margin-top:4px;font-family:'Lato',sans-serif;font-size:7px;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-style:normal;
+}#revista-overlay .art-img-wrap{margin:10px 0}#revista-overlay .art-img-wrap img{width:100%;border-radius:3px;display:block}#revista-overlay .art-img-wrap.float-l{float:left;width:44%;margin-right:12px;margin-bottom:6px}#revista-overlay .art-img-wrap.float-r{float:right;width:44%;margin-left:12px;margin-bottom:6px}#revista-overlay .art-img-caption{
+  font-family:'Lato',sans-serif;font-size:8px;font-style:italic;
+  color:var(--muted);margin-top:4px;line-height:1.45;
+}#revista-overlay .clearfix::after{content:'';display:table;clear:both}#revista-overlay .video-wrap{margin:10px 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:5px;background:#000}#revista-overlay .video-wrap iframe,#revista-overlay .video-wrap video{position:absolute;top:0;left:0;width:100%;height:100%;border:0}#revista-overlay .video-wrap video{object-fit:contain}#revista-overlay .cover-page{
+  position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#0E1628 0%,var(--navy) 60%,#1E3060 100%);
+}#revista-overlay .cover-page .pg-inner{padding:0}#revista-overlay .cover-img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+}#revista-overlay .cover-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(14,22,40,.15) 0%,rgba(14,22,40,.55) 45%,rgba(14,22,40,.95) 100%);
+}#revista-overlay .cover-hebreo-bg{
+  position:absolute;top:0;right:-20px;font-size:340px;line-height:.8;
+  font-family:'Playfair Display',serif;color:rgba(201,168,76,.05);
+  pointer-events:none;user-select:none;
+}#revista-overlay .cover-content{
+  position:absolute;left:0;right:0;bottom:0;padding:22px 22px 28px;color:#fff;
+}#revista-overlay .cover-logo-line{
+  display:flex;align-items:center;gap:9px;margin-bottom:12px;
+  padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,.25);
+}#revista-overlay .cover-logo-line img{height:24px;opacity:.9}#revista-overlay .cover-logo-txt{font-family:'Lato',sans-serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.7)}#revista-overlay .cover-badge{
+  font-family:'Lato',sans-serif;font-size:8.5px;font-weight:900;letter-spacing:3px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:8px;
+}#revista-overlay .cover-title{
+  font-family:'Playfair Display',serif;font-weight:900;
+  font-size:clamp(20px,5vw,30px);line-height:1.04;margin-bottom:7px;
+}#revista-overlay .cover-sub{
+  font-family:'EB Garamond',serif;font-style:italic;font-size:13.5px;
+  color:rgba(255,255,255,.75);margin-bottom:12px;line-height:1.5;
+}#revista-overlay .cover-meta{
+  display:flex;gap:14px;font-family:'Lato',sans-serif;font-size:8.5px;
+  letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.5);
+  border-top:1px solid rgba(255,255,255,.15);padding-top:10px;flex-wrap:wrap;
+}#revista-overlay .cover-hint{
+  position:absolute;bottom:28px;right:16px;
+  font-family:'Lato',sans-serif;font-size:8px;letter-spacing:1.5px;
+  text-transform:uppercase;color:rgba(255,255,255,.45);
+  animation:rv-hintPulse 3s ease-in-out infinite;
+}@keyframes rv-hintPulse{0%,100%{opacity:.3}50%{opacity:.9}}#revista-overlay .indice-titulo{
+  font-family:'Playfair Display',serif;font-weight:900;font-size:22px;
+  color:var(--ink);margin-bottom:2px;
+}#revista-overlay .indice-ed{
+  font-family:'Lato',sans-serif;font-size:8px;font-weight:700;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+  padding-bottom:10px;border-bottom:1px solid var(--paper-rule);
+}#revista-overlay .indice-grupo{
+  font-family:'Lato',sans-serif;font-size:8px;font-weight:900;letter-spacing:2px;
+  text-transform:uppercase;margin:12px 0 5px;
+}#revista-overlay .indice-row{
+  display:flex;align-items:baseline;gap:5px;width:100%;text-align:left;
+  background:none;border:none;border-bottom:1px dotted var(--paper-rule);
+  padding:8px 0;cursor:pointer;font-family:'EB Garamond',serif;
+  transition:all .15s;
+}#revista-overlay .indice-row:hover .ir-titulo{color:var(--gold-dk)}#revista-overlay .ir-titulo{flex:1;font-size:13px;color:var(--ink);line-height:1.3;text-align:left}#revista-overlay .ir-dots{flex:0 1 30px;border-bottom:1px dotted var(--paper-rule);height:1px;align-self:center}#revista-overlay .ir-pag{font-family:'Lato',sans-serif;font-size:9.5px;font-weight:700;color:var(--muted);flex-shrink:0}#revista-overlay .art-page-l .pg-inner,#revista-overlay .art-page-r .pg-inner{padding:22px 20px 32px}#revista-overlay .hero-img-block{
+  width:calc(100% + 40px);margin:-22px -20px 16px;
+  height:38%;min-height:120px;overflow:hidden;flex-shrink:0;
+}#revista-overlay .hero-img-block img{width:100%;height:100%;object-fit:cover}#revista-overlay .fin-page .pg-inner{
+  align-items:center;justify-content:center;gap:10px;text-align:center;
+}#revista-overlay .fin-star{font-size:34px;color:var(--gold);margin-bottom:2px}#revista-overlay .fin-titulo{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:18px;color:var(--ink)}#revista-overlay .fin-sub{font-family:'Lato',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:3px}#revista-overlay .fin-btn{
+  margin-top:16px;padding:8px 22px;border-radius:20px;border:1px solid var(--gold);
+  background:none;color:var(--gold);font-family:'Lato',sans-serif;font-size:9.5px;
+  font-weight:900;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+  transition:all .15s;
+}#revista-overlay .fin-btn:hover{background:var(--gold);color:var(--navy-dk)}@media(max-width:600px){#revista-overlay .book{width:100%!important}#revista-overlay .pg{width:100%!important}#revista-overlay .book-spine,#revista-overlay .page-shadow-l,#revista-overlay .page-shadow-r{display:none}#revista-overlay .single-mode .pg-r-wrap{display:none}#revista-overlay .nav-arrow{width:36px;height:36px;font-size:18px}#revista-overlay .topbar-brand-name{display:none}#revista-overlay .stage{padding:10px 4px}
+}
+
 </style>
 </head>
 <body>
@@ -182,6 +398,19 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
     </div>
     <button onclick="verNovedad()" class="bg-white text-blue-700 font-black text-[10px] px-3 py-1.5 rounded-xl flex-shrink-0">VER</button>
     <button onclick="cerrarBanner()" class="opacity-60 hover:opacity-100 text-white ml-1 flex-shrink-0 text-lg leading-none">&times;</button>
+  </div>
+</div>
+
+<!-- Banner de nueva edición de la revista institucional -->
+<div id="revista-banner" class="hidden sticky top-[73px] z-40 mx-4 mt-2">
+  <div class="rounded-2xl px-4 py-3 flex items-center gap-3 shadow-lg" style="background:linear-gradient(135deg,#1A2848,#0E1628);color:#F5EDD0">
+    <span class="text-lg flex-shrink-0">📰</span>
+    <div class="flex-1 min-w-0">
+      <p class="font-black text-xs">Nueva edición de la revista</p>
+      <p class="text-[10px] opacity-80 truncate" id="revista-banner-texto"></p>
+    </div>
+    <button onclick="verNuevaRevista()" class="font-black text-[10px] px-3 py-1.5 rounded-xl flex-shrink-0" style="background:#C9A84C;color:#0E1628">VER</button>
+    <button onclick="cerrarBannerRevista()" class="opacity-60 hover:opacity-100 ml-1 flex-shrink-0 text-lg leading-none" style="color:#F5EDD0">&times;</button>
   </div>
 </div>
 
@@ -465,8 +694,64 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
   <button onclick="switchTab('academico')"      id="nav-academico"      class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-star text-xl"></i><span>BOLETÍN</span></button>
   <button onclick="switchTab('mensajes')"       id="nav-mensajes"       class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-comments text-xl"></i><span id="badge-msg-fam" class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>MSG</span></button>
   <button onclick="switchTab('autorizaciones')" id="nav-autorizaciones" class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><div class="relative"><i class="fas fa-clipboard-check text-xl"></i><span id="badge-aut" class="hidden absolute -top-1 -right-2 bg-amber-500 text-white text-[8px] font-black px-1 rounded-full">!</span></div><span>PERMISOS</span></button>
-
+  <button onclick="abrirRevista()" id="nav-revista" class="nav-btn flex flex-col items-center gap-1 font-bold text-[8px] text-slate-400 py-1 px-1"><i class="fas fa-book-open text-xl"></i><span>REVISTA</span></button>
 </nav>
+
+<!-- REVISTA INSTITUCIONAL (overlay a pantalla completa) -->
+<div id="revista-overlay" class="hidden" style="position:fixed;inset:0;z-index:8000;background:#0E1628;transform:translateZ(0);overflow:hidden">
+  <button onclick="cerrarRevista()" aria-label="Cerrar revista" style="position:absolute;top:14px;right:14px;z-index:20;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(201,168,76,.4);color:#F5EDD0;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)"><i class="fas fa-times"></i></button>
+  <div id="loading">
+  <div class="spin"></div>
+  <p>Cargando revista…</p>
+</div>
+
+<div id="empty" style="display:none">
+  <p id="empty-msg">No hay ediciones publicadas aún.</p>
+</div>
+
+<div id="preview-banner-slot"></div>
+
+<!-- TOPBAR -->
+<header class="topbar" id="topbar" style="display:none">
+  <div class="topbar-brand">
+    <img src="https://i.ibb.co/hF7Sqzw5/Logo-blanco.png" alt="Logo" onerror="this.style.display='none'">
+    <span class="topbar-brand-name">Colegio Rabino Iosef Caro</span>
+  </div>
+  <div class="topbar-center">
+    <select class="ed-select" id="ed-select" onchange="cambiarEdicion(this.value)"></select>
+  </div>
+  <div class="topbar-nav">
+    <button class="topbar-btn" onclick="irATapa()">📖 Tapa</button>
+    <button class="topbar-btn" onclick="irAIndice()">☰ Índice</button>
+  </div>
+</header>
+
+<!-- STAGE -->
+<div class="stage" id="stage" style="display:none">
+  <button class="nav-arrow" id="btn-prev" onclick="paginaAnterior()" disabled>‹</button>
+
+  <div class="book-wrap">
+    <div class="book" id="book">
+      <!-- Páginas se generan aquí -->
+      <div class="book-spine"></div>
+      <div class="page-shadow-l"></div>
+      <div class="page-shadow-r"></div>
+    </div>
+  </div>
+
+  <button class="nav-arrow" id="btn-next" onclick="paginaSiguiente()">›</button>
+</div>
+
+<!-- FOOTBAR -->
+<footer class="footbar" id="footbar" style="display:none">
+  <button class="foot-btn" onclick="paginaAnterior()" id="foot-prev">‹ Ant.</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+    <div class="page-num" id="page-num">1 / 1</div>
+  </div>
+  <button class="foot-btn" onclick="paginaSiguiente()" id="foot-next">Sig. ›</button>
+</footer>
+</div>
 
 <!-- Modal imagen zoom -->
 <div id="img-zoom-modal" onclick="cerrarZoom()">
@@ -1820,6 +2105,8 @@ window.inicializarApp=async function inicializarApp(){
   renderHijosChips();
   // Resumen hijos
   await cargarResumenHijos();
+  // Chequeo de nueva edición de la revista (no bloqueante)
+  verificarNuevaEdicionRevista();
 };
 
 // ── 7: DETALLE DE FALTAS ──
@@ -2007,7 +2294,673 @@ window.exportarMesICS=function(){
   URL.revokeObjectURL(url);
 };
 
+// ── 21: BANNER "NUEVA EDICIÓN" DE LA REVISTA (guardado en Firestore por usuario) ──
+async function verificarNuevaEdicionRevista(){
+  try{
+    if(typeof window.__obtenerUltimaEdicionRevista!=='function')return; // el módulo de la revista aún no cargó
+    if(!userEmail)return;
+    const ultima=await window.__obtenerUltimaEdicionRevista();
+    if(!ultima)return;
+    const userDoc=await db.collection('usuarios').doc(userEmail).get();
+    const vista=userDoc.data()?.revistaVistaId;
+    if(vista===ultima.id)return; // esta familia ya vio esta edición (en cualquier dispositivo)
+    window.__ultimaEdicionRevistaId=ultima.id;
+    const banner=document.getElementById('revista-banner');
+    const texto=document.getElementById('revista-banner-texto');
+    if(texto)texto.textContent=(ultima.numero?`Edición ${ultima.numero} — `:'')+ultima.titulo;
+    if(banner)banner.classList.remove('hidden');
+  }catch(e){console.warn('No se pudo chequear nueva edición de la revista:',e.message);}
+}
+
+window.cerrarBannerRevista=function(){
+  document.getElementById('revista-banner')?.classList.add('hidden');
+  if(window.__ultimaEdicionRevistaId&&userEmail){
+    db.collection('usuarios').doc(userEmail).update({revistaVistaId:window.__ultimaEdicionRevistaId}).catch(()=>{});
+  }
+};
+
+window.verNuevaRevista=function(){
+  window.cerrarBannerRevista();
+  if(typeof window.abrirRevista==='function')window.abrirRevista();
+};
+
+// ── 20: REVISTA INSTITUCIONAL (integrada, carga perezosa la primera vez) ──
+window.abrirRevista=function(){
+  const ov=document.getElementById('revista-overlay');
+  if(!ov)return;
+  ov.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  if(!window.__revistaIniciada){
+    window.__revistaIniciada=true;
+    if(typeof window.__iniciarRevista==='function')window.__iniciarRevista();
+  }
+};
+window.cerrarRevista=function(){
+  const ov=document.getElementById('revista-overlay');
+  if(!ov)return;
+  ov.classList.add('hidden');
+  document.body.style.overflow='';
+};
+
 // ══ FIN MEJORAS FAMILIAS ══
+
+</script>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDocs, getDoc,
+  query, orderBy, where
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const FC = {
+  apiKey:"AIzaSyDGGYTx7Hj4G2IbYxkxm5rx25sVKDy4DYA",
+  authDomain:"revista-1ac1c.firebaseapp.com",
+  projectId:"revista-1ac1c",
+  storageBucket:"revista-1ac1c.firebasestorage.app",
+  messagingSenderId:"137545616566",
+  appId:"1:137545616566:web:f74736d93682e2727dea17"
+};
+const app = initializeApp(FC);
+const db  = getFirestore(app);
+
+// ══ CONSTANTES ══════════════════════════════════════════════
+const NIVELES = {
+  institucional:{label:'Institucional',color:'#C9A84C',icon:'■'},
+  inicial:      {label:'Nivel Inicial',  color:'#C07030',icon:'✦'},
+  primaria:     {label:'Nivel Primario', color:'#2A7A50',icon:'◆'},
+  secundaria:   {label:'Nivel Secundario',color:'#2A50A0',icon:'▲'},
+  reshit:       {label:'Reshit',         color:'#7030A0',icon:'✡'},
+};
+const TIPOS = {noticia:'Noticia',galeria:'Galería',proyecto:'Proyecto',evento:'Evento',comunicado:'Comunicado',aviso:'Aviso'};
+const NIVEL_ORDER = ['institucional','inicial','primaria','secundaria','reshit'];
+
+// ══ ESTADO ══════════════════════════════════════════════════
+let ediciones = [];
+let edActual  = null;
+let articulos = [];
+let spreads   = []; // cada spread = {l: PageDef, r: PageDef}
+let spreadIdx = 0;
+let flipping  = false;
+let esMobile  = window.innerWidth < 600;
+
+// ══ INIT ════════════════════════════════════════════════════
+async function init() {
+  try {
+    const params     = new URLSearchParams(location.search);
+    const previewId  = params.get('previewEdicion');
+
+    if (previewId) {
+      const sn = await getDoc(doc(db,'ediciones',previewId));
+      if (!sn.exists()) { mostrarEmpty('Edición no encontrada.'); return; }
+      document.getElementById('preview-banner-slot').innerHTML =
+        '<div class="preview-banner">👁 Vista previa — esta edición todavía NO está publicada</div>';
+      ediciones = [{id:sn.id,...sn.data()}];
+    } else {
+      const sn = await getDocs(query(collection(db,'ediciones'), orderBy('fechaInicio','desc')));
+      ediciones = sn.docs.map(d=>({id:d.id,...d.data()})).filter(e=>e.estado==='publicada');
+      if (!ediciones.length) { mostrarEmpty('No hay ediciones publicadas aún.'); return; }
+    }
+
+    renderEdSelect();
+    await cargarEdicion(ediciones[0]);
+    mostrarApp();
+    ocultarLoading();
+  } catch(e) {
+    console.error(e);
+    mostrarEmpty('Error al cargar. Intentá de nuevo más tarde.');
+  }
+}
+
+function mostrarEmpty(msg) {
+  ocultarLoading();
+  const el = document.getElementById('empty');
+  el.querySelector('#empty-msg').textContent = msg;
+  el.style.display = 'flex';
+}
+function ocultarLoading() {
+  const l = document.getElementById('loading');
+  l.style.opacity = '0';
+  setTimeout(()=>l.remove(),500);
+}
+function mostrarApp() {
+  ['topbar','stage','footbar'].forEach(id => document.getElementById(id).style.display = '');
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('stage').style.display  = 'flex';
+  document.getElementById('footbar').style.display = 'flex';
+  ajustarBook();
+  window.addEventListener('resize', ajustarBook);
+}
+
+// ══ CARGA DE DATOS ══════════════════════════════════════════
+async function cargarEdicion(ed) {
+  edActual = ed;
+  const sn = await getDocs(
+    query(collection(db,'articulos'),
+      where('edicionId','==',ed.id),
+      where('estado','==','publicado')
+    )
+  );
+  articulos = sn.docs.map(d=>({id:d.id,...d.data()}))
+    .sort((a,b)=>(a.orden??99)-(b.orden??99));
+
+  construirSpreads();
+  renderizarLibro();
+}
+
+window.cambiarEdicion = async function(edId) {
+  const ed = ediciones.find(e=>e.id===edId);
+  if (!ed || ed.id === edActual?.id) return;
+  await cargarEdicion(ed);
+};
+
+function renderEdSelect() {
+  const sel = document.getElementById('ed-select');
+  sel.innerHTML = ediciones.map(e =>
+    `<option value="${e.id}">${e.numero?'Ed. '+e.numero+' — ':''}Semana del ${fechaCorta(e.fechaInicio)}</option>`
+  ).join('');
+}
+
+// ══ CONSTRUCCIÓN DE SPREADS (pares de páginas) ═══════════════
+// Spread 0 = tapa (izq) + índice (der)
+// Spread 1..N = artículos (2 páginas cada uno: contenido L y R)
+// Spread final = página de cierre
+function construirSpreads() {
+  spreads = [];
+
+  // Spread 0: Tapa + Índice
+  spreads.push({tipo:'portada'});
+
+  // Artículos: cada artículo ocupa UN spread (L+R)
+  articulos.forEach((art, i) => {
+    spreads.push({tipo:'articulo', art, num: i});
+  });
+
+  // Cierre
+  spreads.push({tipo:'fin'});
+
+  spreadIdx = 0;
+}
+
+// ══ RENDERIZADO DEL LIBRO ═══════════════════════════════════
+function renderizarLibro() {
+  const book = document.getElementById('book');
+  // Quitar hojas previas (pero mantener spine y sombras)
+  book.querySelectorAll('.page-pair').forEach(el=>el.remove());
+
+  spreads.forEach((sp, i) => {
+    const pair = document.createElement('div');
+    pair.className = 'page-pair';
+    pair.id = 'spread-' + i;
+    pair.style.display = 'none';
+    pair.style.width = '100%';
+    pair.style.height = '100%';
+    pair.innerHTML = buildSpreadHTML(sp, i);
+    book.appendChild(pair);
+  });
+
+  irASpread(0, false);
+}
+
+function buildSpreadHTML(sp, i) {
+  if (sp.tipo === 'portada') return buildPortada(i);
+  if (sp.tipo === 'articulo') return buildArticulo(sp.art, i);
+  if (sp.tipo === 'fin')     return buildFin(i);
+  return '';
+}
+
+// ── PORTADA + ÍNDICE ─────────────────────────────────────────
+function buildPortada(i) {
+  const ed = edActual;
+
+  // Si la edición tiene diseño drag&drop, usarlo
+  if (Array.isArray(ed?.tapaElementos) && ed.tapaElementos.length) {
+    return buildPortadaDragDrop(ed, i);
+  }
+
+  // Fallback: portada clásica
+  const coverImg = driveUrl(ed?.portadaImagenUrl || '');
+  const logoUrl  = ed?.logoUrl || 'https://i.ibb.co/hF7Sqzw5/Logo-blanco.png';
+  let tapaHTML = `
+    <div class="pg cover-page">
+      ${coverImg ? `<img class="cover-img" src="${coverImg}" alt="" onerror="this.style.display='none'">` : ''}
+      <div class="cover-overlay"></div>
+      <div class="cover-hebreo-bg">${ed?.hebreo||'בס״ד'}</div>
+      <div class="cover-content">
+        <div class="cover-logo-line">
+          <img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'" style="height:22px">
+          <span class="cover-logo-txt">${ed?.institucion||'Colegio Rabino Iosef Caro'}</span>
+        </div>
+        <div class="cover-badge">Edición ${ed?.numero||''} &nbsp;·&nbsp; ${ed?.mes||''} ${ed?.anio||''}</div>
+        <div class="cover-title">${ed?.titulo||'Revista Institucional'}</div>
+        <div class="cover-sub">${ed?.subtitulo||'"Formamos Iehudim íntegros para el mañana"'}</div>
+        <div class="cover-meta">
+          <span>Semana del ${fechaLarga(ed?.fechaInicio)}</span>
+          <span>${articulos.length} nota${articulos.length!==1?'s':''}</span>
+        </div>
+      </div>
+      <div class="cover-hint">Girá la página ›</div>
+      <div class="folio folio-l">1</div>
+    </div>
+  `;
+
+  // Página derecha: ÍNDICE
+  let indiceContent = '';
+  const grupos = {};
+  articulos.forEach((a,idx) => {
+    const n = a.nivel||'institucional';
+    (grupos[n] = grupos[n]||[]).push({...a, _sp: idx+1});
+  });
+  const nivelesPresentes = NIVEL_ORDER.filter(n=>grupos[n]);
+
+  if (!articulos.length) {
+    indiceContent = `<div style="font-family:'EB Garamond',serif;font-style:italic;font-size:13px;color:var(--muted);padding:20px 0;text-align:center">Todavía no hay notas en esta edición.</div>`;
+  } else {
+    nivelesPresentes.forEach(nKey => {
+      const niv = NIVELES[nKey] || {label:nKey,color:'#888',icon:'·'};
+      indiceContent += `<div class="indice-grupo" style="color:${niv.color}">${niv.icon}&nbsp; ${niv.label}</div>`;
+      grupos[nKey].forEach(a => {
+        indiceContent += `
+          <button class="indice-row" onclick="irASpread(${a._sp})">
+            <span class="ir-titulo">${a.titulo||'Sin título'}</span>
+            <span class="ir-dots"></span>
+            <span class="ir-pag">${String((a._sp)*2+1).padStart(2,'0')}</span>
+          </button>`;
+      });
+    });
+  }
+
+  const indiceHTML = `
+    <div class="pg" style="border-left:1px solid var(--paper-rule)">
+      <div class="pg-inner">
+        <div class="indice-titulo">Índice</div>
+        <div class="indice-ed">${ed?.titulo||''} &nbsp;·&nbsp; ${ed?.numero?'N.° '+ed.numero:''}</div>
+        ${indiceContent}
+      </div>
+      <div class="folio folio-r">2 · Índice</div>
+    </div>
+  `;
+
+  return tapaHTML + indiceHTML;
+}
+
+// ── PORTADA DRAG & DROP (cuando está diseñada desde el admin) ──
+function buildPortadaDragDrop(ed, i) {
+  const bgUrl = driveUrl(ed.tapaBgUrl||'');
+
+  // Renderizar los elementos drag&drop en la página izquierda
+  const elsHTML = ed.tapaElementos.map(el => {
+    const style = `position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%`;
+    let inner = '';
+    if (el.tipo==='linea') {
+      inner = `<div style="width:100%;height:100%;background:linear-gradient(90deg,transparent 0%,#C9A84C 20%,#F5EDD0 50%,#C9A84C 80%,transparent 100%);border-radius:1px"></div>`;
+    } else if (el.tipo==='estrella') {
+      inner = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:${el.fs||220}px;color:${el.color||'rgba(201,168,76,.06)'};line-height:1;pointer-events:none;user-select:none">✡</div>`;
+    } else if (el.tipo==='imagen'&&el.src) {
+      inner = `<img src="${driveUrl(el.src)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`;
+    } else if (el.tipo==='logo'&&el.src) {
+      inner = `<img src="${el.src}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">`;
+    } else if (el.text) {
+      const fam = (el.tipo==='titulo'||el.tipo==='subtitulo'||el.tipo==='hebreo') ? "'Playfair Display',serif" : "'Lato',sans-serif";
+      const dir = el.tipo==='hebreo' ? 'rtl' : 'ltr';
+      const s   = `width:100%;height:100%;overflow:hidden;font-size:${el.fs||14}px;color:${el.color||'#fff'};font-weight:${el.fw||'400'};font-style:${el.fi||'normal'};text-align:${el.ta||'left'};line-height:1.25;white-space:pre-wrap;word-break:break-word;font-family:${fam};direction:${dir}`;
+      inner = `<div style="${s}">${(el.text||'').replace(/\n/g,'<br>')}</div>`;
+    }
+    return `<div style="${style}">${inner}</div>`;
+  }).join('');
+
+  const tapaHTML = `
+    <div class="pg cover-page">
+      ${bgUrl ? `<img class="cover-img" src="${bgUrl}" alt="" onerror="this.style.display='none'">` : ''}
+      <div class="cover-overlay"></div>
+      ${elsHTML}
+      <div class="cover-hint">Girá la página ›</div>
+      <div class="folio folio-l" style="color:rgba(255,255,255,.25)">1</div>
+    </div>`;
+
+  // Índice (igual que siempre)
+  let indiceContent = '';
+  const grupos = {};
+  articulos.forEach((a,idx) => {
+    const n = a.nivel||'institucional';
+    (grupos[n]=grupos[n]||[]).push({...a,_sp:idx+1});
+  });
+  const nivelesPresentes = NIVEL_ORDER.filter(n=>grupos[n]);
+  if (!articulos.length) {
+    indiceContent = `<div style="font-family:'EB Garamond',serif;font-style:italic;font-size:13px;color:var(--muted);padding:20px 0;text-align:center">Todavía no hay notas en esta edición.</div>`;
+  } else {
+    nivelesPresentes.forEach(nKey => {
+      const niv = NIVELES[nKey]||{label:nKey,color:'#888',icon:'·'};
+      indiceContent += `<div class="indice-grupo" style="color:${niv.color}">${niv.icon}&nbsp; ${niv.label}</div>`;
+      grupos[nKey].forEach(a => {
+        indiceContent += `<button class="indice-row" onclick="irASpread(${a._sp})">
+          <span class="ir-titulo">${a.titulo||'Sin título'}</span>
+          <span class="ir-dots"></span>
+          <span class="ir-pag">${String(a._sp*2+1).padStart(2,'0')}</span>
+        </button>`;
+      });
+    });
+  }
+  const indiceHTML = `
+    <div class="pg" style="border-left:1px solid var(--paper-rule)">
+      <div class="pg-inner">
+        <div class="indice-titulo">Índice</div>
+        <div class="indice-ed">${ed?.titulo||''} &nbsp;·&nbsp; ${ed?.numero?'N.° '+ed.numero:''}</div>
+        ${indiceContent}
+      </div>
+      <div class="folio folio-r">2 · Índice</div>
+    </div>`;
+  return tapaHTML + indiceHTML;
+}
+
+// ── ARTÍCULO ─────────────────────────────────────────────────
+function buildArticulo(art, spreadI) {
+  const niv   = NIVELES[art.nivel] || {label:art.nivel,color:'#888',icon:'·'};
+  const tipo  = TIPOS[art.tipo]    || art.tipo || '';
+  const pgL   = spreadI * 2 + 1;
+  const pgR   = pgL + 1;
+  const hasPQ = art.pullquote && art.pullquote.trim();
+
+  // Imagen principal
+  const imgUrl = driveUrl(art.imagenUrl||'');
+
+  // Cuerpo de texto — rich HTML o texto plano
+  const cuerpoBlocks = buildCuerpo(art);
+
+  // PÁGINA IZQUIERDA
+  // Layout hero si tiene imagen: foto en la parte superior de la página
+  let paginaIzq = '';
+  if (imgUrl) {
+    paginaIzq = `
+      <div class="pg art-page-l">
+        <div class="pg-inner">
+          <div class="hero-img-block">
+            <img src="${imgUrl}" alt="${esc(art.titulo||'')}" onerror="this.parentElement.style.display='none'">
+          </div>
+          <div class="kicker" style="color:${niv.color}">${niv.icon} ${niv.label} &nbsp;·&nbsp; ${tipo}</div>
+          <div class="headline" style="font-size:clamp(17px,3.5vw,22px);margin-bottom:7px">${art.titulo||''}</div>
+          ${art.bajada?`<div class="deck" style="font-size:13px;margin-bottom:8px">${art.bajada}</div>`:''}
+          <hr class="rule-double">
+          <div class="byline" style="margin-bottom:10px">✍ ${art.autor||''}${art.sala?' · '+art.sala:''} ${art.fecha?' · '+art.fecha:''}</div>
+          <div class="body-text drop-cap">${cuerpoBlocks[0]||""}</div>
+        </div>
+        <div class="folio folio-l">${pgL}</div>
+      </div>
+    `;
+  } else {
+    // Sin imagen: texto más grande, más elegante
+    paginaIzq = `
+      <div class="pg art-page-l">
+        <div class="pg-inner">
+          <div class="kicker" style="color:${niv.color};margin-top:4px">${niv.icon} ${niv.label} &nbsp;·&nbsp; ${tipo}</div>
+          <div class="headline" style="font-size:clamp(20px,4vw,26px);margin-bottom:9px">${art.titulo||''}</div>
+          ${art.bajada?`<div class="deck" style="font-size:14px;margin-bottom:10px">${art.bajada}</div>`:''}
+          <hr class="rule-double">
+          <div class="byline" style="margin-bottom:12px">✍ ${art.autor||''}${art.sala?' · '+art.sala:''} ${art.fecha?' · '+art.fecha:''}</div>
+          <div class="body-text drop-cap">${cuerpoBlocks.slice(0,2).join("")}</div>
+          ${hasPQ?`<blockquote class="pq">${art.pullquote}<span class="pq-attr">${art.firma?'— '+art.firma:''}</span></blockquote>`:''}
+        </div>
+        <div class="folio folio-l">${pgL}</div>
+      </div>
+    `;
+  }
+
+  // PÁGINA DERECHA: resto del contenido
+  const restoParrafos = cuerpoBlocks.slice(imgUrl?1:2);
+  let paginaDer = `
+    <div class="pg art-page-r" style="border-left:1px solid var(--paper-rule)">
+      <div class="pg-inner">
+        ${hasPQ && imgUrl ? `<blockquote class="pq" style="margin-bottom:12px">${art.pullquote}<span class="pq-attr">${art.firma?'— '+art.firma:''}</span></blockquote>` : ''}
+        <div class="body-text clearfix">
+          ${restoParrafos.join("")||""}
+        </div>
+        ${buildBloques(art)}
+        ${buildVideo(art)}
+        <hr class="rule-thin" style="margin-top:auto">
+        <div class="byline" style="margin-top:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+          <span>${art.autor||''}${art.sala?' · '+art.sala:''}</span>
+          <span>${art.fecha||''}</span>
+        </div>
+      </div>
+      <div class="folio folio-r">${pgR} · ${niv.label}</div>
+    </div>
+  `;
+
+  return paginaIzq + paginaDer;
+}
+
+function buildCuerpo(art) {
+  // Soporte de bloques con HTML rico (nuevo editor)
+  if (Array.isArray(art.bloques) && art.bloques.length) {
+    return art.bloques
+      .filter(b => b.tipo === 'texto' && b.html && b.html.replace(/<[^>]*>/g,'').trim())
+      .map(b => b.html);
+  }
+  // Fallback: texto plano legado
+  if (!art.cuerpo) return [];
+  return art.cuerpo.split('\n').filter(l=>l.trim()).map(l=>`<p>${esc(l)}</p>`);
+}
+
+function buildBloques(art) {
+  if (!Array.isArray(art.bloques)) return '';
+  return art.bloques.map(b => {
+    if (b.tipo === 'imagen' && b.url) {
+      const layout = ['left','right'].includes(b.layout) ? 'float-'+b.layout : '';
+      return `<figure class="art-img-wrap ${layout}">
+        <img src="${driveUrl(b.url)}" alt="${esc(b.caption||'')}" loading="lazy" onerror="this.parentElement.style.display='none'">
+        ${b.caption?`<figcaption class="art-img-caption">${esc(b.caption)}</figcaption>`:''}
+      </figure>`;
+    }
+    if (b.tipo === 'separador') {
+      if (b.estilo === 'ornamental') return `<div style="text-align:center;color:#C9A84C;font-size:16px;margin:16px 0;letter-spacing:8px">✦ ✦ ✦</div>`;
+      if (b.estilo === 'doble') return `<div style="border-top:2.5px solid #1A1A2E;height:5px;border-bottom:1px solid #1A1A2E;margin:14px 0"></div>`;
+      return `<hr style="border:none;border-top:1px solid #D4C9A8;margin:14px 0">`;
+    }
+    return '';
+  }).join('');
+}
+
+function buildVideo(art) {
+  if (!Array.isArray(art.bloques)) return '';
+  return art.bloques.filter(b=>b.tipo==='video'&&b.url).map(b=>embedVideo(b.url,b.caption)).join('');
+}
+
+// ── CIERRE ───────────────────────────────────────────────────
+function buildFin(i) {
+  const pgL = i * 2 + 1;
+  return `
+    <div class="pg fin-page">
+      <div class="pg-inner">
+        <div class="fin-star">✡</div>
+        <div class="fin-titulo">Fin de esta edición</div>
+        <div class="fin-sub">Colegio Rabino Iosef Caro · Belgrano, Buenos Aires</div>
+        <button class="fin-btn" onclick="irASpread(0)">↺ Volver a la tapa</button>
+      </div>
+      <div class="folio folio-l">${pgL}</div>
+    </div>
+    <div class="pg" style="border-left:1px solid var(--paper-rule);background:var(--paper-dk)">
+      <div class="pg-inner" style="align-items:center;justify-content:center;gap:8px;text-align:center;opacity:.25">
+        <div style="font-size:80px;color:var(--gold);font-family:'Playfair Display',serif">✡</div>
+      </div>
+    </div>
+  `;
+}
+
+// ══ NAVEGACIÓN ══════════════════════════════════════════════
+window.irASpread = function(idx, animate=true) {
+  if (flipping) return;
+  idx = Math.max(0, Math.min(idx, spreads.length-1));
+
+  if (animate && idx !== spreadIdx) {
+    animarFlip(idx);
+  } else {
+    mostrarSpread(idx);
+  }
+};
+
+function mostrarSpread(idx) {
+  document.querySelectorAll('.page-pair').forEach(el => el.style.display='none');
+  const el = document.getElementById('spread-'+idx);
+  if (el) el.style.display = 'flex';
+  spreadIdx = idx;
+  actualizarControles();
+}
+
+function animarFlip(nextIdx) {
+  flipping = true;
+  const dir = nextIdx > spreadIdx ? 'next' : 'prev';
+
+  // Identificar página a animar
+  const currentEl = document.getElementById('spread-'+spreadIdx);
+  if (!currentEl) { mostrarSpread(nextIdx); flipping=false; return; }
+
+  // Página que sale: mitad izquierda gira hacia izquierda, o der hacia der
+  const halfToAnimate = dir==='next' ? currentEl.querySelector('.pg:last-child') : currentEl.querySelector('.pg:first-child');
+  if (halfToAnimate) {
+    halfToAnimate.style.position = 'absolute';
+    halfToAnimate.style[dir==='next'?'right':'left'] = '0';
+    halfToAnimate.style.width = '50%';
+    halfToAnimate.style.height = '100%';
+    halfToAnimate.style.zIndex = '50';
+    halfToAnimate.style.animation = `${dir==='next'?'flipR':'flipL'} .48s cubic-bezier(.645,.045,.355,1) forwards`;
+    halfToAnimate.style.transformOrigin = dir==='next' ? 'left center' : 'right center';
+    halfToAnimate.style.transformStyle = 'preserve-3d';
+    halfToAnimate.style.backfaceVisibility = 'hidden';
+  }
+
+  setTimeout(() => {
+    if (halfToAnimate) {
+      halfToAnimate.style.animation = '';
+      halfToAnimate.style.position = '';
+      halfToAnimate.style.zIndex   = '';
+    }
+    mostrarSpread(nextIdx);
+    flipping = false;
+  }, 500);
+}
+
+function paginaSiguiente() { irASpread(spreadIdx+1); }
+function paginaAnterior()  { irASpread(spreadIdx-1); }
+window.paginaSiguiente = paginaSiguiente;
+window.paginaAnterior  = paginaAnterior;
+window.irATapa  = () => irASpread(0);
+window.irAIndice= () => irASpread(0); // el índice está en spread 0 lado der
+
+function actualizarControles() {
+  const isFirst = spreadIdx === 0;
+  const isLast  = spreadIdx === spreads.length-1;
+  document.getElementById('btn-prev').disabled   = isFirst;
+  document.getElementById('btn-next').disabled   = isLast;
+  document.getElementById('foot-prev').disabled  = isFirst;
+  document.getElementById('foot-next').disabled  = isLast;
+  const pct = spreads.length>1 ? (spreadIdx/(spreads.length-1))*100 : 0;
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('page-num').textContent = `${spreadIdx*2+1} / ${spreads.length*2}`;
+  document.getElementById('ed-select').value = edActual?.id||'';
+}
+
+// Teclado
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') paginaSiguiente();
+  if (e.key==='ArrowLeft'||e.key==='ArrowUp')  paginaAnterior();
+});
+
+// Touch/swipe
+let tx0=0,ty0=0;
+document.getElementById('stage').addEventListener('touchstart',e=>{tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;},{passive:true});
+document.getElementById('stage').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx0;
+  const dy=e.changedTouches[0].clientY-ty0;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){
+    if(dx<0)paginaSiguiente();else paginaAnterior();
+  }
+},{passive:true});
+
+// ══ AJUSTE DE TAMAÑO DEL LIBRO ════════════════════════════════
+function ajustarBook() {
+  esMobile = window.innerWidth < 600;
+  const book = document.getElementById('book');
+  const stage= document.getElementById('stage');
+  if (!book||!stage) return;
+
+  const arrowW = 44+10; // ancho flecha + gap
+  const padX   = esMobile ? 8 : 24;
+  const padY   = esMobile ? 10 : 20;
+  const stageW = stage.clientWidth  - padX*2 - arrowW*2;
+  const stageH = stage.clientHeight - padY*2;
+
+  // Ratio doble página: 2:1.4 (horizontal)
+  const RATIO = esMobile ? (3/4) : (2/1.38);
+  let w = stageW;
+  let h = w / RATIO;
+  if (h > stageH) { h=stageH; w=h*RATIO; }
+
+  book.style.width  = Math.max(w, esMobile?260:420)+'px';
+  book.style.height = Math.max(h, 300)+'px';
+
+  // Modo mobile: una sola página
+  if (esMobile) {
+    book.classList.add('single-mode');
+    book.querySelectorAll('.pg').forEach(pg=>pg.style.width='100%');
+  } else {
+    book.classList.remove('single-mode');
+    book.querySelectorAll('.pg').forEach(pg=>pg.style.width='50%');
+  }
+}
+
+// ══ HELPERS ════════════════════════════════════════════════════
+function driveUrl(url) {
+  if (!url) return '';
+  const m = url.match(/\/d\/([^/?#]+)/);
+  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  return url;
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function embedVideo(url, caption) {
+  url = (url||'').trim();
+  let src='';
+  let m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
+  if (m) src=`https://www.youtube.com/embed/${m[1]}`;
+  m = url.match(/vimeo\.com\/(\d+)/);
+  if (m) src=`https://player.vimeo.com/video/${m[1]}`;
+  m = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+  if (m) src=`https://drive.google.com/file/d/${m[1]}/preview`;
+  if (src) {
+    return `<div class="video-wrap" style="margin:12px 0"><iframe src="${src}" allowfullscreen loading="lazy"></iframe></div>
+      ${caption?`<div class="art-img-caption" style="margin-top:-6px">${esc(caption)}</div>`:''}`;
+  }
+  if (/\.(mp4|webm|ogg)/i.test(url)) {
+    return `<div class="video-wrap" style="margin:12px 0"><video controls src="${url}"></video></div>`;
+  }
+  return `<a href="${url}" target="_blank" rel="noopener" style="display:inline-block;padding:8px 14px;background:var(--gold);color:#fff;font-family:'Lato',sans-serif;font-size:11px;font-weight:700;border-radius:4px;text-decoration:none;margin:10px 0">▶ Ver video</a>`;
+}
+
+function fechaLarga(ts) {
+  if (!ts) return '—';
+  try { const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}); } catch { return '—'; }
+}
+function fechaCorta(ts) {
+  if (!ts) return '—';
+  try { const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('es-AR',{day:'numeric',month:'short'}); } catch { return '—'; }
+}
+
+// Exponer init para que familia.html lo dispare recien cuando el usuario abre la revista (carga perezosa)
+window.__iniciarRevista = init;
+
+// ══ CONSULTA "ÚLTIMA EDICIÓN PUBLICADA" (para el banner del Muro) ══
+// Solo expone el dato: quién decide si ya la vio o no es familia.html,
+// guardándolo en Firestore del portal (proyecto app-iosefcaro), no acá.
+window.__obtenerUltimaEdicionRevista = async function(){
+  try{
+    const sn = await getDocs(query(collection(db,'ediciones'), orderBy('fechaInicio','desc')));
+    const publicadas = sn.docs.map(d=>({id:d.id,...d.data()})).filter(e=>e.estado==='publicada');
+    if(!publicadas.length) return null;
+    const ultima = publicadas[0];
+    return {id:ultima.id, numero:ultima.numero||null, titulo:ultima.titulo||'Revista Institucional'};
+  }catch(e){ console.warn('No se pudo obtener la última edición de la revista:', e.message); return null; }
+};
 
 </script>
 </body>
