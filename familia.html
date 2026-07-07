@@ -357,7 +357,21 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
   background:none;color:var(--gold);font-family:'Lato',sans-serif;font-size:9.5px;
   font-weight:900;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
   transition:all .15s;
-}#revista-overlay .fin-btn:hover{background:var(--gold);color:var(--navy-dk)}@media(max-width:600px){#revista-overlay .book{width:100%!important}#revista-overlay .pg{width:100%!important}#revista-overlay .book-spine,#revista-overlay .page-shadow-l,#revista-overlay .page-shadow-r{display:none}#revista-overlay .single-mode .pg-r-wrap{display:none}#revista-overlay .nav-arrow{width:36px;height:36px;font-size:18px}#revista-overlay .topbar-brand-name{display:none}#revista-overlay .stage{padding:10px 4px}
+}#revista-overlay .fin-btn:hover{background:var(--gold);color:var(--navy-dk)}@media(max-width:600px){
+#revista-overlay .book{width:100%!important}
+#revista-overlay .pg{width:100%!important}
+#revista-overlay .book-spine,#revista-overlay .page-shadow-l,#revista-overlay .page-shadow-r{display:none}
+#revista-overlay .single-mode .pg-r-wrap{display:none}
+#revista-overlay .topbar-brand-name{display:none}
+#revista-overlay .stage{padding:8px 2px}
+/* En mobile las flechas flotan ENCIMA del libro (no le restan ancho) para que la página se vea más ancha */
+#revista-overlay .nav-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;font-size:16px;z-index:15;
+  background:rgba(14,22,40,.55);border-color:rgba(201,168,76,.5);
+}
+#revista-overlay #btn-prev{left:2px}
+#revista-overlay #btn-next{right:2px}
 }
 
 </style>
@@ -699,7 +713,7 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
 
 <!-- REVISTA INSTITUCIONAL (overlay a pantalla completa) -->
 <div id="revista-overlay" class="hidden" style="position:fixed;inset:0;z-index:8000;background:#0E1628;transform:translateZ(0);overflow:hidden">
-  <button onclick="cerrarRevista()" aria-label="Cerrar revista" style="position:absolute;top:14px;right:14px;z-index:20;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(201,168,76,.4);color:#F5EDD0;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)"><i class="fas fa-times"></i></button>
+  <button onclick="cerrarRevista()" aria-label="Cerrar revista y volver a la app" style="position:absolute;top:14px;right:14px;z-index:9500;width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,.95);border:1px solid rgba(255,255,255,.5);color:#0E1628;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)"><i class="fas fa-times"></i></button>
   <div id="loading">
   <div class="spin"></div>
   <p>Cargando revista…</p>
@@ -2883,19 +2897,23 @@ function ajustarBook() {
   const stage= document.getElementById('stage');
   if (!book||!stage) return;
 
-  const arrowW = 44+10; // ancho flecha + gap
-  const padX   = esMobile ? 8 : 24;
-  const padY   = esMobile ? 10 : 20;
+  // En mobile las flechas flotan ENCIMA del libro (position:absolute, ver CSS),
+  // así que no le restan ancho a la página — solo se descuenta en desktop,
+  // donde siguen ocupando su propio espacio al costado.
+  const arrowW = esMobile ? 0 : (44+10);
+  const padX   = esMobile ? 4 : 24;
+  const padY   = esMobile ? 8 : 20;
   const stageW = stage.clientWidth  - padX*2 - arrowW*2;
   const stageH = stage.clientHeight - padY*2;
 
-  // Ratio doble página: 2:1.4 (horizontal)
-  const RATIO = esMobile ? (3/4) : (2/1.38);
+  // Ratio doble página en desktop (2:1.4). En mobile, página única más ancha
+  // (menos "finita") sin llegar a verse cuadrada.
+  const RATIO = esMobile ? (0.86) : (2/1.38);
   let w = stageW;
   let h = w / RATIO;
   if (h > stageH) { h=stageH; w=h*RATIO; }
 
-  book.style.width  = Math.max(w, esMobile?260:420)+'px';
+  book.style.width  = Math.max(w, esMobile?300:420)+'px';
   book.style.height = Math.max(h, 300)+'px';
 
   // Modo mobile: una sola página
