@@ -193,13 +193,14 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
   display:flex;align-items:center;justify-content:center;
   padding:20px 12px;gap:10px;
 }#revista-overlay .nav-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:15;
   width:44px;height:44px;border-radius:50%;flex-shrink:0;
-  border:1px solid rgba(201,168,76,.3);background:rgba(255,255,255,.04);
+  border:1px solid rgba(201,168,76,.3);background:rgba(14,22,40,.55);
   color:var(--gold);font-size:22px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  transition:all .18s;user-select:none;z-index:10;
-}#revista-overlay .nav-arrow:hover:not(:disabled){background:var(--gold);color:var(--navy-dk)}#revista-overlay .nav-arrow:disabled{opacity:.18;cursor:default}#revista-overlay .book-wrap{
-  position:relative;flex:1;max-width:900px;height:100%;
+  transition:all .18s;user-select:none;backdrop-filter:blur(3px);
+}#revista-overlay #btn-prev{left:6px}#revista-overlay #btn-next{right:6px}#revista-overlay .nav-arrow:hover:not(:disabled){background:var(--gold);color:var(--navy-dk)}#revista-overlay .nav-arrow:disabled{opacity:.18;cursor:default}#revista-overlay .book-wrap{
+  position:relative;flex:1;max-width:1080px;height:100%;
   display:flex;align-items:center;justify-content:center;
 }#revista-overlay .book{
   position:relative;
@@ -364,14 +365,7 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
 #revista-overlay .single-mode .pg-r-wrap{display:none}
 #revista-overlay .topbar-brand-name{display:none}
 #revista-overlay .stage{padding:8px 2px}
-/* En mobile las flechas flotan ENCIMA del libro (no le restan ancho) para que la página se vea más ancha */
-#revista-overlay .nav-arrow{
-  position:absolute;top:50%;transform:translateY(-50%);
-  width:34px;height:34px;font-size:16px;z-index:15;
-  background:rgba(14,22,40,.55);border-color:rgba(201,168,76,.5);
-}
-#revista-overlay #btn-prev{left:2px}
-#revista-overlay #btn-next{right:2px}
+#revista-overlay .nav-arrow{width:34px;height:34px;font-size:16px}
 }
 
 </style>
@@ -712,7 +706,7 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
 </nav>
 
 <!-- REVISTA INSTITUCIONAL (overlay a pantalla completa) -->
-<div id="revista-overlay" class="hidden" style="position:fixed;inset:0;z-index:8000;background:#0E1628;transform:translateZ(0);overflow:hidden">
+<div id="revista-overlay" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:64px;z-index:800;background:#0E1628;transform:translateZ(0);overflow:hidden">
   <button onclick="cerrarRevista()" aria-label="Cerrar revista y volver a la app" style="position:absolute;top:14px;right:14px;z-index:9500;width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,.95);border:1px solid rgba(255,255,255,.5);color:#0E1628;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)"><i class="fas fa-times"></i></button>
   <div id="loading">
   <div class="spin"></div>
@@ -1812,6 +1806,7 @@ async function enviarJustificacion(){
 
 // ─── UTILS ───
 function switchTab(tab){
+  if(typeof window.cerrarRevista==='function')window.cerrarRevista();
   document.querySelectorAll('.tab-content,.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+tab)?.classList.add('active');
   if(document.getElementById('nav-'+tab))document.getElementById('nav-'+tab).classList.add('active');
@@ -2338,12 +2333,22 @@ window.verNuevaRevista=function(){
   if(typeof window.abrirRevista==='function')window.abrirRevista();
 };
 
-// ── 20: REVISTA INSTITUCIONAL (integrada, carga perezosa la primera vez) ──
+// ── 20: REVISTA INSTITUCIONAL (integrada, deja la barra de la app siempre visible) ──
 window.abrirRevista=function(){
   const ov=document.getElementById('revista-overlay');
   if(!ov)return;
+  // El overlay se detiene justo arriba de la barra de navegación de la
+  // app (nunca la tapa), así siempre se puede volver tocando cualquier
+  // otro ícono de abajo, no solo la ✕.
+  const nav=document.querySelector('nav.fixed.bottom-0');
+  ov.style.bottom=(nav?nav.offsetHeight:64)+'px';
   ov.classList.remove('hidden');
   document.body.style.overflow='hidden';
+  // Marcar "Revista" como la sección activa de la barra, como cualquier otra tab
+  const prevActivo=document.querySelector('.nav-btn.active');
+  window.__revistaNavAnterior=prevActivo?prevActivo.id:'nav-muro';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-revista')?.classList.add('active');
   if(!window.__revistaIniciada){
     window.__revistaIniciada=true;
     if(typeof window.__iniciarRevista==='function')window.__iniciarRevista();
@@ -2354,6 +2359,8 @@ window.cerrarRevista=function(){
   if(!ov)return;
   ov.classList.add('hidden');
   document.body.style.overflow='';
+  document.getElementById('nav-revista')?.classList.remove('active');
+  document.getElementById(window.__revistaNavAnterior||'nav-muro')?.classList.add('active');
 };
 
 // ══ FIN MEJORAS FAMILIAS ══
@@ -2897,13 +2904,11 @@ function ajustarBook() {
   const stage= document.getElementById('stage');
   if (!book||!stage) return;
 
-  // En mobile las flechas flotan ENCIMA del libro (position:absolute, ver CSS),
-  // así que no le restan ancho a la página — solo se descuenta en desktop,
-  // donde siguen ocupando su propio espacio al costado.
-  const arrowW = esMobile ? 0 : (44+10);
-  const padX   = esMobile ? 4 : 24;
+  // Las flechas ahora flotan ENCIMA del libro en todos los tamaños
+  // (position:absolute, ver CSS), así que nunca le restan ancho a la página.
+  const padX   = esMobile ? 4 : 16;
   const padY   = esMobile ? 8 : 20;
-  const stageW = stage.clientWidth  - padX*2 - arrowW*2;
+  const stageW = stage.clientWidth  - padX*2;
   const stageH = stage.clientHeight - padY*2;
 
   // Ratio doble página en desktop (2:1.4). En mobile, página única más ancha
