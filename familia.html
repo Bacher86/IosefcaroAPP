@@ -243,11 +243,17 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
   content:'';position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.4;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
 }#revista-overlay .pg > *{position:relative;z-index:1}@keyframes rv-flipL{
-  0%  {transform:rotateY(0deg)}
-  100%{transform:rotateY(-180deg)}
+  0%  {transform:rotateY(0deg);   filter:brightness(1)}
+  50% {                            filter:brightness(.5)}
+  100%{transform:rotateY(-180deg);filter:brightness(1)}
 }@keyframes rv-flipR{
-  0%  {transform:rotateY(0deg)}
-  100%{transform:rotateY(180deg)}
+  0%  {transform:rotateY(0deg);   filter:brightness(1)}
+  50% {                            filter:brightness(.5)}
+  100%{transform:rotateY(180deg); filter:brightness(1)}
+}@keyframes rv-sombraFlip{
+  0%{opacity:0}
+  40%{opacity:1}
+  100%{opacity:0}
 }#revista-overlay .flipping-out-l{
   animation:rv-flipL var(--flip-dur,.55s) cubic-bezier(.645,.045,.355,1) forwards;
   transform-origin:right center;transform-style:preserve-3d;
@@ -2835,18 +2841,34 @@ function animarFlip(nextIdx) {
   const currentEl = document.getElementById('spread-'+spreadIdx);
   if (!currentEl) { mostrarSpread(nextIdx); flipping=false; return; }
 
+  const DUR = 480;
+
   // Página que sale: mitad izquierda gira hacia izquierda, o der hacia der
   const halfToAnimate = dir==='next' ? currentEl.querySelector('.pg:last-child') : currentEl.querySelector('.pg:first-child');
+  // La otra mitad (la que queda quieta) recibe una sombra que barre la
+  // hoja mientras la de al lado gira, como la sombra de una página real.
+  const halfQuieta = dir==='next' ? currentEl.querySelector('.pg:first-child') : currentEl.querySelector('.pg:last-child');
+  let sombra = null;
   if (halfToAnimate) {
     halfToAnimate.style.position = 'absolute';
     halfToAnimate.style[dir==='next'?'right':'left'] = '0';
     halfToAnimate.style.width = '50%';
     halfToAnimate.style.height = '100%';
     halfToAnimate.style.zIndex = '50';
-    halfToAnimate.style.animation = `${dir==='next'?'flipR':'flipL'} .48s cubic-bezier(.645,.045,.355,1) forwards`;
+    halfToAnimate.style.animation = `${dir==='next'?'rv-flipR':'rv-flipL'} ${DUR}ms cubic-bezier(.645,.045,.355,1) forwards`;
     halfToAnimate.style.transformOrigin = dir==='next' ? 'left center' : 'right center';
     halfToAnimate.style.transformStyle = 'preserve-3d';
     halfToAnimate.style.backfaceVisibility = 'hidden';
+    halfToAnimate.style.boxShadow = '0 0 40px rgba(0,0,0,.5)';
+  }
+  if (halfQuieta) {
+    sombra = document.createElement('div');
+    sombra.style.cssText = `position:absolute;top:0;bottom:0;${dir==='next'?'left':'right'}:0;width:100%;
+      pointer-events:none;z-index:49;
+      background:linear-gradient(${dir==='next'?'to left':'to right'},rgba(0,0,0,.35),rgba(0,0,0,0) 55%);
+      animation:rv-sombraFlip ${DUR}ms ease-out forwards;`;
+    halfQuieta.style.position = halfQuieta.style.position || 'relative';
+    halfQuieta.appendChild(sombra);
   }
 
   setTimeout(() => {
@@ -2854,10 +2876,12 @@ function animarFlip(nextIdx) {
       halfToAnimate.style.animation = '';
       halfToAnimate.style.position = '';
       halfToAnimate.style.zIndex   = '';
+      halfToAnimate.style.boxShadow = '';
     }
+    if (sombra) sombra.remove();
     mostrarSpread(nextIdx);
     flipping = false;
-  }, 500);
+  }, DUR);
 }
 
 function paginaSiguiente() { irASpread(spreadIdx+1); }
