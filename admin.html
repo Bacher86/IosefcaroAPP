@@ -1506,10 +1506,19 @@ window.exportarExcel = async function exportarExcel(){
 window.elegirExportacion = function elegirExportacion(){
   return new Promise(r=>{const c=prompt("¿Qué exportar?\n1. Padrón de alumnos\n2. Asistencias del mes\n3. Notas\n4. Informes EOE\n5. TODO\n\nIngresá el número:");const ops=['padron','asistencia','notas','eoe','todo'];r(ops[parseInt(c)-1]||null);});
 }
+// Separa "Nombre Apellido" (como se carga hoy en la ficha del alumno) en dos
+// columnas: la primera palabra se toma como Nombre y el resto como Apellido.
+// Así "Iael Bergman" -> Nombre: Iael / Apellido: Bergman, y nombres
+// compuestos como "María José Bergman" -> Nombre: María José / Apellido: Bergman.
+function separarNombreApellido(completo){
+  const partes=(completo||'').trim().split(/\s+/);
+  if(partes.length<2)return{nombre:partes[0]||'',apellido:''};
+  return{nombre:partes.slice(0,-1).join(' '),apellido:partes[partes.length-1]};
+}
 window.exportarPadron = async function exportarPadron(wb){
   const snap=await db.collection('alumnos').get();
-  const rows=[['Nombre','Curso','Nivel','Familia','Grupo Sanguíneo','Obra Social','Autorización Imagen','Contacto Emergencia 1','Tel. Emergencia 1']];
-  snap.forEach(doc=>{const d=doc.data();const ce=d.contactosEmergencia?.[0];rows.push([d.nombre||'',d.curso||'',d.nivel||'',d.familiaNombre||'',d.grupoSanguineo||'',d.obraSocial||'',d.autorizacionImagen||'pendiente',ce?.nombre||'',ce?.tel||'']);});
+  const rows=[['Apellido','Nombre','Curso','Nivel','Familia','Grupo Sanguíneo','Obra Social','Autorización Imagen','Contacto Emergencia 1','Tel. Emergencia 1']];
+  snap.forEach(doc=>{const d=doc.data();const ce=d.contactosEmergencia?.[0];const{nombre,apellido}=separarNombreApellido(d.nombre);rows.push([apellido,nombre,d.curso||'',d.nivel||'',d.familiaNombre||'',d.grupoSanguineo||'',d.obraSocial||'',d.autorizacionImagen||'pendiente',ce?.nombre||'',ce?.tel||'']);});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Padrón');
 }
 window.exportarAsistencia = async function exportarAsistencia(wb){
