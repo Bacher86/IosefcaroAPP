@@ -1762,7 +1762,7 @@ async function guardarInforme(){
   try{
     await db.collection('alumnos').doc(alumnoId).collection('informes').add({texto,periodo,indicadores,materia:materiaActiva||'General',docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true});
     await db.collection('observaciones_eoe').add({texto,periodo,indicadores,materia:materiaActiva||'General',docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoId,alumnoNombre,fecha:new Date().toISOString(),origen:'docente'});
-    alert(`✅ Informe guardado para ${alumnoNombre} (${periodo}).\nVisible para la familia y el equipo EOE.`);
+    alert(`✅ Informe guardado para ${alumnoNombre} (${periodo}).\nEs confidencial: solo lo verá el equipo EOE, salvo que ellos decidan compartirlo con la familia.`);
     document.getElementById('informe-texto').value='';
     ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
     cargarInformes();
@@ -2302,7 +2302,7 @@ async function guardarObservacion(){
   const obs={texto,tipo:tipoObsActivo,alumnoId,alumnoNombre,docenteEmail,docenteNombre:docenteData?.nombre||'',materia:materiaActiva,fecha:new Date().toISOString(),origen:'docente'};
   await db.collection('alumnos').doc(alumnoId).collection('observaciones').add(obs);
   await db.collection('observaciones_eoe').add(obs);
-  alert('✅ Observación guardada. Visible también para EOE.');
+  alert('✅ Observación guardada. Es confidencial: solo la ve el equipo EOE, salvo que ellos autoricen compartirla.');
   document.getElementById('obs-texto').value='';cargarObservaciones();
 }
 window.guardarObservacion=guardarObservacion;
