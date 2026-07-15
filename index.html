@@ -174,8 +174,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;min-height:10
       <div id="pass-field" class="hidden">
         <label class="text-[10px] font-black text-slate-400 uppercase ml-1 block mb-1.5">Contraseña</label>
         <input type="password" id="login-pass" class="input-pro" placeholder="Tu contraseña" autocomplete="current-password">
+        <p class="text-right mt-1.5"><a href="#" onclick="recuperarContrasena();return false;" class="text-[10px] font-bold text-slate-400 hover:text-slate-600">¿Olvidaste tu contraseña?</a></p>
       </div>
-      <p id="login-hint" class="text-[11px] text-slate-400 text-center">Las familias ingresan solo con email, sin contraseña</p>
+      <p id="login-hint" class="text-[11px] text-slate-400 text-center hidden">Las familias ingresan solo con email, sin contraseña</p>
     </div>
 
     <!-- Progress bar -->
@@ -322,12 +323,22 @@ function abrirLogin(modo){
   var passField=document.getElementById('pass-field');
   document.getElementById('login-error').classList.add('hidden');
   document.getElementById('login-email').value='';document.getElementById('login-pass').value='';
-  if(modo==='familia'){icon.textContent='💜';icon.style.background='#f5f3ff';title.textContent='Portal Familias';subtitle.textContent='Ingresá con tu email registrado';hint.textContent='Las familias ingresan solo con email, sin contraseña';hint.classList.remove('hidden');passField.classList.add('hidden');}
+  if(modo==='familia'){icon.textContent='💜';icon.style.background='#f5f3ff';title.textContent='Portal Familias';subtitle.textContent='Ingresá con tu email y contraseña';hint.textContent='';hint.classList.add('hidden');passField.classList.remove('hidden');}
   else if(modo==='alumno'){icon.textContent='🎓';icon.style.background='#f0f9ff';title.textContent='Portal Alumnos';subtitle.textContent='Ingresá con tu email y contraseña';hint.textContent='';hint.classList.add('hidden');passField.classList.remove('hidden');}
   else{icon.textContent='🏫';icon.style.background='#f0f9ff';title.textContent='Portal Escuela';subtitle.textContent='Personal docente y administrativo';hint.textContent='Docentes y secretaría ingresan con email y contraseña';hint.classList.remove('hidden');passField.classList.remove('hidden');}
   modal.classList.add('open');setTimeout(function(){document.getElementById('login-email').focus();},300);
 }
 function abrirImportar(){document.getElementById('modal-importar').style.display='flex';resetImport();}
+window.recuperarContrasena=function(){
+  var email=document.getElementById('login-email').value.trim();
+  if(!email){showError('Escribí tu email arriba primero, y volvé a tocar el link.');return;}
+  firebase.auth().sendPasswordResetEmail(email).then(function(){
+    showError('');document.getElementById('login-error').classList.add('hidden');
+    alert('✅ Te enviamos un email a '+email+' con instrucciones para elegir una nueva contraseña. Revisá también la carpeta de spam.');
+  }).catch(function(e){
+    showError('No pudimos enviar el email. Verificá que esté bien escrito.');
+  });
+};
 function cerrarImportar(){document.getElementById('modal-importar').style.display='none';}
 function resetImport(){
   impAppActual=null;impDatosParseados=[];
@@ -403,7 +414,7 @@ function _initIndex(){
     var pass=document.getElementById('login-pass').value.trim();
     document.getElementById('login-error').classList.add('hidden');
     if(!email){showError('Ingresá tu email.');return;}
-    if((modoActual==='escuela'||modoActual==='alumno')&&!pass){showError('Ingresá tu contraseña.');return;}
+    if(!pass){showError('Ingresá tu contraseña.');return;}
     document.getElementById('btn-ingresar').disabled=true;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';setProgress(30);
 
     // ── Autenticación real contra Firebase Authentication ──
