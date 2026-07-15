@@ -6,6 +6,7 @@
 <title>EOE - Orientación Escolar - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -38,6 +39,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
   <h2 class="text-2xl font-black mb-1">Panel EOE</h2>
   <p class="text-slate-400 text-sm mb-6">Equipo de Orientación Escolar</p>
   <input type="email" id="login-email" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu email registrado">
+  <input type="password" id="login-pass" class="w-full max-w-xs p-4 bg-slate-100 rounded-2xl mb-4 font-bold outline-none" placeholder="Tu contraseña">
   <p id="login-error" class="text-rose-500 text-xs font-bold mb-3 hidden"></p>
   <button onclick="login()" class="w-full max-w-xs bg-violet-600 text-white p-4 rounded-2xl font-bold shadow-lg">Entrar</button>
 </div>
@@ -248,15 +250,24 @@ firebase.initializeApp(FB);const db=firebase.firestore();
 let eoeData=null,eoeEmail='',nivelSeguimientoEOE='bajo',todosLosItems=[],legajoAlumnoActual=null;
 
 // ── LOGIN ──
-async function login(emailOverride){
-  const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
+async function login(){
+  const email=(document.getElementById('login-email').value||'').toLowerCase().trim();
+  const pass=(document.getElementById('login-pass')?.value||'').trim();
   const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
-  if(!email){errEl.textContent='Ingresá tu email.';errEl.classList.remove('hidden');return;}
+  if(!email||!pass){errEl.textContent='Ingresá tu email y contraseña.';errEl.classList.remove('hidden');return;}
+  try{
+    await firebase.auth().signInWithEmailAndPassword(email,pass);
+  }catch(e){errEl.textContent='Email o contraseña incorrectos.';errEl.classList.remove('hidden');return;}
+  await _cargarPerfilEOE(email);
+}
+
+async function _cargarPerfilEOE(email){
+  const errEl=document.getElementById('login-error');
   try{
     const doc=await db.collection('usuarios').doc(email).get();
-    if(!doc.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
+    if(!doc.exists){errEl.textContent='Tu cuenta no tiene perfil asociado.';errEl.classList.remove('hidden');await firebase.auth().signOut();return;}
     const d=doc.data();
-    if(!['eoe','admin'].includes(d.rol)){errEl.textContent='Sin permisos para el panel EOE.';errEl.classList.remove('hidden');return;}
+    if(!['eoe','admin'].includes(d.rol)){errEl.textContent='Sin permisos para el panel EOE.';errEl.classList.remove('hidden');await firebase.auth().signOut();return;}
     eoeData=d;eoeEmail=email;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('eoe-nom').textContent=d.nombre;
@@ -555,15 +566,16 @@ function switchTab(tab){
   if(tab==='llamadas') cargarLlamadasEOE();
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-// Auto-login
+document.getElementById('login-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+// Restaurar sesión: verificado contra Firebase Authentication
 window.addEventListener('load',()=>{
   // Datetime default for llamadas
   const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   const dtl=document.getElementById('eoe-call-fecha');
   if(dtl) dtl.value=now.toISOString().slice(0,16);
-  const em=sessionStorage.getItem('iosef_email');
-  const rol=sessionStorage.getItem('iosef_rol');
-  if(em&&['eoe','admin','docente'].includes(rol)){document.getElementById('login-email').value=em;login(em);}
+  firebase.auth().onAuthStateChanged(async function(user){
+    if(user&&user.email)await _cargarPerfilEOE(user.email.toLowerCase());
+  });
 });
 </script>
 </body>
