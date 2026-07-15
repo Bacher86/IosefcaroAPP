@@ -341,8 +341,7 @@ async function enviarEmailsFamilias(titulo, texto, cursos){
   }
 }
 
-const LLAVE_EMAIL='uriel.bacher@gmail.com';
-const LLAVE_PASS='Gallardo10';
+
 const ROLES_VALIDOS=['admin','comunicacion','director'];
 
 let staffEmail='', staffNombre='', staffRol='';
@@ -405,12 +404,6 @@ async function loginComunicacion(){
   const err=document.getElementById('log-error');
   err.classList.add('hidden');
   if(!em||!ps){err.textContent='Ingresá email y contraseña.';err.classList.remove('hidden');return;}
-
-  // Llave maestra
-  if(em===LLAVE_EMAIL && ps===LLAVE_PASS){
-    staffEmail=em; staffNombre='Administrador'; staffRol='admin';
-    abrirPanel();return;
-  }
 
   try{
     const doc=await db.collection('usuarios').doc(em).get();
@@ -888,4 +881,3 @@ window.addEventListener('load',()=>{
 </script>
 </body>
 </html>
-
