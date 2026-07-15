@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Panel Docente - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
@@ -352,6 +353,7 @@ body.app-ready nav.app-nav{display:flex}
       <span class="text-[10px] font-black text-slate-400 uppercase">Evaluaciones:</span>
       <div id="tags-examenes" class="flex gap-2 flex-wrap"></div>
       <button onclick="agregarColumna()" class="text-[10px] font-black bg-blue-600 text-white px-3 py-1.5 rounded-xl shadow-sm">+ Agregar</button>
+      <button onclick="exportarLibroNotas()" class="text-[10px] font-black bg-emerald-600 text-white px-3 py-1.5 rounded-xl shadow-sm ml-2">📥 Exportar Excel</button>
     </div>
     <div id="grilla-container" class="hidden">
       <div class="grilla-wrapper mb-4">
@@ -723,6 +725,28 @@ body.app-ready nav.app-nav{display:flex}
       <p class="text-slate-400 text-xs mt-0.5">Cursos asignados y solicitud de nuevos</p>
     </div>
 
+    <!-- Banco de recursos compartido -->
+    <div class="bg-white border rounded-2xl p-4 shadow-sm">
+      <p class="text-[9px] font-black text-slate-400 uppercase mb-3">📚 Banco de recursos entre docentes</p>
+      <p class="text-xs text-slate-500 mb-3">Compartí planificaciones, actividades y materiales con el resto del equipo docente, o buscá lo que ya subieron tus colegas.</p>
+      <input type="text" id="banco-buscar" placeholder="Buscar por título, materia o etiqueta..." class="input-pro w-full mb-2" oninput="filtrarBancoRecursos()">
+      <button onclick="abrirFormBanco()" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold text-sm mb-3"><i class="fas fa-plus mr-2"></i>Compartir un recurso</button>
+      <div id="banco-form" class="hidden bg-slate-50 rounded-xl p-3 mb-3 space-y-2">
+        <input type="text" id="banco-titulo" placeholder="Título (ej: Actividad fracciones 4to grado)" class="input-pro w-full">
+        <input type="text" id="banco-materia" placeholder="Materia" class="input-pro w-full">
+        <input type="text" id="banco-nivel" placeholder="Nivel (inicial/primario/secundario, opcional)" class="input-pro w-full">
+        <input type="url" id="banco-url" placeholder="Link (Google Drive, etc.)" class="input-pro w-full">
+        <textarea id="banco-desc" placeholder="Descripción breve" class="input-pro w-full h-16 resize-none"></textarea>
+        <div class="flex gap-2">
+          <button onclick="document.getElementById('banco-form').classList.add('hidden')" class="flex-1 bg-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs">Cancelar</button>
+          <button onclick="publicarRecursoBanco()" class="flex-1 bg-slate-900 text-white p-2.5 rounded-xl font-bold text-xs">Publicar</button>
+        </div>
+      </div>
+      <div id="banco-lista" class="space-y-2">
+        <p class="text-slate-400 text-xs text-center py-3 italic">Cargando...</p>
+      </div>
+    </div>
+
     <!-- Cursos aprobados -->
     <div class="bg-white border rounded-2xl p-4 shadow-sm">
       <p class="text-[9px] font-black text-slate-400 uppercase mb-3">✅ Cursos asignados</p>
@@ -1008,6 +1032,7 @@ firebase.initializeApp(FB);
 const db=firebase.firestore();
 
 let docenteData=null,docenteEmail='',materiaActiva='';
+function _esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 let periodoActivo={slug:'',nombre:'',id:'',bloqueado:false};
 let cambiosNotas={},cambiosAsis={};
 let columnaExamenes=[],alumnosActuales=[];
@@ -1380,6 +1405,29 @@ function renderTagsExamenes(){
 }
 function agregarColumna(){const n=prompt('Nombre de la evaluación (ej: TP2, Parcial 1):');if(!n?.trim())return;columnaExamenes.push({key:'nota_'+Date.now(),label:n.trim()});guardarConfigColumnas();cargarAlumnos();}
 function eliminarColumna(key){if(!confirm('¿Eliminar esta columna?'))return;columnaExamenes=columnaExamenes.filter(c=>c.key!==key);guardarConfigColumnas();cargarAlumnos();}
+// ── Exportar el libro de notas del curso/materia/período actual a Excel ──
+window.exportarLibroNotas=async function(){
+  if(!alumnosActuales.length){alert('No hay alumnos cargados en este curso.');return;}
+  const filas=[];
+  for(const al of alumnosActuales){
+    const nd=await db.collection('alumnos').doc(al.id).collection('notas_v2').doc(`${periodoActivo.slug}_${materiaActiva}`).get();
+    const nData=nd.exists?nd.data():{};
+    const fila={'N°':al.numero,'Alumno':al.nombre};
+    let suma=0,cnt=0;
+    columnaExamenes.forEach(col=>{
+      const val=nData[col.key]||'';
+      fila[col.label]=val;
+      if(val!==''){suma+=parseFloat(val)||0;cnt++;}
+    });
+    fila['Promedio']=cnt>0?(suma/cnt).toFixed(1):'';
+    filas.push(fila);
+  }
+  const ws=XLSX.utils.json_to_sheet(filas);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Notas');
+  const nombreArchivo=`Notas_${cursoActivo}_${materiaActiva}_${periodoActivo.slug}.xlsx`.replace(/\s+/g,'_');
+  XLSX.writeFile(wb,nombreArchivo);
+}
 async function guardarConfigColumnas(){const curso=cursoActivo||document.getElementById('select-curso')?.value||'';await db.collection('notas_config').doc(`${periodoActivo.slug}_${materiaActiva}_${curso}`).set({columnas:columnaExamenes});}
 
 // ══ INDICADORES BIMESTRALES ══
@@ -2444,12 +2492,12 @@ async function cargarForoDocente(){
       <div style="padding:12px 14px;background:${esDocente?'#eff6ff':'white'}">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <span>${tipoIcon[d.tipo]||'💬'}</span>
-          <span style="font-size:11px;font-weight:700;color:#475569">${d.autorNombre||'Alumno'}${esDocente?' 👩‍🏫':''}</span>
+          <span style="font-size:11px;font-weight:700;color:#475569">${_esc(d.autorNombre||'Alumno')}${esDocente?' 👩‍🏫':''}</span>
           <span style="font-size:9px;color:#94a3b8;margin-left:auto">${fechaStr}</span>
         </div>
-        <p style="font-size:13px;line-height:1.5">${d.texto||''}</p>
+        <p style="font-size:13px;line-height:1.5">${_esc(d.texto)}</p>
       </div>
-      ${respuestas.length?`<div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc">${respuestas.map(r=>`<div style="padding:6px 10px;background:white;border-radius:.625rem;border-left:3px solid ${r.rolAutor==='docente'?'#2563eb':'#e2e8f0'};margin-bottom:4px"><p style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:2px">${r.autorNombre||''}${r.rolAutor==='docente'?' 👩‍🏫':''}</p><p style="font-size:12px">${r.texto}</p></div>`).join('')}</div>`:''}
+      ${respuestas.length?`<div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc">${respuestas.map(r=>`<div style="padding:6px 10px;background:white;border-radius:.625rem;border-left:3px solid ${r.rolAutor==='docente'?'#2563eb':'#e2e8f0'};margin-bottom:4px"><p style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:2px">${_esc(r.autorNombre||'')}${r.rolAutor==='docente'?' 👩‍🏫':''}</p><p style="font-size:12px">${_esc(r.texto)}</p></div>`).join('')}</div>`:''}
       <div style="padding:8px 14px;border-top:1px solid #f1f5f9;display:flex;gap:6px">
         <button onclick="responderForoDocente('${id}')" style="background:#eff6ff;border:none;border-radius:.625rem;padding:5px 12px;font-size:11px;font-weight:700;color:#2563eb;cursor:pointer;font-family:inherit"><i class="fas fa-reply"></i> Responder</button>
         ${esDocente?`<button onclick="eliminarMsgForo('${id}')" style="background:none;border:none;color:#fca5a5;cursor:pointer;padding:5px 8px;font-size:11px"><i class="fas fa-trash"></i></button>`:''}
@@ -2486,7 +2534,7 @@ window.togglePermiteRespuestas=togglePermiteRespuestas;
 // ══ FIN TANDA 3 ══
 window._switchTab=function switchTab(tab){
   document.querySelectorAll('main > section.tab-content').forEach(t=>t.classList.remove('active'));
-  if(tab==='mis-cursos'){cargarMisCursos().catch(()=>{}); cargarCursosParaSolicitud().catch(()=>{});}
+  if(tab==='mis-cursos'){cargarMisCursos().catch(()=>{}); cargarCursosParaSolicitud().catch(()=>{}); cargarBancoRecursos().catch(()=>{});}
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   if(tab==='comunicados'){poblarCursosEnComunicados();cargarComunicadosDocente();}
   if(tab==='tablon'){poblarCursosTablon();poblarMateriasTablon();cargarTablonDocente();}
@@ -2638,6 +2686,60 @@ async function cargarCursosParaSolicitud(){
   }
 }
 
+// ── Banco de recursos compartido entre docentes ──
+window._bancoRecursos=[];
+window.cargarBancoRecursos=async function(){
+  const cont=document.getElementById('banco-lista');
+  try{
+    const snap=await db.collection('banco_recursos').orderBy('fecha','desc').limit(100).get();
+    window._bancoRecursos=snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){window._bancoRecursos=[];}
+  filtrarBancoRecursos();
+};
+window.filtrarBancoRecursos=function(){
+  const q=(document.getElementById('banco-buscar')?.value||'').toLowerCase().trim();
+  const cont=document.getElementById('banco-lista');
+  if(!cont)return;
+  let lista=window._bancoRecursos||[];
+  if(q)lista=lista.filter(r=>(r.titulo||'').toLowerCase().includes(q)||(r.materia||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q));
+  if(!lista.length){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-3 italic">Todavía no hay recursos compartidos. ¡Sé el primero!</p>';return;}
+  cont.innerHTML=lista.map(r=>`
+    <div class="border rounded-xl p-3">
+      <div class="flex items-start justify-between gap-2">
+        <p class="font-bold text-sm">${_esc(r.titulo)}</p>
+        ${r.autorEmail===docenteEmail?`<button onclick="eliminarRecursoBanco('${r.id}')" class="text-rose-300 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>`:''}
+      </div>
+      <p class="text-[10px] text-slate-400 font-bold uppercase">${_esc(r.materia||'')}${r.nivel?' · '+_esc(r.nivel):''}</p>
+      ${r.descripcion?`<p class="text-xs text-slate-600 mt-1">${_esc(r.descripcion)}</p>`:''}
+      <div class="flex items-center justify-between mt-2">
+        <p class="text-[10px] text-slate-400">Por ${_esc(r.autorNombre||'')}</p>
+        ${r.url?`<a href="${_esc(r.url)}" target="_blank" rel="noopener" class="text-[11px] font-bold text-blue-600">Abrir recurso →</a>`:''}
+      </div>
+    </div>`).join('');
+};
+window.abrirFormBanco=function(){document.getElementById('banco-form').classList.remove('hidden');};
+window.publicarRecursoBanco=async function(){
+  const titulo=document.getElementById('banco-titulo').value.trim();
+  const materia=document.getElementById('banco-materia').value.trim();
+  const nivel=document.getElementById('banco-nivel').value.trim();
+  const url=document.getElementById('banco-url').value.trim();
+  const descripcion=document.getElementById('banco-desc').value.trim();
+  if(!titulo){alert('Ponele un título al recurso.');return;}
+  await db.collection('banco_recursos').add({
+    titulo,materia,nivel,url,descripcion,
+    autorEmail:docenteEmail,autorNombre:docenteData?.nombre||'',
+    fecha:new Date().toISOString()
+  });
+  document.getElementById('banco-titulo').value='';document.getElementById('banco-materia').value='';
+  document.getElementById('banco-nivel').value='';document.getElementById('banco-url').value='';document.getElementById('banco-desc').value='';
+  document.getElementById('banco-form').classList.add('hidden');
+  cargarBancoRecursos();
+};
+window.eliminarRecursoBanco=async function(id){
+  if(!confirm('¿Eliminar este recurso del banco compartido?'))return;
+  await db.collection('banco_recursos').doc(id).delete();
+  cargarBancoRecursos();
+};
 window.enviarSolicitudCursos=async function enviarSolicitudCursos(){
   const materia=document.getElementById('sol-materia')?.value;
   if(!materia){alert('Seleccioná una materia.');return;}
