@@ -72,6 +72,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
         <button onclick="switchTab('config')" id="nav-config" class="nav-btn px-4 py-2 font-bold text-xs text-slate-500 transition-all">
           <i class="fas fa-cog mr-1"></i>Config
         </button>
+        <button onclick="switchTab('push')" id="nav-push" class="nav-btn px-4 py-2 font-bold text-xs text-slate-500 transition-all">
+          <i class="fas fa-bell mr-1"></i>Push
+        </button>
       </nav>
       <button onclick="cerrarSesion()" class="text-slate-300 hover:text-rose-500 p-2 transition-colors" title="Cerrar sesión">
         <i class="fas fa-sign-out-alt"></i>
@@ -271,6 +274,41 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
           <i class="fas fa-paper-plane mr-2"></i>Enviar email de prueba a mi cuenta
         </button>
         <div id="email-test-status" class="hidden text-xs font-bold p-2 rounded-xl text-center"></div>
+      </div>
+    </section>
+
+    <!-- ═══ PUSH ═══ -->
+    <section id="tab-push" class="tab-content space-y-5">
+      <div class="card p-5 space-y-4">
+        <h2 class="font-black text-base flex items-center gap-2"><i class="fas fa-bell text-amber-500"></i>Nueva notificación push</h2>
+        <p class="text-xs text-slate-500">Se guarda en una cola. Un script aparte (que corre en tu compu o programado gratis con GitHub Actions) la envía a los celulares de las familias con la app activada. No es instantáneo — depende de cada cuánto corra ese script.</p>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Título</label>
+          <input type="text" id="push-titulo" class="input-pro mt-1" placeholder="Ej: Suspensión de clases mañana">
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Mensaje</label>
+          <textarea id="push-mensaje" class="input-pro mt-1 h-20 resize-none" placeholder="Texto breve, va a aparecer como notificación"></textarea>
+        </div>
+        <div>
+          <label class="text-[9px] font-black text-slate-400 uppercase">Destinatarios</label>
+          <select id="push-nivel" class="input-pro mt-1">
+            <option value="">Todas las familias</option>
+            <option value="inicial">Solo familias de Nivel Inicial</option>
+            <option value="primario">Solo familias de Nivel Primario</option>
+            <option value="secundario">Solo familias de Nivel Secundario</option>
+          </select>
+        </div>
+        <button onclick="guardarPushPendiente()" class="w-full bg-slate-900 text-white p-3 rounded-xl font-bold text-sm">
+          <i class="fas fa-paper-plane mr-2"></i>Guardar en la cola de envío
+        </button>
+      </div>
+
+      <div class="card p-5 space-y-3">
+        <h2 class="font-black text-base flex items-center gap-2"><i class="fas fa-chart-simple text-blue-500"></i>Enviadas y métricas</h2>
+        <div id="push-lista" class="space-y-2">
+          <p class="text-slate-400 text-xs text-center py-3 italic">Cargando...</p>
+        </div>
       </div>
     </section>
 
@@ -870,10 +908,50 @@ function switchTab(tab){
   // Recargar datos al cambiar de tab para asegurar que estén frescos
   if(tab==='calendario')cargarEventosCalendario();
   if(tab==='comunicados')cargarNoticias();
+  if(tab==='push')cargarListaPush();
 }
 
 // ═══ AUTO-LOGIN ═══
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')loginComunicacion();});
+
+// ── Notificaciones push (cola para el script externo) ──
+window.guardarPushPendiente=async function(){
+  const titulo=document.getElementById('push-titulo').value.trim();
+  const mensaje=document.getElementById('push-mensaje').value.trim();
+  const nivel=document.getElementById('push-nivel').value;
+  if(!titulo||!mensaje){alert('Completá título y mensaje.');return;}
+  await db.collection('push_pendientes').add({
+    titulo,mensaje,nivel:nivel||null,
+    estado:'pendiente',aperturas:0,
+    creadoPor:staffEmail,creadoEn:new Date().toISOString()
+  });
+  document.getElementById('push-titulo').value='';
+  document.getElementById('push-mensaje').value='';
+  document.getElementById('push-nivel').value='';
+  alert('✅ Guardada en la cola. Se va a enviar la próxima vez que corra el script de envío.');
+  cargarListaPush();
+};
+window.cargarListaPush=async function(){
+  const cont=document.getElementById('push-lista');
+  const snap=await db.collection('push_pendientes').orderBy('creadoEn','desc').limit(30).get().catch(()=>({docs:[]}));
+  if(snap.docs.length===0){cont.innerHTML='<p class="text-slate-400 text-xs text-center py-3 italic">Todavía no enviaste ninguna.</p>';return;}
+  const nivelLabel={inicial:'Nivel Inicial',primario:'Nivel Primario',secundario:'Nivel Secundario'};
+  cont.innerHTML=snap.docs.map(doc=>{
+    const d=doc.data();
+    const estadoTxt=d.estado==='enviado'
+      ? `<span style="color:#059669;font-weight:800">✅ Enviada</span>`
+      : `<span style="color:#d97706;font-weight:800">⏳ Pendiente de envío</span>`;
+    return `<div class="border rounded-xl p-3">
+      <p class="font-bold text-sm">${(d.titulo||'').replace(/</g,'&lt;')}</p>
+      <p class="text-xs text-slate-500">${(d.mensaje||'').replace(/</g,'&lt;')}</p>
+      <p class="text-[10px] text-slate-400 mt-1">${d.nivel?nivelLabel[d.nivel]:'Todas las familias'} · ${new Date(d.creadoEn).toLocaleString('es-AR')}</p>
+      <div class="flex items-center gap-3 mt-2 text-[11px] font-bold">
+        ${estadoTxt}
+        ${d.estado==='enviado'?`<span class="text-slate-500">📬 ${d.destinatarios||0} destinatarios · 👁 ${d.aperturas||0} aperturas</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+};
 window.addEventListener('load',()=>{
   firebase.auth().onAuthStateChanged(async function(user){
     if(user&&user.email)await _cargarPerfilComunicacion(user.email.toLowerCase());
