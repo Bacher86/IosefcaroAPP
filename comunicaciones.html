@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Comunicaciones - Iosef Caro</title>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -406,11 +407,18 @@ async function loginComunicacion(){
   if(!em||!ps){err.textContent='Ingresá email y contraseña.';err.classList.remove('hidden');return;}
 
   try{
+    await firebase.auth().signInWithEmailAndPassword(em,ps);
+  }catch(e){err.textContent='Email o contraseña incorrectos.';err.classList.remove('hidden');return;}
+  await _cargarPerfilComunicacion(em);
+}
+
+async function _cargarPerfilComunicacion(em){
+  const err=document.getElementById('log-error');
+  try{
     const doc=await db.collection('usuarios').doc(em).get();
-    if(!doc.exists){err.textContent='Email no registrado.';err.classList.remove('hidden');return;}
+    if(!doc.exists){err.textContent='Tu cuenta no tiene perfil asociado.';err.classList.remove('hidden');await firebase.auth().signOut();return;}
     const d=doc.data();
-    if(!ROLES_VALIDOS.includes(d.rol)){err.textContent='Sin permisos para este panel.';err.classList.remove('hidden');return;}
-    if(d.pass!==ps){err.textContent='Contraseña incorrecta.';err.classList.remove('hidden');return;}
+    if(!ROLES_VALIDOS.includes(d.rol)){err.textContent='Sin permisos para este panel.';err.classList.remove('hidden');await firebase.auth().signOut();return;}
     staffEmail=em; staffNombre=d.nombre; staffRol=d.rol;
     abrirPanel();
   }catch(e){err.textContent='Error: '+e.message;err.classList.remove('hidden');}
@@ -427,7 +435,7 @@ function abrirPanel(){
   inicializarApp();
 }
 
-function cerrarSesion(){sessionStorage.clear();location.reload();}
+function cerrarSesion(){sessionStorage.clear();firebase.auth().signOut().finally(()=>location.reload());}
 
 // ═══ INIT ═══
 async function inicializarApp(){
@@ -867,16 +875,9 @@ function switchTab(tab){
 // ═══ AUTO-LOGIN ═══
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')loginComunicacion();});
 window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    const em=sessionStorage.getItem('iosef_email');
-    const ps=sessionStorage.getItem('iosef_pass_tmp')||'';
-    const rol=sessionStorage.getItem('iosef_rol');
-    if(em&&(rol==='admin'||rol==='comunicacion'||rol==='director')){
-      document.getElementById('log-email').value=em;
-      if(ps) document.getElementById('log-pass').value=ps;
-      loginComunicacion();
-    }
-  },200);
+  firebase.auth().onAuthStateChanged(async function(user){
+    if(user&&user.email)await _cargarPerfilComunicacion(user.email.toLowerCase());
+  });
 });
 </script>
 </body>
