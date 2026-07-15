@@ -1007,7 +1007,6 @@ const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosef
 firebase.initializeApp(FB);
 const db=firebase.firestore();
 
-const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let docenteData=null,docenteEmail='',materiaActiva='';
 let periodoActivo={slug:'',nombre:'',id:'',bloqueado:false};
 let cambiosNotas={},cambiosAsis={};
@@ -1033,15 +1032,6 @@ window._doLogin=async function login(emailOverride){
   const pass=(document.getElementById('login-pass')?.value||'').trim();
   const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
   if(!email){errEl.textContent='Ingresá tu email.';errEl.classList.remove('hidden');return;}
-  if(email===LLAVE_EMAIL&&pass===LLAVE_PASS){
-    docenteData={nombre:'Administrador',rol:'docente',materias:[],cursos:[],nivel:'primario'};
-    docenteEmail=email;document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
-    document.getElementById('doc-nom').innerText='Administrador';
-    window.docenteEmail=docenteEmail;window.docenteNombre='Administrador';
-    poblarCursosTablon();poblarMateriasTablon();poblarCursosEnComunicados();
-    await cargarPeriodos();iniciarDashboard();return;
-  }
-  if(email===LLAVE_EMAIL&&!pass){document.getElementById('pass-wrap').style.display='block';errEl.textContent='Ingresá la contraseña.';errEl.classList.remove('hidden');return;}
   try{
     const snap=await db.collection('usuarios').doc(email).get();
     if(!snap.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
@@ -1762,7 +1752,7 @@ async function guardarInforme(){
   try{
     await db.collection('alumnos').doc(alumnoId).collection('informes').add({texto,periodo,indicadores,materia:materiaActiva||'General',docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoNombre,fecha:new Date().toISOString(),visibleFamilia:true});
     await db.collection('observaciones_eoe').add({texto,periodo,indicadores,materia:materiaActiva||'General',docenteEmail,docenteNombre:docenteData?.nombre||'',alumnoId,alumnoNombre,fecha:new Date().toISOString(),origen:'docente'});
-    alert(`✅ Informe guardado para ${alumnoNombre} (${periodo}).\nEs confidencial: solo lo verá el equipo EOE, salvo que ellos decidan compartirlo con la familia.`);
+    alert(`✅ Informe guardado para ${alumnoNombre} (${periodo}).\nVisible para la familia y el equipo EOE.`);
     document.getElementById('informe-texto').value='';
     ['ind-participacion','ind-entregas','ind-conducta','ind-progreso'].forEach(id=>document.getElementById(id).checked=false);
     cargarInformes();
@@ -2302,7 +2292,7 @@ async function guardarObservacion(){
   const obs={texto,tipo:tipoObsActivo,alumnoId,alumnoNombre,docenteEmail,docenteNombre:docenteData?.nombre||'',materia:materiaActiva,fecha:new Date().toISOString(),origen:'docente'};
   await db.collection('alumnos').doc(alumnoId).collection('observaciones').add(obs);
   await db.collection('observaciones_eoe').add(obs);
-  alert('✅ Observación guardada. Es confidencial: solo la ve el equipo EOE, salvo que ellos autoricen compartirla.');
+  alert('✅ Observación guardada. Visible también para EOE.');
   document.getElementById('obs-texto').value='';cargarObservaciones();
 }
 window.guardarObservacion=guardarObservacion;
