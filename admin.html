@@ -83,7 +83,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
     <div class="space-y-3">
       <div><label class="text-[9px] font-black text-slate-400 uppercase">Email</label><p id="staff-edit-email" class="font-bold text-slate-600 text-sm mt-1 bg-slate-50 p-2 rounded-xl"></p></div>
       <div><label class="text-[9px] font-black text-slate-400 uppercase">Nombre</label><input type="text" id="staff-edit-nombre" class="input-pro mt-1"></div>
-      <div><label class="text-[9px] font-black text-slate-400 uppercase">Nueva contraseña (dejar vacío para no cambiar)</label><input type="password" id="staff-edit-pass" class="input-pro mt-1" placeholder="••••••••"></div>
+      <div><p class="text-[9px] font-black text-slate-400 uppercase">Contraseña</p><p class="text-xs text-slate-500 mt-1">Cada persona cambia su propia contraseña desde su cuenta. Si se le olvidó, pedile que use "¿Olvidaste tu contraseña?" en la pantalla de inicio de sesión.</p></div>
       <div><label class="text-[9px] font-black text-slate-400 uppercase">Rol</label>
         <select id="staff-edit-rol" class="input-pro mt-1">
           <option value="admin">Admin Total</option>
@@ -806,6 +806,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
 
     <!-- ════ PERMISOS POR ROL (mejora 19) ════ -->
     <section id="tab-permisos" class="tab-content space-y-6">
+      <h2 class="text-2xl font-black tracking-tight">Gestión de accesos</h2>
+      <p class="text-slate-400 text-xs -mt-3">Buscá a cualquier persona del sistema y cambiale el rol sin tener que ir a buscarla en su pestaña original.</p>
+      <input type="text" id="accesos-buscar" placeholder="Buscar por nombre o email..." class="input-pro w-full" oninput="filtrarGestionAccesos()">
+      <div id="accesos-resultados" class="space-y-2"></div>
+      <hr class="my-6">
       <h2 class="text-2xl font-black tracking-tight">Permisos por Rol</h2>
       <p class="text-slate-400 text-xs -mt-3">Referencia de qué puede hacer cada rol en el sistema.</p>
       <div id="tabla-permisos-cont" class="space-y-4"></div>
@@ -1962,7 +1967,7 @@ window.switchTab = function switchTab(t){
   if(t==='ciclo')cargarCiclos();
   if(t==='comunicado-admin')cargarComAdmin();
   if(t==='eventos-aprobacion'){window._evFiltro='pendiente';cargarEventosAprobacion();}
-  if(t==='permisos')renderTablaPermisos();
+  if(t==='permisos'){renderTablaPermisos();cargarGestionAccesos();}
   if(t==='docentes')cargarDocentes();
   if(t==='familias')cargarFamilias();
   if(t==='alumnos'){cargarAlumnosFiltrados();cargarCursosSelector();}
@@ -1992,7 +1997,6 @@ window.abrirEditarStaff = async function abrirEditarStaff(id){
   const u=doc.data();
   document.getElementById('staff-edit-email').textContent=id;
   document.getElementById('staff-edit-nombre').value=u.nombre||'';
-  document.getElementById('staff-edit-pass').value='';
   document.getElementById('staff-edit-rol').value=u.rol||'';
   document.querySelectorAll('.staff-edit-nivel-check').forEach(cb=>cb.checked=(u.niveles||[]).includes(cb.value));
   document.querySelectorAll('.perm-edit-check').forEach(cb=>cb.checked=(u.permisos||[]).includes(cb.value));
@@ -2001,14 +2005,13 @@ window.abrirEditarStaff = async function abrirEditarStaff(id){
 window.guardarEdicionStaff = async function guardarEdicionStaff(){
   if(!staffEditandoId)return;
   const nombre=document.getElementById('staff-edit-nombre').value.trim();
-  const pass=document.getElementById('staff-edit-pass').value.trim();
   const rol=document.getElementById('staff-edit-rol').value;
   const niveles=Array.from(document.querySelectorAll('.staff-edit-nivel-check:checked')).map(c=>c.value);
   const permisos=[];  // permisos simplificados — acceso por rol
-  const data={nombre,rol,niveles,permisos};if(pass)data.pass=pass;
+  const data={nombre,rol,niveles,permisos};
   await db.collection('usuarios').doc(staffEditandoId).update(data);
   registrarLog('editar',`Staff editado: ${nombre} (${staffEditandoId})`,'staff');
-  alert('✅ Usuario actualizado.');cerrarModalStaff();cargarStaff();
+  alert('✅ Usuario actualizado. (Para cambiar la contraseña, la persona debe hacerlo ella misma desde su cuenta.)');cerrarModalStaff();cargarStaff();
 }
 window.cerrarModalStaff = function cerrarModalStaff(){document.getElementById('modal-staff').style.display='none';staffEditandoId=null;}
 document.getElementById('modal-staff').addEventListener('click',function(e){if(e.target===this)cerrarModalStaff();});
@@ -2475,6 +2478,42 @@ window.crearCiclo = async function(){
 };
 
 // ── 19: Tabla de permisos ──
+window._todosLosUsuarios=[];
+window.cargarGestionAccesos=async function(){
+  const snap=await db.collection('usuarios').get();
+  window._todosLosUsuarios=snap.docs.map(d=>({email:d.id,...d.data()}));
+  filtrarGestionAccesos();
+};
+window.filtrarGestionAccesos=function(){
+  const q=(document.getElementById('accesos-buscar')?.value||'').toLowerCase().trim();
+  const cont=document.getElementById('accesos-resultados');
+  if(!cont)return;
+  let lista=window._todosLosUsuarios||[];
+  if(q)lista=lista.filter(u=>(u.nombre||'').toLowerCase().includes(q)||u.email.toLowerCase().includes(q));
+  lista=lista.slice(0,50); // limitar para no renderizar miles de filas de una
+  if(!lista.length){cont.innerHTML='<p class="text-slate-400 text-sm text-center py-4">Sin resultados. Escribí un nombre o email para buscar.</p>';return;}
+  const roles=['admin','director','secretaria_inicial','secretaria_primario','secretaria_secundario','docente','eoe','comunicacion','familia','alumno'];
+  cont.innerHTML=lista.map(u=>`
+    <div class="flex items-center gap-2 bg-white border rounded-xl p-3">
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-sm truncate">${(u.nombre||'(sin nombre)').replace(/</g,'&lt;')}</p>
+        <p class="text-[10px] text-slate-400 truncate">${u.email}</p>
+      </div>
+      <select id="rolsel-${u.email.replace(/[@.]/g,'_')}" class="input-pro text-xs" style="width:auto">
+        ${roles.map(r=>`<option value="${r}" ${u.rol===r?'selected':''}>${r}</option>`).join('')}
+      </select>
+      <button onclick="cambiarRolUsuario('${u.email}')" class="bg-slate-900 text-white text-[11px] font-bold px-3 py-2 rounded-lg">Guardar</button>
+    </div>`).join('');
+};
+window.cambiarRolUsuario=async function(email){
+  const sel=document.getElementById('rolsel-'+email.replace(/[@.]/g,'_'));
+  const nuevoRol=sel.value;
+  if(!confirm(`¿Cambiar el rol de ${email} a "${nuevoRol}"?`))return;
+  await db.collection('usuarios').doc(email).update({rol:nuevoRol});
+  registrarLog('editar',`Rol cambiado: ${email} → ${nuevoRol}`,'permisos');
+  alert('✅ Rol actualizado. La persona lo va a ver reflejado la próxima vez que entre.');
+  cargarGestionAccesos();
+};
 window.renderTablaPermisos = function(){
   const cont = document.getElementById('tabla-permisos-cont');
   if(!cont)return;
