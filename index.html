@@ -405,7 +405,6 @@ function _initIndex(){
     if(!email){showError('Ingresá tu email.');return;}
     if((modoActual==='escuela'||modoActual==='alumno')&&!pass){showError('Ingresá tu contraseña.');return;}
     document.getElementById('btn-ingresar').disabled=true;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';setProgress(30);
-    if(modoActual==='escuela'&&email==='uriel.bacher@gmail.com'&&pass==='Gallardo10'){setProgress(100);setTimeout(function(){window.location.href='admin.html';},300);return;}
     if(modoActual==='alumno'){
       try{
         var snap=await db.collection('alumnos').where('email','==',email).limit(1).get();setProgress(70);
