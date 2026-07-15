@@ -470,18 +470,6 @@ async function doLogin(){
   const btn=document.querySelector('.btn-login');
   btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';
 
-  // ── Acceso admin total ──
-  if(em==='uriel.bacher@gmail.com'&&ps==='Gallardo10'){
-    alumnoEmail=em;alumnoNombre='Admin';alumnoCurso='';alumnoNivel='secundario';
-    sessionStorage.setItem('iosef_alu_email',em);
-    sessionStorage.setItem('iosef_alu_nombre','Admin');
-    sessionStorage.setItem('iosef_alu_curso','');
-    sessionStorage.setItem('iosef_alu_nivel','secundario');
-    iniciarPanel();
-    btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
-    return;
-  }
-
   // Validar dominio @iosefcaro
   if(!em.includes(DOMINIO_VALIDO)){
     showErr('El email debe ser institucional (@iosefcaro).');
