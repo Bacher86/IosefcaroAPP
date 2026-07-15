@@ -233,6 +233,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
       <span id="badge-sol-admin" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#ef4444"></span>
     </button>
     <button onclick="exportarExcel()"               class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
+    <button onclick="backupCompleto()"               class="nav-btn text-indigo-700 bg-indigo-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup completo</button>
     <button onclick="document.getElementById('modal-backup').classList.remove('hidden')" class="nav-btn text-blue-700 bg-blue-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup</button>
     <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
   </nav>
@@ -1497,6 +1498,35 @@ window.exportarExcel = async function exportarExcel(){
 }
 window.elegirExportacion = function elegirExportacion(){
   return new Promise(r=>{const c=prompt("¿Qué exportar?\n1. Padrón de alumnos\n2. Asistencias del mes\n3. Notas\n4. Informes EOE\n5. TODO\n\nIngresá el número:");const ops=['padron','asistencia','notas','eoe','todo'];r(ops[parseInt(c)-1]||null);});
+}
+// ── Backup completo de la base (guarda TODAS las colecciones en un solo JSON) ──
+window.backupCompleto = async function backupCompleto(){
+  if(!confirm('Esto va a descargar una copia completa de toda la base de datos en un archivo. Puede tardar un momento. ¿Continuar?'))return;
+  const btn=event?.currentTarget;
+  if(btn){btn.disabled=true;btn.textContent='⏳ Generando...';}
+  const colecciones=['cursos','materias','ciclos_lectivos','periodos','usuarios','alumnos','curso_alumnos',
+    'asistencia','notas_config','config_indicadores','informes_eoe','observaciones_eoe','observaciones',
+    'justificaciones','autorizaciones','conversaciones','registro_llamadas','comunicados','eventos',
+    'config_visibilidad','tablon','foro','foro_config','notificaciones_push','notificaciones_docentes',
+    'notificaciones_admin','solicitudes_cursos','resp_rapidas_sec','log_actividad','periodos'];
+  const backup={generadoEn:new Date().toISOString(),colecciones:{}};
+  for(const col of [...new Set(colecciones)]){
+    try{
+      const snap=await db.collection(col).get();
+      backup.colecciones[col]=snap.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(e){
+      backup.colecciones[col]={error:e.message};
+    }
+  }
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`IosefCaro_backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+  registrarLog('exportar','Backup completo de la base de datos descargado','exportar');
+  if(btn){btn.disabled=false;btn.textContent='💾 Backup completo';}
+  alert('✅ Backup descargado. Guardalo en un lugar seguro (ej. Google Drive de la institución) — contiene datos sensibles, no lo compartas por email ni WhatsApp.');
 }
 // Separa "Nombre Apellido" (como se carga hoy en la ficha del alumno) en dos
 // columnas: la primera palabra se toma como Nombre y el resto como Apellido.
