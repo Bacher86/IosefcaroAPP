@@ -822,7 +822,6 @@ const db=firebase.firestore();
 let messaging=null;
 try{messaging=firebase.messaging();}catch(e){console.warn("FCM no soportado:",e.message);}
 
-const LLAVE_EMAIL='uriel.bacher@gmail.com';
 let userData=null,userEmail="",listaHijos=[],alumnoSeleccionadoId=null;
 let brain={noticias:[],faltas:[],notas:[],agenda:[]};
 let modalidadFiltro='num';
