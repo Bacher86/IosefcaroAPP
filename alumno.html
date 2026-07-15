@@ -434,7 +434,7 @@ main{padding:1rem;max-width:540px;margin:0 auto}
 
 <script>
 // ── Loader secuencial ──
-var _q=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _q=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
 var _qi=0;
 function _loadNext(){
   if(_qi>=_q.length){_initApp();return;}
@@ -457,7 +457,7 @@ let calMes=new Date();
 let periodosFiltro=[];
 
 // ── LOGIN ──
-const PASS_GENERICA='alumnos123';
+const PASS_TEMPORAL='CambiarAhora2026!'; // la que asigna el script de migración cuando no había contraseña previa
 const DOMINIO_VALIDO='@iosefcaro';
 
 async function doLogin(){
@@ -477,11 +477,21 @@ async function doLogin(){
   }
 
   try{
+    await firebase.auth().signInWithEmailAndPassword(em,ps);
+  }catch(e){
+    showErr('Email o contraseña incorrectos.');
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;
+  }
+  await _cargarPerfilAlumno(em, ps===PASS_TEMPORAL);
+  btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
+}
+
+async function _cargarPerfilAlumno(em, forzarCambioPass){
+  try{
     const uDoc=await db.collection('usuarios').doc(em).get();
-    if(!uDoc.exists){showErr('Email no registrado.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
+    if(!uDoc.exists){showErr('Tu cuenta no tiene perfil asociado.');await firebase.auth().signOut();return;}
     const u=uDoc.data();
-    if(u.rol!=='alumno'){showErr('Este portal es solo para alumnos.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
-    if(u.pass!==ps){showErr('Contraseña incorrecta.');btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';return;}
+    if(u.rol!=='alumno'){showErr('Este portal es solo para alumnos.');await firebase.auth().signOut();return;}
     alumnoEmail=em;
     alumnoNombre=u.nombre||em;
     alumnoCurso=u.curso||'';
@@ -493,27 +503,26 @@ async function doLogin(){
     sessionStorage.setItem('iosef_alu_curso',alumnoCurso);
     sessionStorage.setItem('iosef_alu_nivel',alumnoNivel);
     sessionStorage.setItem('iosef_alu_id',alumnoId);
-    if(ps===PASS_GENERICA){
-      btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
+    if(forzarCambioPass){
       document.getElementById('modal-pass').style.display='flex';
       return;
     }
     iniciarPanel();
   }catch(e){showErr('Error de conexión: '+e.message);}
-  btn.disabled=false;btn.innerHTML='<i class="fas fa-arrow-right"></i> INGRESAR';
 }
+
 async function guardarNuevaPass(){
   const nueva=document.getElementById('np-nueva').value.trim();
   const rep=document.getElementById('np-repetir').value.trim();
   const errEl=document.getElementById('np-err');
   errEl.style.display='none';
   if(nueva.length<8){errEl.textContent='La contraseña debe tener al menos 8 caracteres.';errEl.style.display='block';return;}
-  if(nueva===PASS_GENERICA){errEl.textContent='No podés usar la contraseña genérica. Elegí una personal.';errEl.style.display='block';return;}
+  if(nueva===PASS_TEMPORAL){errEl.textContent='No podés usar la contraseña temporal. Elegí una personal.';errEl.style.display='block';return;}
   if(nueva!==rep){errEl.textContent='Las contraseñas no coinciden.';errEl.style.display='block';return;}
   const btn=document.querySelector('#modal-pass button');
   btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Guardando...';
   try{
-    await db.collection('usuarios').doc(alumnoEmail).update({pass:nueva,primerLogin:false});
+    await firebase.auth().currentUser.updatePassword(nueva);
     document.getElementById('modal-pass').style.display='none';
     toast('✅ Contraseña actualizada. ¡Bienvenido!');
     iniciarPanel();
@@ -521,18 +530,11 @@ async function guardarNuevaPass(){
   btn.disabled=false;btn.innerHTML='<i class="fas fa-check"></i> GUARDAR Y CONTINUAR';
 }
 function showErr(m){const e=document.getElementById('login-err');e.textContent=m;e.style.display='block';}
-window.onload=()=>{
-  const em=sessionStorage.getItem('iosef_alu_email');
-  if(em){
-    alumnoEmail=em;alumnoNombre=sessionStorage.getItem('iosef_alu_nombre')||em;
-    alumnoCurso=sessionStorage.getItem('iosef_alu_curso')||'';
-    alumnoNivel=sessionStorage.getItem('iosef_alu_nivel')||'secundario';
-    alumnoId=sessionStorage.getItem('iosef_alu_id')||'';
-    iniciarPanel();
-  }
-};
+firebase.auth().onAuthStateChanged(async function(user){
+  if(user&&user.email)await _cargarPerfilAlumno(user.email.toLowerCase(), false);
+});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none')doLogin();});
-function cerrarSesion(){sessionStorage.clear();location.reload();}
+function cerrarSesion(){sessionStorage.clear();firebase.auth().signOut().finally(()=>location.reload());}
 
 function iniciarPanel(){
   document.getElementById('login-screen').style.display='none';
