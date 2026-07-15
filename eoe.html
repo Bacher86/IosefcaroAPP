@@ -248,6 +248,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);const db=firebase.firestore();
 let eoeData=null,eoeEmail='',nivelSeguimientoEOE='bajo',todosLosItems=[],legajoAlumnoActual=null;
+let legajoAlumnoCursoActual='',obsAutorizacionData={};
 
 // ── LOGIN ──
 async function login(){
@@ -364,6 +365,8 @@ async function buscarAlumnoLegajo(){
 }
 async function abrirLegajo(alumnoId,nombre,curso,nivel){
   legajoAlumnoActual=alumnoId;
+  legajoAlumnoCursoActual=curso||'';
+  obsAutorizacionData={};
   document.getElementById('legajo-resultados').innerHTML='';document.getElementById('legajo-search').value='';
   document.getElementById('legajo-perfil').classList.remove('hidden');
   document.getElementById('legajo-avatar').textContent=nombre.charAt(0).toUpperCase();
@@ -417,6 +420,12 @@ async function abrirLegajo(alumnoId,nombre,curso,nivel){
     const tipoBg={academica:'tipo-inf',conductual:'tipo-falta',emocional:'tipo-eoe'};
     obsDocenteSnap.docs.forEach(doc=>{
       const d=doc.data();
+      obsAutorizacionData[doc.id]={autorizadoCursos:d.autorizadoCursos||[],autorizadoFamilia:!!d.autorizadoFamilia};
+      const autorizadaCurso=(d.autorizadoCursos||[]).length>0;
+      const autorizadaFamilia=!!d.autorizadoFamilia;
+      const estadoTxt=autorizadaCurso||autorizadaFamilia
+        ? `<span style="color:#059669"><i class="fas fa-unlock mr-1"></i>Compartida${autorizadaCurso?' con docentes':''}${autorizadaFamilia?' con familia':''}</span>`
+        : `<span style="color:#94a3b8"><i class="fas fa-lock mr-1"></i>Confidencial</span>`;
       todosLosItems.push({tipo:'observaciones',fecha:d.fecha,html:`
         <div class="legajo-bloque" data-tipo="observaciones" style="border-left:3px solid #6366f1">
           <div class="flex items-center gap-2 mb-2">
@@ -426,6 +435,10 @@ async function abrirLegajo(alumnoId,nombre,curso,nivel){
           </div>
           <p class="text-sm text-slate-700">${d.texto}</p>
           <p class="text-[9px] text-slate-400 mt-2 font-bold">Prof. ${d.docenteNombre||''}</p>
+          <div class="flex items-center gap-3 mt-2">
+            <span class="text-[9px] font-bold">${estadoTxt}</span>
+            <button onclick="abrirAutorizar('${doc.id}')" class="text-[9px] font-bold text-violet-600 ml-auto"><i class="fas fa-share-alt mr-1"></i>Autorizar visibilidad</button>
+          </div>
         </div>`});
     });
   }
@@ -444,6 +457,50 @@ function filtrarLegajo(tipo){
   cont.innerHTML=items.map(i=>i.html).join('');
 }
 function cerrarLegajo(){legajoAlumnoActual=null;todosLosItems=[];document.getElementById('legajo-perfil').classList.add('hidden');document.getElementById('legajo-search').value='';}
+
+// ── Autorizar visibilidad de una observación de docente ──
+function abrirAutorizar(obsId){
+  const data=obsAutorizacionData[obsId]||{autorizadoCursos:[],autorizadoFamilia:false};
+  const yaAutorizadaCurso=(data.autorizadoCursos||[]).includes(legajoAlumnoCursoActual);
+  const overlay=document.createElement('div');
+  overlay.id='_overlay-autorizar';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:20px;padding:24px;max-width:360px;width:100%">
+      <h3 style="font-weight:900;font-size:1.1rem;margin-bottom:4px">Autorizar visibilidad</h3>
+      <p style="color:#64748b;font-size:.8rem;margin-bottom:16px">Por defecto esta observación es confidencial. Elegí con quién compartirla.</p>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.85rem;font-weight:700">
+        <input type="checkbox" id="_chk-curso" ${yaAutorizadaCurso?'checked':''}>
+        Compartir con docentes de ${legajoAlumnoCursoActual||'este curso'}
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:.85rem;font-weight:700">
+        <input type="checkbox" id="_chk-familia" ${data.autorizadoFamilia?'checked':''}>
+        Compartir con la familia
+      </label>
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('_overlay-autorizar').remove()" style="flex:1;padding:10px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;font-weight:700;cursor:pointer">Cancelar</button>
+        <button onclick="guardarAutorizacion('${obsId}')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#0f172a;color:#fff;font-weight:700;cursor:pointer">Guardar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+async function guardarAutorizacion(obsId){
+  const compartirCurso=document.getElementById('_chk-curso').checked;
+  const compartirFamilia=document.getElementById('_chk-familia').checked;
+  try{
+    await db.collection('observaciones_eoe').doc(obsId).update({
+      autorizadoCursos: compartirCurso && legajoAlumnoCursoActual ? [legajoAlumnoCursoActual] : [],
+      autorizadoFamilia: compartirFamilia
+    });
+    document.getElementById('_overlay-autorizar').remove();
+    // Refrescar el legajo para reflejar el nuevo estado
+    const nombre=document.getElementById('legajo-nombre').textContent;
+    const meta=document.getElementById('legajo-meta').textContent.split(' · ');
+    await abrirLegajo(legajoAlumnoActual,nombre,meta[0]||'',meta[1]||'');
+  }catch(e){
+    alert('Error al guardar: '+e.message);
+  }
+}
 
 // ── ALERTAS TEMPRANAS ──
 async function ejecutarScanAlertas(){
