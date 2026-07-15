@@ -913,11 +913,6 @@ try{
   db={collection:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{},empty:true,size:0}),add:()=>Promise.resolve({id:'local'}),doc:()=>({get:()=>Promise.resolve({exists:false,data:()=>({})}),set:()=>Promise.resolve(),update:()=>Promise.resolve(),delete:()=>Promise.resolve(),collection:()=>db.collection()}),where:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{},empty:true}),orderBy:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),orderBy:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),limit:()=>({get:()=>Promise.resolve({docs:[],forEach:()=>{}})})}),batch:()=>({set:()=>{},update:()=>{},delete:()=>{},commit:()=>Promise.resolve()}),FieldValue:{serverTimestamp:()=>new Date(),increment:(n)=>n,arrayUnion:(...a)=>a,arrayRemove:()=>[]}};
   if(typeof firebase!=='undefined'&&firebase.firestore){try{db=firebase.firestore();}catch(e2){}}
 }
-// ⚠️ SEGURIDAD: estas credenciales maestras están hardcodeadas en el cliente (visible en el navegador).
-// Cualquier persona con acceso al HTML puede verlas. Para producción real, estas
-// deben validarse en el servidor (Firebase Functions + reglas de Firestore).
-// Por ahora funcionan como acceso de emergencia de admin.
-const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let matSel=[],curSel=[],allCursos=[],allMats=[];
 let cNiv=null,cAsis=null,cCom=null,cMsg=null;
 let adminEmail='',adminNombre='';
@@ -930,7 +925,6 @@ window.validarIngreso = async function validarIngreso(){
   const em=document.getElementById('log-email').value.trim().toLowerCase();
   const ps=document.getElementById('log-pass').value.trim();
   if(!em||!ps)return alert("Ingresá tus datos.");
-  if(em===LLAVE_EMAIL&&ps===LLAVE_PASS){adminEmail=em;adminNombre="Administrador";autorizar();return;}
   try{
     const d=await db.collection('usuarios').doc(em).get();
     if(!d.exists){alert("Usuario no registrado.");return;}
