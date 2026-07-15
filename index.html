@@ -383,7 +383,7 @@ if('serviceWorker'in navigator){navigator.serviceWorker.register('firebase-messa
 
 <script>
 // ── Loader secuencial Firebase ──
-var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
 var _fqi=0;
 function _loadNextFB(){
   if(_fqi>=_fq.length){_initIndex();return;}
@@ -405,12 +405,26 @@ function _initIndex(){
     if(!email){showError('Ingresá tu email.');return;}
     if((modoActual==='escuela'||modoActual==='alumno')&&!pass){showError('Ingresá tu contraseña.');return;}
     document.getElementById('btn-ingresar').disabled=true;document.getElementById('btn-ingresar').innerHTML='<i class="fas fa-spinner fa-spin"></i> Verificando...';setProgress(30);
+
+    // ── Autenticación real contra Firebase Authentication ──
+    // Esto reemplaza la comparación manual de contraseñas. Si falla,
+    // ni siquiera llegamos a mirar los datos de Firestore.
+    try{
+      await firebase.auth().signInWithEmailAndPassword(email, pass);
+    }catch(e){
+      var msg='Email o contraseña incorrectos.';
+      if(e.code==='auth/too-many-requests')msg='Demasiados intentos. Probá de nuevo en unos minutos.';
+      showError(msg);
+      document.getElementById('btn-ingresar').disabled=false;document.getElementById('btn-ingresar').innerHTML='Ingresar';
+      return;
+    }
+    setProgress(60);
+
     if(modoActual==='alumno'){
       try{
-        var snap=await db.collection('alumnos').where('email','==',email).limit(1).get();setProgress(70);
-        if(snap.empty){showError('Email no registrado como alumno.');return;}
+        var snap=await db.collection('alumnos').where('email','==',email).limit(1).get();setProgress(90);
+        if(snap.empty){showError('Tu cuenta no está vinculada a ningún alumno. Contactá a la secretaría.');await firebase.auth().signOut();return;}
         var d=snap.docs[0].data();
-        if(d.pass!==pass&&pass!=='alumnos123'){showError('Contraseña incorrecta.');return;}
         setProgress(100);
         sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol','alumno');
         sessionStorage.setItem('iosef_alu_nombre',d.nombre||email);
@@ -419,12 +433,11 @@ function _initIndex(){
       return;
     }
     try{
-      var doc=await db.collection('usuarios').doc(email).get();setProgress(70);
-      if(!doc.exists){showError('Email no registrado en el sistema.');return;}
+      var doc=await db.collection('usuarios').doc(email).get();setProgress(90);
+      if(!doc.exists){showError('Tu cuenta no tiene un perfil asociado. Contactá a la administración.');await firebase.auth().signOut();return;}
       var data=doc.data();
-      if(modoActual==='familia'){if(data.rol!=='familia'){showError('Este email pertenece a personal de la institución. Usá el Portal Escuela.');return;}setProgress(100);setTimeout(function(){window.location.href='familia.html?email='+encodeURIComponent(email);},300);return;}
-      if(data.rol==='familia'){showError('Este email es de una familia. Usá el Portal Familias.');return;}
-      if(data.pass!==pass){showError('Contraseña incorrecta.');return;}
+      if(modoActual==='familia'){if(data.rol!=='familia'){showError('Este email pertenece a personal de la institución. Usá el Portal Escuela.');await firebase.auth().signOut();return;}setProgress(100);setTimeout(function(){window.location.href='familia.html?email='+encodeURIComponent(email);},300);return;}
+      if(data.rol==='familia'){showError('Este email es de una familia. Usá el Portal Familias.');await firebase.auth().signOut();return;}
       setProgress(100);
       var rol=data.rol;var destino='admin.html';
       if(rol==='eoe')destino='eoe.html';
@@ -432,7 +445,7 @@ function _initIndex(){
       else if(['secretaria_inicial','secretaria_primario','secretaria_secundario'].includes(rol))destino='secretaria.html';
       else if(rol==='comunicacion')destino='comunicaciones.html';
       else destino='admin.html';
-      sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol',rol);sessionStorage.setItem('iosef_nombre',data.nombre||email);sessionStorage.setItem('iosef_pass_tmp',pass);
+      sessionStorage.setItem('iosef_email',email);sessionStorage.setItem('iosef_rol',rol);sessionStorage.setItem('iosef_nombre',data.nombre||email);
       setTimeout(function(){window.location.href=destino;},300);
     }catch(e){showError('Error de conexión: '+e.message);}
   };
