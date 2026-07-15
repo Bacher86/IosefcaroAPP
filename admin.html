@@ -2,19 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<script>
-(function(){
-  var s=sessionStorage.getItem('iosef_admin_session'),
-      e=sessionStorage.getItem('iosef_email'),
-      r=sessionStorage.getItem('iosef_rol');
-  if(s||(e&&(r==='admin'||r==='director'))){
-    document.write('<style>#login-overlay{display:none!important}#admin-content{display:block!important}</style>');
-  }
-})();
-</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Gestión Maestro - Iosef Caro</title>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -926,11 +917,13 @@ window.validarIngreso = async function validarIngreso(){
   const ps=document.getElementById('log-pass').value.trim();
   if(!em||!ps)return alert("Ingresá tus datos.");
   try{
+    await firebase.auth().signInWithEmailAndPassword(em,ps);
+  }catch(e){alert("Email o contraseña incorrectos.");return;}
+  try{
     const d=await db.collection('usuarios').doc(em).get();
-    if(!d.exists){alert("Usuario no registrado.");return;}
+    if(!d.exists){alert("Tu cuenta no tiene perfil asociado.");await firebase.auth().signOut();return;}
     const u=d.data();
-    if(u.pass!==ps){alert("Contraseña incorrecta.");return;}
-    if(u.rol!=='admin'){alert("Sin permisos de administrador.");return;}
+    if(u.rol!=='admin'){alert("Sin permisos de administrador.");await firebase.auth().signOut();return;}
     adminEmail=em;adminNombre=u.nombre;
     autorizar();
   }catch(e){alert("Error de conexión.");}
@@ -943,7 +936,7 @@ window.autorizar = function autorizar(){
   refrescarTodo();
 }
 ;
-window.cerrarSesion = function cerrarSesion(){sessionStorage.clear();location.reload();}
+window.cerrarSesion = function cerrarSesion(){sessionStorage.clear();firebase.auth().signOut().finally(()=>location.reload());}
 
 // ══════════════════════
 // LOG DE ACTIVIDAD
@@ -2937,19 +2930,26 @@ window.cargarCiclos = async function cargarCiclos(){
   poblarSelectoresComparativa(ciclosArr);
 }
 
-// ── Restaurar sesión ──
-(function(){
-  var sess=sessionStorage.getItem('iosef_admin_session');
-  var em=sessionStorage.getItem('iosef_email');
-  var rol=sessionStorage.getItem('iosef_rol');
-  if(sess||(em&&(rol==='admin'||rol==='director'))){
-    adminEmail=sessionStorage.getItem('iosef_admin_email')||em||'admin';
-    adminNombre=sessionStorage.getItem('iosef_admin_nombre')||sessionStorage.getItem('iosef_nombre')||'Admin';
+// ── Restaurar sesión (verificado contra Firebase Authentication) ──
+firebase.auth().onAuthStateChanged(async function(user){
+  if(!user||!user.email){
+    document.getElementById('login-overlay').style.display='';
+    document.getElementById('admin-content').classList.add('hidden');
+    return;
+  }
+  try{
+    const em=user.email.toLowerCase();
+    const d=await db.collection('usuarios').doc(em).get();
+    if(!d.exists||(d.data().rol!=='admin'&&d.data().rol!=='director')){
+      await firebase.auth().signOut();
+      return;
+    }
+    adminEmail=em;adminNombre=d.data().nombre||'Admin';
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('admin-content').classList.remove('hidden');
     refrescarTodo();
-  }
-})();
+  }catch(e){console.warn('Error verificando sesión:',e.message);}
+});
 } // fin _initAdmin
 </script>
 </body>
