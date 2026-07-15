@@ -245,7 +245,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
 <script>
 const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosefcaro.firebaseapp.com",projectId:"app-iosefcaro",storageBucket:"app-iosefcaro.firebasestorage.app",messagingSenderId:"651320124248",appId:"1:651320124248:web:97c8ca00e29114e1983b2d"};
 firebase.initializeApp(FB);const db=firebase.firestore();
-const LLAVE_EMAIL='uriel.bacher@gmail.com',LLAVE_PASS='Gallardo10';
 let eoeData=null,eoeEmail='',nivelSeguimientoEOE='bajo',todosLosItems=[],legajoAlumnoActual=null;
 
 // ── LOGIN ──
@@ -253,8 +252,6 @@ async function login(emailOverride){
   const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
   const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
   if(!email){errEl.textContent='Ingresá tu email.';errEl.classList.remove('hidden');return;}
-  // Llave maestra
-  if(email===LLAVE_EMAIL){eoeData={nombre:'Administrador',rol:'admin'};eoeEmail=email;document.getElementById('login-screen').style.display='none';document.getElementById('eoe-nom').textContent='Administrador';await cargarCursosEOE();await cargarRecientesEOE();return;}
   try{
     const doc=await db.collection('usuarios').doc(email).get();
     if(!doc.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
