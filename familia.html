@@ -6,6 +6,7 @@
 <title>Portal de Familias - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -384,6 +385,8 @@ input,textarea,select{background:var(--input-bg)!important;color:var(--text)!imp
   <h2 class="text-3xl font-black mb-2 tracking-tighter">Portal de Familias</h2>
   <p class="text-slate-400 text-sm mb-8">Accedé con tu email registrado</p>
   <input type="email" id="login-email" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Tu email">
+  <input type="password" id="login-pass" class="w-full max-w-xs p-5 bg-slate-50 rounded-2xl mb-4 outline-none border-2 border-transparent focus:border-slate-900 font-bold" placeholder="Tu contraseña">
+  <p id="login-error" class="text-red-500 text-sm mb-4 hidden"></p>
   <button onclick="login()" class="w-full max-w-xs bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl">Entrar al Portal</button>
 </div>
 
@@ -839,19 +842,27 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('firebase-messa
 // pisándose y sumando resultados entre sí (Mateo, Bruno x2). Este flag evita
 // que una segunda llamada arranque mientras la primera todavía está en curso.
 let _loginEnCurso=false;
-async function login(emailOverride){
+async function login(){
   if(_loginEnCurso)return; // ya hay un login en progreso, ignorar el duplicado
   _loginEnCurso=true;
   try{
-    await _ejecutarLogin(emailOverride);
+    const errEl=document.getElementById('login-error');
+    if(errEl)errEl.classList.add('hidden');
+    const email=(document.getElementById('login-email').value||'').toLowerCase().trim();
+    const pass=(document.getElementById('login-pass')?.value||'').trim();
+    if(!email||!pass){if(errEl){errEl.textContent='Ingresá tu email y contraseña.';errEl.classList.remove('hidden');}return;}
+    try{
+      await firebase.auth().signInWithEmailAndPassword(email,pass);
+    }catch(e){if(errEl){errEl.textContent='Email o contraseña incorrectos.';errEl.classList.remove('hidden');}return;}
+    await _cargarDatosFamilia(email);
   } finally {
     _loginEnCurso=false;
   }
 }
-async function _ejecutarLogin(emailOverride){
-  userEmail=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
+async function _cargarDatosFamilia(emailAutenticado){
+  userEmail=emailAutenticado;
   const doc=await db.collection('usuarios').doc(userEmail).get();
-  if(!doc.exists){alert("Acceso denegado.");return;}
+  if(!doc.exists){alert("Tu cuenta no tiene perfil asociado.");await firebase.auth().signOut();return;}
   userData=doc.data();
   if(userData.rol!=='familia'){alert("Este acceso es solo para familias.");return;}
   document.getElementById('login-screen').style.display='none';
@@ -2017,17 +2028,13 @@ function _descargarPDF(html,nombre){
   }).save().then(()=>container.remove());
 }
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-// Auto-login desde index.html (URL param o sessionStorage)
-(function(){
-  const params=new URLSearchParams(window.location.search);
-  const emailUrl=params.get('email');
-  const emailSess=sessionStorage.getItem('iosef_email');
-  const email=emailUrl||emailSess;
-  if(email){
-    document.getElementById('login-email').value=email;
-    login(email);
+document.getElementById('login-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+// Restaurar sesión: solo si Firebase Authentication confirma que hay una sesión real
+firebase.auth().onAuthStateChanged(async function(user){
+  if(user&&user.email){
+    await _cargarDatosFamilia(user.email.toLowerCase());
   }
-})();
+});
 
 // ══ MEJORAS PORTAL FAMILIAS ══
 
