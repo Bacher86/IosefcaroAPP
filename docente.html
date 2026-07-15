@@ -989,7 +989,7 @@ body.app-ready nav.app-nav{display:flex}
 </nav>
 
 <script>
-var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
 var _fqi=0;
 function _loadNextFB(){
   if(_fqi>=_fq.length){_initDocente();return;}
@@ -1027,17 +1027,14 @@ window.setAsis=setAsis;window.setUniforme=setUniforme;
 window.agregarIndicador=agregarIndicador;window.eliminarIndicador=eliminarIndicador;
 
 // ══ LOGIN ══
-window._doLogin=async function login(emailOverride){
-  const email=(emailOverride||document.getElementById('login-email').value||'').toLowerCase().trim();
-  const pass=(document.getElementById('login-pass')?.value||'').trim();
-  const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
-  if(!email){errEl.textContent='Ingresá tu email.';errEl.classList.remove('hidden');return;}
+async function cargarPerfilDocenteYEntrar(email){
+  const errEl=document.getElementById('login-error');
   try{
     const snap=await db.collection('usuarios').doc(email).get();
-    if(!snap.exists){errEl.textContent='Email no registrado.';errEl.classList.remove('hidden');return;}
+    if(!snap.exists){errEl.textContent='Tu cuenta no tiene perfil asociado. Contactá a la administración.';errEl.classList.remove('hidden');await firebase.auth().signOut();return;}
     const data=snap.data();
     if(data.rol==='eoe'){window.location.href='eoe.html';return;}
-    if(data.rol!=='docente'){errEl.textContent='Sin permisos para este panel.';errEl.classList.remove('hidden');return;}
+    if(data.rol!=='docente'){errEl.textContent='Sin permisos para este panel.';errEl.classList.remove('hidden');await firebase.auth().signOut();return;}
     docenteData=data;docenteEmail=email;
     document.getElementById('login-screen').style.display='none';document.body.classList.add('app-ready');
     document.getElementById('doc-nom').innerText=data.nombre;
@@ -1057,9 +1054,20 @@ window._doLogin=async function login(emailOverride){
     await cargarEventosDocente();
     poblarCursosEnComunicados();
   }catch(e){errEl.textContent='Error: '+e.message;errEl.classList.remove('hidden');}
+}
+
+window._doLogin=async function login(){
+  const email=(document.getElementById('login-email').value||'').toLowerCase().trim();
+  const pass=(document.getElementById('login-pass')?.value||'').trim();
+  const errEl=document.getElementById('login-error');errEl.classList.add('hidden');
+  if(!email||!pass){errEl.textContent='Ingresá tu email y contraseña.';errEl.classList.remove('hidden');return;}
+  try{
+    await firebase.auth().signInWithEmailAndPassword(email,pass);
+  }catch(e){errEl.textContent='Email o contraseña incorrectos.';errEl.classList.remove('hidden');return;}
+  await cargarPerfilDocenteYEntrar(email);
 };
 
-window.login=function(e){window._doLogin(e);};
+window.login=function(){window._doLogin();};
 
 // ══ SELECTOR DE CURSOS VISUAL ══
 function renderCursosGrid(curs){
@@ -2666,10 +2674,11 @@ window.enviarSolicitudCursos=async function enviarSolicitudCursos(){
 };
 
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
-window.addEventListener('load',()=>{
-  const em=sessionStorage.getItem('iosef_email');const rol=sessionStorage.getItem('iosef_rol');
-  if(em&&rol==='eoe'){window.location.href='eoe.html';return;}
-  if(em&&(rol==='docente'||rol==='admin'||rol==='director')){document.getElementById('login-email').value=em;login(em);}
+document.getElementById('login-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+firebase.auth().onAuthStateChanged(async function(user){
+  if(user&&user.email){
+    await cargarPerfilDocenteYEntrar(user.email.toLowerCase());
+  }
 });
 
 // ══ MEJORAS FINALES ══
