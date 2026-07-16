@@ -169,6 +169,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
           </div>
         </div>
 
+        <label class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-xl">
+          <input type="checkbox" id="not-enviar-push" checked>
+          <i class="fas fa-bell text-amber-500"></i> Enviar también como notificación push al celular de las familias
+        </label>
+
         <button onclick="guardarNoticia()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-black transition">
           <i class="fas fa-paper-plane mr-2"></i><span id="btn-guardar-txt">PUBLICAR COMUNICADO</span>
         </button>
@@ -670,13 +675,25 @@ async function guardarNoticia(){
       creadoEn:firebase.firestore.FieldValue.serverTimestamp(),
       leidos:[]
     });
+    // Notificación push real al celular (cola para el script externo)
+    if(document.getElementById('not-enviar-push')?.checked){
+      await db.collection('push_pendientes').add({
+        titulo:datos.titulo,
+        mensaje:(datos.texto||'').slice(0,150),
+        nivel:null, // el push no distingue por curso puntual, solo por nivel — se manda a todas las familias
+        estado:'pendiente',aperturas:0,
+        creadoPor:staffEmail,creadoEn:new Date().toISOString(),
+        origenComunicadoId:docRef.id
+      });
+    }
     // Envío de emails (en background, sin bloquear UI)
+    const pushMsg=document.getElementById('not-enviar-push')?.checked?' y se encoló la notificación push.':'.';
     if(EMAILJS_PUBLIC_KEY&&EMAILJS_PUBLIC_KEY.length>10){
       enviarEmailsFamilias(datos.titulo, datos.texto, datos.cursos||['TODOS'])
         .catch(e=>console.warn('Email batch error:',e));
-      alert('✅ Comunicado publicado. Se enviarán emails a las familias.');
+      alert('✅ Comunicado publicado. Se enviarán emails a las familias'+pushMsg);
     }else{
-      alert('✅ Comunicado publicado. (Configurá EmailJS para envío de emails — ver consola para instrucciones)');
+      alert('✅ Comunicado publicado'+pushMsg+' (Configurá EmailJS para envío de emails — ver consola para instrucciones)');
       console.info('EmailJS: configurá las claves en el tab Config.');
     }
   }
