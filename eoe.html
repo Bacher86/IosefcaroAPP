@@ -6,6 +6,7 @@
 <title>EOE - Orientación Escolar - Iosef Caro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -51,6 +52,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;padding-botto
     <p class="text-[9px] font-black text-violet-500 uppercase">Equipo de Orientación Escolar · Confidencial</p>
   </div>
   <div class="flex items-center gap-2">
+    <button id="btn-push-eoe" onclick="activarNotificacionesPersonal()" class="text-amber-500 hover:text-white hover:bg-amber-500 p-1.5 text-sm rounded transition" title="Activar notificaciones"><i class="fas fa-bell"></i></button>
     <a href="docente.html" class="text-slate-400 hover:text-blue-500 p-1.5 text-sm" title="Ir al panel docente"><i class="fas fa-chalkboard-teacher"></i></a>
     <button onclick="sessionStorage.clear();window.location.href='index.html'" class="text-slate-400 hover:text-rose-500 p-1.5"><i class="fas fa-sign-out-alt"></i></button>
   </div>
@@ -249,6 +251,23 @@ const FB={apiKey:"AIzaSyD4pg_8j_CbgeqA1x8IOqn3CxpXepVWQtI",authDomain:"app-iosef
 firebase.initializeApp(FB);const db=firebase.firestore();
 let eoeData=null,eoeEmail='',nivelSeguimientoEOE='bajo',todosLosItems=[],legajoAlumnoActual=null;
 let legajoAlumnoCursoActual='',obsAutorizacionData={};
+async function activarNotificacionesPersonal(){
+  const btn=document.getElementById('btn-push-eoe');
+  if(!('serviceWorker' in navigator)){alert('Tu navegador no soporta notificaciones.');return;}
+  try{
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){alert('Permiso denegado.');return;}
+    const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    const messaging=firebase.messaging();
+    const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});
+    if(tk){
+      await db.collection('usuarios').doc(eoeEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});
+      btn.classList.add('bg-emerald-500','text-white');
+      alert('✅ Notificaciones activadas.');
+    }
+  }catch(e){alert('Error: '+e.message);}
+}
 
 // ── LOGIN ──
 async function login(){
