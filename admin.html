@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Gestión Maestro - Iosef Caro</title>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -235,6 +236,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc}
     <button onclick="exportarExcel()"               class="nav-btn text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">📥 Excel</button>
     <button onclick="backupCompleto()"               class="nav-btn text-indigo-700 bg-indigo-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup completo</button>
     <button onclick="document.getElementById('modal-backup').classList.remove('hidden')" class="nav-btn text-blue-700 bg-blue-50 px-3 py-2 rounded-xl font-bold text-xs whitespace-nowrap">💾 Backup</button>
+    <button id="btn-push-admin" onclick="activarNotificacionesPersonal()" class="text-amber-500 hover:text-white hover:bg-amber-500 p-2 rounded transition" title="Activar notificaciones"><i class="fas fa-bell"></i></button>
     <button onclick="cerrarSesion()"          class="ml-auto text-rose-500 p-2"><i class="fas fa-power-off"></i></button>
   </nav>
 
@@ -913,6 +915,23 @@ try{
 let matSel=[],curSel=[],allCursos=[],allMats=[];
 let cNiv=null,cAsis=null,cCom=null,cMsg=null;
 let adminEmail='',adminNombre='';
+async function activarNotificacionesPersonal(){
+  const btn=document.getElementById('btn-push-admin');
+  if(!('serviceWorker' in navigator)){alert('Tu navegador no soporta notificaciones.');return;}
+  try{
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){alert('Permiso denegado.');return;}
+    const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    const messaging=firebase.messaging();
+    const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});
+    if(tk){
+      await db.collection('usuarios').doc(adminEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});
+      btn.classList.add('bg-emerald-500','text-white');
+      alert('✅ Notificaciones activadas.');
+    }
+  }catch(e){alert('Error: '+e.message);}
+}
 let alumnoEditandoId=null;
 
 // ══════════════════════
