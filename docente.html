@@ -227,6 +227,9 @@ body.app-ready nav.app-nav{display:flex}
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <button id="btn-push-docente" onclick="activarNotificacionesPersonal()" class="w-9 h-9 bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg flex items-center justify-center transition-all" title="Activar notificaciones">
+        <i class="fas fa-bell"></i>
+      </button>
       <a href="eoe.html" class="w-9 h-9 bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white rounded-lg flex items-center justify-center transition-all" title="Panel EOE">
         <i class="fas fa-shield-alt text-sm"></i>
       </a>
@@ -1013,7 +1016,7 @@ body.app-ready nav.app-nav{display:flex}
 </nav>
 
 <script>
-var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js'];
+var _fq=['https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js','https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js'];
 var _fqi=0;
 function _loadNextFB(){
   if(_fqi>=_fq.length){_initDocente();return;}
@@ -1033,6 +1036,23 @@ const db=firebase.firestore();
 
 let docenteData=null,docenteEmail='',materiaActiva='';
 function _esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+async function activarNotificacionesPersonal(){
+  const btn=document.getElementById('btn-push-docente');
+  if(!('serviceWorker' in navigator)){alert('Tu navegador no soporta notificaciones.');return;}
+  try{
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){alert('Permiso denegado.');return;}
+    const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    const messaging=firebase.messaging();
+    const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});
+    if(tk){
+      await db.collection('usuarios').doc(docenteEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});
+      btn.classList.replace('bg-amber-50','bg-emerald-500');btn.classList.add('text-white');
+      alert('✅ Notificaciones activadas. Vas a recibir avisos importantes de la institución en este dispositivo.');
+    }
+  }catch(e){alert('Error: '+e.message);}
+}
 let periodoActivo={slug:'',nombre:'',id:'',bloqueado:false};
 let cambiosNotas={},cambiosAsis={};
 let columnaExamenes=[],alumnosActuales=[];
