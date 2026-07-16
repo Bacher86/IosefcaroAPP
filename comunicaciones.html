@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Comunicaciones - Iosef Caro</title>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
@@ -62,6 +63,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
       <p class="text-[9px] font-black text-slate-400 uppercase" id="staff-rol-label">Cargando...</p>
     </div>
     <div class="flex items-center gap-2">
+      <button id="btn-push-comu" onclick="activarNotificacionesPersonal()" class="w-9 h-9 bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-600 rounded-xl flex items-center justify-center transition" title="Activar notificaciones">
+        <i class="fas fa-bell text-sm"></i>
+      </button>
       <nav class="flex gap-1 bg-slate-100 p-1 rounded-2xl">
         <button onclick="switchTab('noticias')" id="nav-noticias" class="nav-btn active px-4 py-2 font-bold text-xs text-white transition-all">
           <i class="fas fa-bullhorn mr-1"></i>Noticias
@@ -296,7 +300,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;padding-botto
           <textarea id="push-mensaje" class="input-pro mt-1 h-20 resize-none" placeholder="Texto breve, va a aparecer como notificación"></textarea>
         </div>
         <div>
-          <label class="text-[9px] font-black text-slate-400 uppercase">Destinatarios</label>
+          <label class="text-[9px] font-black text-slate-400 uppercase">¿A quién le llega?</label>
+          <select id="push-tipo-destino" class="input-pro mt-1" onchange="togglePushDestino()">
+            <option value="familias">Familias</option>
+            <option value="personal">Personal (docentes, secretaría, EOE, etc.)</option>
+            <option value="ambos">Ambos</option>
+          </select>
+        </div>
+        <div id="push-cursos-wrap">
+          <label class="text-[9px] font-black text-slate-400 uppercase">Cursos (solo para familias)</label>
           <div id="push-cursos-cont" class="flex flex-wrap gap-2 mt-1 bg-slate-50 p-3 rounded-xl">
             <p class="text-[10px] text-slate-400 italic">Cargando cursos...</p>
           </div>
@@ -386,6 +398,23 @@ async function enviarEmailsFamilias(titulo, texto, cursos){
 const ROLES_VALIDOS=['admin','comunicacion','director'];
 
 let staffEmail='', staffNombre='', staffRol='';
+async function activarNotificacionesPersonal(){
+  const btn=document.getElementById('btn-push-comu');
+  if(!('serviceWorker' in navigator)){alert('Tu navegador no soporta notificaciones.');return;}
+  try{
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){alert('Permiso denegado.');return;}
+    const r=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    const messaging=firebase.messaging();
+    const tk=await messaging.getToken({vapidKey:'BLq1oEsfDsDi3k7ZM7eJsNGa2jb5R7SYBOlr-ASXngk8Vy6RY270RMMja_YI9n_O-RsmrqGUndc9-8lAbKJOxXc',serviceWorkerRegistration:r});
+    if(tk){
+      await db.collection('usuarios').doc(staffEmail).update({fcmTokens:firebase.firestore.FieldValue.arrayUnion(tk)});
+      btn.classList.replace('bg-amber-50','bg-emerald-500');btn.classList.add('text-white');
+      alert('✅ Notificaciones activadas.');
+    }
+  }catch(e){alert('Error: '+e.message);}
+}
 
 // ═══ CONFIG EMAIL ═══
 function cargarConfigEmailGuardada(){
@@ -686,7 +715,8 @@ async function guardarNoticia(){
       await db.collection('push_pendientes').add({
         titulo:datos.titulo,
         mensaje:(datos.texto||'').slice(0,150),
-        nivel:null, // el push no distingue por curso puntual, solo por nivel — se manda a todas las familias
+        cursos:datos.cursos||['TODOS'],
+        tipoDestino:'familias',
         estado:'pendiente',aperturas:0,
         creadoPor:staffEmail,creadoEn:new Date().toISOString(),
         origenComunicadoId:docRef.id
@@ -938,16 +968,21 @@ function switchTab(tab){
 document.getElementById('log-pass').addEventListener('keydown',e=>{if(e.key==='Enter')loginComunicacion();});
 
 // ── Notificaciones push (cola para el script externo) ──
+function togglePushDestino(){
+  const tipo=document.getElementById('push-tipo-destino').value;
+  document.getElementById('push-cursos-wrap').style.display=(tipo==='personal')?'none':'block';
+}
 window.guardarPushPendiente=async function(){
   const titulo=document.getElementById('push-titulo').value.trim();
   const mensaje=document.getElementById('push-mensaje').value.trim();
+  const tipoDestino=document.getElementById('push-tipo-destino').value; // familias | personal | ambos
   const todasMarcado=document.getElementById('push-todos')?.checked;
   const cursosCheck=Array.from(document.querySelectorAll('.check-cursos-push:checked')).map(c=>c.value);
   const cursos=todasMarcado?['TODOS']:cursosCheck;
   if(!titulo||!mensaje){alert('Completá título y mensaje.');return;}
-  if(!todasMarcado&&cursosCheck.length===0){alert('Elegí "Todas las familias" o al menos un curso.');return;}
+  if(tipoDestino!=='personal'&&!todasMarcado&&cursosCheck.length===0){alert('Elegí "Todas las familias" o al menos un curso.');return;}
   await db.collection('push_pendientes').add({
-    titulo,mensaje,cursos,
+    titulo,mensaje,cursos,tipoDestino,
     estado:'pendiente',aperturas:0,
     creadoPor:staffEmail,creadoEn:new Date().toISOString()
   });
@@ -971,10 +1006,11 @@ window.cargarListaPush=async function(){
     const destinoTxt=(!d.cursos||d.cursos.includes('TODOS'))
       ? 'Todas las familias'
       : d.cursos.join(', ');
+    const tipoTxt=d.tipoDestino==='personal'?'👥 Personal':d.tipoDestino==='ambos'?'👥 Personal + '+destinoTxt:destinoTxt;
     return `<div class="border rounded-xl p-3">
       <p class="font-bold text-sm">${(d.titulo||'').replace(/</g,'&lt;')}</p>
       <p class="text-xs text-slate-500">${(d.mensaje||'').replace(/</g,'&lt;')}</p>
-      <p class="text-[10px] text-slate-400 mt-1">${destinoTxt} · ${new Date(d.creadoEn).toLocaleString('es-AR')}</p>
+      <p class="text-[10px] text-slate-400 mt-1">${tipoTxt} · ${new Date(d.creadoEn).toLocaleString('es-AR')}</p>
       <div class="flex items-center gap-3 mt-2 text-[11px] font-bold">
         ${estadoTxt}
         ${d.estado==='enviado'?`<span class="text-slate-500">📬 ${d.destinatarios||0} destinatarios · 👁 ${d.aperturas||0} aperturas</span>`:''}
