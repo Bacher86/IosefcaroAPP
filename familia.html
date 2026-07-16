@@ -2031,14 +2031,36 @@ function _descargarPDF(html,nombre){
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 document.getElementById('login-pass')?.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 window.recuperarContrasenaFamilia=function(){
-  const email=(document.getElementById('login-email').value||'').trim();
-  const errEl=document.getElementById('login-error');
-  if(!email){errEl.textContent='Escribí tu email arriba primero, y volvé a tocar el link.';errEl.classList.remove('hidden');return;}
-  firebase.auth().sendPasswordResetEmail(email).then(()=>{
-    errEl.classList.add('hidden');
-    alert('✅ Te enviamos un email a '+email+' con instrucciones para elegir una nueva contraseña. Revisá también la carpeta de spam.');
+  const emailInicial=(document.getElementById('login-email').value||'').trim();
+  const overlay=document.createElement('div');
+  overlay.id='_overlay-recuperar';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:20px;padding:24px;max-width:340px;width:100%">
+      <h3 style="font-weight:900;font-size:1.1rem;margin-bottom:4px">Recuperar contraseña</h3>
+      <p style="color:#64748b;font-size:.8rem;margin-bottom:16px">Para evitar errores de tipeo, escribí tu email dos veces.</p>
+      <input type="email" id="_rec-email1" value="${emailInicial.replace(/"/g,'&quot;')}" placeholder="Tu email" style="width:100%;padding:12px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;font-weight:700">
+      <input type="email" id="_rec-email2" placeholder="Repetí tu email" style="width:100%;padding:12px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;font-weight:700">
+      <p id="_rec-err" style="color:#e11d48;font-size:.75rem;margin-bottom:8px;display:none"></p>
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('_overlay-recuperar').remove()" style="flex:1;padding:10px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;font-weight:700;cursor:pointer">Cancelar</button>
+        <button onclick="_confirmarRecuperarFamilia()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#0f172a;color:#fff;font-weight:700;cursor:pointer">Enviar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+};
+window._confirmarRecuperarFamilia=function(){
+  const e1=(document.getElementById('_rec-email1').value||'').trim().toLowerCase();
+  const e2=(document.getElementById('_rec-email2').value||'').trim().toLowerCase();
+  const errEl=document.getElementById('_rec-err');
+  if(!e1||!e2){errEl.textContent='Completá los dos campos.';errEl.style.display='block';return;}
+  if(e1!==e2){errEl.textContent='Los dos emails no coinciden. Revisalos.';errEl.style.display='block';return;}
+  firebase.auth().sendPasswordResetEmail(e1).then(()=>{
+    document.getElementById('_overlay-recuperar').remove();
+    alert('✅ Si '+e1+' está registrado en el sistema, le va a llegar un email con instrucciones para elegir una nueva contraseña. Revisá también la carpeta de spam.');
   }).catch(()=>{
-    errEl.textContent='No pudimos enviar el email. Verificá que esté bien escrito.';errEl.classList.remove('hidden');
+    document.getElementById('_overlay-recuperar').remove();
+    alert('✅ Si '+e1+' está registrado en el sistema, le va a llegar un email con instrucciones para elegir una nueva contraseña. Revisá también la carpeta de spam.');
   });
 };
 // Restaurar sesión: solo si Firebase Authentication confirma que hay una sesión real
